@@ -1,30 +1,6 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:recommended",
-    "schedule:weekly",
-    ":pinAllExceptPeerDependencies",
-    "helpers:pinGitHubActionDigests"
-  ],
-  "mode": "full",
-  "dependencyDashboard": true,
-  "vulnerabilityAlerts": {
-    "enabled": true,
-    "labels": ["security"],
-    "dependencyDashboardApproval": false,
-    "rangeStrategy": "update-lockfile",
-    "prCreation": "immediate",
-    "minimumReleaseAge": null,
-    "vulnerabilityFixStrategy": "lowest"
-  },
-  "packageRules": [
-    {
-      "description": "Wait for PyPI packages to satisfy uv exclude-newer.",
-      "matchDatasources": ["pypi"],
-      "minimumReleaseAge": "7 days",
-      "internalChecksFilter": "strict"
-    }
-  ],
+  "extends": ["github>furedea/renovate-config"],
   "customManagers": [
     {
       "description": "Update the release versions the server bootstrap pins.",
@@ -35,11 +11,5 @@
       ],
       "extractVersionTemplate": "{{#if extractVersion}}{{{extractVersion}}}{{else}}^(?<version>.+)${{/if}}"
     }
-  ],
-  "lockFileMaintenance": {
-    "enabled": true
-  },
-  "nix": {
-    "enabled": true
-  }
+  ]
 }

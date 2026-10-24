@@ -126,8 +126,8 @@ function main() {
   install_dprint "$_python"
   render_harness
   pin_python_shebangs "$_python"
-  configure_agent_github_token
   apply_claude_settings_override
+  configure_agent_github_token
   write_env_snippet
   verify_harness
   warn_missing_sandbox_tools
@@ -283,12 +283,19 @@ function stash_runtime_config() {
 }
 
 # Merges the freshly rendered keys into the stashed runtime copy, then restores it.
+# A copy the sync rejects goes back unchanged, so the agent's own edits are never lost.
 function sync_runtime_config() {
   local _command="$1" _config="$2" _stashed
   _stashed="$(stashed_config_path "$_config")"
   [[ -f "$_stashed" ]] || return 0
-  "$BIN_DIR/agent-harness" "$_command" --source "$_config" --target "$_stashed"
-  install -m 0600 "$_stashed" "$_config"
+  local _merged="$_stashed.merged"
+  cp "$_stashed" "$_merged"
+  if ! "$BIN_DIR/agent-harness" "$_command" --source "$_config" --target "$_merged"; then
+    install -m 0600 "$_stashed" "$_config"
+    printf 'restored %s, which %s could not merge; fix it and run again.\n' "$_config" "$_command" >&2
+    exit 1
+  fi
+  install -m 0600 "$_merged" "$_config"
 }
 
 function stashed_config_path() {
@@ -321,7 +328,8 @@ function pin_python_shebang() {
 }
 
 # Matches the agent-harness Home Manager token module: gh and git push in the Claude sandbox
-# authenticate with a GitHub App token, and the App key stays unreadable there.
+# authenticate with a GitHub App token, and the App key stays unreadable there. It runs after
+# the host override, whose arrays would otherwise replace these entries.
 function configure_agent_github_token() {
   [[ -n "${AGENT_GITHUB_APP_ID:-}" ]] || return 0
   local _refresh=("$BIN_DIR/agent-harness" github-app-token refresh --app-id "$AGENT_GITHUB_APP_ID")

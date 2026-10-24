@@ -177,6 +177,16 @@ setup() {
   [ "$(jq -r '.hooks.managed' "$HOME_DIR/.config/devin/config.json")" = "true" ]
 }
 
+@test "keeps a Devin config it cannot sync and fails" {
+  mkdir -p "$HOME_DIR/.config/devin"
+  printf '%s\n' '{"theme":"dark",}' >|"$HOME_DIR/.config/devin/config.json"
+
+  run bootstrap_server
+
+  [ "$status" -ne 0 ]
+  [ "$(cat "$HOME_DIR/.config/devin/config.json")" = '{"theme":"dark",}' ]
+}
+
 @test "enables the Hermes hook plugin in the Hermes config while keeping its keys" {
   mkdir -p "$HOME_DIR/.hermes"
   printf '%s\n' 'model: user-model' >|"$HOME_DIR/.hermes/config.yaml"
@@ -237,6 +247,20 @@ setup() {
   [ "$(jq -c '.sandbox.excludedCommands' "$_settings")" = '["herdr *"]' ]
   [ "$(jq -r '.permissions.deny | index("Read(/'"$HOME_DIR"'/app.pem)") != null' "$_settings")" = "true" ]
   [ "$(jq -r '.sandbox.filesystem.denyRead | index("'"$HOME_DIR"'/app.pem") != null' "$_settings")" = "true" ]
+}
+
+@test "keeps GitHub access and the App key denial over the host settings override" {
+  write_host_env 'AGENT_GITHUB_APP_ID=123' "AGENT_GITHUB_APP_PRIVATE_KEY=$HOME_DIR/app.pem"
+  printf '%s\n' '{"permissions":{"deny":["Read(~/notes)"]},"sandbox":{"network":{"allowedDomains":["example.com"]},"filesystem":{"denyRead":["~/notes"]}}}' \
+    >|"$HOME_DIR/.config/agent-config/claude_settings_override.json"
+
+  run bootstrap_server
+
+  [ "$status" -eq 0 ]
+  local _settings="$HOME_DIR/.claude/settings.json"
+  [ "$(jq -c '.sandbox.network.allowedDomains' "$_settings")" = '["example.com","github.com","api.github.com"]' ]
+  [ "$(jq -c '.permissions.deny' "$_settings")" = '["Read(~/notes)","Read(/'"$HOME_DIR"'/app.pem)"]' ]
+  [ "$(jq -c '.sandbox.filesystem.denyRead' "$_settings")" = '["~/notes","'"$HOME_DIR"'/app.pem"]' ]
 }
 
 @test "leaves GitHub out of the sandbox when the host names no GitHub App" {

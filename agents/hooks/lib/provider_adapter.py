@@ -4,13 +4,11 @@ Each provider adapter declares only a Profile of provider facts. Payload normali
 guard dispatch, and CLI validation live here so the providers cannot drift apart.
 """
 
-from collections.abc import Callable, Iterator, Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
-from itertools import islice
 import json
 import os
 from pathlib import Path
-import shlex
 import sys
 
 import audit_log
@@ -24,6 +22,7 @@ import hook_input
 import lint_format
 import patch_input
 import secret_path_policy
+import shell_paths
 import shell_syntax
 import verification_session
 
@@ -35,8 +34,6 @@ AUDIT_KINDS = ("tool", "compaction")
 CONTENT_MODES = ("prompt", "read", "write", "apply-patch", "suppression")
 NO_ARGUMENT: tuple[str, ...] = ()
 ANY_ARGUMENT = None
-# Brace expansion multiplies; past this many words the rest are left unjudged rather than stall the hook.
-BRACE_EXPANSION_LIMIT = 256
 Formatter = Callable[[str, dict], dict]
 
 
@@ -190,7 +187,13 @@ class Adapter:
     def check_paths(self, mode: str, payload: dict) -> int:
         rules = secret_path_policy.load(secret_policy_path())
         context = self.normalized(payload)
-        candidates = edit_targets(context) if mode == "patch" else shell_words(command_text(context["tool_input"]))
+        try:
+            candidates = (
+                edit_targets(context) if mode == "patch" else command_paths(command_text(context["tool_input"]))
+            )
+        except shell_paths.UnknownDirectory as error:
+            audit_log.blocked(secret_path_refusal(mode, "", context))
+            return hook_decision.emit(hook_decision.ask(f"Needs review: {error}.").hardened())
         for value in candidates:
             if rule := secret_path_policy.blocked_rule(value, rules):
                 audit_log.blocked(secret_path_refusal(mode, value, context))
@@ -288,61 +291,11 @@ def edit_targets(context: dict) -> list[str]:
     return [name for name in (hook_input.file_path(values), *patch_input.paths(body)) if name]
 
 
-def shell_words(command: str) -> list[str]:
-    """Return every argument and redirection word, plus the values of assignment words."""
+def command_paths(command: str) -> list[str]:
     try:
-        commands = shell_syntax.parse(command)
+        return shell_paths.command_paths(command)
     except shell_syntax.UnsupportedSyntax as error:
         raise ValueError(f"{error}\n\nCommand: {shell_syntax.command_preview(command)}") from error
-    words = [word for item in commands for word in (*item.arguments, *item.redirections)]
-    words += [
-        unquoted
-        for item in commands
-        for argument, dynamic in zip(item.arguments, item.dynamic, strict=True)
-        if dynamic
-        for unquoted in unquoted_words(argument)
-    ]
-    words += [expanded for word in words if "{" in word for expanded in brace_expansions(word)]
-    return words + [word.partition("=")[2] for word in words if "=" in word]
-
-
-def unquoted_words(source: str) -> list[str]:
-    """Drop the quotes of a run-time word's source text, so a partly quoted glob such as ".en"* is judged as .en*."""
-    try:
-        return shlex.split(source)
-    except ValueError:
-        return []
-
-
-def brace_expansions(word: str) -> list[str]:
-    """Expand comma braces as the shell does before globbing, so {.env,x} is judged as .env and x."""
-    return list(islice(brace_words(word), BRACE_EXPANSION_LIMIT))
-
-
-def brace_words(word: str) -> Iterator[str]:
-    starts = (start for start, character in enumerate(word) if character == "{")
-    groups = ((start, group) for start in starts if (group := brace_group(word, start)) is not None)
-    if (first := next(groups, None)) is None:
-        yield word
-        return
-    start, (end, alternatives) = first
-    for alternative in alternatives:
-        yield from brace_words(word[:start] + alternative + word[end + 1 :])
-
-
-def brace_group(word: str, start: int) -> tuple[int, list[str]] | None:
-    """Locate the brace closing the one at start and split its top-level alternatives; None without a comma."""
-    depth, alternatives, first = 0, [], start + 1
-    for index in range(start, len(word)):
-        character = word[index]
-        if character == "{":
-            depth += 1
-        elif character == "}" and (depth := depth - 1) == 0:
-            return (index, [*alternatives, word[first:index]]) if alternatives else None
-        elif character == "," and depth == 1:
-            alternatives.append(word[first:index])
-            first = index + 1
-    return None
 
 
 def secret_path_refusal(mode: str, value: str, context: dict) -> audit_log.Refusal:

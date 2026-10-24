@@ -38,6 +38,7 @@ known_first_party = [
   "replay_commands",
   "secret_path_policy",
   "shell_inspection",
+  "shell_paths",
   "shell_syntax",
   "shell_words",
   "session_gate",

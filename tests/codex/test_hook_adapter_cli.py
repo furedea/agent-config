@@ -135,8 +135,6 @@ def test_missing_policy_fails_closed(
         ("command", {"tool_input": {"command": "cat .env"}}, ".env"),
         ("command", {"tool_input": {"command": "cat ~/.docker/config.json"}}, "~/.docker/config.json"),
         ("command", {"tool_input": {"command": "rg token README.md"}}, ""),
-        ("command", {"tool_input": {"command": "cat .en*"}}, ".en*"),
-        ("command", {"tool_input": {"command": 'cat ".en"*'}}, ".en"),
         ("command", {"tool_input": {"command": "cat *.md"}}, ""),
         ("command", {"tool_input": {"command": "cat {.env,README.md}"}}, ".env"),
         ("command", {"tool_input": {"command": "cat .{env,envrc}"}}, ".env"),
@@ -153,6 +151,62 @@ def test_secret_paths(run_cli: CliRunner, harness: Path, mode: str, payload: dic
         assert "BLOCKED" in result.stderr and blocked_path in result.stderr
     else:
         assert result.stdout == result.stderr == ""
+
+
+@pytest.mark.parametrize(
+    "command,secret,blocked_path",
+    [
+        ("cat *.json", "api_key.json", "api_key.json"),
+        ("cat *.json", "", ""),
+        ("jq . *.json", "api_key.json", "api_key.json"),
+        ("jq . *.json", "", ""),
+        ("cat config/*.json", "config/api_key.json", "config/api_key.json"),
+        ("cat config/*.json", "", ""),
+        ("cat .*", ".env", ".env"),
+        ("cat .*", "", ""),
+        ("cat .en*", ".env", ".env"),
+        ('cat ".en"*', ".env", ".env"),
+        ("cd config && cat *.json", "config/api_key.json", "api_key.json"),
+        ("cat {README,api_key}.*", "api_key.json", "api_key.json"),
+        ("rg -g '*.json' token", "api_key.json", ""),
+        ("cat < .en*", ".env", ".env"),
+    ],
+)
+def test_globs_are_judged_by_the_files_they_expand_to(
+    run_cli: CliRunner, harness: Path, isolated_project: Path, command: str, secret: str, blocked_path: str
+) -> None:
+    (isolated_project / "config").mkdir()
+    for name in ("package.json", "config/app.json", "README.md", ".gitignore"):
+        (isolated_project / name).write_text("{}")
+    if secret:
+        (isolated_project / secret).write_text("{}")
+    result = run_cli(SCRIPT, "paths", "command", payload={"tool_input": {"command": command}})
+    assert result.returncode == (2 if blocked_path else 0)
+    if blocked_path:
+        assert f"Path: {blocked_path}" in result.stderr
+    else:
+        assert result.stdout == result.stderr == ""
+
+
+@pytest.mark.parametrize("present", [True, False])
+def test_home_globs_expand_against_the_home_directory(run_cli: CliRunner, harness: Path, present: bool) -> None:
+    ssh = Path.home() / ".ssh"
+    ssh.mkdir()
+    (ssh / ("id_rsa" if present else "known_hosts")).write_text("fixture")
+    result = run_cli(SCRIPT, "paths", "command", payload={"tool_input": {"command": "cat ~/.ss*/id_rsa"}})
+    assert result.returncode == (2 if present else 0)
+
+
+@pytest.mark.parametrize("command", ['cd "$DIR" && cat *.json', "cd - && cat .*"])
+def test_globs_in_an_unknown_directory_need_review(run_cli: CliRunner, harness: Path, command: str) -> None:
+    result = run_cli(SCRIPT, "paths", "command", payload={"tool_input": {"command": command}})
+    assert result.returncode == 2
+    assert "review" in result.stderr.lower()
+
+
+def test_an_unknown_directory_does_not_matter_without_a_glob(run_cli: CliRunner, harness: Path) -> None:
+    result = run_cli(SCRIPT, "paths", "command", payload={"tool_input": {"command": 'cd "$DIR" && cat README.md'}})
+    assert result.returncode == 0
 
 
 @pytest.mark.parametrize("field", ["command", "cmd"])

@@ -39,6 +39,7 @@ known_first_party = [
   "secret_path_policy",
   "shell_inspection",
   "shell_syntax",
+  "shell_words",
   "session_gate",
   "session_snapshot",
   "session_store",

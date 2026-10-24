@@ -28,7 +28,7 @@ def repository_files() -> list[str]:
         text=True,
         timeout=10,
     )
-    return result.stdout.splitlines()
+    return [path for path in result.stdout.splitlines() if (REPO_ROOT / path).is_file()]
 
 
 def selected_tests(*changed: str) -> set[str]:
@@ -67,6 +67,12 @@ def test_every_extension_target_exists(extension: dict[str, list[str]]) -> None:
         ("agents/codex/config.toml", "tests/codex/test_config.py"),
         ("agents/hooks.json", "tests/test_hook_generation.py"),
         ("agents/hooks/lib/provider_adapter.py", "tests/test_provider_adapters.py"),
+        ("agents/claude/settings.json", "tests/codex/test_config.py"),
+        ("agents/hooks.json", "tests/hooks/test_herdr_ownership_workspaces.py"),
+        ("agents/hooks/guard_git.py", "tests/hooks/test_replay_commands.py"),
+        ("agents/hooks/guard_suppression.py", "tests/codex/test_hook_adapter_cli.py"),
+        ("agents/hooks/lib/check_execution.py", "tests/hooks/test_verification_status.py"),
+        ("agents/hooks/lib/patch_input.py", "tests/hooks/test_guard_suppression.py"),
         ("agents/codex/hooks/hook_adapter.py", "tests/codex/test_hook_adapter_cli.py"),
         ("agents/hooks/lib/herdr_grammar.py", "tests/hooks/test_herdr_ownership.py"),
         ("agents/skills/explain-visually/assets/template.html", "tests/skills/explain-visually/test_verify_page.py"),
@@ -75,3 +81,8 @@ def test_every_extension_target_exists(extension: dict[str, list[str]]) -> None:
 )
 def test_changed_source_selects_tests_its_name_does_not_match(source: str, required: str) -> None:
     assert required in selected_tests(source)
+
+
+@pytest.mark.parametrize("source", ["agents/hooks/lib/unmapped_module.py", "agents/codex/hooks/unmapped_module.py"])
+def test_an_unmapped_hook_module_keeps_its_full_suite_fallback(extension: dict[str, list[str]], source: str) -> None:
+    assert not [pattern for pattern in extension if fnmatch.fnmatchcase(source, pattern)]

@@ -1,13 +1,11 @@
 {
   ".agents/hooks/rules/related_test_extensions.json": [
-    "tests/hooks/test_verification_rule.py",
     "tests/hooks/test_check_selection.py",
     "tests/test_related_test_extensions.py"
   ],
   "agents/hooks/rules/secret_path_policy.json": [
     "tests/hooks/test_secret_path_policy.py",
     "tests/codex/test_hook_adapter_cli.py",
-    "tests/hooks/test_verification_rule.py",
     "tests/devin/test_hook_adapter.py",
     "tests/hermes/test_hermes_hook_adapter.py",
     "tests/pi/test_pi_hook_adapter.py",
@@ -29,8 +27,7 @@
   ],
   "agents/hooks/rules/secret_content_patterns.json": [
     "tests/hooks/test_secret_content_pattern.py",
-    "tests/hooks/test_secret_content.py",
-    "tests/hooks/test_verification_rule.py"
+    "tests/hooks/test_secret_content.py"
   ],
   "tests/hooks/secret_content_samples.json": [
     "tests/hooks/test_secret_content.py"
@@ -38,13 +35,14 @@
   "agents/hooks/rules/secret_commit_policy.json": [
     "tests/hooks/test_secret_commit_policy.py",
     "tests/hooks/test_guard_file.py",
-    "tests/hooks/test_verification_rule.py",
     "tests/hooks/test_hook_boundary.py"
   ],
   "agents/hooks/rules/related_test_*.json": [
     "tests/hooks/test_check_selection.py",
     "tests/hooks/test_verification_rule.py",
-    "tests/test_related_test_extensions.py"
+    "tests/test_related_test_extensions.py",
+    "tests/hooks/test_verification_status.py",
+    "tests/hooks/test_verification_reuse.py"
   ],
   "agents/claude/settings.json": [
     "tests/claude/test_settings.py",
@@ -57,7 +55,8 @@
     "tests/hooks/test_verification_session.py",
     "tests/hooks/test_cleanup_worktrees_trust.py",
     "tests/test_command_permission_sync.py",
-    "tests/test_hook_generation.py"
+    "tests/test_hook_generation.py",
+    "tests/codex/test_config.py"
   ],
   "agents/codex/config.toml": [
     "tests/test_notification.py",
@@ -70,7 +69,8 @@
     "tests/test_python_runtime.py",
     "tests/hooks/test_verification_session.py",
     "tests/test_hook_generation.py",
-    "tests/codex/test_config.py"
+    "tests/codex/test_config.py",
+    "tests/hooks/test_herdr_ownership_workspaces.py"
   ],
   "agents/hooks/lib/session_*.py": [
     "tests/hooks/test_verification_status.py",
@@ -82,7 +82,8 @@
     "tests/hooks/test_verification_session.py",
     "tests/devin/test_hook_adapter.py",
     "tests/hermes/test_hermes_hook_adapter.py",
-    "tests/pi/test_pi_hook_adapter.py"
+    "tests/pi/test_pi_hook_adapter.py",
+    "tests/hooks/test_hook_lock_wait.py"
   ],
   "agents/hooks/verification_session.py": [
     "tests/hooks/test_verification_status.py",
@@ -92,7 +93,8 @@
     "tests/hooks/test_session_gate.py",
     "tests/devin/test_hook_adapter.py",
     "tests/hermes/test_hermes_hook_adapter.py",
-    "tests/pi/test_pi_hook_adapter.py"
+    "tests/pi/test_pi_hook_adapter.py",
+    "tests/hooks/test_hook_lock_wait.py"
   ],
   "agents/command_permissions.json": [
     "tests/codex/test_execpolicy.py",
@@ -141,7 +143,9 @@
     "tests/codex/test_hook_adapter_cli.py",
     "tests/hermes/test_hermes_hook_adapter.py",
     "tests/pi/test_pi_hook_adapter.py",
-    "tests/hooks/test_tool_target_fields.py"
+    "tests/hooks/test_tool_target_fields.py",
+    "tests/hooks/test_audit_log.py",
+    "tests/hooks/test_guard_suppression.py"
   ],
   "agents/hooks/lib/lint_engine.py": [
     "tests/hooks/test_lint_format.py",
@@ -165,7 +169,10 @@
     "tests/devin/test_hook_adapter.py",
     "tests/hermes/test_hermes_hook_adapter.py",
     "tests/pi/test_pi_hook_adapter.py",
-    "tests/test_related_test_extensions.py"
+    "tests/test_related_test_extensions.py",
+    "tests/hooks/test_verification_status.py",
+    "tests/hooks/test_verification_reuse.py",
+    "tests/hooks/test_hook_lock_wait.py"
   ],
   "agents/hooks/audit_log.py": [
     "tests/hooks/test_audit_log_cli.py",
@@ -209,7 +216,11 @@
     "tests/devin/test_hook_adapter.py",
     "tests/codex/test_hook_adapter_cli.py",
     "tests/hermes/test_hermes_hook_adapter.py",
-    "tests/pi/test_pi_hook_adapter.py"
+    "tests/pi/test_pi_hook_adapter.py",
+    "tests/hooks/test_allowed_gh_api.py",
+    "tests/hooks/test_request_command.py",
+    "tests/hooks/test_cleanup_command.py",
+    "tests/hooks/test_replay_commands.py"
   ],
   "agents/hooks/guard_command.py": [
     "tests/hooks/test_allowed_command.py",
@@ -220,7 +231,10 @@
     "tests/hooks/test_cleanup_command.py",
     "tests/hooks/test_command_policy.py",
     "tests/test_command_permission_sync.py",
-    "tests/test_python_runtime.py"
+    "tests/test_python_runtime.py",
+    "tests/test_provider_adapters.py",
+    "tests/hooks/test_audit_log_cli.py",
+    "tests/hooks/test_replay_commands.py"
   ],
   "agents/hooks/lib/hook_decision.py": [
     "tests/hooks/test_allowed_command.py",
@@ -238,7 +252,14 @@
   "agents/hooks/guard_git.py": [
     "tests/hooks/test_guard_git.py",
     "tests/hooks/test_command_cli.py",
-    "tests/hooks/test_git_safety.py"
+    "tests/hooks/test_git_safety.py",
+    "tests/codex/test_hook_adapter_cli.py",
+    "tests/devin/test_hook_adapter.py",
+    "tests/hermes/test_hermes_hook_adapter.py",
+    "tests/pi/test_pi_hook_adapter.py",
+    "tests/test_provider_adapters.py",
+    "tests/hooks/test_audit_log_cli.py",
+    "tests/hooks/test_replay_commands.py"
   ],
   "agents/hooks/guard_file.py": [
     "tests/hooks/test_guard_file.py",
@@ -256,7 +277,8 @@
     "tests/hooks/test_hook_boundary.py",
     "tests/test_hook_generation.py",
     "tests/test_entry_points.py",
-    "tests/test_provider_adapters.py"
+    "tests/test_provider_adapters.py",
+    "tests/test_python_runtime.py"
   ],
   "agents/hooks/lib/patch_input.py": [
     "tests/codex/test_hook_adapter_cli.py",
@@ -265,7 +287,9 @@
     "tests/hermes/test_hermes_hook_adapter.py",
     "tests/pi/test_pi_hook_adapter.py",
     "tests/hooks/test_verification_session.py",
-    "tests/hooks/test_lint_format.py"
+    "tests/hooks/test_lint_format.py",
+    "tests/hooks/test_audit_log.py",
+    "tests/hooks/test_guard_suppression.py"
   ],
   "agents/hooks/lib/secret_path_policy.py": [
     "tests/codex/test_hook_adapter_cli.py",
@@ -283,12 +307,6 @@
   "agents/manifest.json": [
     "tests/test_python_runtime.py"
   ],
-  "agents/hooks/*.py": [
-    "tests/test_python_runtime.py"
-  ],
-  "agents/codex/hooks/*.py": [
-    "tests/test_python_runtime.py"
-  ],
   "agents/hooks/lib/hook_dispatch.py": [
     "tests/hermes/test_hermes_hook_adapter.py",
     "tests/pi/test_pi_hook_adapter.py",
@@ -298,19 +316,22 @@
     "tests/devin/test_hook_adapter.py",
     "tests/test_hook_generation.py",
     "tests/test_entry_points.py",
-    "tests/test_provider_adapters.py"
+    "tests/test_provider_adapters.py",
+    "tests/test_python_runtime.py"
   ],
   "agents/hermes/hooks/hook_adapter.py": [
     "tests/hermes/test_hermes_hook_adapter.py",
     "tests/test_hook_generation.py",
     "tests/test_entry_points.py",
-    "tests/test_provider_adapters.py"
+    "tests/test_provider_adapters.py",
+    "tests/test_python_runtime.py"
   ],
   "agents/pi/hooks/hook_adapter.py": [
     "tests/pi/test_pi_hook_adapter.py",
     "tests/test_hook_generation.py",
     "tests/test_entry_points.py",
-    "tests/test_provider_adapters.py"
+    "tests/test_provider_adapters.py",
+    "tests/test_python_runtime.py"
   ],
   "agents/hooks/lib/provider_adapter.py": [
     "tests/test_provider_adapters.py",
@@ -355,10 +376,10 @@
     "tests/hooks/test_cleanup_worktrees_trust.py",
     "tests/hooks/test_cleanup_command.py"
   ],
-  "agents/AGENTS.md": [
-    "tests/hooks/test_guard_file.py"
-  ],
   "agents/skills/explain-visually/assets/**": [
     "tests/skills/explain-visually/test_verify_page.py"
+  ],
+  "agents/hooks/guard_suppression.py": [
+    "tests/codex/test_hook_adapter_cli.py"
   ]
 }

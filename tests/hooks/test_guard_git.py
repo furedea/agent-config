@@ -274,6 +274,8 @@ def test_destructive_git_inside_substitutions_and_clauses_is_denied(command: str
         'sh <<< "git reset --hard"',
         "echo 'git clean -fd' | env zsh",
         'echo "git reset --hard" | (bash)',
+        'echo "git reset --hard" | dash',
+        "ksh -c 'git reset --hard'",
     ],
 )
 def test_destructive_git_fed_to_a_shell_as_input_is_denied(command: str) -> None:

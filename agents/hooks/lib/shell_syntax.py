@@ -26,7 +26,7 @@ ALLOWED_NODES = frozenset(
         ).split(),
     }
 )
-SHELLS = frozenset({"bash", "sh", "zsh"})
+SHELLS = frozenset({"bash", "dash", "ksh", "sh", "zsh"})
 COMMAND_LOOKUP = frozenset({"-v", "-V"})
 # Options of echo, which writes its remaining arguments; the backslash escapes they toggle are refused.
 ECHO_OPTIONS = re.compile(r"-[neE]+")

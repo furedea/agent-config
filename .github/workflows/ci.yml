@@ -103,6 +103,12 @@ jobs:
       - name: Install Nix
         uses: cachix/install-nix-action@ab739621df7a23f52766f9ccc97f38da6b7af14f # v31.10.5
 
+      - name: Cache the Nix store
+        uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7
+        with:
+          primary-key: nix-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.nix', 'flake.lock', 'nix/**') }}
+          save: false
+
       - name: Setup Node.js
         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
@@ -137,6 +143,13 @@ jobs:
       - name: Install Nix
         uses: cachix/install-nix-action@ab739621df7a23f52766f9ccc97f38da6b7af14f # v31.10.5
 
+      - name: Cache the Nix store
+        uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7
+        with:
+          primary-key: nix-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.nix', 'flake.lock', 'nix/**') }}
+          # One job saves the shared devShell closure; the others only restore it.
+          save: ${{ github.event_name == 'push' }}
+
       - name: Run bats
         run: nix develop --command bats --print-output-on-failure tests/bootstrap_server.bats
 
@@ -153,6 +166,12 @@ jobs:
 
       - name: Install Nix
         uses: cachix/install-nix-action@ab739621df7a23f52766f9ccc97f38da6b7af14f # v31.10.5
+
+      - name: Cache the Nix store
+        uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7
+        with:
+          primary-key: nix-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.nix', 'flake.lock', 'nix/**') }}
+          save: false
 
       - name: Install locked agent-harness
         uses: ./.github/actions/install-agent-harness
@@ -177,6 +196,12 @@ jobs:
 
       - name: Install Nix
         uses: cachix/install-nix-action@ab739621df7a23f52766f9ccc97f38da6b7af14f # v31.10.5
+
+      - name: Cache the Nix store
+        uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7
+        with:
+          primary-key: nix-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.nix', 'flake.lock', 'nix/**') }}
+          save: false
 
       - name: Setup Node.js
         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
@@ -234,6 +259,12 @@ jobs:
       - name: Install Nix
         uses: cachix/install-nix-action@ab739621df7a23f52766f9ccc97f38da6b7af14f # v31.10.5
 
+      - name: Cache the Nix store
+        uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7
+        with:
+          primary-key: nix-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.nix', 'flake.lock', 'nix/**') }}
+          save: false
+
       - name: Run shellcheck and shfmt
         run: |
           mapfile -d '' -t files < <(git ls-files -z -- '*.sh')
@@ -253,6 +284,12 @@ jobs:
 
       - name: Install Nix
         uses: cachix/install-nix-action@ab739621df7a23f52766f9ccc97f38da6b7af14f # v31.10.5
+
+      - name: Cache the Nix store
+        uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7
+        with:
+          primary-key: nix-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.nix', 'flake.lock', 'nix/**') }}
+          save: false
 
       - name: Build the agent source
         run: nix build .#default

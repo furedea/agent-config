@@ -16,9 +16,6 @@ GLOB = re.compile(r"[*?[]")
 BRACE_EXPANSION_LIMIT = 256
 # A glob that lists more directory entries than this needs review rather than stall the hook.
 VISIT_LIMIT = 10000
-# Dependency, build, and virtual environment trees a recursive glob does not enter.
-SKIPPED_DIRECTORIES = frozenset({"node_modules", "__pycache__", "target", "venv"})
-NIX_STORE = Path("/nix/store")
 HOME_VARIABLE = re.compile(r"\$(?:HOME\b|\{HOME\})")
 
 
@@ -81,7 +78,8 @@ class GlobWalk:
     """Expand globs over the file system as the shell would, giving up after VISIT_LIMIT directory entries.
 
     A name starting with a dot matches only a segment that starts with one, and `**` enters neither
-    hidden directories, symbolic links, nor the dependency and store trees in SKIPPED_DIRECTORIES.
+    hidden directories nor symbolic links, as the shell's globstar does not. Every other directory
+    is walked, so a large tree needs review rather than hiding a secret file inside it.
     """
 
     def __init__(self) -> None:
@@ -116,10 +114,7 @@ class GlobWalk:
         return [
             Path(entry.path)
             for entry in self._entries(directory)
-            if entry.is_dir(follow_symlinks=False)
-            and not entry.name.startswith(".")
-            and entry.name not in SKIPPED_DIRECTORIES
-            and not Path(entry.path).is_relative_to(NIX_STORE)
+            if entry.is_dir(follow_symlinks=False) and not entry.name.startswith(".")
         ]
 
     def _entries(self, directory: Path) -> list[os.DirEntry]:

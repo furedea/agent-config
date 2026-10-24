@@ -214,14 +214,15 @@ def test_a_glob_walking_too_many_entries_needs_review(
     assert "review" in result.stderr.lower()
 
 
-def test_a_recursive_glob_skips_dependency_directories(
-    run_cli: CliRunner, harness: Path, isolated_project: Path
+@pytest.mark.parametrize("directory", ["node_modules/package", "target", "venv"])
+def test_a_recursive_glob_reads_dependency_directories(
+    run_cli: CliRunner, harness: Path, isolated_project: Path, directory: str
 ) -> None:
-    fill(isolated_project / "node_modules/package", 10001)
-    (isolated_project / "src").mkdir()
-    (isolated_project / "src/app.json").write_text("{}")
-    result = run_cli(SCRIPT, "paths", "command", payload={"tool_input": {"command": "cat **/*.json"}})
-    assert result.returncode == 0
+    (isolated_project / directory).mkdir(parents=True)
+    (isolated_project / directory / "private.key").write_text("fixture")
+    result = run_cli(SCRIPT, "paths", "command", payload={"tool_input": {"command": "cat **/*.key"}})
+    assert result.returncode == 2
+    assert "private.key" in result.stderr
 
 
 @pytest.mark.parametrize("variable", ["$HOME", "${HOME}"])

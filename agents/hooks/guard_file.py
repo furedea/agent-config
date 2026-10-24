@@ -147,8 +147,8 @@ def commit_locations(command: str) -> list[tuple[str, ...]]:
         commands = shell_syntax.parse(command)
     except shell_syntax.UnsupportedSyntax:
         return unparsed_commit_locations(command)
-    # The shell joins quoted pieces of a word, so GIT_''DIR= still names GIT_DIR.
-    if REPOSITORY_VARIABLE.search(re.sub(r"[\"'\\]", "", command)) and any(
+    # The shell joins quoted pieces and line continuations of a word, so GIT_''DIR= still names GIT_DIR.
+    if REPOSITORY_VARIABLE.search(re.sub(r"\\\n|[\"'\\]", "", command)) and any(
         commit_path_options(item) is not None for item in commands
     ):
         raise ValueError(UNKNOWN_REPOSITORY)

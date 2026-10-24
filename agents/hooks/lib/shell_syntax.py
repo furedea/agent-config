@@ -205,17 +205,14 @@ def reached_directories(directories: tuple[Path | None, ...], command: Command) 
 
 def env_directory(command: Command) -> str | None:
     """The directory env -C or --chdir runs its command in: "" without the option, None when known only at run time."""
-    for index, argument in enumerate(command.arguments[1:], 1):
-        if argument in {"-C", "--chdir"}:
-            index += 1
-            value = command.arguments[index] if index < len(command.arguments) else ""
-        elif argument.startswith(("--chdir=", "-C")):
-            value = argument.removeprefix("--chdir=") if argument.startswith("--") else argument[2:]
-        elif argument.startswith("-") or ASSIGNMENT.match(argument):
-            continue
-        else:
-            return ""
-        return None if command.dynamic[index] else value
+    arguments, index = command.arguments, 1
+    while index < len(arguments) and (arguments[index].startswith("-") or ASSIGNMENT.match(arguments[index])):
+        argument = arguments[index]
+        if argument in {"-C", "--chdir"} and index + 1 < len(arguments):
+            return None if command.dynamic[index + 1] else arguments[index + 1]
+        if argument.startswith(("--chdir=", "-C")):
+            return None if command.dynamic[index] else argument.split("=", 1)[-1].removeprefix("-C")
+        index += 2 if argument in {"-u", "--unset"} else 1
     return ""
 
 

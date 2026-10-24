@@ -1,6 +1,7 @@
 """Evaluate explicit Git operations without relying on whitespace-based argument parsing."""
 
 from pathlib import Path
+import re
 import subprocess
 
 
@@ -45,6 +46,10 @@ LONG_OPTIONS = {
         "--quiet",
         "symbolic-ref": "--delete --no-recurse --quiet --recurse --short",
         "update-ref": "--batch-updates --create-reflog --deref --no-deref --stdin",
+        "branch": "--abbrev --all --color --column --contains --copy --create-reflog --delete --edit-description "
+        "--force --format --ignore-case --list --merged --move --no-contains --no-merged --omit-empty --points-at "
+        "--quiet --recurse-submodules --remotes --set-upstream-to --show-current --sort --track --unset-upstream "
+        "--verbose",
         "worktree": "--force",
         "commit": "--ahead-behind --all --allow-empty --allow-empty-message --amend --author --branch --cleanup --date "
         "--dry-run --edit --file --fixup --gpg-sign --include --inter-hunk-context --interactive --long --message "
@@ -160,9 +165,17 @@ def git_reason(arguments: tuple[str, ...]) -> str:
     destructive |= verb == "worktree" and remaining[:1] == ("remove",) and bool(options & FORCE_FLAGS)
     destructive |= verb == "reflog" and bool(remaining) and remaining[0] in {"delete", "expire"}
     destructive |= bool(options & DANGEROUS_OPTIONS.get(verb, set()))
+    destructive |= verb == "branch" and forces_deletion(remaining)
     if verb == "restore":
         destructive = not bool(options & {"--staged", "-S"}) or bool(options & {"--worktree", "-W", "--source", "-s"})
     return f"destructive git operation: {verb}" if destructive else ""
+
+
+def forces_deletion(arguments: tuple[str, ...]) -> bool:
+    """Whether a branch command deletes with force, spelled -D, -df, or --delete with --force in any form."""
+    flags = {argument for argument in arguments if argument.startswith("--")}
+    flags |= {f"-{flag}" for argument in arguments if re.fullmatch(r"-[A-Za-z]+", argument) for flag in argument[1:]}
+    return "-D" in flags or bool(flags & {"-d", "--delete"} and flags & FORCE_FLAGS)
 
 
 def spelled_out(verb: str, arguments: tuple[str, ...]) -> tuple[str, ...]:

@@ -55,17 +55,25 @@ def with_variants(words: list[str]) -> list[str]:
 
 
 def expanded_paths(pattern: str, directories: tuple[Path | None, ...]) -> list[str]:
-    """Expand a glob as the shell would: from the home directory, from the root, or from each reachable directory."""
+    """Expand a glob as the shell would: from the home directory, from the root, or from each reachable directory.
+
+    `**` spans directories, as zsh and bash with globstar expand it; elsewhere it matches less.
+    """
     pattern = HOME_VARIABLE.sub(lambda _: str(Path.home()), pattern)
     if "$" in pattern or "`" in pattern:
         raise UnexpandableGlob(f"cannot expand {pattern}, whose value is known only at run time")
     if pattern.startswith("~"):
-        return glob.glob(os.path.expanduser(pattern))
+        return glob.glob(os.path.expanduser(pattern), recursive=True)
     if os.path.isabs(pattern):
-        return glob.glob(pattern)
+        return glob.glob(pattern, recursive=True)
     if None in directories:
         raise UnexpandableGlob(f"cannot expand {pattern} in a directory known only at run time")
-    return [path for directory in directories if directory for path in glob.glob(pattern, root_dir=directory)]
+    return [
+        path
+        for directory in directories
+        if directory
+        for path in glob.glob(pattern, root_dir=directory, recursive=True)
+    ]
 
 
 def unquoted_words(source: str) -> list[str]:

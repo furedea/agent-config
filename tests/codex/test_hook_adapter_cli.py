@@ -169,6 +169,7 @@ def test_secret_paths(run_cli: CliRunner, harness: Path, mode: str, payload: dic
         ("cd config && cat *.json", "config/api_key.json", "api_key.json"),
         ("cat {README,api_key}.*", "api_key.json", "api_key.json"),
         ("rg -g '*.json' token", "api_key.json", ""),
+        ("cat **/*.json", "nested/deeper/api_key.json", "nested/deeper/api_key.json"),
         ("cat < .en*", ".env", ".env"),
     ],
 )
@@ -179,6 +180,7 @@ def test_globs_are_judged_by_the_files_they_expand_to(
     for name in ("package.json", "config/app.json", "README.md", ".gitignore"):
         (isolated_project / name).write_text("{}")
     if secret:
+        (isolated_project / secret).parent.mkdir(parents=True, exist_ok=True)
         (isolated_project / secret).write_text("{}")
     result = run_cli(SCRIPT, "paths", "command", payload={"tool_input": {"command": command}})
     assert result.returncode == (2 if blocked_path else 0)

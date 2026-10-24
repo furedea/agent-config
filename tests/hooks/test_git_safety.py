@@ -95,6 +95,34 @@ def test_ambiguous_or_harmless_abbreviations_are_not_rejected(arguments: tuple[s
     assert not git.reason(arguments)
 
 
+@pytest.mark.parametrize(
+    "arguments",
+    [
+        ("git", "tag", "-m", "--sig", "v1"),
+        ("git", "tag", "--message", "--sig", "v1"),
+        ("git", "tag", "-am", "--sig", "v1"),
+        ("git", "tag", "-F", "--sig", "v1"),
+        ("git", "commit", "-m", "--gpg"),
+        ("git", "commit", "--message", "--gpg"),
+        ("git", "commit", "--author", "--gpg"),
+    ],
+)
+def test_option_values_that_look_like_abbreviated_options_are_not_normalized(arguments: tuple[str, ...]) -> None:
+    assert not git.reason(arguments)
+
+
+@pytest.mark.parametrize(
+    "arguments",
+    [
+        ("git", "tag", "-m", "msg", "--sig", "v1"),
+        ("git", "tag", "-m", "--sig", "--sign", "v1"),
+        ("git", "commit", "-m", "x", "--gpg"),
+    ],
+)
+def test_an_abbreviation_after_an_option_value_is_still_normalized(arguments: tuple[str, ...]) -> None:
+    assert git.reason(arguments)
+
+
 def test_unicode_and_quotes_do_not_shift_command_boundaries() -> None:
     commands = syntax.parse('echo "日本語; unchanged"; git push origin "feature/topic"')
     assert commands[0].arguments == ("echo", "日本語; unchanged")
@@ -227,6 +255,9 @@ def test_literal_wrapper_commands_are_inspected_recursively() -> None:
         ("nohup cargo run", ("cargo", "run")),
         ("exec git status", ("git", "status")),
         ("caffeinate -i git status", ("git", "status")),
+        ("sudo git status", ("git", "status")),
+        ("sudo -n -u root git status", ("git", "status")),
+        ("sudo -uroot --user=root -E -- git status", ("git", "status")),
         ("echo x | xargs -0 -I {} git add {}", ("git", "add", "{}")),
         ("command git status", ("git", "status")),
         ("env FOO=1 bash -c 'git status'", ("git", "status")),
@@ -252,9 +283,16 @@ def test_wrapper_lookups_and_bare_invocations_are_not_unwrapped(command: str) ->
     assert commands[0].wrapper_depth == 0
 
 
+def test_sudo_with_a_script_shell_is_judged_as_the_shell_it_runs() -> None:
+    commands = syntax.parse("sudo sh -c 'git reset --hard'")
+    assert commands[-1].arguments == ("git", "reset", "--hard")
+
+
 def test_unknown_wrapper_options_are_not_silently_skipped() -> None:
     with pytest.raises(syntax.UnsupportedSyntax):
         syntax.parse("xargs --unknown-option git add .")
+    with pytest.raises(syntax.UnsupportedSyntax):
+        syntax.parse("sudo --unknown-option git status")
 
 
 @pytest.mark.parametrize(

@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 from pytest_mock import MockerFixture
 
-from tests.runtime import load_script_module
+from tests.runtime import CliRunner, load_script_module
 
 
 guard = load_script_module("agents/hooks/guard_git.py", "guard_git")
@@ -58,6 +58,9 @@ pytestmark = pytest.mark.usefixtures("isolated_project")
         pytest.param("exec git push --force origin feature/foo", 2, [], id="blocks exec wrapper around --force"),
         pytest.param("nohup git push --force origin feature/foo", 2, [], id="blocks nohup wrapper around --force"),
         pytest.param("nice -n 5 git push --force origin feature/foo", 2, [], id="blocks nice wrapper around --force"),
+        pytest.param("sudo git reset --hard", 2, [], id="blocks sudo wrapper around --hard"),
+        pytest.param("sudo -u root git push --force origin feature/foo", 2, [], id="blocks sudo -u around --force"),
+        pytest.param("sudo git status", 0, [], id="allows sudo around a read-only command"),
         pytest.param("env -u XDG_CONFIG_HOME git status", 0, [], id="allows env wrapper around a read-only command"),
         pytest.param("command -v git", 0, [], id="allows command lookups"),
         pytest.param(
@@ -399,3 +402,13 @@ def test_a_non_object_payload_is_denied_and_recorded_without_context(mocker: Moc
     verdict = guard.decide(["git", "status"])
     assert verdict.decision == "deny"
     blocked.assert_called_once_with(guard.audit_log.Refusal("Bash", guard.RULE, "", payload=None))
+
+
+def test_implicit_push_target_is_read_in_the_payload_directory(
+    run_cli: CliRunner, git_project: Path, tmp_path_factory: pytest.TempPathFactory
+) -> None:
+    elsewhere = tmp_path_factory.mktemp("elsewhere")
+    payload = {"cwd": str(git_project), "tool_input": {"command": "git push origin"}}
+    result = run_cli("agents/hooks/guard_git.py", payload=payload, cwd=elsewhere)
+    assert result.returncode == 2
+    assert "push target is" in result.stderr

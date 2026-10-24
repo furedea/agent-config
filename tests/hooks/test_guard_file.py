@@ -314,3 +314,18 @@ def test_malformed_commit_filename_rules_fail_closed(
     )
     assert result.returncode == 2
     assert "invalid secret commit policy" in result.stderr
+
+
+def test_commit_is_checked_in_the_payload_directory_not_the_hook_process_directory(
+    run_cli: CliRunner, git_project: Path, tmp_path_factory: pytest.TempPathFactory
+) -> None:
+    stage(git_project, ".env")
+    elsewhere = tmp_path_factory.mktemp("elsewhere")
+    result = run_cli(
+        SCRIPT,
+        "commit",
+        payload={"cwd": str(git_project), "tool_input": {"command": "git commit -m x"}},
+        cwd=elsewhere,
+    )
+    assert result.returncode == 2
+    assert ".env" in result.stderr

@@ -1,5 +1,7 @@
 """Normalize provider hook payloads into unique filesystem targets."""
 
+from collections.abc import Iterator
+from contextlib import contextmanager
 import os
 from pathlib import Path
 
@@ -42,6 +44,21 @@ def _cwd(payload: dict) -> Path:
     if not isinstance(value, str) or not value:
         return Path.cwd().resolve()
     return Path(value).expanduser().resolve()
+
+
+@contextmanager
+def payload_directory(payload: object) -> Iterator[None]:
+    """Run a decision in the payload's `cwd`, the directory the provider runs the tool in, then restore ours."""
+    value = payload.get("cwd") if isinstance(payload, dict) else None
+    if not isinstance(value, str) or not value or not Path(value).is_dir():
+        yield
+        return
+    previous = os.getcwd()
+    os.chdir(value)
+    try:
+        yield
+    finally:
+        os.chdir(previous)
 
 
 def patch_body(values: dict, tool: str | None = None) -> str:

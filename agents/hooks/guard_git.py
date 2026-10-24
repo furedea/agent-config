@@ -13,6 +13,7 @@ sys.path.insert(0, str(ROOT / "lib"))
 import audit_log
 import git_safety
 import hook_decision
+import hook_input
 from hook_decision import Verdict
 import shell_syntax
 
@@ -22,6 +23,11 @@ RULE = "guard_dangerous_git.sh"
 
 def decide(payload: dict) -> Verdict:
     """Inspect parsed literal commands; hand uninspectable input to the user and deny destructive forms."""
+    with hook_input.payload_directory(payload):
+        return judged(payload)
+
+
+def judged(payload: dict) -> Verdict:
     command = ""
     try:
         if not isinstance(payload, dict):

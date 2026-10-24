@@ -39,6 +39,12 @@ WRAPPERS: dict[str, tuple[frozenset[str], frozenset[str]]] = {
     "exec": (frozenset({"-c", "-l"}), frozenset({"-a"})),
     "nice": (frozenset(), frozenset({"-n", "--adjustment"})),
     "nohup": (frozenset(), frozenset()),
+    "sudo": (
+        frozenset(
+            {"-n", "-S", "-E", "-H", "-k", "-b", "-B", "-P", "-A", "--non-interactive", "--stdin", "--set-home"}
+        ),
+        frozenset({"-u", "-g", "-p", "-C", "-D", "-R", "-T", "-U", "-r", "-t", "--user", "--group", "--prompt"}),
+    ),
     "time": (frozenset({"-p", "-l", "-h", "-a", "--portability"}), frozenset({"-o", "-f", "--output", "--format"})),
     "timeout": (
         frozenset({"--preserve-status", "--foreground", "-v"}),

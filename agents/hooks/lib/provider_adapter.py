@@ -188,9 +188,10 @@ class Adapter:
         rules = secret_path_policy.load(secret_policy_path())
         context = self.normalized(payload)
         try:
-            candidates = (
-                edit_targets(context) if mode == "patch" else command_paths(command_text(context["tool_input"]))
-            )
+            with hook_input.payload_directory(context):
+                candidates = (
+                    edit_targets(context) if mode == "patch" else command_paths(command_text(context["tool_input"]))
+                )
         except shell_paths.UnexpandableGlob as error:
             audit_log.blocked(secret_path_refusal(mode, "", context))
             return hook_decision.emit(hook_decision.ask(f"Needs review: {error}.").hardened())

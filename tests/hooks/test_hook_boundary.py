@@ -297,3 +297,18 @@ def test_malformed_guard_input_remains_auditable(
     blocked.assert_called_once()
     [refusal] = blocked.call_args.args
     assert (refusal.hook, refusal.session, refusal.payload) == (identifier, "", None)
+
+
+def test_globs_expand_in_the_payload_directory_not_the_hook_process_directory(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    project, elsewhere = tmp_path / "project", tmp_path / "elsewhere"
+    project.mkdir()
+    elsewhere.mkdir()
+    (project / ".env").write_text("fixture\n")
+    monkeypatch.setenv("AGENT_SECRET_PATH_POLICY", str(REPO_ROOT / "agents/hooks/rules/secret_path_policy.json"))
+    monkeypatch.chdir(elsewhere)
+    payload = {"cwd": str(project), "tool_input": {"command": "cat .en*"}}
+    with pytest.raises(ValueError, match=r"\.env"):
+        hook_adapter.ADAPTER.dispatch("paths", ["command"], payload)
+    assert Path.cwd() == elsewhere

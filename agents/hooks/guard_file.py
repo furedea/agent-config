@@ -21,7 +21,7 @@ import shell_syntax
 
 
 # Environment variables through which a commit can use another repository or index than the directory's own.
-REPOSITORY_VARIABLE = re.compile(r"\bGIT_(DIR|WORK_TREE|INDEX_FILE|COMMON_DIR|OBJECT_DIRECTORY)=")
+REPOSITORY_VARIABLE = re.compile(r"\bGIT_(DIR|WORK_TREE|INDEX_FILE|COMMON_DIR|OBJECT_DIRECTORY)\+?=")
 COMMIT_HOOK = "guard_secret_commit.sh"
 UNKNOWN_REPOSITORY = (
     "cannot tell which repository this commit uses, because a shell expansion, a directory stack, "

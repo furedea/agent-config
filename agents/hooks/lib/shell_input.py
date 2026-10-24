@@ -91,7 +91,7 @@ def redirected_scripts(statement: dict, data: bytes, directories: tuple[Path | N
 
 def stdin_operator(redirect: dict, data: bytes) -> str:
     match = INPUT_REDIRECTION.match(source_text(redirect, data))
-    return match.group(2) if match and match.group(1) in {"", "0"} else ""
+    return match.group(2) if match and int(match.group(1) or "0") == 0 else ""
 
 
 def reads_process_substitution(node: dict, data: bytes) -> bool:

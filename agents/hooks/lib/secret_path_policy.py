@@ -3,6 +3,10 @@
 from fnmatch import fnmatchcase
 import json
 from pathlib import Path
+import re
+
+
+GLOB = re.compile(r"[*?[]")
 
 
 def load(path: Path) -> list[dict]:
@@ -44,4 +48,25 @@ def blocked_rule(value: str, rules: list[dict]) -> dict | None:
         pattern = rule["pattern"]
         if fnmatchcase(path, pattern) or (pattern.startswith("**/") and fnmatchcase(path, pattern[3:])):
             return rule
+        if names_glob(path) and glob_reaches(path, pattern):
+            return rule
     return None
+
+
+def names_glob(path: str) -> bool:
+    """Whether a glob narrows the file name; a bare `*` stays unjudged like any word that names no path."""
+    return bool(GLOB.search(path)) and bool(Path(path).name.strip("*"))
+
+
+def glob_reaches(glob: str, pattern: str) -> bool:
+    """Whether the glob matches the rule's own text, so it can expand to a name the rule covers.
+
+    This compares the two patterns as text, never the file system, so a glob over files that do not
+    exist yet is judged the same.
+    """
+    if fnmatchcase(pattern, glob):
+        return True
+    if not pattern.startswith("**/"):
+        return False
+    tail = pattern[3:]
+    return fnmatchcase(tail, "/".join(glob.split("/")[-(tail.count("/") + 1) :]))

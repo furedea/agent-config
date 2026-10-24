@@ -43,3 +43,16 @@ def test_credential_paths_are_denied(path: str) -> None:
 )
 def test_source_code_paths_are_readable(path: str) -> None:
     assert policy.blocked_rule(path, RULES) is None
+
+
+@pytest.mark.parametrize(
+    "path",
+    [".en*", ".e?v", ".env.loc*", "*.pem", "certs/*.pem", "keys/*key*.json", "~/.config/gh/*.yml", "credential*.json"],
+)
+def test_globs_that_can_name_a_credential_file_are_denied(path: str) -> None:
+    assert policy.blocked_rule(path, RULES) is not None
+
+
+@pytest.mark.parametrize("path", ["*.md", "src/*.py", "*", "src/*", ".envrc*", "docs/*token*.md"])
+def test_globs_that_cannot_name_a_credential_file_are_readable(path: str) -> None:
+    assert policy.blocked_rule(path, RULES) is None

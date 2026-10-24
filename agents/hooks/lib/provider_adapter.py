@@ -9,6 +9,7 @@ from dataclasses import dataclass, field
 import json
 import os
 from pathlib import Path
+import shlex
 import sys
 
 import audit_log
@@ -290,7 +291,22 @@ def shell_words(command: str) -> list[str]:
     except shell_syntax.UnsupportedSyntax as error:
         raise ValueError(f"{error}\n\nCommand: {shell_syntax.command_preview(command)}") from error
     words = [word for item in commands for word in (*item.arguments, *item.redirections)]
+    words += [
+        unquoted
+        for item in commands
+        for argument, dynamic in zip(item.arguments, item.dynamic, strict=True)
+        if dynamic
+        for unquoted in unquoted_words(argument)
+    ]
     return words + [word.partition("=")[2] for word in words if "=" in word]
+
+
+def unquoted_words(source: str) -> list[str]:
+    """Drop the quotes of a run-time word's source text, so a partly quoted glob such as ".en"* is judged as .en*."""
+    try:
+        return shlex.split(source)
+    except ValueError:
+        return []
 
 
 def secret_path_refusal(mode: str, value: str, context: dict) -> audit_log.Refusal:

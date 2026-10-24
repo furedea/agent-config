@@ -22,6 +22,9 @@ OTHER_FORMATTER_CONFIG_NAMES = (
 )
 OXFMT_CONFIG_NAMES = (".oxfmtrc", ".oxfmtrc.json", ".oxfmtrc.jsonc")
 JS_FORMATTER_PACKAGES = {"prettier": "prettier", "@biomejs/biome": "biome", "oxfmt": "oxfmt"}
+PERSONAL_DPRINT_CONFIG_NAME = "dprint.json"
+PERSONAL_PRETTIER_CONFIG_NAME = ".prettierrc"
+PERSONAL_CONFIG_NAMES = frozenset({PERSONAL_DPRINT_CONFIG_NAME, PERSONAL_PRETTIER_CONFIG_NAME})
 BUNDLED_CONFIG_DIRECTORY = Path(__file__).resolve().parent.parent / "defaults"
 
 
@@ -52,12 +55,16 @@ def project_root(start: Path, markers: tuple[str, ...]) -> Path | None:
 
 
 def project_files(start: Path, names: tuple[str, ...]) -> tuple[Path, ...]:
-    """Return formatter declarations from the nearest ancestor below the home directory that has any."""
+    """Return formatter declarations from the nearest ancestor that has any."""
+    home = Path.home().resolve()
     for directory in (start, *start.parents):
-        # Home configs are personal fallbacks, not declarations of every project under it.
-        if directory == Path.home():
-            break
-        found = tuple(directory / name for name in names if (directory / name).is_file())
+        # Personal fallbacks in the home directory do not declare a formatter for every project under it.
+        candidates = (
+            names
+            if directory.resolve() != home
+            else tuple(name for name in names if name not in PERSONAL_CONFIG_NAMES)
+        )
+        found = tuple(directory / name for name in candidates if (directory / name).is_file())
         if found:
             return found
     return ()
@@ -313,7 +320,7 @@ def dprint_plan(path: Path) -> tuple[Step, ...]:
         )
         return (policy_step(path, reason),)
     project_config = dprint[0] if dprint else None
-    config = project_config or personal_config("dprint.json", "dprint.json")
+    config = project_config or personal_config(PERSONAL_DPRINT_CONFIG_NAME, "dprint.json")
     root = project_config.parent if project_config else path.parent
     relative = str(path.relative_to(root)) if project_config else path.name
     arguments = (

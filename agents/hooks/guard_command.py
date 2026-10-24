@@ -200,9 +200,14 @@ def decide(kind: str, payload: dict, directory: Path = ROOT) -> Verdict:
 
 
 def announced(verdict: Verdict, policy: Policy) -> Verdict:
-    """Tell the user once per project that its allow rules were left out; a denial already explains itself."""
+    """Tell the user once per project that its allow rules were left out; a denial already explains itself.
+
+    A prompt carries the message in its reason, which survives a provider turning the prompt into a denial.
+    """
     if policy.ignored is None or verdict.decision == "deny" or not trusted_owners.announce_once(policy.ignored):
         return verdict
+    if verdict.decision == "ask":
+        return replace(verdict, reason=f"{verdict.reason}\n\n{policy.ignored.message}")
     return replace(verdict, notice=policy.ignored.message)
 
 

@@ -4,6 +4,7 @@ from collections.abc import Callable
 import json
 from pathlib import Path
 import subprocess
+import sys
 
 import pytest
 
@@ -13,6 +14,8 @@ SetOrigin = Callable[[str], None]
 AnswerGh = Callable[[str | None], Path]
 
 trusted_owners = load_script_module("agents/hooks/lib/trusted_owners.py", "trusted_owners")
+sys.path.insert(0, str(REPO_ROOT / "agents/hooks/lib"))
+guard_command = load_script_module("agents/hooks/guard_command.py", "guard_command")
 
 CONFIG = REPO_ROOT / "agents/hooks/rules/trusted_owners.json"
 # An approved gh prefix in a form the global rules do not list: only a project rule lets it through.
@@ -189,10 +192,21 @@ def test_the_ignored_rules_are_announced_once_with_the_way_to_fix_it(
 ) -> None:
     origin("https://github.com/someone/agent-config.git")
     gh("false")
-    first = json.loads(decide(run_cli).stdout)
-    assert "trusted_owners.json" in first["systemMessage"]
-    assert "someone" in first["systemMessage"]
-    assert "systemMessage" not in json.loads(decide(run_cli).stdout)
+    first = json.loads(decide(run_cli).stdout)["hookSpecificOutput"]["permissionDecisionReason"]
+    assert "trusted_owners.json" in first
+    assert "someone" in first
+    second = json.loads(decide(run_cli).stdout)["hookSpecificOutput"]["permissionDecisionReason"]
+    assert "trusted_owners.json" not in second
+
+
+def test_a_prompt_that_a_provider_turns_into_a_denial_still_carries_the_announcement(
+    project: Path, origin: SetOrigin, gh: AnswerGh
+) -> None:
+    origin("https://github.com/someone/agent-config.git")
+    gh("false")
+    verdict = guard_command.decide("allowed", {"tool_input": {"command": COMMAND}}).hardened()
+    assert verdict.decision == "deny"
+    assert "trusted_owners.json" in verdict.reason
 
 
 def test_the_announcement_also_reaches_a_command_the_project_rules_did_not_matter_for(

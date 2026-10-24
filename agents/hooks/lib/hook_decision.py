@@ -15,7 +15,7 @@ class Verdict:
     """Allow silently, ask the user, or deny with a reason the model can act on.
 
     `detail` is a short audit label such as the governed prefix, never command text. `notice` is
-    shown to the user beside the decision, whatever it is.
+    shown to the user with an allow; an ask or deny carries such text in its reason.
     """
 
     decision: Decision
@@ -44,10 +44,8 @@ def emit(verdict: Verdict) -> int:
     if verdict.decision == "deny":
         print(verdict.reason, file=sys.stderr)
         return 2
-    output = escalation(verdict.reason) if verdict.decision == "ask" else {}
-    if verdict.notice:
-        output["systemMessage"] = verdict.notice
-    if output:
+    output = escalation(verdict.reason) if verdict.decision == "ask" else {"systemMessage": verdict.notice}
+    if verdict.decision == "ask" or verdict.notice:
         print(json.dumps(output, ensure_ascii=True, separators=(",", ":")))
     return 0
 

@@ -63,6 +63,7 @@
         "~/.cache/nix",
         "~/.cache/uv",
         "~/Library/Caches/dprint",
+        "~/.cache/dprint",
         "~/.local/state/agent-harness",
         "~/.local/share/pnpm"
       ],

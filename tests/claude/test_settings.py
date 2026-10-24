@@ -25,6 +25,7 @@ def test_verification_and_agent_tools_work_without_escaping_the_sandbox() -> Non
         "~/.cache/nix",
         "~/.cache/uv",
         "~/Library/Caches/dprint",
+        "~/.cache/dprint",
         "~/.local/state/agent-harness",
     } <= set(sandbox["filesystem"]["allowWrite"])
     assert {"gh *", "herdr *"} <= set(sandbox["excludedCommands"])

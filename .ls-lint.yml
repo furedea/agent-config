@@ -1,0 +1,18 @@
+ls:
+  .dir: regex:\.?[a-z0-9]+(-[a-z0-9]+)*
+  .md: regex:[a-z0-9]*([._][a-z0-9]+)* | regex:(README|CONTRIBUTING|CHANGELOG|AGENTS|CLAUDE|SKILL)
+  .py: regex:[a-z0-9]*([._][a-z0-9]+)* | regex:__[a-z0-9]+__
+  .*: regex:[a-z0-9]*([._][a-z0-9]+)*
+
+ignore:
+  - .git
+  - .direnv
+  - result
+  - result-*
+  - docs/logs
+  - "**/docs/logs"
+
+  - "{.venv,.coverage,.uv-cache,.ruff_cache,.pytest_cache,.ipynb_checkpoints,__pycache__,node_modules,target}"
+  - "**/{.venv,.coverage,.uv-cache,.ruff_cache,.pytest_cache,.ipynb_checkpoints,__pycache__,node_modules,target}"
+  - "{dist,build}"
+  - "**/{dist,build}"

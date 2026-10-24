@@ -263,6 +263,58 @@ setup() {
   [ "$(jq -c '.sandbox.filesystem.denyRead' "$_settings")" = '["~/notes","'"$HOME_DIR"'/app.pem"]' ]
 }
 
+@test "points Codex shell commands at the agent token and lets its sandbox reach GitHub" {
+  write_host_env 'AGENT_GITHUB_APP_ID=123' "AGENT_GITHUB_APP_PRIVATE_KEY=$HOME_DIR/app.pem"
+
+  run bootstrap_server
+
+  [ "$status" -eq 0 ]
+  local _codex
+  _codex="$(codex_config_json)"
+  [ "$(jq -r '.shell_environment_policy.set.GH_CONFIG_DIR' <<<"$_codex")" = "$HOME_DIR/.config/agent-harness/gh" ]
+  [ "$(jq -r '.default_permissions' <<<"$_codex")" = "guarded" ]
+  [ "$(jq -r '.permissions.guarded.network.enabled' <<<"$_codex")" = "true" ]
+  [ "$(jq -c '.permissions.guarded.filesystem | [.[":root"], .[":tmpdir"], .[":slash_tmp"], .[":workspace_roots"], .["~/.config/gh/hosts.yml"]]' <<<"$_codex")" \
+    = '["read","write","write",{".":"write"},"deny"]' ]
+  [ "$(jq -r '.permissions.guarded.filesystem["~/.codex/config.toml"]' <<<"$_codex")" = "read" ]
+  [ "$(jq -r '.model' <<<"$_codex")" = "gpt" ]
+}
+
+@test "lets Codex write the cache directories Claude may write and hides the App key" {
+  write_host_env 'AGENT_GITHUB_APP_ID=123' "AGENT_GITHUB_APP_PRIVATE_KEY=$HOME_DIR/app.pem"
+  printf '%s\n' '{"sandbox":{"filesystem":{"allowWrite":["~/.cache/uv","/var/cache/tools","relative/dir"]}}}' \
+    >|"$HOME_DIR/.config/agent-config/claude_settings_override.json"
+
+  run bootstrap_server
+
+  [ "$status" -eq 0 ]
+  local _filesystem
+  _filesystem="$(codex_config_json | jq -c '.permissions.guarded.filesystem')"
+  [ "$(jq -r '.["~/.cache/uv"]' <<<"$_filesystem")" = "write" ]
+  [ "$(jq -r '.["/var/cache/tools"]' <<<"$_filesystem")" = "write" ]
+  [ "$(jq -r 'has("relative/dir")' <<<"$_filesystem")" = "false" ]
+  [ "$(jq -r '.["'"$HOME_DIR"'/app.pem"]' <<<"$_filesystem")" = "deny" ]
+}
+
+@test "applies the Codex token settings again on a repeated run" {
+  write_host_env 'AGENT_GITHUB_APP_ID=123' "AGENT_GITHUB_APP_PRIVATE_KEY=$HOME_DIR/app.pem"
+  run bootstrap_server
+  [ "$status" -eq 0 ]
+
+  run bootstrap_server
+
+  [ "$status" -eq 0 ]
+  [ "$(codex_config_json | jq -r '.shell_environment_policy.set.GH_CONFIG_DIR')" = "$HOME_DIR/.config/agent-harness/gh" ]
+}
+
+@test "leaves the Codex config alone when the host names no GitHub App" {
+  run bootstrap_server
+
+  [ "$status" -eq 0 ]
+  [ "$(codex_config_json | jq -r '.default_permissions // "unset"')" = "unset" ]
+  [ "$(codex_config_json | jq -c '.shell_environment_policy')" = "{}" ]
+}
+
 @test "leaves GitHub out of the sandbox when the host names no GitHub App" {
   run bootstrap_server
 

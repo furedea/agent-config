@@ -84,6 +84,12 @@ function write_stub() {
   chmod 0755 "$_path"
 }
 
+# Prints the rendered Codex config as JSON.
+function codex_config_json() {
+  python3 -c 'import json, sys, tomllib; json.dump(tomllib.load(sys.stdin.buffer), sys.stdout)' \
+    <"$HOME_DIR/.codex/config.toml"
+}
+
 function write_host_env() {
   mkdir -p "$HOME_DIR/.config/agent-config"
   printf '%s\n' "$@" >|"$HOME_DIR/.config/agent-config/bootstrap_server.env"
@@ -197,6 +203,9 @@ render() {
     '{"model":"fable","sandbox":{"enabled":true,"excludedCommands":["gh *","herdr *"],"network":{"allowedDomains":["api.day.app"]}}}' \
     >|"$_prefix/.claude/settings.json"
   printf '%s\n' '{"hooks":{"managed":true}}' >|"$_prefix/.config/devin/config.json"
+  mkdir -p "$_prefix/.codex"
+  [[ -f "$_prefix/.codex/config.toml" ]] || printf '%s\n' 'model = "gpt"' 'shell_environment_policy = {}' '' \
+    '[permissions.guarded.filesystem]' '"~/.codex/config.toml" = "read"' >|"$_prefix/.codex/config.toml"
   printf '%s\n' 'plugins:' '  enabled:' '    - agent-harness-hooks' >|"$_prefix/.hermes/managed-config.yaml"
 }
 

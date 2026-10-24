@@ -140,9 +140,8 @@ def reachable_staged_matches(rules: list[dict], locations: list[tuple[str, ...]]
 def commit_locations(command: str) -> list[tuple[str, ...]]:
     """The Git options that select each repository a commit may use.
 
-    A commit is checked in every directory the command may have reached before it, the starting one
-    included, since a cd inside a subshell or before || may leave the commit where it began. Only
-    path options are kept: a -c from the command would let it run configured programs here.
+    A commit is checked in every directory the command may have reached before it. Only path options
+    are kept: a -c from the command would let it run configured programs here.
     """
     try:
         commands = shell_syntax.parse(command)
@@ -150,18 +149,15 @@ def commit_locations(command: str) -> list[tuple[str, ...]]:
         return unparsed_commit_locations(command)
     if REPOSITORY_VARIABLE.search(command) and any(commit_path_options(item) is not None for item in commands):
         raise ValueError(UNKNOWN_REPOSITORY)
-    directories: list[Path | None] = [Path.cwd()]
+    directories: tuple[Path | None, ...] = (Path.cwd(),)
     locations = []
     for item in commands:
-        if Path(item.arguments[0]).name in {"cd", "pushd", "popd"}:
-            reached = (changed_directory(directory, item) for directory in directories)
-            directories = list(dict.fromkeys([*directories, *reached]))
-        elif (options := commit_path_options(item)) is None:
+        directories = shell_syntax.reached_directories(directories, item)
+        if (options := commit_path_options(item)) is None:
             continue
-        elif None in directories:
+        if None in directories:
             raise ValueError(UNKNOWN_REPOSITORY)
-        else:
-            locations += [("-C", str(directory), *options) for directory in directories]
+        locations += [("-C", str(directory), *options) for directory in directories]
     return list(dict.fromkeys(locations))
 
 
@@ -174,18 +170,6 @@ def unparsed_commit_locations(command: str) -> list[tuple[str, ...]]:
     ):
         return [("-C", str(Path.cwd()))]
     raise UnplacedCommit(UNKNOWN_REPOSITORY)
-
-
-def changed_directory(directory: Path | None, item: shell_syntax.Command) -> Path | None:
-    """Follow a cd or pushd to a literal directory; any other change leaves the directory unknown."""
-    name, arguments = Path(item.arguments[0]).name, item.arguments
-    operands = [index for index, argument in enumerate(arguments[1:], 1) if not argument.startswith("-")]
-    if directory is None or name == "popd" or "-" in arguments or (name == "pushd" and not operands):
-        return None
-    if not operands:
-        return Path.home()
-    index = operands[0]
-    return None if item.dynamic[index] else directory / arguments[index]
 
 
 def commit_path_options(item: shell_syntax.Command) -> tuple[str, ...] | None:

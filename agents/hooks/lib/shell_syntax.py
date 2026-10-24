@@ -26,6 +26,7 @@ ALLOWED_NODES = frozenset(
         ).split(),
     }
 )
+DIRECTORY_CHANGES = frozenset({"cd", "pushd", "popd"})
 SHELLS = frozenset({"bash", "dash", "ksh", "sh", "zsh"})
 COMMAND_LOOKUP = frozenset({"-v", "-V"})
 # Options of echo, which writes its remaining arguments; the backslash escapes they toggle are refused.
@@ -179,6 +180,28 @@ def parse(source: str, depth: int = 0) -> tuple[Command, ...]:
         ):
             commands.extend(parse(stdin, innermost.wrapper_depth + 1))
     return tuple(commands)
+
+
+def reached_directories(directories: tuple[Path | None, ...], command: Command) -> tuple[Path | None, ...]:
+    """Add where a cd, pushd, or popd may lead to the directories reachable so far; None is one known only at run time.
+
+    Earlier directories stay reachable, since a cd inside a subshell or before || may not take effect.
+    """
+    if Path(command.arguments[0]).name not in DIRECTORY_CHANGES:
+        return directories
+    return tuple(dict.fromkeys([*directories, *(changed_directory(directory, command) for directory in directories)]))
+
+
+def changed_directory(directory: Path | None, item: Command) -> Path | None:
+    """Follow a cd or pushd to a literal directory; any other change leaves the directory unknown."""
+    name, arguments = Path(item.arguments[0]).name, item.arguments
+    operands = [index for index, argument in enumerate(arguments[1:], 1) if not argument.startswith("-")]
+    if directory is None or name == "popd" or "-" in arguments or (name == "pushd" and not operands):
+        return None
+    if not operands:
+        return Path.home()
+    index = operands[0]
+    return None if item.dynamic[index] else directory / arguments[index]
 
 
 def statement_writes(statement: dict, data: bytes) -> tuple[str, ...]:

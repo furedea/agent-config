@@ -1,4 +1,4 @@
-# ADR-0013: Judge only statically determinable shell text in the guards
+# ADR-0015: Judge only statically determinable shell text in the guards
 
 - Status: Accepted
 - Date: 2026-10-24

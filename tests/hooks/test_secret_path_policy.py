@@ -33,7 +33,7 @@ def test_credential_paths_are_denied(path: str) -> None:
 @pytest.mark.parametrize(
     "path",
     [
-        ".venv/lib/python3.14/site-packages/pygments/token.py",
+        ".venv/lib/python3.15/site-packages/pygments/token.py",
         ".envrc",
         "src/tokenizer.rs",
         "src/keyboard.ts",

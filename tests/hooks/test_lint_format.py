@@ -238,6 +238,19 @@ def test_personal_dprint_runs_from_the_target_directory(tmp_path: Path, monkeypa
     assert all(str(home / "dprint.json") in step.arguments for step in steps)
 
 
+def test_personal_configs_in_home_are_not_project_declarations(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    home = tmp_path / "home"
+    home.mkdir()
+    (home / "dprint.json").write_text("{}")
+    (home / ".prettierrc").write_text("{}")
+    monkeypatch.setenv("HOME", str(home))
+    steps = formatter_policy.plan("json_toml", home / "project" / "config.json")
+    assert [step.label for step in steps] == ["dprint format", "dprint lint"]
+    assert all(str(home / "dprint.json") in step.arguments for step in steps)
+
+
 def test_bundled_dprint_config_is_used_without_a_personal_config(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

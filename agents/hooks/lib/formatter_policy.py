@@ -52,8 +52,11 @@ def project_root(start: Path, markers: tuple[str, ...]) -> Path | None:
 
 
 def project_files(start: Path, names: tuple[str, ...]) -> tuple[Path, ...]:
-    """Return formatter declarations from the nearest ancestor that has any."""
+    """Return formatter declarations from the nearest ancestor below the home directory that has any."""
     for directory in (start, *start.parents):
+        # Home configs are personal fallbacks, not declarations of every project under it.
+        if directory == Path.home():
+            break
         found = tuple(directory / name for name in names if (directory / name).is_file())
         if found:
             return found

@@ -3,6 +3,7 @@
 - Status: Accepted
 - Date: 2026-10-17
 - Originally: furedea/dotfiles ADR-0035
+- Related: [ADR-0013](0013_let_the_host_supply_the_agent_github_token.md) (who supplies the token)
 
 In the context of Claude Code agents that commit and push through the sandbox described in
 [ADR-0007](0007_ask_only_for_effects_that_escape_the_sandbox.md), facing commit signing that cannot

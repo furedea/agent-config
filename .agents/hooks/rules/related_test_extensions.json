@@ -158,6 +158,9 @@
     "tests/hermes/test_hermes_hook_adapter.py",
     "tests/pi/test_pi_hook_adapter.py"
   ],
+  "agents/hooks/lib/source_listing.py": [
+    "tests/hooks/test_removed_project_sources.py"
+  ],
   "agents/hooks/lib/__init__.py": [
     "tests/hooks/test_lint_format.py",
     "tests/test_python_runtime.py"

@@ -91,8 +91,11 @@
                 statix
                 uv
               ])
+              # agent-harness publishes its package for macOS only; CI installs the locked revision itself.
+              ++ nixpkgs.lib.optional (
+                agent-harness.packages ? ${system}
+              ) agent-harness.packages.${system}.default
               ++ [
-                agent-harness.packages.${system}.default
                 # lefthook before 2.1.6 runs hooks under a pty, which agent sandboxes deny.
                 nixpkgs-unstable.legacyPackages.${system}.lefthook
               ];

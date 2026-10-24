@@ -339,7 +339,7 @@ def test_a_primary_stays_open_when_live_state_has_unhashable_values(
 def merged_worktree_with_ignored(primary: Path, merged: dict[str, str], *ignored: str) -> Path:
     path = task_worktree(primary, "feat/done")
     merged["feat/done"] = git("rev-parse", "HEAD", cwd=path)
-    (path / ".gitignore").write_text("*.ignored\n.venv/\nnode_modules/\nresult\nresult-*\n__pycache__/\n")
+    (path / ".gitignore").write_text("*.ignored\n.venv/\nnode_modules/\nresult\nresult-*\n__pycache__/\n.claude/\n")
     git("add", ".gitignore", cwd=path)
     git("commit", "--quiet", "-m", "ignore", cwd=path)
     merged["feat/done"] = git("rev-parse", "HEAD", cwd=path)
@@ -369,6 +369,44 @@ def test_other_ignored_files_keep_the_worktree_and_are_reported(primary: Path, m
     assert "feat/done" in branches(primary)
     assert "notes.ignored" in result.stdout
     assert ".venv" not in result.stdout
+
+
+@pytest.mark.parametrize("name", [".claude/.cc-writes", ".claude/.cc-writes/session.json"])
+def test_claude_code_session_files_do_not_keep_a_merged_worktree(
+    primary: Path, merged: dict[str, str], name: str
+) -> None:
+    path = merged_worktree_with_ignored(primary, merged)
+    (path / name).parent.mkdir(parents=True, exist_ok=True)
+    (path / name).write_text("")
+    assert cleanup(primary).returncode == 0
+    assert not path.exists()
+    assert branches(primary) == {"main"}
+
+
+def test_session_files_beside_tracked_claude_files_do_not_keep_a_merged_worktree(
+    primary: Path, merged: dict[str, str]
+) -> None:
+    path = task_worktree(primary, "feat/done")
+    (path / ".claude").mkdir()
+    (path / ".claude/settings.json").write_text("{}\n")
+    (path / ".gitignore").write_text(".claude/.cc-writes\n")
+    git("add", ".", cwd=path)
+    git("commit", "--quiet", "-m", "claude settings", cwd=path)
+    merged["feat/done"] = git("rev-parse", "HEAD", cwd=path)
+    (path / ".claude/.cc-writes").write_text("")
+    assert cleanup(primary).returncode == 0
+    assert not path.exists()
+
+
+def test_other_files_under_claude_keep_the_worktree_beside_session_files(
+    primary: Path, merged: dict[str, str]
+) -> None:
+    path = merged_worktree_with_ignored(primary, merged, ".claude/.cc-writes", ".claude/settings.local.json")
+    result = cleanup(primary)
+    assert path.exists()
+    assert (path / ".claude/settings.local.json").exists()
+    assert "feat/done" in branches(primary)
+    assert ".claude/" in result.stdout
 
 
 def test_dry_run_reports_ignored_files_that_keep_a_worktree(primary: Path, merged: dict[str, str]) -> None:

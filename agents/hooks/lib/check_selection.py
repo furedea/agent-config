@@ -9,6 +9,7 @@ from pathlib import Path
 import tomllib
 
 from javascript_runner import javascript_runner, package_manager, runner_arguments
+from source_listing import remaining_sources
 
 
 LANGUAGES = ("bats", "python", "javascript_typescript", "rust")
@@ -308,8 +309,7 @@ def removed(scope: LanguageScope) -> bool:
     reaching = {path for path in scope.changed if changed_language(rule, (path,)) or suite_triggered(rule, (path,))}
     if any((scope.root / path).exists() for path in reaching):
         return False
-    extensions = tuple(rule["source_extensions"])
-    return not any(path.name.endswith(extensions) for path in searched_files(scope.root, {**rule, "test_dirs": ["."]}))
+    return not remaining_sources(scope.root, tuple(rule["source_extensions"]))
 
 
 def missing_marker(scope: LanguageScope, *, affected: bool) -> str:

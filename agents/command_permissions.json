@@ -1728,7 +1728,7 @@
         "defaults",
         "read"
       ],
-      "justification": "Allow read-only inspection of macOS preferences; writes belong to nix-darwin."
+      "justification": "Allow read-only inspection of macOS preferences; writes belong to the system configuration manager."
     },
     {
       "decision": "allow",
@@ -1776,7 +1776,7 @@
         "launchctl",
         "list"
       ],
-      "justification": "Allow read-only service inspection; service changes belong to nix-darwin."
+      "justification": "Allow read-only service inspection; service changes belong to the system configuration manager."
     },
     {
       "decision": "allow",
@@ -1784,7 +1784,7 @@
         "launchctl",
         "print"
       ],
-      "justification": "Allow read-only service inspection; service changes belong to nix-darwin."
+      "justification": "Allow read-only service inspection; service changes belong to the system configuration manager."
     },
     {
       "decision": "allow",
@@ -2759,7 +2759,7 @@
         "brew",
         "services"
       ],
-      "justification": "nix-darwin owns services and system state; ask the user to change them."
+      "justification": "Declarative system configuration owns services and system state; ask the user to change them."
     },
     {
       "decision": "deny",
@@ -3138,7 +3138,7 @@
         "defaults",
         "write"
       ],
-      "justification": "Manage macOS defaults through nix-darwin instead."
+      "justification": "Manage macOS defaults through the declarative system configuration instead."
     },
     {
       "decision": "deny",
@@ -3146,7 +3146,7 @@
         "defaults",
         "delete"
       ],
-      "justification": "Manage macOS defaults through nix-darwin instead."
+      "justification": "Manage macOS defaults through the declarative system configuration instead."
     },
     {
       "decision": "deny",
@@ -3154,7 +3154,7 @@
         "launchctl",
         "bootstrap"
       ],
-      "justification": "nix-darwin owns services and system state; ask the user to change them."
+      "justification": "Declarative system configuration owns services and system state; ask the user to change them."
     },
     {
       "decision": "deny",
@@ -3162,7 +3162,7 @@
         "launchctl",
         "bootout"
       ],
-      "justification": "nix-darwin owns services and system state; ask the user to change them."
+      "justification": "Declarative system configuration owns services and system state; ask the user to change them."
     },
     {
       "decision": "deny",
@@ -3170,7 +3170,7 @@
         "launchctl",
         "kickstart"
       ],
-      "justification": "nix-darwin owns services and system state; ask the user to change them."
+      "justification": "Declarative system configuration owns services and system state; ask the user to change them."
     },
     {
       "decision": "deny",
@@ -3178,7 +3178,7 @@
         "launchctl",
         "load"
       ],
-      "justification": "nix-darwin owns services and system state; ask the user to change them."
+      "justification": "Declarative system configuration owns services and system state; ask the user to change them."
     },
     {
       "decision": "deny",
@@ -3186,7 +3186,7 @@
         "launchctl",
         "unload"
       ],
-      "justification": "nix-darwin owns services and system state; ask the user to change them."
+      "justification": "Declarative system configuration owns services and system state; ask the user to change them."
     },
     {
       "decision": "deny",
@@ -3194,7 +3194,7 @@
         "launchctl",
         "enable"
       ],
-      "justification": "nix-darwin owns services and system state; ask the user to change them."
+      "justification": "Declarative system configuration owns services and system state; ask the user to change them."
     },
     {
       "decision": "deny",
@@ -3202,14 +3202,14 @@
         "launchctl",
         "disable"
       ],
-      "justification": "nix-darwin owns services and system state; ask the user to change them."
+      "justification": "Declarative system configuration owns services and system state; ask the user to change them."
     },
     {
       "decision": "deny",
       "prefix": [
         "networksetup"
       ],
-      "justification": "nix-darwin owns services and system state; ask the user to change them."
+      "justification": "Declarative system configuration owns services and system state; ask the user to change them."
     },
     {
       "decision": "deny",
@@ -3217,7 +3217,7 @@
         "scutil",
         "--set"
       ],
-      "justification": "nix-darwin owns services and system state; ask the user to change them."
+      "justification": "Declarative system configuration owns services and system state; ask the user to change them."
     },
     {
       "decision": "deny",

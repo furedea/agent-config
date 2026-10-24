@@ -28,6 +28,8 @@
       ];
       forAllSystems = nixpkgs.lib.genAttrs systems;
       pkgsFor = system: import nixpkgs { inherit system; };
+      pythonFor = pkgs: pkgs.callPackage ./nix/python.nix { };
+      uvFor = pkgs: pkgs.callPackage ./nix/uv.nix { };
     in
     {
       # Environment variables every agent host exports; scripts/bootstrap_server.sh reads the same file.
@@ -40,7 +42,7 @@
         in
         {
           # The rendered hooks run on this interpreter, so shebangs are pinned at build time.
-          default = pkgs.runCommand "agent-source" { buildInputs = [ pkgs.python314 ]; } ''
+          default = pkgs.runCommand "agent-source" { buildInputs = [ (pythonFor pkgs) ]; } ''
             cp -R ${./agents}/. "$out"
             chmod -R u+w "$out"
             patchShebangs --host "$out"
@@ -87,13 +89,15 @@
                 jq
                 ls-lint
                 nixfmt
-                python314
                 ripgrep
                 shellcheck
                 shfmt
                 statix
-                uv
               ])
+              ++ [
+                (pythonFor pkgs)
+                (uvFor pkgs)
+              ]
               # agent-harness publishes its package for macOS only; CI installs the locked revision itself.
               ++ nixpkgs.lib.optional (
                 agent-harness.packages ? ${system}

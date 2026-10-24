@@ -192,11 +192,46 @@ def test_commits_in_another_repository_check_its_staged_files(
     assert ".env" in result.stderr
 
 
-@pytest.mark.parametrize("command", ["cd nested && git commit", "git -C nested commit"])
-def test_commits_in_another_repository_ignore_the_starting_repository(
+@pytest.mark.parametrize(
+    "command",
+    ["(cd nested) && git commit", "cd nested || git commit", "(cd nested; git status); cd . && git commit"],
+)
+def test_commits_that_may_run_in_the_starting_repository_check_it(
     run_cli: CliRunner, git_project: Path, nested_project: Path, command: str
 ) -> None:
     stage(git_project, ".env")
+    result = run_cli(SCRIPT, "commit", payload={"tool_input": {"command": command}})
+    assert result.returncode == 2
+    assert ".env" in result.stderr
+
+
+@pytest.mark.parametrize(
+    "command",
+    ["git -C nested commit -m $'fixture'", "cd nested && git commit -m $'fixture'"],
+)
+def test_commits_in_another_repository_are_not_skipped_when_the_command_cannot_be_parsed(
+    run_cli: CliRunner, nested_project: Path, command: str
+) -> None:
+    stage(nested_project, ".env")
+    result = run_cli(SCRIPT, "commit", payload={"tool_input": {"command": command}})
+    assert result.returncode == 2
+
+
+def test_a_commit_reaching_a_repository_from_outside_any_repository_is_checked(
+    run_cli: CliRunner, isolated_project: Path
+) -> None:
+    nested = isolated_project / "nested"
+    subprocess.run(["git", "init", "--quiet", str(nested)], check=True, capture_output=True)
+    stage(nested, "README.md")
+    result = run_cli(SCRIPT, "commit", payload={"tool_input": {"command": "cd nested && git commit"}})
+    assert result.returncode == 0
+    stage(nested, ".env")
+    result = run_cli(SCRIPT, "commit", payload={"tool_input": {"command": "cd nested && git commit"}})
+    assert result.returncode == 2
+
+
+def test_run_time_configuration_values_do_not_hide_the_repository(run_cli: CliRunner, git_project: Path) -> None:
+    command = 'git -c user.name="$NAME" commit -m fixture'
     result = run_cli(SCRIPT, "commit", payload={"tool_input": {"command": command}})
     assert result.returncode == 0
     assert result.stdout == result.stderr == ""

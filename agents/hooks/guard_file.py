@@ -100,7 +100,7 @@ def commit_reason(command: str, directory: Path) -> str:
         return ""
     path = policy_path("AGENT_SECRET_COMMIT_POLICY", "secret_commit_policy.json", directory)
     rules = commit_filename_rules(path)
-    matches = [match for location in locations for match in staged_filename_matches(rules, location)]
+    matches = reachable_staged_matches(rules, locations)
     if not matches:
         return ""
     files = "\n".join(f"  - {name} ({reason})" for name, reason in matches)
@@ -111,27 +111,58 @@ def commit_reason(command: str, directory: Path) -> str:
     )
 
 
-def commit_locations(command: str) -> list[tuple[str, ...]]:
-    """The Git options that select the repository of each commit, following any cd before it.
+def reachable_staged_matches(rules: list[dict], locations: list[tuple[str, ...]]) -> list[tuple[str, str]]:
+    """Collect matches wherever Git can list staged files; a commit fails wherever Git cannot.
 
-    Only path options are kept: a -c from the command would let it run configured programs here.
+    Failing at every location is not an empty success, so that failure is raised.
     """
-    directory: Path | None = Path.cwd()
+    matches: list[tuple[str, str]] = []
+    failures: list[subprocess.CalledProcessError] = []
+    for location in locations:
+        try:
+            matches += staged_filename_matches(rules, location)
+        except subprocess.CalledProcessError as error:
+            failures.append(error)
+    if len(failures) == len(locations):
+        raise failures[-1]
+    return matches
+
+
+def commit_locations(command: str) -> list[tuple[str, ...]]:
+    """The Git options that select each repository a commit may use.
+
+    A commit is checked in every directory the command may have reached before it, the starting one
+    included, since a cd inside a subshell or before || may leave the commit where it began. Only
+    path options are kept: a -c from the command would let it run configured programs here.
+    """
     try:
         commands = shell_syntax.parse(command)
     except shell_syntax.UnsupportedSyntax:
-        return [("-C", str(directory))] if re.match(r"^\s*git\s+commit", command) else []
+        return unparsed_commit_locations(command)
+    directories: list[Path | None] = [Path.cwd()]
     locations = []
     for item in commands:
         if Path(item.arguments[0]).name in {"cd", "pushd", "popd"}:
-            directory = changed_directory(directory, item)
+            reached = (changed_directory(directory, item) for directory in directories)
+            directories = list(dict.fromkeys([*directories, *reached]))
         elif (options := commit_path_options(item)) is None:
             continue
-        elif directory is None:
+        elif None in directories:
             raise ValueError(UNKNOWN_REPOSITORY)
         else:
-            locations.append(("-C", str(directory), *options))
+            locations += [("-C", str(directory), *options) for directory in directories]
     return list(dict.fromkeys(locations))
+
+
+def unparsed_commit_locations(command: str) -> list[tuple[str, ...]]:
+    """Check a plain leading commit in place; refuse to guess where any other commit runs."""
+    if not re.search(r"\bgit\b.*\bcommit\b", command, re.DOTALL):
+        return []
+    if re.match(r"^\s*git\s+commit\b", command) and not re.search(
+        r"\b(cd|pushd|popd)\b|\s(-C|--git-dir|--work-tree)\b", command
+    ):
+        return [("-C", str(Path.cwd()))]
+    raise ValueError(UNKNOWN_REPOSITORY)
 
 
 def changed_directory(directory: Path | None, item: shell_syntax.Command) -> Path | None:
@@ -156,18 +187,17 @@ def commit_path_options(item: shell_syntax.Command) -> tuple[str, ...] | None:
         return None
     if command[:1] != ("commit",):
         return None
-    if any(item.dynamic[1 : 1 + len(globals_)]):
-        raise ValueError(UNKNOWN_REPOSITORY)
-    options: list[str] = []
+    spans: list[range] = []
     index = 0
     while index < len(globals_):
         option = globals_[index]
-        if option in {"-C", "--git-dir", "--work-tree"}:
-            options += globals_[index : index + 2]
-        elif option.startswith(("--git-dir=", "--work-tree=")):
-            options.append(option)
-        index += 2 if option in {"-C", "-c", "--git-dir", "--work-tree"} else 1
-    return tuple(options)
+        width = 2 if option in {"-C", "-c", "--git-dir", "--work-tree"} else 1
+        if option in {"-C", "--git-dir", "--work-tree"} or option.startswith(("--git-dir=", "--work-tree=")):
+            spans.append(range(index, index + width))
+        index += width
+    if any(item.dynamic[1 + position] for span in spans for position in span):
+        raise ValueError(UNKNOWN_REPOSITORY)
+    return tuple(globals_[position] for span in spans for position in span)
 
 
 def content_text(mode: str, payload: dict) -> str:

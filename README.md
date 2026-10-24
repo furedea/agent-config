@@ -5,15 +5,15 @@ instructions, skills, hooks, and permission rules that render into `~/.claude` a
 
 ## Layout
 
-| Path                         | Content                                                              |
-| ---------------------------- | -------------------------------------------------------------------- |
-| `agents/`                    | Harness source (source layout version 1)                             |
-| `tests/`                     | pytest and Bats specifications for the source                        |
-| `scripts/bootstrap_server.sh`| Installs the harness on servers without Nix                          |
-| `docs/DESIGN.md`             | Development cycle, verification, and hook decisions                  |
-| `docs/adr/`                  | Decisions about the source                                           |
-| `CONTRIBUTING.md`            | How to check a local change                                          |
-| `flake.nix`                  | `packages.default`: `agents/` with shebangs pinned to Python 3.14    |
+| Path                          | Content                                                             |
+| ----------------------------- | ------------------------------------------------------------------- |
+| `agents/`                     | Harness source (source layout version 1)                            |
+| `tests/`                      | pytest and Bats specifications for the source                       |
+| `scripts/bootstrap_server.sh` | Installs the harness on servers without Nix                         |
+| `docs/DESIGN.md`              | Development cycle, verification, and hook decisions                 |
+| `docs/adr/`                   | Decisions about the source                                          |
+| `CONTRIBUTING.md`             | How to check a local change                                         |
+| `flake.nix`                   | `packages.default`: `agents/` with shebangs pinned to Python 3.15.1 |
 
 ## Use
 
@@ -34,7 +34,7 @@ bash scripts/bootstrap_server.sh
 ```
 
 The script downloads pinned x86_64 Linux release binaries (`agent-harness`, `shfmt`, `rg`, `jq`,
-`ruff`, `dprint`, `shellcheck`, `bats`, and `uv`) into `~/.local/bin`, installs Python 3.14 through
+`ruff`, `dprint`, `shellcheck`, `bats`, and `uv`) into `~/.local/bin`, installs Python 3.15.1 through
 uv, renders `agents/` into the home directory with the same `agent-harness` CLI, pins the hook
 shebangs to that interpreter, keeps settings that Claude Code wrote at runtime, and writes
 `~/.config/agent-config/agent_env.sh` for the login shell to source. It exits before installing

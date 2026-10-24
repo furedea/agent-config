@@ -19,7 +19,7 @@ Host-specific settings, from the environment or
 \$XDG_CONFIG_HOME/agent-config/bootstrap_server.env:
     BIN_DIR                        user-space binaries (default: ~/.local/bin)
     BATS_PREFIX                    bats-core installation (default: ~/.local/share/bats-core)
-    PYTHON_VERSION                 uv-managed interpreter (default: 3.14)
+    PYTHON_VERSION                 uv-managed interpreter (default: 3.15.1)
     UV_PYTHON_INSTALL_DIR          interpreter location (uv default: ~/.local/share/uv/python)
     UV_CACHE_DIR                   uv cache (uv default: ~/.cache/uv)
     XDG_CACHE_HOME                 hook cache (default: ~/.cache)
@@ -73,7 +73,7 @@ function load_host_env() {
 load_host_env
 
 readonly BIN_DIR="${BIN_DIR:-$HOME/.local/bin}"
-readonly PYTHON_VERSION="${PYTHON_VERSION:-3.14}"
+readonly PYTHON_VERSION="${PYTHON_VERSION:-3.15.1}"
 MACHINE="${BOOTSTRAP_SERVER_MACHINE:-$(uname -m)}"
 readonly MACHINE
 # Renovate updates the versions below from the release named on each comment.
@@ -94,7 +94,10 @@ readonly SHELLCHECK_VERSION="${SHELLCHECK_VERSION:-0.11.0}"
 # renovate: datasource=github-releases depName=bats-core/bats-core extractVersion=^v(?<version>.+)$
 readonly BATS_VERSION="${BATS_VERSION:-1.13.0}"
 readonly BATS_PREFIX="${BATS_PREFIX:-${XDG_DATA_HOME:-$HOME/.local/share}/bats-core}"
-readonly UV_INSTALLER_URL="${UV_INSTALLER_URL:-https://astral.sh/uv/install.sh}"
+# Older uv cannot install the managed CPython this script requests.
+# renovate: datasource=github-releases depName=astral-sh/uv
+readonly UV_VERSION="${UV_VERSION:-0.13.5}"
+readonly UV_INSTALLER_URL="${UV_INSTALLER_URL:-https://astral.sh/uv/${UV_VERSION}/install.sh}"
 readonly AGENT_HARNESS_URL="${AGENT_HARNESS_URL:-https://github.com/furedea/agent-harness/releases/download/agent-harness-v${AGENT_HARNESS_VERSION}/agent-harness-x86_64-unknown-linux-musl.tar.xz}"
 readonly SHFMT_URL="${SHFMT_URL:-https://github.com/mvdan/sh/releases/download/v${SHFMT_VERSION}/shfmt_v${SHFMT_VERSION}_linux_amd64}"
 readonly RIPGREP_URL="${RIPGREP_URL:-https://github.com/BurntSushi/ripgrep/releases/download/${RIPGREP_VERSION}/ripgrep-${RIPGREP_VERSION}-x86_64-unknown-linux-musl.tar.gz}"
@@ -250,11 +253,40 @@ function install_bats() {
 function install_uv() {
   if [[ -x "$BIN_DIR/uv" ]]; then
     printf 'keep %s\n' "$BIN_DIR/uv"
-    return 0
+  else
+    download "$UV_INSTALLER_URL" "$WORK_DIR/uv_install.sh"
+    UV_UNMANAGED_INSTALL="$BIN_DIR" sh "$WORK_DIR/uv_install.sh"
+    printf 'install %s\n' "$BIN_DIR/uv"
   fi
-  download "$UV_INSTALLER_URL" "$WORK_DIR/uv_install.sh"
-  UV_UNMANAGED_INSTALL="$BIN_DIR" sh "$WORK_DIR/uv_install.sh"
-  printf 'install %s\n' "$BIN_DIR/uv"
+  require_uv_version
+}
+
+# An installed uv is never replaced, so one older than the pin stops the run.
+function require_uv_version() {
+  local _output _found
+  _output="$("$BIN_DIR/uv" --version)"
+  _found="${_output#uv }"
+  _found="${_found%% *}"
+  _found="${_found%%[!0-9.]*}"
+  version_at_least "$_found" "$UV_VERSION" && return 0
+  printf '%s is uv %s, but %s or newer is required; remove it and run again.\n' \
+    "$BIN_DIR/uv" "$_found" "$UV_VERSION" >&2
+  exit 1
+}
+
+# Compares dotted numeric versions field by field.
+function version_at_least() {
+  local -a _found _required
+  IFS=. read -ra _found <<<"$1"
+  IFS=. read -ra _required <<<"$2"
+  local _index _have _need
+  for _index in "${!_required[@]}"; do
+    _have="${_found[_index]:-0}"
+    _need="${_required[_index]}"
+    ((_have == _need)) && continue
+    ((_have > _need))
+    return
+  done
 }
 
 # Prints the absolute path of the managed interpreter.

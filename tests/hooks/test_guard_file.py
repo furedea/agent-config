@@ -236,6 +236,13 @@ def test_a_commit_reaching_a_repository_from_outside_any_repository_is_checked(
     assert result.returncode == 2
 
 
+def test_git_variables_inside_a_script_the_shell_reads_are_blocked(run_cli: CliRunner, git_project: Path) -> None:
+    (git_project / "script.sh").write_text("GIT_INDEX_FILE=other-index git commit -m fixture\n")
+    result = run_cli(SCRIPT, "commit", payload={"tool_input": {"command": "sh < script.sh"}})
+    assert result.returncode == 2
+    assert "repository" in result.stderr
+
+
 def test_run_time_configuration_values_do_not_hide_the_repository(run_cli: CliRunner, git_project: Path) -> None:
     command = 'git -c user.name="$NAME" commit -m fixture'
     result = run_cli(SCRIPT, "commit", payload={"tool_input": {"command": command}})

@@ -3,6 +3,19 @@ export REPO_ROOT
 # Keep bsdtar from adding AppleDouble entries to fixture archives.
 export COPYFILE_DISABLE=1
 
+readonly FAKE_AGENT_HARNESS_VERSION="9.9.9"
+# Executable entry points the fake agent-harness renders with the source shebang.
+readonly RENDERED_ENTRY_POINTS=(
+  .claude/hooks/guard_command.py
+  .claude/statusline/statusline.py
+  .claude/skills/explain-visually/scripts/render.py
+  .codex/hooks/hook_adapter.py
+  .codex/skills/explain-visually/scripts/render.py
+  .devin/hooks/hook_adapter.py
+  .hermes/hooks/hook_adapter.py
+  .pi/hooks/hook_adapter.py
+)
+
 # Offline stand-ins for the release downloads and installers used by
 # scripts/bootstrap_server.sh. Every fixture lives under BATS_TEST_TMPDIR.
 function create_bootstrap_server_fixtures() {
@@ -13,24 +26,36 @@ function create_bootstrap_server_fixtures() {
   FAKE_PYTHON="$BATS_TEST_TMPDIR/python3.14"
   UV_ARGS_FILE="$BATS_TEST_TMPDIR/uv-args"
   AGENT_HARNESS_ARGS_FILE="$BATS_TEST_TMPDIR/agent-harness-args"
-  mkdir -p "$HOME_DIR" "$RELEASES"
-  write_stub "$FAKE_PYTHON" '#!/bin/sh' 'exit 0'
+  SANDBOX_TOOLS_DIR="$BATS_TEST_TMPDIR/sandbox-tools"
+  mkdir -p "$HOME_DIR" "$RELEASES" "$SANDBOX_TOOLS_DIR"
+  write_stub "$FAKE_PYTHON" '#!/bin/sh' "exec '$(command -v python3)' \"\$@\""
   write_stub "$RELEASES/shfmt" '#!/bin/sh' 'exit 0'
   write_stub "$RELEASES/jq" '#!/bin/sh' "exec '$(command -v jq)' \"\$@\""
+  write_stub "$SANDBOX_TOOLS_DIR/bwrap" '#!/bin/sh' 'exit 0'
+  write_stub "$SANDBOX_TOOLS_DIR/socat" '#!/bin/sh' 'exit 0'
   create_agent_harness_archive
-  create_ripgrep_archive
+  create_tarball ripgrep.tar.gz ripgrep-14.1.1-x86_64-unknown-linux-musl rg
+  create_tarball ruff.tar.gz ruff-x86_64-unknown-linux-musl ruff
+  create_tarball shellcheck.tar.xz shellcheck-v0.11.0 shellcheck
+  create_dprint_archive
   create_bats_archive
   create_uv_installer
 }
 
+# Runs the script with the sandbox tools present unless PATH is overridden.
 function bootstrap_server() {
   env -u XDG_CONFIG_HOME -u XDG_STATE_HOME -u XDG_CACHE_HOME -u BIN_DIR \
     HOME="$HOME_DIR" \
+    PATH="$SANDBOX_TOOLS_DIR:$PATH" \
     BOOTSTRAP_SERVER_MACHINE=x86_64 \
+    AGENT_HARNESS_VERSION="$FAKE_AGENT_HARNESS_VERSION" \
     AGENT_HARNESS_URL="file://$RELEASES/agent-harness.tar.xz" \
     SHFMT_URL="file://$RELEASES/shfmt" \
     RIPGREP_URL="file://$RELEASES/ripgrep.tar.gz" \
     JQ_URL="file://$RELEASES/jq" \
+    RUFF_URL="file://$RELEASES/ruff.tar.gz" \
+    DPRINT_URL="file://$RELEASES/dprint.zip" \
+    SHELLCHECK_URL="file://$RELEASES/shellcheck.tar.xz" \
     BATS_URL="file://$RELEASES/bats-core.tar.gz" \
     UV_INSTALLER_URL="file://$RELEASES/uv_install.sh" \
     FAKE_PYTHON="$FAKE_PYTHON" \
@@ -40,6 +65,18 @@ function bootstrap_server() {
     /bin/bash "$SCRIPT"
 }
 
+# Prints a PATH holding only the host commands the script and its fixtures use,
+# so tests can observe a host without bubblewrap or socat.
+function path_without_sandbox_tools() {
+  local _directory="$BATS_TEST_TMPDIR/host-tools" _command
+  mkdir -p "$_directory"
+  for _command in bash sh env cat curl tar xz gzip install mktemp rm cp mv ln mkdir chmod \
+    head tail find dirname uname sha256sum jq python3 grep; do
+    ln -sf "$(command -v "$_command")" "$_directory/$_command"
+  done
+  printf '%s\n' "$_directory"
+}
+
 function write_stub() {
   local _path="$1"
   shift
@@ -47,18 +84,39 @@ function write_stub() {
   chmod 0755 "$_path"
 }
 
+function write_host_env() {
+  mkdir -p "$HOME_DIR/.config/agent-config"
+  printf '%s\n' "$@" >|"$HOME_DIR/.config/agent-config/bootstrap_server.env"
+}
+
 function create_agent_harness_archive() {
   local _name="agent-harness-x86_64-unknown-linux-musl"
   mkdir -p "$BATS_TEST_TMPDIR/$_name"
   write_fake_agent_harness "$BATS_TEST_TMPDIR/$_name/agent-harness"
   tar -cJf "$RELEASES/agent-harness.tar.xz" -C "$BATS_TEST_TMPDIR" "$_name"
+  write_checksum "$RELEASES/agent-harness.tar.xz"
 }
 
-function create_ripgrep_archive() {
-  local _name="ripgrep-14.1.1-x86_64-unknown-linux-musl"
+# Mirrors the release checksum format: "<sha256> *<asset name>".
+function write_checksum() {
+  local _archive="$1" _sum
+  _sum="$(sha256sum "$_archive")"
+  printf '%s *%s\n' "${_sum%% *}" "${_archive##*/}" >|"$_archive.sha256"
+}
+
+# Packs one stub binary inside a top-level directory, as the release tarballs do.
+function create_tarball() {
+  local _archive="$1" _name="$2" _binary="$3"
   mkdir -p "$BATS_TEST_TMPDIR/$_name"
-  write_stub "$BATS_TEST_TMPDIR/$_name/rg" '#!/bin/sh' 'exit 0'
-  tar -czf "$RELEASES/ripgrep.tar.gz" -C "$BATS_TEST_TMPDIR" "$_name"
+  write_stub "$BATS_TEST_TMPDIR/$_name/$_binary" '#!/bin/sh' 'exit 0'
+  tar -caf "$RELEASES/$_archive" -C "$BATS_TEST_TMPDIR" "$_name"
+}
+
+# dprint ships its binary at the root of a zip archive.
+function create_dprint_archive() {
+  mkdir -p "$BATS_TEST_TMPDIR/dprint-release"
+  write_stub "$BATS_TEST_TMPDIR/dprint-release/dprint" '#!/bin/sh' 'exit 0'
+  (cd "$BATS_TEST_TMPDIR/dprint-release" && python3 -m zipfile -c "$RELEASES/dprint.zip" dprint)
 }
 
 # Mimics bats-core's source archive: install.sh lays out bin/ and libexec/ under a prefix.
@@ -98,12 +156,17 @@ EOF
   chmod 0755 "$1"
 }
 
-# Mimics the agent-harness CLI surface the script relies on: `install` renders
-# hook entry points with the source shebang, `sync-claude-settings` lets
-# generated top-level keys win, and `verify` reports FAKE_VERIFY_STATUS.
+# Mimics the agent-harness CLI surface the script relies on, including the
+# behaviour verified against agent-harness 0.9.7: `install` renders every
+# provider with the source shebang, replaces the Devin config, and writes the
+# Hermes managed config without enabling it in config.yaml; the sync commands
+# let generated keys win; `github-app-token refresh` writes the gh config.
 function write_fake_agent_harness() {
-  /bin/cat >|"$1" <<'EOF'
-#!/usr/bin/env bash
+  {
+    printf '#!/usr/bin/env bash\n'
+    printf 'readonly VERSION=%q\n' "$FAKE_AGENT_HARNESS_VERSION"
+    printf 'readonly ENTRY_POINTS=(%s)\n' "${RENDERED_ENTRY_POINTS[*]}"
+    /bin/cat <<'EOF'
 set -euo pipefail
 printf '%s\n' "$*" >>"${AGENT_HARNESS_ARGS_FILE:?}"
 
@@ -122,26 +185,44 @@ option_value() {
 
 render() {
   local _prefix="$1" _entry
-  mkdir -p "$_prefix/.claude/hooks/lib" "$_prefix/.claude/statusline" "$_prefix/.codex/hooks"
-  for _entry in .claude/hooks/guard_command.py .claude/statusline/statusline.py .codex/hooks/hook_adapter.py; do
+  for _entry in "${ENTRY_POINTS[@]}"; do
+    mkdir -p "$(dirname "$_prefix/$_entry")"
     printf '%s\n' '#!/usr/bin/env -S python3 -IB' 'print("hook")' >|"$_prefix/$_entry"
     chmod 0755 "$_prefix/$_entry"
   done
+  mkdir -p "$_prefix/.claude/hooks/lib" "$_prefix/.config/devin" "$_prefix/.hermes"
   printf '%s\n' '"""Shared policy."""' >|"$_prefix/.claude/hooks/lib/policy.py"
+  printf '%s\n' '#!/usr/bin/env -S python3 -IB' >|"$_prefix/.claude/hooks/lib/not_executable.py"
   printf '%s\n' \
-    '{"model":"fable","sandbox":{"enabled":true,"network":{"allowedDomains":["api.day.app"]}}}' \
+    '{"model":"fable","sandbox":{"enabled":true,"excludedCommands":["gh *","herdr *"],"network":{"allowedDomains":["api.day.app"]}}}' \
     >|"$_prefix/.claude/settings.json"
+  printf '%s\n' '{"hooks":{"managed":true}}' >|"$_prefix/.config/devin/config.json"
+  printf '%s\n' 'plugins:' '  enabled:' '    - agent-harness-hooks' >|"$_prefix/.hermes/managed-config.yaml"
+}
+
+merge_json() {
+  local _source="$1" _target="$2" _merged
+  _merged="$(jq -s '.[1] + .[0]' "$_source" "$_target")"
+  printf '%s\n' "$_merged" >|"$_target"
 }
 
 case "${1:-}" in
+  --version)
+    printf 'agent-harness %s\n' "$VERSION"
+    ;;
   install)
     render "$(option_value --prefix "$@")"
     ;;
-  sync-claude-settings)
-    source_file="$(option_value --source "$@")"
-    target_file="$(option_value --target "$@")"
-    merged="$(jq -s '.[1] + .[0]' "$source_file" "$target_file")"
-    printf '%s\n' "$merged" >|"$target_file"
+  sync-claude-settings | sync-devin-config)
+    merge_json "$(option_value --source "$@")" "$(option_value --target "$@")"
+    ;;
+  sync-hermes-config)
+    /bin/cat "$(option_value --source "$@")" >>"$(option_value --target "$@")"
+    ;;
+  github-app-token)
+    config_dir="$(option_value --config-dir "$@")"
+    mkdir -p "$config_dir"
+    printf '%s\n' 'github.com:' '    oauth_token: fake' >|"$config_dir/hosts.yml"
     ;;
   verify)
     exit "${FAKE_VERIFY_STATUS:-0}"
@@ -151,5 +232,6 @@ case "${1:-}" in
     ;;
 esac
 EOF
+  } >|"$1"
   chmod 0755 "$1"
 }

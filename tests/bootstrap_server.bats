@@ -18,7 +18,7 @@ setup() {
 
   [ "$status" -eq 0 ]
   local _tool
-  for _tool in agent-harness shfmt rg jq bats uv; do
+  for _tool in agent-harness shfmt rg jq ruff dprint shellcheck bats uv; do
     [ -x "$BIN_DIR/$_tool" ] || {
       echo "missing tool: $_tool"
       return 1
@@ -35,10 +35,47 @@ setup() {
     SHFMT_URL="file://$RELEASES/missing" \
     RIPGREP_URL="file://$RELEASES/missing.tar.gz" \
     JQ_URL="file://$RELEASES/missing" \
+    RUFF_URL="file://$RELEASES/missing.tar.gz" \
+    DPRINT_URL="file://$RELEASES/missing.zip" \
+    SHELLCHECK_URL="file://$RELEASES/missing.tar.xz" \
     BATS_URL="file://$RELEASES/missing.tar.gz" \
     UV_INSTALLER_URL="file://$RELEASES/missing.sh"
 
   [ "$status" -eq 0 ]
+}
+
+@test "replaces an installed agent-harness of another version" {
+  run bootstrap_server
+  [ "$status" -eq 0 ]
+
+  run bootstrap_server AGENT_HARNESS_VERSION=10.0.0 AGENT_HARNESS_URL="file://$RELEASES/missing.tar.xz"
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"missing.tar.xz"* ]]
+}
+
+@test "downloads agent-harness from its release tag" {
+  local _curl_log="$BATS_TEST_TMPDIR/curl-urls"
+  mkdir -p "$BATS_TEST_TMPDIR/logging-curl"
+  write_stub "$BATS_TEST_TMPDIR/logging-curl/curl" \
+    '#!/bin/sh' \
+    "printf '%s\\n' \"\$*\" >>'$_curl_log'" \
+    'exit 22'
+
+  run bootstrap_server PATH="$BATS_TEST_TMPDIR/logging-curl:$SANDBOX_TOOLS_DIR:$PATH" AGENT_HARNESS_URL=
+
+  [ "$status" -ne 0 ]
+  grep -Fq "releases/download/agent-harness-v$FAKE_AGENT_HARNESS_VERSION/agent-harness-x86_64-unknown-linux-musl.tar.xz" "$_curl_log"
+}
+
+@test "refuses an agent-harness archive that does not match its release checksum" {
+  printf '%064d *agent-harness.tar.xz\n' 0 >|"$RELEASES/agent-harness.tar.xz.sha256"
+
+  run bootstrap_server
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"checksum"* ]]
+  [ ! -e "$BIN_DIR/agent-harness" ]
 }
 
 @test "installs bats-core under its own prefix and links it into the binary directory" {
@@ -69,6 +106,27 @@ setup() {
 }
 
 # ============================================================
+# Linux sandbox components
+# ============================================================
+
+@test "stays quiet when bubblewrap and socat are installed" {
+  run bootstrap_server
+
+  [ "$status" -eq 0 ]
+  ! [[ "$output" == *"bwrap"* ]]
+  ! [[ "$output" == *"socat"* ]]
+}
+
+@test "warns about missing bubblewrap and socat without stopping" {
+  run bootstrap_server PATH="$(path_without_sandbox_tools)"
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"warning"*"bwrap"* ]]
+  [[ "$output" == *"warning"*"socat"* ]]
+  [ -x "$BIN_DIR/agent-harness" ]
+}
+
+# ============================================================
 # Harness rendering
 # ============================================================
 
@@ -81,12 +139,12 @@ setup() {
   [[ "$output" == *"verify --source $REPO_ROOT/agents --prefix $HOME_DIR"* ]]
 }
 
-@test "pins hook shebangs to the managed interpreter" {
+@test "pins the shebang of every rendered executable to the managed interpreter" {
   run bootstrap_server
 
   [ "$status" -eq 0 ]
   local _entry
-  for _entry in .claude/hooks/guard_command.py .claude/statusline/statusline.py .codex/hooks/hook_adapter.py; do
+  for _entry in "${RENDERED_ENTRY_POINTS[@]}"; do
     [ -x "$HOME_DIR/$_entry" ]
     [ "$(head -n 1 "$HOME_DIR/$_entry")" = "#!$FAKE_PYTHON -IB" ] || {
       echo "shebang not pinned: $_entry"
@@ -94,6 +152,7 @@ setup() {
     }
   done
   [ "$(head -n 1 "$HOME_DIR/.claude/hooks/lib/policy.py")" = '"""Shared policy."""' ]
+  [ "$(head -n 1 "$HOME_DIR/.claude/hooks/lib/not_executable.py")" = '#!/usr/bin/env -S python3 -IB' ]
 }
 
 @test "preserves settings Claude Code added while generated keys win" {
@@ -107,9 +166,41 @@ setup() {
   [ "$(jq -r '.permissions.allow[0]' "$HOME_DIR/.claude/settings.json")" = "Bash(ls)" ]
 }
 
+@test "preserves keys Devin added to its config while generated keys win" {
+  mkdir -p "$HOME_DIR/.config/devin"
+  printf '%s\n' '{"hooks":{"stale":true},"theme":"dark"}' >|"$HOME_DIR/.config/devin/config.json"
+
+  run bootstrap_server
+
+  [ "$status" -eq 0 ]
+  [ "$(jq -r '.theme' "$HOME_DIR/.config/devin/config.json")" = "dark" ]
+  [ "$(jq -r '.hooks.managed' "$HOME_DIR/.config/devin/config.json")" = "true" ]
+}
+
+@test "keeps a Devin config it cannot sync and fails" {
+  mkdir -p "$HOME_DIR/.config/devin"
+  printf '%s\n' '{"theme":"dark",}' >|"$HOME_DIR/.config/devin/config.json"
+
+  run bootstrap_server
+
+  [ "$status" -ne 0 ]
+  [ "$(cat "$HOME_DIR/.config/devin/config.json")" = '{"theme":"dark",}' ]
+}
+
+@test "enables the Hermes hook plugin in the Hermes config while keeping its keys" {
+  mkdir -p "$HOME_DIR/.hermes"
+  printf '%s\n' 'model: user-model' >|"$HOME_DIR/.hermes/config.yaml"
+
+  run bootstrap_server
+
+  [ "$status" -eq 0 ]
+  grep -Fxq 'model: user-model' "$HOME_DIR/.hermes/config.yaml"
+  grep -Fq 'agent-harness-hooks' "$HOME_DIR/.hermes/config.yaml"
+}
+
 @test "applies the host settings override after rendering" {
-  mkdir -p "$HOME_DIR/.config/dotfiles"
-  printf '%s\n' '{"sandbox":{"enabled":false}}' >|"$HOME_DIR/.config/dotfiles/claude_settings_override.json"
+  mkdir -p "$HOME_DIR/.config/agent-config"
+  printf '%s\n' '{"sandbox":{"enabled":false}}' >|"$HOME_DIR/.config/agent-config/claude_settings_override.json"
 
   run bootstrap_server
 
@@ -127,33 +218,128 @@ setup() {
 }
 
 # ============================================================
+# Agent GitHub token
+# ============================================================
+
+@test "mints the agent GitHub token when the host names a GitHub App" {
+  write_host_env 'AGENT_GITHUB_APP_ID=123' "AGENT_GITHUB_APP_PRIVATE_KEY=$HOME_DIR/app.pem"
+
+  run bootstrap_server
+
+  [ "$status" -eq 0 ]
+  local _config_dir="$HOME_DIR/.config/agent-harness/gh"
+  grep -Fq "github-app-token refresh --app-id 123 --private-key $HOME_DIR/app.pem --config-dir $_config_dir" \
+    "$AGENT_HARNESS_ARGS_FILE"
+  [ -f "$_config_dir/hosts.yml" ]
+  [[ "$output" == *"crontab"*"github-app-token refresh"* ]]
+}
+
+@test "lets Claude Code reach GitHub with the agent token and hides the App key" {
+  write_host_env 'AGENT_GITHUB_APP_ID=123' "AGENT_GITHUB_APP_PRIVATE_KEY=$HOME_DIR/app.pem"
+
+  run bootstrap_server
+
+  [ "$status" -eq 0 ]
+  local _settings="$HOME_DIR/.claude/settings.json"
+  [ "$(jq -r '.env.GH_CONFIG_DIR' "$_settings")" = "$HOME_DIR/.config/agent-harness/gh" ]
+  [ "$(jq -c '.sandbox.network.allowedDomains' "$_settings")" = '["api.day.app","github.com","api.github.com"]' ]
+  [ "$(jq -r '.sandbox.enableWeakerNetworkIsolation' "$_settings")" = "true" ]
+  [ "$(jq -c '.sandbox.excludedCommands' "$_settings")" = '["herdr *"]' ]
+  [ "$(jq -r '.permissions.deny | index("Read(/'"$HOME_DIR"'/app.pem)") != null' "$_settings")" = "true" ]
+  [ "$(jq -r '.sandbox.filesystem.denyRead | index("'"$HOME_DIR"'/app.pem") != null' "$_settings")" = "true" ]
+}
+
+@test "keeps GitHub access and the App key denial over the host settings override" {
+  write_host_env 'AGENT_GITHUB_APP_ID=123' "AGENT_GITHUB_APP_PRIVATE_KEY=$HOME_DIR/app.pem"
+  printf '%s\n' '{"permissions":{"deny":["Read(~/notes)"]},"sandbox":{"network":{"allowedDomains":["example.com"]},"filesystem":{"denyRead":["~/notes"]}}}' \
+    >|"$HOME_DIR/.config/agent-config/claude_settings_override.json"
+
+  run bootstrap_server
+
+  [ "$status" -eq 0 ]
+  local _settings="$HOME_DIR/.claude/settings.json"
+  [ "$(jq -c '.sandbox.network.allowedDomains' "$_settings")" = '["example.com","github.com","api.github.com"]' ]
+  [ "$(jq -c '.permissions.deny' "$_settings")" = '["Read(~/notes)","Read(/'"$HOME_DIR"'/app.pem)"]' ]
+  [ "$(jq -c '.sandbox.filesystem.denyRead' "$_settings")" = '["~/notes","'"$HOME_DIR"'/app.pem"]' ]
+}
+
+@test "leaves GitHub out of the sandbox when the host names no GitHub App" {
+  run bootstrap_server
+
+  [ "$status" -eq 0 ]
+  ! grep -Fq "github-app-token" "$AGENT_HARNESS_ARGS_FILE"
+  [ "$(jq -c '.sandbox.network.allowedDomains' "$HOME_DIR/.claude/settings.json")" = '["api.day.app"]' ]
+  [ "$(jq -r '.env.GH_CONFIG_DIR // "unset"' "$HOME_DIR/.claude/settings.json")" = "unset" ]
+}
+
+@test "refuses a GitHub App without its private key before downloading anything" {
+  write_host_env 'AGENT_GITHUB_APP_ID=123'
+
+  run bootstrap_server
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"AGENT_GITHUB_APP_PRIVATE_KEY"* ]]
+  [ ! -e "$BIN_DIR" ]
+}
+
+# ============================================================
 # Host-specific locations
 # ============================================================
 
-@test "loads host locations from the dotfiles config directory" {
-  mkdir -p "$HOME_DIR/.config/dotfiles"
-  printf '%s\n' \
-    "BIN_DIR=\"$BATS_TEST_TMPDIR/tools\"" \
-    "XDG_STATE_HOME=\"$BATS_TEST_TMPDIR/state\"" \
-    >|"$HOME_DIR/.config/dotfiles/bootstrap_server.env"
+@test "loads host locations from the agent-config config directory" {
+  write_host_env "BIN_DIR=\"$BATS_TEST_TMPDIR/tools\""
 
   run bootstrap_server
 
   [ "$status" -eq 0 ]
   [ -x "$BATS_TEST_TMPDIR/tools/agent-harness" ]
   [ ! -e "$BIN_DIR" ]
-  grep -Fq "XDG_STATE_HOME=\"$BATS_TEST_TMPDIR/state\"" "$HOME_DIR/.config/dotfiles/agent_env.sh"
+}
+
+@test "reads the legacy dotfiles config directory and asks to move it" {
+  mkdir -p "$HOME_DIR/.config/dotfiles"
+  printf '%s\n' "BIN_DIR=\"$BATS_TEST_TMPDIR/tools\"" >|"$HOME_DIR/.config/dotfiles/bootstrap_server.env"
+  printf '%s\n' '{"sandbox":{"enabled":false}}' >|"$HOME_DIR/.config/dotfiles/claude_settings_override.json"
+
+  run bootstrap_server
+
+  [ "$status" -eq 0 ]
+  [ -x "$BATS_TEST_TMPDIR/tools/agent-harness" ]
+  [ "$(jq -r '.sandbox.enabled' "$HOME_DIR/.claude/settings.json")" = "false" ]
+  [[ "$output" == *"$HOME_DIR/.config/dotfiles"*"$HOME_DIR/.config/agent-config"* ]]
+  [ -f "$HOME_DIR/.config/agent-config/agent_env.sh" ]
+}
+
+@test "refuses a relocated hook state directory before downloading anything" {
+  write_host_env "XDG_STATE_HOME=\"$BATS_TEST_TMPDIR/state\""
+
+  run bootstrap_server
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"XDG_STATE_HOME"* ]]
+  [ ! -e "$BIN_DIR" ]
 }
 
 @test "writes a shell snippet that puts the tools on PATH" {
   run bootstrap_server
 
   [ "$status" -eq 0 ]
-  local _snippet="$HOME_DIR/.config/dotfiles/agent_env.sh"
+  local _snippet="$HOME_DIR/.config/agent-config/agent_env.sh"
   [[ "$output" == *"$_snippet"* ]]
   run env -i PATH=/usr/bin:/bin /bin/bash -c "source '$_snippet' && command -v rg"
   [ "$status" -eq 0 ]
   [ "$output" = "$BIN_DIR/rg" ]
+}
+
+@test "exports the shared agent environment from the shell snippet" {
+  run bootstrap_server
+
+  [ "$status" -eq 0 ]
+  local _snippet="$HOME_DIR/.config/agent-config/agent_env.sh" _expected
+  _expected="$(jq -er '.DEVIN_PERMISSION_MODE' "$REPO_ROOT/agent_environment.json")"
+  run env -i PATH=/usr/bin:/bin /bin/bash -c "source '$_snippet' && printenv DEVIN_PERMISSION_MODE"
+  [ "$status" -eq 0 ]
+  [ "$output" = "$_expected" ]
 }
 
 @test "prints usage for --help" {

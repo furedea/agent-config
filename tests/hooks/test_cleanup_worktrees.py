@@ -334,3 +334,46 @@ def test_a_primary_stays_open_when_live_state_has_unhashable_values(
     assert f"remove worktree {path}" in result.stdout
     assert "close primary workspace" not in result.stdout
     assert not (tmp_path / "herdr_removed.txt").exists()
+
+
+def merged_worktree_with_ignored(primary: Path, merged: dict[str, str], *ignored: str) -> Path:
+    path = task_worktree(primary, "feat/done")
+    merged["feat/done"] = git("rev-parse", "HEAD", cwd=path)
+    (path / ".gitignore").write_text("*.ignored\n.venv/\nnode_modules/\nresult\nresult-*\n__pycache__/\n")
+    git("add", ".gitignore", cwd=path)
+    git("commit", "--quiet", "-m", "ignore", cwd=path)
+    merged["feat/done"] = git("rev-parse", "HEAD", cwd=path)
+    for name in ignored:
+        (path / name).parent.mkdir(parents=True, exist_ok=True)
+        (path / name).write_text("x\n")
+    return path
+
+
+@pytest.mark.parametrize(
+    "name", [".venv/bin/python", "node_modules/pkg/index.js", "src/__pycache__/a.pyc", "result-1"]
+)
+def test_regenerable_ignored_files_do_not_keep_a_merged_worktree(
+    primary: Path, merged: dict[str, str], name: str
+) -> None:
+    path = merged_worktree_with_ignored(primary, merged, name)
+    assert cleanup(primary).returncode == 0
+    assert not path.exists()
+    assert branches(primary) == {"main"}
+
+
+def test_other_ignored_files_keep_the_worktree_and_are_reported(primary: Path, merged: dict[str, str]) -> None:
+    path = merged_worktree_with_ignored(primary, merged, ".venv/bin/python", "notes.ignored")
+    result = cleanup(primary)
+    assert path.exists()
+    assert (path / "notes.ignored").exists()
+    assert "feat/done" in branches(primary)
+    assert "notes.ignored" in result.stdout
+    assert ".venv" not in result.stdout
+
+
+def test_dry_run_reports_ignored_files_that_keep_a_worktree(primary: Path, merged: dict[str, str]) -> None:
+    path = merged_worktree_with_ignored(primary, merged, "notes.ignored")
+    result = cleanup(primary, "--dry-run")
+    assert "notes.ignored" in result.stdout
+    assert "remove worktree" not in result.stdout
+    assert path.exists()

@@ -29,6 +29,9 @@ import session_store
 PROTECTED_BRANCHES = frozenset({"main", "master"})
 MERGED_PULL_REQUEST_LIMIT = "200"
 TIMEOUT_SECONDS = 30
+REGENERABLE_NAMES = frozenset({".venv", "node_modules", "__pycache__", ".pytest_cache", ".ruff_cache", ".direnv"})
+REGENERABLE_NAMES |= frozenset({"result", "target", ".coverage"})
+REGENERABLE_PREFIXES = ("result-",)
 HERDR_WORKTREES = Path(".herdr/worktrees")
 """Herdr's default worktrees.directory, holding <repo>/<branch-slug> checkouts."""
 
@@ -171,9 +174,14 @@ def cleanup(primary: Path, current: Path | None, *, dry_run: bool) -> list[str]:
     report = []
     removed = set()
     for worktree in worktrees:
-        if worktree.path in {primary, current} or not is_merged(primary, worktree.branch, merged):
+        if (
+            worktree.path in {primary, current}
+            or not is_merged(primary, worktree.branch, merged)
+            or not worktree_is_clean(primary, worktree)
+        ):
             continue
-        if not worktree_is_clean(primary, worktree):
+        if kept := irreplaceable_ignored_paths(primary, worktree):
+            report.append(f"keep worktree {worktree.path}: ignored files would be lost: {', '.join(kept)}")
             continue
         removed.add(worktree.path)
         report.append(f"remove worktree {worktree.path} and branch {worktree.branch}")
@@ -222,6 +230,27 @@ def worktree_is_clean(primary: Path, worktree: Worktree) -> bool:
         "--ignore-submodules=all",
         cwd=primary,
     )
+
+
+def irreplaceable_ignored_paths(primary: Path, worktree: Worktree) -> list[str]:
+    """List ignored paths that are not regenerable caches, which a forced removal would delete."""
+    output = run(
+        "git",
+        f"--git-dir={worktree.admin_dir}",
+        f"--work-tree={worktree.path}",
+        "status",
+        "--porcelain",
+        "--ignored=matching",
+        "--ignore-submodules=all",
+        "-z",
+        cwd=primary,
+    )
+    paths = [entry.removeprefix("!! ") for entry in output.split("\0") if entry.startswith("!! ")]
+    return [path for path in paths if not is_regenerable(path)]
+
+
+def is_regenerable(path: str) -> bool:
+    return any(part in REGENERABLE_NAMES or part.startswith(REGENERABLE_PREFIXES) for part in Path(path).parts)
 
 
 def recorded_primary_workspaces(primary: Path) -> dict[str, dict]:

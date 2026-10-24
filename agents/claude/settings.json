@@ -101,5 +101,6 @@
   },
   "effortLevel": "medium",
   "autoMemoryEnabled": false,
-  "skipAutoPermissionPrompt": true
+  "skipAutoPermissionPrompt": true,
+  "editorMode": "normal"
 }

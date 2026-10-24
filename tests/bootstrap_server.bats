@@ -307,6 +307,17 @@ setup() {
   [ "$(codex_config_json | jq -r '.shell_environment_policy.set.GH_CONFIG_DIR')" = "$HOME_DIR/.config/agent-harness/gh" ]
 }
 
+@test "keeps non-ASCII text in the Codex config readable" {
+  write_host_env 'AGENT_GITHUB_APP_ID=123' "AGENT_GITHUB_APP_PRIVATE_KEY=$HOME_DIR/app.pem"
+  mkdir -p "$HOME_DIR/.codex"
+  printf '%s\n' 'developer_instructions = "be nice 😀 日本語"' >|"$HOME_DIR/.codex/config.toml"
+
+  run bootstrap_server
+
+  [ "$status" -eq 0 ]
+  [ "$(codex_config_json | jq -r '.developer_instructions')" = "be nice 😀 日本語" ]
+}
+
 @test "leaves the Codex config alone when the host names no GitHub App" {
   run bootstrap_server
 

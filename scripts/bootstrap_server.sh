@@ -374,10 +374,11 @@ import json
 import sys
 import tomllib
 
+sys.stdout.reconfigure(encoding="utf-8")
 config_path, claude_settings_path, config_dir, private_key = sys.argv[1:]
 with open(config_path, "rb") as file:
     config = tomllib.load(file)
-with open(claude_settings_path) as file:
+with open(claude_settings_path, encoding="utf-8") as file:
     claude_settings = json.load(file)
 
 # Relative allowWrite entries name Claude's working directory, which :workspace_roots covers.
@@ -404,7 +405,7 @@ guarded.setdefault("network", {})["enabled"] = True
 
 
 def key(name):
-    return json.dumps(name)
+    return json.dumps(name, ensure_ascii=False)
 
 
 def inline(value):
@@ -415,7 +416,7 @@ def inline(value):
     if isinstance(value, bool):
         return "true" if value else "false"
     if isinstance(value, str):
-        return json.dumps(value)
+        return json.dumps(value, ensure_ascii=False)
     return value.isoformat() if hasattr(value, "isoformat") else repr(value)
 
 
@@ -438,6 +439,7 @@ def emit(table, path):
 
 emit(config, [])
 PY
+  "$_python" -I -c 'import sys, tomllib; tomllib.load(open(sys.argv[1], "rb"))' "$_merged"
   install -m 0600 "$_merged" "$CODEX_CONFIG"
 }
 

@@ -40,7 +40,7 @@ wiring; `unstable` is the separately imported `nixpkgs-unstable` package set.
 
 Use `flake.nix` for input names and URLs, and `flake.lock` for pinned revisions. Claude Code,
 Codex, and Herdr packages come from `llm-agents`; `agent-harness` renders and deploys the personal
-source under `agents/`. Inspect package selection and wrappers in `nix/home/default.nix` before
+source, which `agent-config` provides as `packages.default`. Inspect package selection and wrappers in `nix/home/default.nix` before
 changing an agent package.
 
 `homeSpecialArgs` in `flake.nix` passes inputs and selected packages to Home Manager through
@@ -74,7 +74,7 @@ home-manager switch --flake "$HOME/ghq/github.com/furedea/dotfiles/#kaito@<host>
 Rebuilds **only** home-manager (packages, programs, dotfile symlinks, activation hooks). Does not touch nix-darwin or require `sudo`. Use this for:
 
 - Changes to `nix/home/default.nix` only (adding packages, editing programs.\*, updating dotfile symlinks, activation hooks)
-- Changes to the managed agent source under `agents/`
+- Updating the pinned `agent-config` source revision
 - Faster iteration when the darwin layer is unchanged
 
 Each `homeConfigurations."kaito@<host>"` output in `flake.nix` imports `nix/home/default.nix`
@@ -88,12 +88,14 @@ Changes to files linked via `mkOutOfStoreSymlink` (e.g. `.zshrc`, `starship.toml
 
 ### When managed agent source changes
 
-Edit `agents/` in this repository. `agentSource` in `nix/home/default.nix` snapshots that directory
-into the Nix store and patches executable shebangs before `programs.agent-harness` renders and
-deploys it. Changes to instructions, skills, hooks, policies, and provider settings require a
-rebuild and activation through the appropriate path above. Generated files in `~/.claude/` and
-`~/.codex/` are deployment outputs. See `docs/adr/0016_own_personal_agent_source.md` and
-`docs/adr/0027_let_nix_own_python_entry_points.md` for the ownership and deployment rationale.
+The source lives in `furedea/agent-config` (`~/ghq/github.com/furedea/agent-config`), not in this
+repository. Edit `agents/` there, merge it, then update the `agent-config` input here
+(`nix flake update agent-config`). `packages.default` snapshots that directory into the Nix store and
+patches executable shebangs before `programs.agent-harness` renders and deploys it. Changes to
+instructions, skills, hooks, policies, and provider settings require a rebuild and activation through
+the appropriate path above. Generated files in `~/.claude/` and `~/.codex/` are deployment outputs.
+See `docs/adr/0027_let_nix_own_python_entry_points.md` for the deployment rationale and the
+`agent-config` ADRs for source ownership.
 
 ## Where to Add a Package
 

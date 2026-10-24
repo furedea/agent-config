@@ -45,7 +45,7 @@ def protected_reason(value: str, path: Path) -> str:
         return ""
     return (
         f"{value} is part of the agent harness boundary.\n\n"
-        "Change the source under dotfiles/agents, then regenerate the installed files. "
+        "Change the source under agents/ in the agent-config repository, then regenerate the installed files. "
         "The provider permissions and sandbox remain the hard boundary."
     )
 

@@ -25,6 +25,17 @@
       "internalChecksFilter": "strict"
     }
   ],
+  "customManagers": [
+    {
+      "description": "Update the release versions the server bootstrap pins.",
+      "customType": "regex",
+      "managerFilePatterns": ["/^scripts/bootstrap_server\\.sh$/"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)( extractVersion=(?<extractVersion>\\S+))?\\nreadonly [A-Z_]+_VERSION=\"\\$\\{[A-Z_]+_VERSION:-(?<currentValue>[^}]+)\\}\""
+      ],
+      "extractVersionTemplate": "{{#if extractVersion}}{{{extractVersion}}}{{else}}^(?<version>.+)${{/if}}"
+    }
+  ],
   "lockFileMaintenance": {
     "enabled": true
   },

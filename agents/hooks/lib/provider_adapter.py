@@ -4,8 +4,9 @@ Each provider adapter declares only a Profile of provider facts. Payload normali
 guard dispatch, and CLI validation live here so the providers cannot drift apart.
 """
 
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Iterator, Mapping
 from dataclasses import dataclass, field
+from itertools import islice
 import json
 import os
 from pathlib import Path
@@ -34,6 +35,8 @@ AUDIT_KINDS = ("tool", "compaction")
 CONTENT_MODES = ("prompt", "read", "write", "apply-patch", "suppression")
 NO_ARGUMENT: tuple[str, ...] = ()
 ANY_ARGUMENT = None
+# Brace expansion multiplies; past this many words the rest are left unjudged rather than stall the hook.
+BRACE_EXPANSION_LIMIT = 256
 Formatter = Callable[[str, dict], dict]
 
 
@@ -298,6 +301,7 @@ def shell_words(command: str) -> list[str]:
         if dynamic
         for unquoted in unquoted_words(argument)
     ]
+    words += [expanded for word in words if "{" in word for expanded in brace_expansions(word)]
     return words + [word.partition("=")[2] for word in words if "=" in word]
 
 
@@ -307,6 +311,37 @@ def unquoted_words(source: str) -> list[str]:
         return shlex.split(source)
     except ValueError:
         return []
+
+
+def brace_expansions(word: str) -> list[str]:
+    """Expand comma braces as the shell does before globbing, so {.env,x} is judged as .env and x."""
+    return list(islice(brace_words(word), BRACE_EXPANSION_LIMIT))
+
+
+def brace_words(word: str) -> Iterator[str]:
+    starts = (start for start, character in enumerate(word) if character == "{")
+    groups = ((start, group) for start in starts if (group := brace_group(word, start)) is not None)
+    if (first := next(groups, None)) is None:
+        yield word
+        return
+    start, (end, alternatives) = first
+    for alternative in alternatives:
+        yield from brace_words(word[:start] + alternative + word[end + 1 :])
+
+
+def brace_group(word: str, start: int) -> tuple[int, list[str]] | None:
+    """Locate the brace closing the one at start and split its top-level alternatives; None without a comma."""
+    depth, alternatives, first = 0, [], start + 1
+    for index in range(start, len(word)):
+        character = word[index]
+        if character == "{":
+            depth += 1
+        elif character == "}" and (depth := depth - 1) == 0:
+            return (index, [*alternatives, word[first:index]]) if alternatives else None
+        elif character == "," and depth == 1:
+            alternatives.append(word[first:index])
+            first = index + 1
+    return None
 
 
 def secret_path_refusal(mode: str, value: str, context: dict) -> audit_log.Refusal:

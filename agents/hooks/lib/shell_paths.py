@@ -1,7 +1,7 @@
 """Name the paths a shell command touches, expanding braces and globs the way the shell would."""
 
 from collections.abc import Iterator
-import glob
+from fnmatch import fnmatchcase
 from itertools import islice
 import os
 from pathlib import Path
@@ -14,6 +14,11 @@ import shell_syntax
 GLOB = re.compile(r"[*?[]")
 # Brace expansion multiplies; past this many words the command needs review rather than stall the hook.
 BRACE_EXPANSION_LIMIT = 256
+# A glob that lists more directory entries than this needs review rather than stall the hook.
+VISIT_LIMIT = 10000
+# Dependency, build, and virtual environment trees a recursive glob does not enter.
+SKIPPED_DIRECTORIES = frozenset({"node_modules", "__pycache__", "target", "venv"})
+NIX_STORE = Path("/nix/store")
 HOME_VARIABLE = re.compile(r"\$(?:HOME\b|\{HOME\})")
 
 
@@ -62,18 +67,71 @@ def expanded_paths(pattern: str, directories: tuple[Path | None, ...]) -> list[s
     pattern = HOME_VARIABLE.sub(lambda _: str(Path.home()), pattern)
     if "$" in pattern or "`" in pattern:
         raise UnexpandableGlob(f"cannot expand {pattern}, whose value is known only at run time")
+    walk = GlobWalk()
     if pattern.startswith("~"):
-        return glob.glob(os.path.expanduser(pattern), recursive=True)
+        return walk.expand(os.path.expanduser(pattern), Path.home())
     if os.path.isabs(pattern):
-        return glob.glob(pattern, recursive=True)
+        return walk.expand(pattern, Path("/"))
     if None in directories:
         raise UnexpandableGlob(f"cannot expand {pattern} in a directory known only at run time")
-    return [
-        path
-        for directory in directories
-        if directory
-        for path in glob.glob(pattern, root_dir=directory, recursive=True)
-    ]
+    return [path for directory in directories if directory for path in walk.expand(pattern, directory)]
+
+
+class GlobWalk:
+    """Expand globs over the file system as the shell would, giving up after VISIT_LIMIT directory entries.
+
+    A name starting with a dot matches only a segment that starts with one, and `**` enters neither
+    hidden directories, symbolic links, nor the dependency and store trees in SKIPPED_DIRECTORIES.
+    """
+
+    def __init__(self) -> None:
+        self.visited = 0
+
+    def expand(self, pattern: str, root: Path) -> list[str]:
+        """Return the matches, absolute for an absolute pattern and relative to root otherwise."""
+        absolute = pattern.startswith("/")
+        base = Path("/") if absolute else root
+        matches = self._match(base, tuple(segment for segment in pattern.split("/") if segment))
+        return [str(path if absolute else path.relative_to(root)) for path in matches]
+
+    def _match(self, directory: Path, segments: tuple[str, ...]) -> list[Path]:
+        if not segments:
+            return [directory]
+        head, rest = segments[0], segments[1:]
+        if head == "**":
+            deeper = (path for child in self._descendable(directory) for path in self._match(child, segments))
+            return [*self._match(directory, rest), *deeper]
+        if not GLOB.search(head):
+            child = directory / head
+            return self._match(child, rest) if (child.is_dir() if rest else os.path.lexists(child)) else []
+        names = [
+            entry.name
+            for entry in self._entries(directory)
+            if fnmatchcase(entry.name, head) and (head.startswith(".") or not entry.name.startswith("."))
+        ]
+        children = (directory / name for name in names)
+        return [path for child in children if not rest or child.is_dir() for path in self._match(child, rest)]
+
+    def _descendable(self, directory: Path) -> list[Path]:
+        return [
+            Path(entry.path)
+            for entry in self._entries(directory)
+            if entry.is_dir(follow_symlinks=False)
+            and not entry.name.startswith(".")
+            and entry.name not in SKIPPED_DIRECTORIES
+            and not Path(entry.path).is_relative_to(NIX_STORE)
+        ]
+
+    def _entries(self, directory: Path) -> list[os.DirEntry]:
+        try:
+            with os.scandir(directory) as entries:
+                listed = list(entries)
+        except OSError:
+            return []
+        self.visited += len(listed)
+        if self.visited > VISIT_LIMIT:
+            raise UnexpandableGlob(f"a glob here visits more than {VISIT_LIMIT} files")
+        return listed
 
 
 def unquoted_words(source: str) -> list[str]:

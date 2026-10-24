@@ -199,6 +199,31 @@ def test_home_globs_expand_against_the_home_directory(run_cli: CliRunner, harnes
     assert result.returncode == (2 if present else 0)
 
 
+def fill(directory: Path, count: int) -> None:
+    directory.mkdir(parents=True)
+    for index in range(count):
+        (directory / f"file{index}.txt").touch()
+
+
+def test_a_glob_walking_too_many_entries_needs_review(
+    run_cli: CliRunner, harness: Path, isolated_project: Path
+) -> None:
+    fill(isolated_project / "data", 10001)
+    result = run_cli(SCRIPT, "paths", "command", payload={"tool_input": {"command": "cat **/*.json"}})
+    assert result.returncode == 2
+    assert "review" in result.stderr.lower()
+
+
+def test_a_recursive_glob_skips_dependency_directories(
+    run_cli: CliRunner, harness: Path, isolated_project: Path
+) -> None:
+    fill(isolated_project / "node_modules/package", 10001)
+    (isolated_project / "src").mkdir()
+    (isolated_project / "src/app.json").write_text("{}")
+    result = run_cli(SCRIPT, "paths", "command", payload={"tool_input": {"command": "cat **/*.json"}})
+    assert result.returncode == 0
+
+
 @pytest.mark.parametrize("variable", ["$HOME", "${HOME}"])
 def test_home_variable_globs_expand_against_the_home_directory(
     run_cli: CliRunner, harness: Path, variable: str

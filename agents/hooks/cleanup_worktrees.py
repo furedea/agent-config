@@ -247,15 +247,15 @@ def irreplaceable_ignored_paths(primary: Path, worktree: Worktree) -> list[str]:
         cwd=primary,
     )
     paths = [entry.removeprefix("!! ") for entry in output.split("\0") if entry.startswith("!! ")]
-    return [p for p in paths if not is_regenerable(primary, command, p) and not is_session_scratch(worktree.path, p)]
+    claude = worktree.path / ".claude"
+    return [p for p in paths if not is_regenerable(primary, command, p) and not is_session_scratch(claude, p)]
 
 
-def is_session_scratch(root: Path, path: str) -> bool:
+def is_session_scratch(claude: Path, path: str) -> bool:
     """Claude Code's .cc-writes is disposable, alone or as the only content of an ignored .claude/."""
-    parts = Path(path).parts
-    if (root / ".claude").is_symlink() or parts[:1] != (".claude",):
+    if claude.is_symlink() or not claude.is_dir() or Path(path).parts[:1] != (".claude",):
         return False
-    return parts[1:2] == (".cc-writes",) or {entry.name for entry in (root / ".claude").iterdir()} <= {".cc-writes"}
+    return Path(path).parts[1:2] == (".cc-writes",) or {entry.name for entry in claude.iterdir()} <= {".cc-writes"}
 
 
 def is_regenerable(primary: Path, command: tuple[str, ...], path: str) -> bool:

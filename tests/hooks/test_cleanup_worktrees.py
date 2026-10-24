@@ -383,6 +383,21 @@ def test_claude_code_session_files_do_not_keep_a_merged_worktree(
     assert branches(primary) == {"main"}
 
 
+def test_session_files_beside_tracked_claude_files_do_not_keep_a_merged_worktree(
+    primary: Path, merged: dict[str, str]
+) -> None:
+    path = task_worktree(primary, "feat/done")
+    (path / ".claude").mkdir()
+    (path / ".claude/settings.json").write_text("{}\n")
+    (path / ".gitignore").write_text(".claude/.cc-writes\n")
+    git("add", ".", cwd=path)
+    git("commit", "--quiet", "-m", "claude settings", cwd=path)
+    merged["feat/done"] = git("rev-parse", "HEAD", cwd=path)
+    (path / ".claude/.cc-writes").write_text("")
+    assert cleanup(primary).returncode == 0
+    assert not path.exists()
+
+
 def test_other_files_under_claude_keep_the_worktree_beside_session_files(
     primary: Path, merged: dict[str, str]
 ) -> None:

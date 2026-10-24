@@ -24,6 +24,12 @@ pre-commit:
     ty:
       glob: "*.py"
       run: uv run ty check
+    shfmt:
+      glob: "*.sh"
+      run: shfmt -d {all_files}
+    shellcheck:
+      glob: "*.sh"
+      run: shellcheck -x --source-path=SCRIPTDIR {all_files}
     ls-lint:
       run: ls_lint
     file-length:

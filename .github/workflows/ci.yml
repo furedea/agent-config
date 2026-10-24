@@ -81,6 +81,24 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@ab739621df7a23f52766f9ccc97f38da6b7af14f # v31.10.5
+
+      # The provider integration tests render with the locked agent-harness CLI.
+      - name: Run pytest
+        run: nix develop --command uv run --frozen pytest --cov
+
+  bats:
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
       contents: read
@@ -90,11 +108,51 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+      - name: Install Nix
+        uses: cachix/install-nix-action@ab739621df7a23f52766f9ccc97f38da6b7af14f # v31.10.5
 
-      - name: Run tests
-        run: uv run pytest --cov
+      - name: Run bats
+        run: nix develop --command bats --print-output-on-failure tests/bootstrap_server.bats
+
+  shell-lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@ab739621df7a23f52766f9ccc97f38da6b7af14f # v31.10.5
+
+      - name: Run shellcheck and shfmt
+        run: |
+          mapfile -d '' -t files < <(git ls-files -z -- '*.sh')
+          nix develop --command shellcheck -x --source-path=SCRIPTDIR "${files[@]}"
+          nix develop --command shfmt -d "${files[@]}"
+
+  nix-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@ab739621df7a23f52766f9ccc97f38da6b7af14f # v31.10.5
+
+      - name: Build the agent source
+        run: nix build .#default
+
+      - name: Run flake checks
+        run: nix flake check
 
   audit:
     runs-on: ubuntu-latest
@@ -118,7 +176,7 @@ jobs:
 
   all-green:
     if: always()
-    needs: [nix-lint, lint, typecheck, test, audit]
+    needs: [nix-lint, lint, typecheck, test, bats, shell-lint, nix-check, audit]
     runs-on: ubuntu-latest
     timeout-minutes: 1
     permissions: {}

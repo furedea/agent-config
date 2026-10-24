@@ -22,6 +22,7 @@ import audit_log
 import command_policy
 import herdr_grammar
 import hook_decision
+import hook_input
 from hook_decision import Verdict
 import shell_inspection
 import shell_syntax
@@ -191,7 +192,8 @@ def decide(kind: str, payload: dict, directory: Path = ROOT) -> Verdict:
         policy = policies(kind, directory)
         if not isinstance(payload, dict):
             raise ValueError("failed to parse tool input JSON: expected an object")
-        verdict = announced(command_verdict(kind, payload, policy), policy)
+        with hook_input.payload_directory(payload):
+            verdict = announced(command_verdict(kind, payload, policy), policy)
     except (ValueError, TypeError, AttributeError, OSError) as error:
         prefix = "forbidden command: " if kind == "forbidden" else ""
         verdict = hook_decision.deny(f"BLOCKED: {prefix}{error}\n\n{hook_decision.REVIEW_HINT}")

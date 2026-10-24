@@ -309,6 +309,11 @@ def check(mode: str, payload: dict, directory: Path = ROOT) -> int:
 
 def commit_verdict(payload: dict, directory: Path = ROOT) -> hook_decision.Verdict:
     """Deny a commit of staged secrets, and ask when the parser cannot tell where a commit runs."""
+    with hook_input.payload_directory(payload):
+        return judged_commit(payload, directory)
+
+
+def judged_commit(payload: dict, directory: Path) -> hook_decision.Verdict:
     tool = "Bash"
     try:
         tool = payload.get("tool_name") or tool

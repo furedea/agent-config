@@ -22,7 +22,7 @@ setup are independent tasks.
 | Create a project and make it ready for development                             | Repository setup and development environment                                         |
 
 Do not introduce Nix or change GitHub settings merely because a code-editing task loads a
-language skill. Global nix-darwin/Home Manager configuration belongs to `nix-dotfiles`;
+language skill. Machine-wide package and system configuration is outside this skill;
 branches and authorized commits, pushes, and PRs belong to `git-workflow`.
 
 ## Shared Principles

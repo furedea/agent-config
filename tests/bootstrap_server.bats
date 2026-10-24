@@ -268,7 +268,7 @@ setup() {
 
   [ "$status" -eq 0 ]
   [ "$(jq -r '.sandbox.enabled' "$HOME_DIR/.claude/settings.json")" = "false" ]
-  [ "$(jq -r '.sandbox.network.allowedDomains[0]' "$HOME_DIR/.claude/settings.json")" = "api.day.app" ]
+  [ "$(jq -r '.sandbox.network.allowedDomains[0]' "$HOME_DIR/.claude/settings.json")" = "pypi.org" ]
   [ "$(jq -r '.model' "$HOME_DIR/.claude/settings.json")" = "fable" ]
 }
 
@@ -304,7 +304,7 @@ setup() {
   [ "$status" -eq 0 ]
   local _settings="$HOME_DIR/.claude/settings.json"
   [ "$(jq -r '.env.GH_CONFIG_DIR' "$_settings")" = "$HOME_DIR/.config/agent-harness/gh" ]
-  [ "$(jq -c '.sandbox.network.allowedDomains' "$_settings")" = '["api.day.app","github.com","api.github.com"]' ]
+  [ "$(jq -c '.sandbox.network.allowedDomains' "$_settings")" = '["pypi.org","github.com","api.github.com"]' ]
   [ "$(jq -r '.sandbox.enableWeakerNetworkIsolation' "$_settings")" = "true" ]
   [ "$(jq -c '.sandbox.excludedCommands' "$_settings")" = '["herdr *"]' ]
   [ "$(jq -r '.permissions.deny | index("Read(/'"$HOME_DIR"'/app.pem)") != null' "$_settings")" = "true" ]
@@ -470,7 +470,7 @@ setup() {
 
   [ "$status" -eq 0 ]
   ! grep -Fq "github-app-token" "$AGENT_HARNESS_ARGS_FILE"
-  [ "$(jq -c '.sandbox.network.allowedDomains' "$HOME_DIR/.claude/settings.json")" = '["api.day.app"]' ]
+  [ "$(jq -c '.sandbox.network.allowedDomains' "$HOME_DIR/.claude/settings.json")" = '["pypi.org"]' ]
   [ "$(jq -r '.env.GH_CONFIG_DIR // "unset"' "$HOME_DIR/.claude/settings.json")" = "unset" ]
 }
 

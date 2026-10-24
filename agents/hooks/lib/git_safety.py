@@ -62,6 +62,19 @@ LONG_OPTIONS = {
     }.items()
 }
 """The long options of each judged verb, as `git <verb> -h` lists them, so an abbreviation reads as git reads it."""
+VALUED_OPTIONS = {
+    "commit": frozenset(
+        "-m -F -C -c -t --message --file --reuse-message --reedit-message --author --date --cleanup --fixup "
+        "--squash --template --trailer".split()
+    ),
+    "tag": frozenset("-m -F -u --message --file --local-user --format --sort --points-at --trailer".split()),
+    "branch": frozenset("-u --set-upstream-to --format --sort --points-at".split()),
+    "checkout": frozenset("-b -B".split()),
+    "switch": frozenset("-c -C --create --force-create".split()),
+    "restore": frozenset("-s --source".split()),
+    "push": frozenset("-o --push-option --repo --receive-pack --exec".split()),
+}
+"""The options of each judged verb that read the next argument as their value, which is never an option."""
 
 
 def branch(arguments: tuple[str, ...] = ()) -> str:
@@ -206,10 +219,34 @@ def option_flags(arguments: tuple[str, ...]) -> list[str]:
 
 
 def spelled_out(verb: str, arguments: tuple[str, ...]) -> tuple[str, ...]:
-    """Read each option before `--` under its full name; git accepts a unique abbreviation and rejects others."""
+    """Read each option before `--` under its full name; git accepts a unique abbreviation and rejects others.
+
+    An option's separate value is kept as written: it is data, not an abbreviated option.
+    """
     end = arguments.index("--") if "--" in arguments else len(arguments)
     names = LONG_OPTIONS.get(verb, frozenset())
-    return tuple(full_option(argument, names) for argument in arguments[:end]) + arguments[end:]
+    valued = VALUED_OPTIONS.get(verb, frozenset())
+    spelled: list[str] = []
+    takes_value = False
+    for argument in arguments[:end]:
+        if takes_value:
+            spelled.append(argument)
+            takes_value = False
+            continue
+        full = full_option(argument, names)
+        spelled.append(full)
+        takes_value = reads_next_value(full, argument, valued)
+    return tuple(spelled) + arguments[end:]
+
+
+def reads_next_value(full: str, argument: str, valued: frozenset[str]) -> bool:
+    """Whether an option leaves its value to the next argument: a bare valued option or a cluster ending in one."""
+    if argument.startswith("--"):
+        return "=" not in argument and full in valued
+    if re.fullmatch(r"-[A-Za-z]+", argument):
+        first = next((flag for flag in argument[1:] if f"-{flag}" in valued), None)
+        return first is not None and argument.endswith(first)
+    return False
 
 
 def full_option(argument: str, names: frozenset[str]) -> str:

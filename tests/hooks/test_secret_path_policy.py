@@ -24,6 +24,13 @@ RULES = policy.load(REPO_ROOT / "agents/hooks/rules/secret_path_policy.json")
         "home/.netrc",
         "credentials.json",
         "id_ed25519",
+        "id_rsa",
+        "sub/.env",
+        "a/b/.env.local",
+        "x/id_rsa",
+        "x/id_ed25519",
+        "deep/dir/credentials.json",
+        "keys/service-account-prod.json",
     ],
 )
 def test_credential_paths_are_denied(path: str) -> None:

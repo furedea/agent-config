@@ -143,3 +143,9 @@ def test_generated_pi_hooks_use_only_supported_events_and_native_tools(
     matchers = [group.get("matcher", "") for event in ("tool_call", "tool_result") for group in hooks.get(event, [])]
     assert any("bash" in matcher for matcher in matchers)
     assert not any("Bash" in matcher for matcher in matchers)
+
+
+def test_generated_claude_settings_allow_no_unused_notification_host(agent_harness: CliRunner, tmp_path: Path) -> None:
+    path = tmp_path / "settings.json"
+    agent_harness("generate-claude-settings", "--output", str(path))
+    assert "api.day.app" not in json.loads(path.read_text())["sandbox"]["network"]["allowedDomains"]

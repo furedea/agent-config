@@ -29,6 +29,9 @@ import session_store
 PROTECTED_BRANCHES = frozenset({"main", "master"})
 MERGED_PULL_REQUEST_LIMIT = "200"
 TIMEOUT_SECONDS = 30
+REGENERABLE_NAMES = frozenset({".venv", "node_modules", "__pycache__", ".pytest_cache", ".ruff_cache", ".direnv"})
+REGENERABLE_NAMES |= frozenset({"result", "target", ".coverage"})
+REGENERABLE_PREFIXES = ("result-",)
 HERDR_WORKTREES = Path(".herdr/worktrees")
 """Herdr's default worktrees.directory, holding <repo>/<branch-slug> checkouts."""
 
@@ -169,11 +172,17 @@ def cleanup(primary: Path, current: Path | None, *, dry_run: bool) -> list[str]:
     checked_out = {worktree.branch for worktree in worktrees} | {current_branch(primary)}
     workspaces = herdr_workspaces(primary)
     report = []
+    kept = []
     removed = set()
     for worktree in worktrees:
-        if worktree.path in {primary, current} or not is_merged(primary, worktree.branch, merged):
+        if (
+            worktree.path in {primary, current}
+            or not is_merged(primary, worktree.branch, merged)
+            or not worktree_is_clean(primary, worktree)
+        ):
             continue
-        if not worktree_is_clean(primary, worktree):
+        if kept := irreplaceable_ignored_paths(primary, worktree):
+            kept.append(f"keep worktree {worktree.path}: ignored files would be lost: {', '.join(kept)}")
             continue
         removed.add(worktree.path)
         report.append(f"remove worktree {worktree.path} and branch {worktree.branch}")
@@ -193,7 +202,7 @@ def cleanup(primary: Path, current: Path | None, *, dry_run: bool) -> list[str]:
         worktree.path != primary and (not dry_run or worktree.path not in removed) for worktree in remaining
     ):
         report += close_primary_workspaces(primary, dry_run=dry_run)
-    return report
+    return report + kept
 
 
 def worktree_is_clean(primary: Path, worktree: Worktree) -> bool:
@@ -221,6 +230,33 @@ def worktree_is_clean(primary: Path, worktree: Worktree) -> bool:
         "--porcelain",
         "--ignore-submodules=all",
         cwd=primary,
+    )
+
+
+def irreplaceable_ignored_paths(primary: Path, worktree: Worktree) -> list[str]:
+    """List ignored paths that are not regenerable caches, which a forced removal would delete."""
+    command = ("git", f"--git-dir={worktree.admin_dir}", f"--work-tree={worktree.path}")
+    output = run(
+        *command,
+        "status",
+        "--porcelain",
+        "--ignored=matching",
+        "--untracked-files=normal",
+        "--ignore-submodules=all",
+        "-z",
+        cwd=primary,
+    )
+    paths = [entry.removeprefix("!! ") for entry in output.split("\0") if entry.startswith("!! ")]
+    return [path for path in paths if not is_regenerable(primary, command, path)]
+
+
+def is_regenerable(primary: Path, command: tuple[str, ...], path: str) -> bool:
+    """A cache name counts only for an ancestor that holds no tracked file."""
+    parts = Path(path).parts
+    return any(
+        (part in REGENERABLE_NAMES or part.startswith(REGENERABLE_PREFIXES))
+        and not run(*command, "ls-files", "--", "/".join(parts[: index + 1]), cwd=primary)
+        for index, part in enumerate(parts)
     )
 
 

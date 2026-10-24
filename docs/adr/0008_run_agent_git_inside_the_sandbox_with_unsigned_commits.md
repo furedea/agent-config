@@ -1,10 +1,11 @@
-# ADR-0035: Run agent git inside the sandbox with unsigned commits
+# ADR-0008: Run agent git inside the sandbox with unsigned commits
 
 - Status: Accepted
 - Date: 2026-10-17
+- Originally: furedea/dotfiles ADR-0035
 
 In the context of Claude Code agents that commit and push through the sandbox described in
-[ADR-0034](0034_ask_only_for_effects_that_escape_the_sandbox.md), facing commit signing that cannot
+[ADR-0007](0007_ask_only_for_effects_that_escape_the_sandbox.md), facing commit signing that cannot
 reach the SSH agent inside the sandbox and therefore kept `git commit` and its neighbors excluded,
 so that repository git hooks also ran outside the sandbox and an agent could run code there by
 editing `lefthook.yml`, a script a hook calls, or build settings that a hook's tool reads, we

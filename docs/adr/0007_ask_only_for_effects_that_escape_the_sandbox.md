@@ -1,12 +1,13 @@
-# ADR-0034: Ask only for effects that escape the sandbox
+# ADR-0007: Ask only for effects that escape the sandbox
 
 - Status: Superseded
 - Date: 2026-10-15
-- Supersedes: ADR-0031
-- Superseded by: ADR-0036
+- Originally: furedea/dotfiles ADR-0034
+- Supersedes: ADR-0004
+- Superseded by: ADR-0009
 
 In the context of the three command tiers from
-[ADR-0031](0031_permit_agent_commands_by_reversibility.md), facing an OS sandbox that now confines
+[ADR-0004](0004_permit_agent_commands_by_reversibility.md), facing an OS sandbox that now confines
 every agent command to the worktree and temp directories, allowed network hosts, and unreadable
 credential paths, and audit evidence that script execution, in-place edits, and read-only
 inspection with globs, variables, or regex metacharacters were prompting dozens of times a day
@@ -15,7 +16,7 @@ execution with `python`, `node`, and `uv run python`, in-place edits such as `se
 trivial builtins, and read-only programs with any argument as long as no redirection writes a
 file, and for asking only about effects that escape the sandbox or cannot be undone, namely
 fetched-package execution, dependency changes, deletions of untracked files, merges, publishing,
-remote changes, and the sandbox escape itself, while denying what ADR-0031 denied, and against
+remote changes, and the sandbox escape itself, while denying what ADR-0004 denied, and against
 keeping the classifier as the default judge of unlisted commands or widening the precise rules one
 form at a time, to make ordinary work prompt-free and deterministic while the sandbox and the
 hard denials carry the safety, accepting that a script may rewrite or delete untracked files inside

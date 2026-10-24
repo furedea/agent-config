@@ -1,8 +1,9 @@
-# ADR-0028: Register verification before agent launch
+# ADR-0002: Register verification before agent launch
 
 - Status: Superseded
 - Date: 2026-09-15
-- Superseded by: [ADR-0029](0029_register_verification_in_native_hooks.md)
+- Originally: furedea/dotfiles ADR-0028
+- Superseded by: [ADR-0003](0003_register_verification_in_native_hooks.md)
 - Historical sources: [implementation at eaeec4d](https://github.com/furedea/dotfiles/tree/eaeec4d)
 
 In the context of automatic verification for terminal coding agents, facing
@@ -31,5 +32,5 @@ and provider-created worktrees need a registration boundary of their own before
 they can use this policy.
 
 See [the operating guide](../agent_verification.md) for entry points and storage,
-and the executable contracts in `tests/agents/hooks/test_session_*.py`,
+and the executable contracts in `tests/hooks/test_session_*.py`,
 `test_launch_agent.py`, and `test_verification_session.py` for observable behavior.

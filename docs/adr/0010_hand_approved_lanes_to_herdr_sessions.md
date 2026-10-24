@@ -1,7 +1,8 @@
-# ADR-0037: Hand approved lanes to Herdr sessions
+# ADR-0010: Hand approved lanes to Herdr sessions
 
 - Status: Accepted
 - Date: 2026-10-17
+- Originally: furedea/dotfiles ADR-0037
 
 In the context of a delivery flow whose only human gates are plan approval and merging, and a
 sandbox that confines each session's writes to the directory it started in, facing task

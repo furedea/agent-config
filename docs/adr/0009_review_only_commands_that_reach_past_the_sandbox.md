@@ -1,12 +1,13 @@
-# ADR-0036: Review only commands that reach past the sandbox
+# ADR-0009: Review only commands that reach past the sandbox
 
 - Status: Accepted
 - Date: 2026-10-17
-- Supersedes: ADR-0034
+- Originally: furedea/dotfiles ADR-0036
+- Supersedes: ADR-0007
 
 In the context of the sandbox tiers from
-[ADR-0034](0034_ask_only_for_effects_that_escape_the_sandbox.md) and agent git running inside the
-sandbox under [ADR-0035](0035_run_agent_git_inside_the_sandbox_with_unsigned_commits.md), facing a
+[ADR-0007](0007_ask_only_for_effects_that_escape_the_sandbox.md) and agent git running inside the
+sandbox under [ADR-0008](0008_run_agent_git_inside_the_sandbox_with_unsigned_commits.md), facing a
 replay of a day's agent commands in which 56 of 58 prompts came from local commands that merely
 used a shell variable or a form the precise allowlist did not list, such as `git -C $W add`,
 `git commit -S`, or `sed -i ''`, while only two were real denials, we decided for letting every

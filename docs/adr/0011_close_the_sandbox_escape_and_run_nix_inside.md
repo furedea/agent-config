@@ -1,9 +1,10 @@
-# ADR-0038: Close the sandbox escape and run Nix inside
+# ADR-0011: Close the sandbox escape and run Nix inside
 
 - Status: Accepted
 - Date: 2026-10-17
+- Originally: furedea/dotfiles ADR-0038
 
-In the context of [ADR-0036](0036_review_only_commands_that_reach_past_the_sandbox.md), which
+In the context of [ADR-0009](0009_review_only_commands_that_reach_past_the_sandbox.md), which
 reserves prompts for effects the sandbox cannot contain, facing sessions that read an empty
 `gh` output or another ordinary failure as a sandbox denial and retried the command with the
 sandbox disabled, a retry that the `Bash(dangerouslyDisableSandbox:true)` ask rule turns into a

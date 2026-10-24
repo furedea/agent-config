@@ -1,7 +1,8 @@
-# ADR-0023: Define information authority for TSDD
+# ADR-0001: Define information authority for TSDD
 
 - Status: Accepted
 - Date: 2026-09-04
+- Originally: furedea/dotfiles ADR-0023
 
 In the context of using TSDD across AI coding agents and repositories with executable contracts,
 human-facing documentation, automated hooks, and provider-specific entry files, facing a four-part

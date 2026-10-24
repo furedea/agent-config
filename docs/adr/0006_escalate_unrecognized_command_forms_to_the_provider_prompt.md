@@ -1,11 +1,12 @@
-# ADR-0033: Escalate unrecognized command forms to the provider prompt
+# ADR-0006: Escalate unrecognized command forms to the provider prompt
 
 - Status: Accepted
 - Date: 2026-10-15
+- Originally: furedea/dotfiles ADR-0033
 
 In the context of the command and verification hooks from
-[ADR-0031](0031_permit_agent_commands_by_reversibility.md) and
-[ADR-0029](0029_register_verification_in_native_hooks.md), facing audit evidence that about half
+[ADR-0004](0004_permit_agent_commands_by_reversibility.md) and
+[ADR-0003](0003_register_verification_in_native_hooks.md), facing audit evidence that about half
 of all hook denials were commands inside an approved family whose exact form the precise rules did
 not list or commands the static shell inspection could not decode, and a scope check that denied
 the provider's own scratch directory, we decided for returning the provider's `ask` decision in

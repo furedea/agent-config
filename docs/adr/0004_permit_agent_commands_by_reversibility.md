@@ -1,10 +1,11 @@
-# ADR-0031: Permit agent commands by reversibility
+# ADR-0004: Permit agent commands by reversibility
 
-- Status: Superseded by [ADR-0034](0034_ask_only_for_effects_that_escape_the_sandbox.md)
+- Status: Superseded by [ADR-0007](0007_ask_only_for_effects_that_escape_the_sandbox.md)
 - Date: 2026-09-17
+- Originally: furedea/dotfiles ADR-0031
 
 In the context of the command policy that Claude Code and Codex enforce through the shared hooks
-from [ADR-0026](0026_use_python_for_automation_logic.md), facing a deny list that grew from a
+from [dotfiles ADR-0026](https://github.com/furedea/dotfiles/blob/main/docs/adr/0026_use_python_for_automation_logic.md), facing a deny list that grew from a
 Codex-era blocklist, left most commands to a non-deterministic classifier, and was bypassed by
 process wrappers, install paths, and Git global options, we decided for three tiers chosen by
 reversibility and blast radius, evaluated on the canonical command that a wrapper eventually runs,

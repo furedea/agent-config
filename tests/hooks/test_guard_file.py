@@ -209,12 +209,15 @@ def test_commits_that_may_run_in_the_starting_repository_check_it(
     "command",
     ["git -C nested commit -m $'fixture'", "cd nested && git commit -m $'fixture'"],
 )
-def test_commits_in_another_repository_are_not_skipped_when_the_command_cannot_be_parsed(
+def test_commits_the_parser_cannot_place_are_left_to_the_user(
     run_cli: CliRunner, nested_project: Path, command: str
 ) -> None:
     stage(nested_project, ".env")
     result = run_cli(SCRIPT, "commit", payload={"tool_input": {"command": command}})
-    assert result.returncode == 2
+    assert result.returncode == 0
+    decision = json.loads(result.stdout)["hookSpecificOutput"]
+    assert decision["permissionDecision"] == "ask"
+    assert "repository" in decision["permissionDecisionReason"]
 
 
 def test_a_commit_reaching_a_repository_from_outside_any_repository_is_checked(

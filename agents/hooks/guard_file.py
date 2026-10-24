@@ -15,12 +15,14 @@ sys.path.insert(0, str(ROOT / "lib"))
 import audit_log
 from command_policy import regex_matches
 import git_safety
+import hook_decision
 import hook_input
 import shell_syntax
 
 
 # Environment variables through which a commit can use another repository or index than the directory's own.
 REPOSITORY_VARIABLE = re.compile(r"\bGIT_(DIR|WORK_TREE|INDEX_FILE|COMMON_DIR|OBJECT_DIRECTORY)=")
+COMMIT_HOOK = "guard_secret_commit.sh"
 UNKNOWN_REPOSITORY = (
     "cannot tell which repository this commit uses, because a shell expansion, a directory stack, "
     "or a GIT_DIR-like variable picks it.\n\n"
@@ -77,6 +79,10 @@ def validate_filename_rule(rule: object) -> None:
     ):
         raise ValueError("invalid secret filename rule")
     regex_matches(rule["pattern"], "")
+
+
+class UnplacedCommit(ValueError):
+    """The parser cannot read the command, so where its commit runs is left to the user."""
 
 
 def staged_filename_matches(rules: list[dict], location: tuple[str, ...]) -> list[tuple[str, str]]:
@@ -167,7 +173,7 @@ def unparsed_commit_locations(command: str) -> list[tuple[str, ...]]:
         r"\b(cd|pushd|popd)\b|\s(-C|--git-dir|--work-tree)\b", command
     ):
         return [("-C", str(Path.cwd()))]
-    raise ValueError(UNKNOWN_REPOSITORY)
+    raise UnplacedCommit(UNKNOWN_REPOSITORY)
 
 
 def changed_directory(directory: Path | None, item: shell_syntax.Command) -> Path | None:
@@ -282,38 +288,62 @@ def scan_content(mode: str, payload: dict, directory: Path) -> None:
 
 def check(mode: str, payload: dict, directory: Path = ROOT) -> int:
     """Enforce file policy without spawning another hook process."""
+    if mode == "commit":
+        return hook_decision.emit(commit_verdict(payload, directory))
     value = ""
-    tool = "Bash" if mode == "commit" else "Edit"
-    hook = "guard_secret_commit.sh" if mode == "commit" else "guard_harness_files.sh"
+    tool = "Edit"
     try:
         if mode in {"prompt", "read", "write"}:
             scan_content(mode, payload, directory)
             return 0
-        values = payload.get("tool_input") or {}
         tool = payload.get("tool_name") or tool
-        value = values.get("command") or "" if mode == "commit" else hook_input.file_path(values)
+        value = hook_input.file_path(payload.get("tool_input") or {})
         if not value:
             return 0
-        reason = (
-            commit_reason(value, directory)
-            if mode == "commit"
-            else protected_reason(value, policy_path("AGENT_PROTECTED_PATH_POLICY", "protected_paths.json", directory))
-        )
+        reason = protected_reason(value, policy_path("AGENT_PROTECTED_PATH_POLICY", "protected_paths.json", directory))
         if not reason:
             return 0
-    except (OSError, ValueError, TypeError, AttributeError, subprocess.CalledProcessError) as error:
+    except (OSError, ValueError, TypeError, AttributeError) as error:
         reason = str(error)
     audit_log.blocked(
         audit_log.Refusal(
             tool,
-            hook,
-            payload.get("session_id", "") if isinstance(payload, dict) else "",
-            payload=payload if isinstance(payload, dict) else None,
-            targets=() if mode == "commit" else ((value,) if value else ()),
+            "guard_harness_files.sh",
+            session(payload),
+            payload=context(payload),
+            targets=(value,) if value else (),
         )
     )
     print(f"BLOCKED: {reason}", file=sys.stderr)
     return 2
+
+
+def commit_verdict(payload: dict, directory: Path = ROOT) -> hook_decision.Verdict:
+    """Deny a commit of staged secrets, and ask when the parser cannot tell where a commit runs."""
+    tool = "Bash"
+    try:
+        tool = payload.get("tool_name") or tool
+        command = (payload.get("tool_input") or {}).get("command") or ""
+        reason = commit_reason(command, directory) if command else ""
+    except UnplacedCommit as error:
+        audit_log.escalated(
+            audit_log.Refusal(tool, COMMIT_HOOK, session(payload), payload=context(payload), detail="syntax")
+        )
+        return hook_decision.ask(f"Needs review: {error}", "syntax")
+    except (OSError, ValueError, TypeError, AttributeError, subprocess.CalledProcessError) as error:
+        reason = str(error)
+    if not reason:
+        return hook_decision.ALLOW
+    audit_log.blocked(audit_log.Refusal(tool, COMMIT_HOOK, session(payload), payload=context(payload)))
+    return hook_decision.deny(f"BLOCKED: {reason}")
+
+
+def context(payload: object) -> dict | None:
+    return payload if isinstance(payload, dict) else None
+
+
+def session(payload: object) -> str:
+    return payload.get("session_id", "") if isinstance(payload, dict) else ""
 
 
 def main(arguments: list[str]) -> int:

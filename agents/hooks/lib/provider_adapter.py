@@ -165,10 +165,11 @@ class Adapter:
         values = {"command": command_text(self.normalized(payload)["tool_input"])}
         command = self.translated(payload, "Bash", values)
         if mode == "commit":
-            return guard_file.check("commit", command, shared_directory())
-        verdict = (
-            guard_git.decide(command) if mode == "git" else guard_command.decide(mode, command, shared_directory())
-        )
+            verdict = guard_file.commit_verdict(command, shared_directory())
+        elif mode == "git":
+            verdict = guard_git.decide(command)
+        else:
+            verdict = guard_command.decide(mode, command, shared_directory())
         return hook_decision.emit(verdict.hardened())
 
     def lint(self, payload: dict) -> int:

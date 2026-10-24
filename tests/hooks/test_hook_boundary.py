@@ -212,8 +212,8 @@ def test_shell_translation_calls_shared_policy(
 ) -> None:
     monkeypatch.setenv("AGENT_HARNESS_ROOT", str(tmp_path))
     if mode == "commit":
-        check = Mock(return_value=2)
-        monkeypatch.setattr(shared.guard_file, "check", check)
+        check = Mock(return_value=shared.hook_decision.deny("BLOCKED: test"))
+        monkeypatch.setattr(shared.guard_file, "commit_verdict", check)
     else:
         check = Mock(return_value=shared.hook_decision.deny("BLOCKED: test"))
         monkeypatch.setattr(shared.guard_git if mode == "git" else shared.guard_command, "decide", check)
@@ -228,6 +228,8 @@ def test_shell_translation_calls_shared_policy(
     }
     if mode == "git":
         check.assert_called_once_with(translated)
+    elif mode == "commit":
+        check.assert_called_once_with(translated, tmp_path / ".claude/hooks")
     else:
         check.assert_called_once_with(mode, translated, tmp_path / ".claude/hooks")
 

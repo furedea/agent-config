@@ -139,3 +139,14 @@ def test_non_object_payloads_are_rejected(run_cli: CliRunner, harness: Path, pro
     result = run_cli(script(provider), "shell", "git", payload=raw)
     assert result.returncode == 2
     assert "BLOCKED" in result.stderr
+
+
+@pytest.mark.parametrize("provider", PROVIDERS)
+def test_commit_escalations_are_denied_for_providers_whose_hooks_cannot_ask(
+    run_cli: CliRunner, harness: Path, provider: str
+) -> None:
+    payload = {"session_id": "adapter-session", "tool_input": {"command": "git -C elsewhere commit -m $'x'"}}
+    result = run_cli(script(provider), "shell", "commit", payload=payload)
+    assert result.returncode == 2
+    assert result.stdout == ""
+    assert "repository" in result.stderr

@@ -42,7 +42,8 @@
     "tests/hooks/test_verification_rule.py",
     "tests/test_related_test_extensions.py",
     "tests/hooks/test_verification_status.py",
-    "tests/hooks/test_verification_reuse.py"
+    "tests/hooks/test_verification_reuse.py",
+    "tests/hooks/test_hook_lock_wait.py"
   ],
   "agents/claude/settings.json": [
     "tests/claude/test_settings.py",

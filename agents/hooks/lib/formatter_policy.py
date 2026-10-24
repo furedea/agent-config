@@ -22,6 +22,7 @@ OTHER_FORMATTER_CONFIG_NAMES = (
 )
 OXFMT_CONFIG_NAMES = (".oxfmtrc", ".oxfmtrc.json", ".oxfmtrc.jsonc")
 JS_FORMATTER_PACKAGES = {"prettier": "prettier", "@biomejs/biome": "biome", "oxfmt": "oxfmt"}
+BUNDLED_CONFIG_DIRECTORY = Path(__file__).resolve().parent.parent / "defaults"
 
 
 @dataclass(frozen=True, slots=True)
@@ -57,6 +58,12 @@ def project_files(start: Path, names: tuple[str, ...]) -> tuple[Path, ...]:
         if found:
             return found
     return ()
+
+
+def personal_config(home_name: str, bundled_name: str) -> Path:
+    """Prefer the user's home config, then the default bundled with the hooks."""
+    home = Path.home() / home_name
+    return home if home.is_file() else BUNDLED_CONFIG_DIRECTORY / bundled_name
 
 
 def toml_data(path: Path) -> dict | None:
@@ -303,7 +310,7 @@ def dprint_plan(path: Path) -> tuple[Step, ...]:
         )
         return (policy_step(path, reason),)
     project_config = dprint[0] if dprint else None
-    config = project_config or Path.home() / "dprint.json"
+    config = project_config or personal_config("dprint.json", "dprint.json")
     root = project_config.parent if project_config else path.parent
     relative = str(path.relative_to(root)) if project_config else path.name
     arguments = (

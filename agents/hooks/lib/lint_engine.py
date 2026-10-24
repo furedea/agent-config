@@ -7,7 +7,7 @@ from pathlib import Path
 import shutil
 import tempfile
 
-from lib.formatter_policy import Step, plan
+from lib.formatter_policy import Step, personal_config, plan
 from lib import process_runner
 
 
@@ -55,7 +55,7 @@ def run_step(step: Step, path: Path) -> str:
     """Run a quality step and return only failures or explicitly meaningful warnings."""
     environment = dict(os.environ)
     if step.writes_stdout:
-        environment["PRETTIERD_DEFAULT_CONFIG"] = str(Path.home() / ".prettierrc")
+        environment["PRETTIERD_DEFAULT_CONFIG"] = str(personal_config(".prettierrc", "prettier.json"))
     result = process_runner.run_process(step, path, environment)
     diagnostics = diagnostic_text(result.diagnostics, result.output_truncated)
     if result.timed_out:

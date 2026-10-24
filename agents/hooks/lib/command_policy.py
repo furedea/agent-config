@@ -88,8 +88,8 @@ def governed_programs(rules: list[dict]) -> frozenset[str]:
     return frozenset(program for rule in rules for program in rule.get("programs", ()))
 
 
-def project_file(name: str) -> Path | None:
-    """Locate optional project policy using its owning Git root."""
+def project_root() -> Path | None:
+    """The Git root that owns the project's policy."""
     start = os.environ.get("AGENT_PROJECT_DIR", os.environ.get("CLAUDE_PROJECT_DIR", os.getcwd()))
     try:
         root = subprocess.check_output(
@@ -97,7 +97,12 @@ def project_file(name: str) -> Path | None:
         ).strip()
     except OSError, subprocess.CalledProcessError:
         return None
-    path = Path(root) / ".agents/hooks/rules" / name
+    return Path(root)
+
+
+def project_file(root: Path, name: str) -> Path | None:
+    """Locate optional project policy under its Git root."""
+    path = root / ".agents/hooks/rules" / name
     return path if path.is_file() else None
 
 

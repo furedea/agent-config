@@ -25,6 +25,7 @@ import hook_decision
 from hook_decision import Verdict
 import shell_inspection
 import shell_syntax
+import trusted_owners
 
 
 REQUEST_PROGRAMS = frozenset({"curl", "wget"})
@@ -60,6 +61,7 @@ class Policy:
     prefixes: list[dict]
     rules: list[dict]
     literal_words: bool = True
+    ignored: trusted_owners.Ignored | None = None
 
     @property
     def listing_rules(self) -> list[dict]:
@@ -87,12 +89,22 @@ def policies(kind: str, directory: Path) -> Policy:
         rule["patterns"] = patterns + [
             "^" + re.escape(str(Path.home())) + pattern[2:] for pattern in patterns if pattern.startswith("^~/")
         ]
-    if project := command_policy.project_file(name):
-        try:
-            rules += command_policy.load_rules(project)
-        except ValueError as error:
-            raise ValueError(f"invalid project {kind} command rules: {project}") from error
-    return Policy(prefixes, rules)
+    root = command_policy.project_root()
+    if root is None or (project := command_policy.project_file(root, name)) is None:
+        return Policy(prefixes, rules)
+    try:
+        project_rules = command_policy.load_rules(project)
+    except ValueError as error:
+        raise ValueError(f"invalid project {kind} command rules: {project}") from error
+    if kind == "allowed" and (ignored := ignored_project_rules(root, directory)):
+        return Policy(prefixes, rules, ignored=ignored)
+    return Policy(prefixes, rules + project_rules)
+
+
+def ignored_project_rules(root: Path, directory: Path) -> trusted_owners.Ignored | None:
+    """Project allow rules widen what runs unreviewed, so only a trusted owner's repository may add them."""
+    path = Path(os.environ.get("AGENT_TRUSTED_OWNERS", str(directory / "rules/trusted_owners.json")))
+    return trusted_owners.ignored_rules(root, trusted_owners.load(path))
 
 
 def objection(kind: str, item: shell_syntax.Command, policy: Policy) -> Verdict:
@@ -179,12 +191,19 @@ def decide(kind: str, payload: dict, directory: Path = ROOT) -> Verdict:
         policy = policies(kind, directory)
         if not isinstance(payload, dict):
             raise ValueError("failed to parse tool input JSON: expected an object")
-        verdict = command_verdict(kind, payload, policy)
+        verdict = announced(command_verdict(kind, payload, policy), policy)
     except (ValueError, TypeError, AttributeError, OSError) as error:
         prefix = "forbidden command: " if kind == "forbidden" else ""
         verdict = hook_decision.deny(f"BLOCKED: {prefix}{error}\n\n{hook_decision.REVIEW_HINT}")
     record(verdict, kind, payload)
     return verdict
+
+
+def announced(verdict: Verdict, policy: Policy) -> Verdict:
+    """Tell the user once per project that its allow rules were left out; a denial already explains itself."""
+    if policy.ignored is None or verdict.decision == "deny" or not trusted_owners.announce_once(policy.ignored):
+        return verdict
+    return replace(verdict, notice=policy.ignored.message)
 
 
 def command_verdict(kind: str, payload: dict, policy: Policy) -> Verdict:

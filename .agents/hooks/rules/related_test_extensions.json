@@ -25,6 +25,14 @@
     "tests/hooks/test_guard_file.py",
     "tests/hooks/test_replay_commands.py"
   ],
+  "agents/hooks/rules/trusted_owners.json": [
+    "tests/hooks/test_trusted_owners.py",
+    "tests/hooks/test_command_cli.py"
+  ],
+  "agents/hooks/lib/trusted_owners.py": [
+    "tests/hooks/test_trusted_owners.py",
+    "tests/hooks/test_command_cli.py"
+  ],
   "agents/hooks/rules/secret_content_patterns.json": [
     "tests/hooks/test_secret_content_pattern.py",
     "tests/hooks/test_secret_content.py"
@@ -210,6 +218,7 @@
     "tests/pi/test_pi_hook_adapter.py"
   ],
   "agents/hooks/lib/command_policy.py": [
+    "tests/hooks/test_trusted_owners.py",
     "tests/test_command_permission_sync.py",
     "tests/hooks/test_allowed_command.py",
     "tests/hooks/test_command_cli.py",
@@ -227,6 +236,7 @@
     "tests/hooks/test_replay_commands.py"
   ],
   "agents/hooks/guard_command.py": [
+    "tests/hooks/test_trusted_owners.py",
     "tests/hooks/test_allowed_command.py",
     "tests/hooks/test_command_cli.py",
     "tests/hooks/test_forbidden_command.py",
@@ -241,6 +251,7 @@
     "tests/hooks/test_replay_commands.py"
   ],
   "agents/hooks/lib/hook_decision.py": [
+    "tests/hooks/test_trusted_owners.py",
     "tests/hooks/test_allowed_command.py",
     "tests/hooks/test_command_cli.py",
     "tests/hooks/test_forbidden_command.py",

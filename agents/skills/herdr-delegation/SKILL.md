@@ -51,8 +51,9 @@ is not used for now because the verification hook rejects its thread
 (furedea/agent-config#19). Use `adversarial-review` only to have Codex challenge the design of a
 high-risk or design-heavy change. The lane waits for CI. It ends its final message with
 `LANE-READY` only when CI is green and no P0 or P1 finding is open; otherwise it ends with
-`LANE-BLOCKED` and the reason. The lane never types into the parent's pane with `herdr agent prompt` or `send-text`:
-text typed there is indistinguishable from the user's own input.
+`LANE-BLOCKED` and the reason. The lane never types into the parent's pane with
+`herdr agent prompt` or `send-text`: text typed there is indistinguishable from the user's own
+input.
 
 Honor an explicit provider choice. Keep plan review, code review, and implementation as distinct
 assignments; asking for findings does not authorize the reviewer to fix them.

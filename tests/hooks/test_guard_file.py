@@ -155,13 +155,123 @@ def test_commit_reports_all_sensitive_files(run_cli: CliRunner, git_project: Pat
     assert ".env" in result.stderr and "secrets" in result.stderr
 
 
-@pytest.mark.parametrize("command", ["git status", "echo hello", "git commit"])
+@pytest.mark.parametrize("command", ["git status", "echo hello", "echo commit", "git commit"])
 def test_no_relevant_staged_commit(run_cli: CliRunner, git_project: Path, command: str) -> None:
     if command != "git commit":
         stage(git_project, ".env")
     result = run_cli(SCRIPT, "commit", payload={"tool_input": {"command": command}})
     assert result.returncode == 0
     assert result.stdout == result.stderr == ""
+
+
+@pytest.fixture
+def nested_project(git_project: Path) -> Path:
+    """A second repository inside the working directory, reached only through cd or git -C."""
+    nested = git_project / "nested"
+    nested.mkdir()
+    subprocess.run(["git", "init", "--quiet", str(nested)], check=True, capture_output=True)
+    return nested
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        'cd nested && git commit -m "fixture"',
+        'git -C nested commit -m "fixture"',
+        "cd nested; git status; git commit",
+        'git --git-dir=nested/.git --work-tree=nested commit -m "fixture"',
+        'bash -c "cd nested && git commit"',
+        "env -C nested git commit",
+        "env --chdir=nested git commit",
+        "env -u SOME_VAR -C nested git commit",
+        "env -C . -C nested git commit",
+    ],
+)
+def test_commits_in_another_repository_check_its_staged_files(
+    run_cli: CliRunner, nested_project: Path, command: str
+) -> None:
+    stage(nested_project, ".env")
+    result = run_cli(SCRIPT, "commit", payload={"tool_input": {"command": command}})
+    assert result.returncode == 2
+    assert ".env" in result.stderr
+
+
+@pytest.mark.parametrize(
+    "command",
+    ["(cd nested) && git commit", "cd nested || git commit", "(cd nested; git status); cd . && git commit"],
+)
+def test_commits_that_may_run_in_the_starting_repository_check_it(
+    run_cli: CliRunner, git_project: Path, nested_project: Path, command: str
+) -> None:
+    stage(git_project, ".env")
+    result = run_cli(SCRIPT, "commit", payload={"tool_input": {"command": command}})
+    assert result.returncode == 2
+    assert ".env" in result.stderr
+
+
+@pytest.mark.parametrize(
+    "command",
+    ["git -C nested commit -m $'fixture'", "cd nested && git commit -m $'fixture'"],
+)
+def test_commits_the_parser_cannot_place_are_left_to_the_user(
+    run_cli: CliRunner, nested_project: Path, command: str
+) -> None:
+    stage(nested_project, ".env")
+    result = run_cli(SCRIPT, "commit", payload={"tool_input": {"command": command}})
+    assert result.returncode == 0
+    decision = json.loads(result.stdout)["hookSpecificOutput"]
+    assert decision["permissionDecision"] == "ask"
+    assert "repository" in decision["permissionDecisionReason"]
+
+
+def test_a_commit_reaching_a_repository_from_outside_any_repository_is_checked(
+    run_cli: CliRunner, isolated_project: Path
+) -> None:
+    nested = isolated_project / "nested"
+    subprocess.run(["git", "init", "--quiet", str(nested)], check=True, capture_output=True)
+    stage(nested, "README.md")
+    result = run_cli(SCRIPT, "commit", payload={"tool_input": {"command": "cd nested && git commit"}})
+    assert result.returncode == 0
+    stage(nested, ".env")
+    result = run_cli(SCRIPT, "commit", payload={"tool_input": {"command": "cd nested && git commit"}})
+    assert result.returncode == 2
+
+
+def test_git_variables_inside_a_script_the_shell_reads_are_blocked(run_cli: CliRunner, git_project: Path) -> None:
+    (git_project / "script.sh").write_text("GIT_INDEX_FILE=other-index git commit -m fixture\n")
+    result = run_cli(SCRIPT, "commit", payload={"tool_input": {"command": "sh < script.sh"}})
+    assert result.returncode == 2
+    assert "repository" in result.stderr
+
+
+def test_run_time_configuration_values_do_not_hide_the_repository(run_cli: CliRunner, git_project: Path) -> None:
+    command = 'git -c user.name="$NAME" commit -m fixture'
+    result = run_cli(SCRIPT, "commit", payload={"tool_input": {"command": command}})
+    assert result.returncode == 0
+    assert result.stdout == result.stderr == ""
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        'cd "$REPOSITORY" && git commit',
+        'git -C "$REPOSITORY" commit',
+        "cd - && git commit",
+        "GIT_DIR=nested/.git git commit",
+        "env GIT_WORK_TREE=nested git commit",
+        "export GIT_INDEX_FILE=other; git commit",
+        "env GIT_''INDEX_FILE=other git commit",
+        "GIT_INDEX_FILE+=other git commit",
+        "GIT_\\\nDIR=nested/.git git commit",
+        'export GIT_"DIR"=other; git commit',
+    ],
+)
+def test_commits_in_a_repository_known_only_at_run_time_are_blocked(
+    run_cli: CliRunner, git_project: Path, command: str
+) -> None:
+    result = run_cli(SCRIPT, "commit", payload={"tool_input": {"command": command}})
+    assert result.returncode == 2
+    assert "repository" in result.stderr
 
 
 @pytest.mark.parametrize("valid", [True, False])

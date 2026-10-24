@@ -1,14 +1,14 @@
 """Inspect a conservative shell subset using shfmt's parser, never by executing input."""
 
 from dataclasses import dataclass, replace
-from collections.abc import Iterator
 import json
-import os
 from pathlib import Path
 import re
-import shlex
 import subprocess
-from typing import Literal, Self
+from typing import Self
+
+import shell_input
+from shell_words import UnsupportedSyntax, literal_word, nodes, source_text, spreads
 
 
 COMMAND_PREVIEW_LIMIT = 200
@@ -26,28 +26,10 @@ ALLOWED_NODES = frozenset(
         ).split(),
     }
 )
-# Every command inside a substitution, clause, or function body is a CallExpr that parse judges on
-# its own, so a body is judged where it is defined and a call by its own name; the substituted word
-# itself is only known at run time.
-SUBSTITUTIONS = frozenset({"CmdSubst", "ProcSubst", "ArithmExp"})
-# A ParamExp other than the home directory makes its word a run-time word; Word is an operand inside it.
-WORD_PARTS = frozenset({None, "Lit", "SglQuoted", "DblQuoted", "ParamExp", "Word"}) | SUBSTITUTIONS
-QUOTED_PARTS = frozenset({"SglQuoted", "DblQuoted"})
-HOME_PARAMETER = "HOME"
-PARAMETER_MODIFIERS = ("Excl", "Length", "Width", "Index", "Slice", "Repl", "Exp")
-SHELLS = frozenset({"bash", "sh", "zsh"})
+DIRECTORY_CHANGES = frozenset({"cd", "pushd", "popd"})
+SHELLS = frozenset({"bash", "dash", "ksh", "sh", "zsh"})
 COMMAND_LOOKUP = frozenset({"-v", "-V"})
 ASSIGNMENT = re.compile(r"[A-Za-z_][A-Za-z0-9_]*=")
-# All positional parameters, any single one (a digit), and every array element ([@] or [*]) can
-# become any number of words, options included, even inside double quotes.
-SPREADING = frozenset({"@", "*"})
-# Parts that the shell splits into words, or expands into several, when they stand outside quotes.
-SPLIT_PARTS = frozenset({"ParamExp", "CmdSubst", "ProcSubst", "ArithmExp"})
-# A bracket opens a glob only when a closing bracket follows, so the test command `[` stays literal.
-GLOB = re.compile(r"(?<!\\)[*?]|(?<!\\)\[.+\]")
-# Brace expansion can pair braces across quoted parts, so any unquoted brace counts.
-BRACES = frozenset("{}")
-LINE_CONTINUATION = "\\\n"
 # Process wrappers run their trailing arguments as a command. Each entry lists the flags without an
 # operand and the options whose operand is the next token; unknown options are refused, not skipped.
 WRAPPERS: dict[str, tuple[frozenset[str], frozenset[str]]] = {
@@ -69,18 +51,6 @@ WRAPPERS: dict[str, tuple[frozenset[str], frozenset[str]]] = {
         ),
     ),
 }
-
-
-class UnsupportedSyntax(ValueError):
-    """The command cannot be statically inspected by this supplementary guard."""
-
-    def __init__(
-        self,
-        message: str,
-        kind: Literal["heredoc", "expansion", "dollar-quote", "wrapper", "parse-failure"] = "parse-failure",
-    ) -> None:
-        super().__init__(message)
-        self.kind = kind
 
 
 @dataclass(frozen=True, slots=True)
@@ -180,8 +150,13 @@ def command_preview(source: str) -> str:
     return preview
 
 
-def parse(source: str, depth: int = 0) -> tuple[Command, ...]:
-    """Parse literal commands, including static shell and process wrappers, and reject unknown syntax."""
+def parse(source: str, depth: int = 0, directories: tuple[Path | None, ...] = ()) -> tuple[Command, ...]:
+    """Parse literal commands, including static shell and process wrappers, and reject unknown syntax.
+
+    `directories` are where the source may start running, the working directory by default; a
+    script file a shell reads is looked up in each directory the source may have reached.
+    """
+    directories = directories or (Path.cwd(),)
     if not source.strip():
         return ()
     if depth > 8:
@@ -191,20 +166,68 @@ def parse(source: str, depth: int = 0) -> tuple[Command, ...]:
     if any(node.get("Type") not in ALLOWED_NODES for node in records):
         raise UnsupportedSyntax("dynamic or unsupported shell syntax requires explicit review", "expansion")
     data = source.encode()
+    sources = shell_input.InputSources.of(records, data)
     commands: list[Command] = []
     for node in records:
         if node.get("Type") != "CallExpr" or not node.get("Args"):
             continue
         owner = owners.get(id(node), node)
         command = replace(literal_command(node, owner, data), wrapper_depth=depth)
-        commands.append(command)
-        commands.extend(unwrapped(command))
-        innermost = commands[-1]
+        layers = [command, *unwrapped(command)]
+        commands += layers
+        for layer in layers:
+            directories = reached_directories(directories, layer)
+        innermost = layers[-1]
         if script := shell_script(innermost):
-            commands.extend(parse(script, innermost.wrapper_depth + 1))
-        elif Path(innermost.arguments[0]).name in SHELLS and (stdin := heredoc_script(owner)):
-            commands.extend(parse(stdin, innermost.wrapper_depth + 1))
+            scripts = [script]
+        elif Path(innermost.arguments[0]).name in SHELLS:
+            scripts = sources.scripts(owner, directories)
+        else:
+            scripts = []
+        commands += [
+            nested for script in scripts for nested in parse(script, innermost.wrapper_depth + 1, directories)
+        ]
     return tuple(commands)
+
+
+def reached_directories(directories: tuple[Path | None, ...], command: Command) -> tuple[Path | None, ...]:
+    """Add where a cd, pushd, popd, or env -C may lead to the directories reachable so far; None is one known only at run time.
+
+    Earlier directories stay reachable, since a cd inside a subshell or before || may not take effect.
+    """
+    name = Path(command.arguments[0]).name
+    if name == "env" and (target := env_directory(command)) != "":
+        reached = [None if target is None or directory is None else directory / target for directory in directories]
+    elif name in DIRECTORY_CHANGES:
+        reached = [changed_directory(directory, command) for directory in directories]
+    else:
+        return directories
+    return tuple(dict.fromkeys([*directories, *reached]))
+
+
+def env_directory(command: Command) -> str | None:
+    """The directory the last env -C or --chdir names: "" without the option, None when known only at run time."""
+    arguments, index, target = command.arguments, 1, ""
+    while index < len(arguments) and (arguments[index].startswith("-") or ASSIGNMENT.match(arguments[index])):
+        argument = arguments[index]
+        if argument in {"-C", "--chdir"} and index + 1 < len(arguments):
+            target = None if command.dynamic[index + 1] else arguments[index + 1]
+        elif argument.startswith(("--chdir=", "-C")):
+            target = None if command.dynamic[index] else argument.split("=", 1)[-1].removeprefix("-C")
+        index += 2 if argument in {"-u", "--unset", "-C", "--chdir"} else 1
+    return target
+
+
+def changed_directory(directory: Path | None, item: Command) -> Path | None:
+    """Follow a cd or pushd to a literal directory; any other change leaves the directory unknown."""
+    name, arguments = Path(item.arguments[0]).name, item.arguments
+    operands = [index for index, argument in enumerate(arguments[1:], 1) if not argument.startswith("-")]
+    if directory is None or name == "popd" or "-" in arguments or (name == "pushd" and not operands):
+        return None
+    if not operands:
+        return Path.home()
+    index = operands[0]
+    return None if item.dynamic[index] else directory / arguments[index]
 
 
 def statement_writes(statement: dict, data: bytes) -> tuple[str, ...]:
@@ -231,17 +254,6 @@ def is_one_simple_command(source: str) -> bool:
     )
 
 
-def heredoc_script(owner: dict) -> str:
-    """Return the static script a shell reads from a heredoc, refusing one the shell computes."""
-    bodies = [redirect["Hdoc"] for redirect in owner.get("Redirs", []) if redirect.get("Hdoc")]
-    if not bodies:
-        return ""
-    parts = [part for body in bodies for part in body.get("Parts", [])]
-    if any(part.get("Type") != "Lit" for part in parts):
-        raise UnsupportedSyntax("a shell heredoc whose text is computed requires explicit review", "heredoc")
-    return "".join(part.get("Value", "") for part in parts)
-
-
 def syntax_tree(source: str) -> dict:
     """Obtain shfmt's syntax tree, refusing to guess about input it cannot parse."""
     try:
@@ -253,17 +265,6 @@ def syntax_tree(source: str) -> dict:
         return json.loads(result.stdout)
     except (OSError, subprocess.TimeoutExpired, json.JSONDecodeError) as error:
         raise UnsupportedSyntax("shell parser unavailable; command cannot be validated", "parse-failure") from error
-
-
-def nodes(value: object) -> Iterator[dict]:
-    """Walk parser records without interpreting position metadata as executable code."""
-    if isinstance(value, dict):
-        yield value
-        for child in value.values():
-            yield from nodes(child)
-    elif isinstance(value, list):
-        for child in value:
-            yield from nodes(child)
 
 
 def literal_command(node: dict, owner: dict, data: bytes) -> Command:
@@ -290,132 +291,17 @@ def literal_command(node: dict, owner: dict, data: bytes) -> Command:
 
 def writes_file(redirect: dict, target: str, data: bytes) -> bool:
     """Whether a redirection creates or overwrites a file, judged by its operator text, not by parser codes."""
-    operator = re.match(r"\d*(&>>|&>|>>|>\||>&|<&|<<<|<>|<|>)", source_text(redirect, data))
-    if operator is None:
+    symbol = redirect_operator(redirect, data)
+    if not symbol:
         return True
-    symbol = operator.group(1)
     if symbol in {">&", "<&"}:
         return symbol == ">&" and not (target.isdigit() or target == "-")
     return symbol in {">", ">>", ">|", "&>", "&>>", "<>"}
 
 
-def source_text(node: dict, source: bytes) -> str:
-    """Use byte offsets so non-ASCII input cannot shift command boundaries."""
-    return source[node["Pos"]["Offset"] : node["End"]["Offset"]].decode()
-
-
-def literal_word(word: dict, source: bytes) -> tuple[str, bool]:
-    """Decode a word the tree proves static, or return its source text flagged as dynamic.
-
-    Only substitutions that run code (command, process, and arithmetic substitution) and
-    dollar-quoted or heredoc forms are refused outright; a glob or a parameter other than the
-    home directory is reported to the caller, which decides whether the program can take it.
-    """
-    dynamic = False
-    for part in word_nodes(word):
-        if part.get("Type") in QUOTED_PARTS and part.get("Dollar"):
-            raise UnsupportedSyntax("dollar-quoted shell words require explicit review", "dollar-quote")
-        if part.get("Type") == "ParamExp":
-            dynamic |= not is_home_parameter(part)
-        elif part.get("Type") in SUBSTITUTIONS:
-            dynamic = True
-        elif part.get("Type") not in WORD_PARTS:
-            raise UnsupportedSyntax("shell expansions require explicit review", "expansion")
-    parts = word.get("Parts", [])
-    for index, part in enumerate(parts):
-        if part.get("Type") == "Lit" and not is_literal_text(part.get("Value", ""), first=index == 0):
-            dynamic = True
-    if dynamic:
-        return source_text(word, source), True
-    return "".join(literal_part(index, part, source) for index, part in enumerate(parts)), False
-
-
-def spreads(word: dict, source: bytes) -> bool:
-    """Whether a word may become several words, or other words than the decoder sees.
-
-    That is an unquoted expansion, substitution, glob, or brace, a line continuation, which the
-    shell removes, or a positional parameter or array expansion even in quotes.
-    """
-    parts = word.get("Parts", [])
-    unquoted = "".join(part.get("Value", "") for part in parts if part.get("Type") == "Lit")
-    if any(part.get("Type") in SPLIT_PARTS for part in parts) or GLOB.search(unquoted) or BRACES & set(unquoted):
-        return True
-    if LINE_CONTINUATION in source_text(word, source):
-        return True
-    for part in word_nodes(word):
-        if part.get("Type") != "ParamExp":
-            continue
-        name = part.get("Param", {}).get("Value", "")
-        index = "".join(inner.get("Value", "") for inner in (part.get("Index") or {}).get("Parts", []))
-        if name in SPREADING or name.isdigit() or index in SPREADING:
-            return True
-    return False
-
-
-def word_nodes(value: object) -> Iterator[dict]:
-    """Walk a word's parts without entering substitutions, whose commands parse judges separately."""
-    if isinstance(value, dict):
-        yield value
-        if value.get("Type") in SUBSTITUTIONS:
-            return
-        for child in value.values():
-            yield from word_nodes(child)
-    elif isinstance(value, list):
-        for child in value:
-            yield from word_nodes(child)
-
-
-def is_home_parameter(part: dict) -> bool:
-    """Accept a plain $HOME or ${HOME}; any modifier would compute a value the hook cannot predict."""
-    name = part.get("Param", {}).get("Value")
-    return name == HOME_PARAMETER and not any(part.get(key) for key in PARAMETER_MODIFIERS)
-
-
-def is_literal_text(value: str, *, first: bool) -> bool:
-    """Unquoted globs expand at run time, and so does a leading tilde unless it names the home directory."""
-    if GLOB.search(value):
-        return False
-    if value.startswith("~"):
-        return first and (value == "~" or value.startswith("~/"))
-    return True
-
-
-def literal_part(index: int, part: dict, source: bytes) -> str:
-    """Decode one word part, substituting the home directory where the tree allowed it."""
-    kind = part.get("Type")
-    if kind == "ParamExp":
-        return home_directory()
-    if kind == "SglQuoted":
-        return part.get("Value", "")
-    if kind == "DblQuoted":
-        return "".join(
-            home_directory() if inner.get("Type") == "ParamExp" else unquoted('"' + source_text(inner, source) + '"')
-            for inner in part.get("Parts", [])
-        )
-    value = unquoted(source_text(part, source))
-    if index == 0 and value.startswith("~"):
-        return home_directory() + value[1:]
-    return value
-
-
-def unquoted(text: str) -> str:
-    """Decode an unquoted or double-quoted part as the shell does, dropping each line continuation."""
-    try:
-        values = shlex.split(text.replace(LINE_CONTINUATION, ""), posix=True)
-    except ValueError as error:
-        raise UnsupportedSyntax("a shell word could not be decoded unambiguously", "parse-failure") from error
-    if len(values) != 1:
-        raise UnsupportedSyntax("a shell word could not be decoded unambiguously", "parse-failure")
-    return values[0]
-
-
-def home_directory() -> str:
-    home = os.path.expanduser("~")
-    if home == "~":
-        raise UnsupportedSyntax(
-            "the home directory is unknown, so its expansion requires explicit review", "expansion"
-        )
-    return home
+def redirect_operator(redirect: dict, data: bytes) -> str:
+    operator = re.match(r"\d*(&>>|&>|>>|>\||>&|<&|<<<|<>|<|>)", source_text(redirect, data))
+    return operator.group(1) if operator else ""
 
 
 def unwrapped(command: Command) -> list[Command]:

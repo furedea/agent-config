@@ -287,6 +287,9 @@ def test_global_prefix_rejects_home_manager_activation(capsys: pytest.CaptureFix
         "f(){ git add -A; }",
         "f() { git commit --no-verify -m x; }; f",
         "function f { bash -c 'echo hi'; }",
+        "cat script.sh | sh",
+        'sh <<< "$SCRIPT"',
+        'sh <(echo "rm -rf build")',
     ],
 )
 def test_uninspectable_commands_are_left_to_the_user(kind: str, command: str) -> None:
@@ -301,6 +304,8 @@ def test_uninspectable_commands_are_left_to_the_user(kind: str, command: str) ->
         'echo "$(rm -rf build)"',
         'for d in a b; do rm -rf "$d"; done',
         "bash <<'EOF'\nrm -rf build\nEOF",
+        'echo "rm -rf build" | sh',
+        "bash <<< 'rm -rf build'",
         "if true; then git add -A; fi",
         'echo "${TARGET:-$(rm -rf build)}"',
         "{ rm -rf /Users/kaito/project/build; } > $'out'",

@@ -114,7 +114,7 @@ def test_staged_filename_policy_does_not_guess_from_generic_secret_words(tmp_pat
 def test_failed_staged_file_enumeration_is_not_an_empty_success(mocker: MockerFixture) -> None:
     mocker.patch.object(files.subprocess, "run", side_effect=files.subprocess.CalledProcessError(128, "git"))
     with pytest.raises(files.subprocess.CalledProcessError):
-        files.staged_filename_matches([])
+        files.staged_filename_matches([], ())
 
 
 def test_content_source_keeps_both_write_fields() -> None:
@@ -212,8 +212,8 @@ def test_shell_translation_calls_shared_policy(
 ) -> None:
     monkeypatch.setenv("AGENT_HARNESS_ROOT", str(tmp_path))
     if mode == "commit":
-        check = Mock(return_value=2)
-        monkeypatch.setattr(shared.guard_file, "check", check)
+        check = Mock(return_value=shared.hook_decision.deny("BLOCKED: test"))
+        monkeypatch.setattr(shared.guard_file, "commit_verdict", check)
     else:
         check = Mock(return_value=shared.hook_decision.deny("BLOCKED: test"))
         monkeypatch.setattr(shared.guard_git if mode == "git" else shared.guard_command, "decide", check)
@@ -228,6 +228,8 @@ def test_shell_translation_calls_shared_policy(
     }
     if mode == "git":
         check.assert_called_once_with(translated)
+    elif mode == "commit":
+        check.assert_called_once_with(translated, tmp_path / ".claude/hooks")
     else:
         check.assert_called_once_with(mode, translated, tmp_path / ".claude/hooks")
 

@@ -22,6 +22,7 @@ import hook_input
 import lint_format
 import patch_input
 import secret_path_policy
+import shell_paths
 import shell_syntax
 import verification_session
 
@@ -161,10 +162,11 @@ class Adapter:
         values = {"command": command_text(self.normalized(payload)["tool_input"])}
         command = self.translated(payload, "Bash", values)
         if mode == "commit":
-            return guard_file.check("commit", command, shared_directory())
-        verdict = (
-            guard_git.decide(command) if mode == "git" else guard_command.decide(mode, command, shared_directory())
-        )
+            verdict = guard_file.commit_verdict(command, shared_directory())
+        elif mode == "git":
+            verdict = guard_git.decide(command)
+        else:
+            verdict = guard_command.decide(mode, command, shared_directory())
         return hook_decision.emit(verdict.hardened())
 
     def lint(self, payload: dict) -> int:
@@ -185,7 +187,13 @@ class Adapter:
     def check_paths(self, mode: str, payload: dict) -> int:
         rules = secret_path_policy.load(secret_policy_path())
         context = self.normalized(payload)
-        candidates = edit_targets(context) if mode == "patch" else shell_words(command_text(context["tool_input"]))
+        try:
+            candidates = (
+                edit_targets(context) if mode == "patch" else command_paths(command_text(context["tool_input"]))
+            )
+        except shell_paths.UnexpandableGlob as error:
+            audit_log.blocked(secret_path_refusal(mode, "", context))
+            return hook_decision.emit(hook_decision.ask(f"Needs review: {error}.").hardened())
         for value in candidates:
             if rule := secret_path_policy.blocked_rule(value, rules):
                 audit_log.blocked(secret_path_refusal(mode, value, context))
@@ -283,14 +291,11 @@ def edit_targets(context: dict) -> list[str]:
     return [name for name in (hook_input.file_path(values), *patch_input.paths(body)) if name]
 
 
-def shell_words(command: str) -> list[str]:
-    """Return every argument and redirection word, plus the values of assignment words."""
+def command_paths(command: str) -> list[str]:
     try:
-        commands = shell_syntax.parse(command)
+        return shell_paths.command_paths(command)
     except shell_syntax.UnsupportedSyntax as error:
         raise ValueError(f"{error}\n\nCommand: {shell_syntax.command_preview(command)}") from error
-    words = [word for item in commands for word in (*item.arguments, *item.redirections)]
-    return words + [word.partition("=")[2] for word in words if "=" in word]
 
 
 def secret_path_refusal(mode: str, value: str, context: dict) -> audit_log.Refusal:

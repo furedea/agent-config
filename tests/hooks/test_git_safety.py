@@ -21,6 +21,14 @@ syntax = load_script_module("agents/hooks/lib/shell_syntax.py", "shell_syntax")
         ("git", "push", "--force", "--force-if-includes", "origin", "topic"),
         ("git", "restore", "--staged", "--worktree", "file.py"),
         ("git", "rm", "-f", "file.py"),
+        ("git", "branch", "--delete", "--force", "topic"),
+        ("git", "restore", "--stag", "--no-staged", "README.md"),
+        ("git", "restore", "-S", "--no-staged", "README.md"),
+        ("git", "restore", "--staged", "--no-stag", "README.md"),
+        ("git", "branch", "--delete", "-f", "topic"),
+        ("git", "branch", "-d", "--force", "topic"),
+        ("git", "branch", "-df", "topic"),
+        ("git", "branch", "--del", "--forc", "topic"),
         ("git", "mv", "--force", "a.py", "b.py"),
         ("git", "worktree", "remove", "--force", "../topic"),
         ("gh", "pr", "merge", "--admin"),
@@ -38,6 +46,9 @@ def test_destructive_operations_are_rejected(arguments: tuple[str, ...]) -> None
         ("git", "push", "origin", "topic"),
         ("git", "push", "--force-with-lease", "--force-if-includes", "origin", "topic"),
         ("git", "rm", "--cached", "file.py"),
+        ("git", "branch", "-d", "topic"),
+        ("git", "restore", "--worktree", "--no-worktree", "--staged", "README.md"),
+        ("git", "branch", "--force", "topic", "main"),
         ("git", "mv", "a.py", "b.py"),
         ("git", "worktree", "remove", "../topic"),
         ("git", "worktree", "prune"),
@@ -45,6 +56,42 @@ def test_destructive_operations_are_rejected(arguments: tuple[str, ...]) -> None
     ],
 )
 def test_non_destructive_operations_remain_available(arguments: tuple[str, ...]) -> None:
+    assert not git.reason(arguments)
+
+
+@pytest.mark.parametrize(
+    "arguments",
+    [
+        ("git", "reset", "--har"),
+        ("git", "reset", "--ha", "HEAD~1"),
+        ("git", "push", "--force-w", "origin", "topic"),
+        ("git", "push", "--force-with=origin/topic", "origin", "topic"),
+        ("git", "checkout", "--forc", "topic"),
+        ("git", "switch", "--disc", "topic"),
+        ("git", "switch", "--force-create", "main"),
+        ("git", "switch", "--force-c", "main"),
+        ("git", "rm", "--fo", "file.py"),
+        ("git", "worktree", "remove", "--f", "../topic"),
+        ("git", "gc", "--pru"),
+        ("git", "commit", "--gpg", "-m", "feat"),
+        ("git", "push", "--set-up", "origin", "topic"),
+    ],
+)
+def test_unique_abbreviations_of_long_options_are_judged_as_the_full_option(arguments: tuple[str, ...]) -> None:
+    assert git.reason(arguments)
+
+
+@pytest.mark.parametrize(
+    "arguments",
+    [
+        ("git", "reset", "--m", "HEAD~1"),
+        ("git", "push", "--forc", "origin", "topic"),
+        ("git", "restore", "--stag", "file.py"),
+        ("git", "reset", "--so", "HEAD~1"),
+        ("git", "rm", "--cached", "--", "--fo"),
+    ],
+)
+def test_ambiguous_or_harmless_abbreviations_are_not_rejected(arguments: tuple[str, ...]) -> None:
     assert not git.reason(arguments)
 
 

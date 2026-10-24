@@ -14,12 +14,14 @@ REVIEW_HINT = "Use a non-destructive approved form, or ask the user to review th
 class Verdict:
     """Allow silently, ask the user, or deny with a reason the model can act on.
 
-    `detail` is a short audit label such as the governed prefix, never command text.
+    `detail` is a short audit label such as the governed prefix, never command text. `notice` is
+    shown to the user with an allow; an ask or deny carries such text in its reason.
     """
 
     decision: Decision
     reason: str = ""
     detail: str = ""
+    notice: str = ""
 
     def hardened(self) -> Self:
         """Turn a prompt into a denial for providers whose hooks cannot ask the user."""
@@ -42,8 +44,9 @@ def emit(verdict: Verdict) -> int:
     if verdict.decision == "deny":
         print(verdict.reason, file=sys.stderr)
         return 2
-    if verdict.decision == "ask":
-        print(json.dumps(escalation(verdict.reason), ensure_ascii=True, separators=(",", ":")))
+    output = escalation(verdict.reason) if verdict.decision == "ask" else {"systemMessage": verdict.notice}
+    if verdict.decision == "ask" or verdict.notice:
+        print(json.dumps(output, ensure_ascii=True, separators=(",", ":")))
     return 0
 
 

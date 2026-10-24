@@ -47,6 +47,7 @@ known_first_party = [
   "session_snapshot",
   "session_store",
   "source_listing",
+  "trusted_owners",
   "verification_session",
 ]
 

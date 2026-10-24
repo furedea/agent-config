@@ -52,6 +52,7 @@ def isolated_project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     for name in ("CLAUDE_PROJECT_DIR", "AGENT_PROJECT_DIR"):
         monkeypatch.setenv(name, str(tmp_path))
     monkeypatch.setenv("AGENT_COMMAND_PERMISSIONS", str(REPO_ROOT / "agents/command_permissions.json"))
+    monkeypatch.setenv("AGENT_TRUSTED_OWNERS", str(REPO_ROOT / "agents/hooks/rules/trusted_owners.json"))
     for kind in ("ALLOWED", "FORBIDDEN"):
         monkeypatch.setenv(
             f"AGENT_{kind}_COMMAND_RULES", str(REPO_ROOT / f"agents/hooks/rules/{kind.lower()}_commands.json")

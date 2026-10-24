@@ -39,7 +39,7 @@ LONG_OPTIONS = {
         "--ignore-other-worktrees --merge --orphan --overwrite-ignore --progress --quiet --recurse-submodules --track",
         "restore": "--conflict --ignore-skip-worktree-bits --ignore-unmerged --inter-hunk-context --merge --ours "
         "--overlay --patch --pathspec-file-nul --pathspec-from-file --progress --quiet --recurse-submodules --source "
-        "--staged --theirs --unified --worktree",
+        "--staged --theirs --unified --worktree --no-staged --no-worktree",
         "rm": "--cached --dry-run --force --ignore-unmatch --pathspec-file-nul --pathspec-from-file --quiet --sparse",
         "mv": "--dry-run --force --sparse --verbose",
         "gc": "--aggressive --auto --cruft --detach --expire-to --force --keep-largest-pack --max-cruft-size --prune "
@@ -167,15 +167,42 @@ def git_reason(arguments: tuple[str, ...]) -> str:
     destructive |= bool(options & DANGEROUS_OPTIONS.get(verb, set()))
     destructive |= verb == "branch" and forces_deletion(remaining)
     if verb == "restore":
-        destructive = not bool(options & {"--staged", "-S"}) or bool(options & {"--worktree", "-W", "--source", "-s"})
+        destructive = restores_worktree(remaining)
     return f"destructive git operation: {verb}" if destructive else ""
 
 
 def forces_deletion(arguments: tuple[str, ...]) -> bool:
     """Whether a branch command deletes with force, spelled -D, -df, or --delete with --force in any form."""
-    flags = {argument for argument in arguments if argument.startswith("--")}
-    flags |= {f"-{flag}" for argument in arguments if re.fullmatch(r"-[A-Za-z]+", argument) for flag in argument[1:]}
+    flags = set(option_flags(arguments))
     return "-D" in flags or bool(flags & {"-d", "--delete"} and flags & FORCE_FLAGS)
+
+
+def restores_worktree(arguments: tuple[str, ...]) -> bool:
+    """Whether git restore writes the working tree, as the last of each -S and -W toggle decides.
+
+    Without either, restore writes the working tree; any --source also counts, as before.
+    """
+    staged, worktree = False, None
+    for flag in option_flags(arguments):
+        if flag in {"--source", "-s"}:
+            return True
+        if flag in {"--staged", "-S", "--no-staged"}:
+            staged = flag != "--no-staged"
+        elif flag in {"--worktree", "-W", "--no-worktree"}:
+            worktree = flag != "--no-worktree"
+    return not staged if worktree is None else worktree
+
+
+def option_flags(arguments: tuple[str, ...]) -> list[str]:
+    """The options before `--` in order, a long one without its value and a short cluster split into flags."""
+    end = arguments.index("--") if "--" in arguments else len(arguments)
+    flags: list[str] = []
+    for argument in arguments[:end]:
+        if argument.startswith("--"):
+            flags.append(argument.split("=", 1)[0])
+        elif re.fullmatch(r"-[A-Za-z]+", argument):
+            flags += [f"-{flag}" for flag in argument[1:]]
+    return flags
 
 
 def spelled_out(verb: str, arguments: tuple[str, ...]) -> tuple[str, ...]:

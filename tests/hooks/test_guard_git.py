@@ -315,6 +315,8 @@ def test_a_shell_reading_a_process_substitution_is_left_to_the_user(command: str
         ("git status\n", "sh < script.sh", "allow"),
         ("git status\n", "sh < missing.sh", "ask"),
         ("git status\n", 'sh < "$SCRIPT"', "ask"),
+        ("git status\n", "sh <<< '\"' <<< 'git reset --hard #\"'", "ask"),
+        ("git status\n", "sh <<< 'git status' < script.sh", "ask"),
     ],
 )
 def test_a_shell_reading_a_script_file_from_its_input_is_judged_by_its_content(

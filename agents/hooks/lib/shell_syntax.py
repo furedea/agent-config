@@ -246,9 +246,11 @@ def is_pipe(node: dict, data: bytes) -> bool:
 def input_script(owner: dict, feed: dict | None, data: bytes) -> str:
     """Return the static script a shell reads from its input; a redirection replaces a pipe.
 
-    A `<(...)` argument hands the shell a script known only at run time, so it is refused.
+    A `<(...)` argument hands the shell a script known only at run time, and of several input
+    redirections only one reaches the shell, so both are refused rather than guessed.
     """
-    if reads_process_substitution(owner.get("Cmd", owner), data):
+    inputs = [redirect for redirect in owner.get("Redirs", []) if redirect_operator(redirect, data) in {"<", "<<<"}]
+    if reads_process_substitution(owner.get("Cmd", owner), data) or len(inputs) > 1:
         raise computed_input()
     if script := heredoc_script(owner) + here_string_script(owner, data) + file_script(owner, data):
         return script

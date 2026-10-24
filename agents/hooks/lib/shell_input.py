@@ -1,7 +1,9 @@
-"""Find the script a shell reads from its standard input: a pipe, a heredoc, a here-string, or a file."""
+"""Find the scripts a shell reads from its standard input: a pipe, a heredoc, a here-string, or a file."""
 
+from dataclasses import dataclass
 from pathlib import Path
 import re
+from typing import Self
 
 from shell_words import UnsupportedSyntax, literal_word, nodes, source_text
 
@@ -12,13 +14,53 @@ ECHO_OPTIONS = re.compile(r"-[neE]+")
 INPUT_REDIRECTION = re.compile(r"(\d*)(<<<|<<|<&|<>|<(?!\())")
 
 
-def pipe_feeds(records: tuple[dict, ...], data: bytes) -> dict[int, dict]:
-    """Map each statement on the reading side of a pipe to the statement whose output it reads.
+@dataclass(frozen=True, slots=True)
+class InputSources:
+    """Where each statement of one parsed source reads its standard input from.
 
-    Records list an outer pipeline before the pipelines inside it, so the nearest pipe wins.
+    `feeds` maps a statement on the reading side of a pipe to the statement writing into it, and
+    `enclosing` maps a statement inside a compound command, such as `( ... )` or `{ ...; }`, to the
+    compound statement whose input redirection it inherits. Records list an outer node before the
+    nodes inside it, so the nearest source wins.
     """
-    pipes = (node for node in records if node.get("Type") == "BinaryCmd" and is_pipe(node, data))
-    return {id(statement): pipe["X"] for pipe in pipes for statement in nodes(pipe["Y"]) if "Cmd" in statement}
+
+    data: bytes
+    feeds: dict[int, dict]
+    enclosing: dict[int, dict]
+
+    @classmethod
+    def of(cls, records: tuple[dict, ...], data: bytes) -> Self:
+        pipes = (node for node in records if node.get("Type") == "BinaryCmd" and is_pipe(node, data))
+        feeds = {id(statement): pipe["X"] for pipe in pipes for statement in nodes(pipe["Y"]) if "Cmd" in statement}
+        compounds = (
+            node
+            for node in records
+            if "Cmd" in node and node["Cmd"].get("Type") != "CallExpr" and redirected_inputs(node, data)
+        )
+        enclosing = {
+            id(statement): compound
+            for compound in compounds
+            for statement in nodes(compound["Cmd"])
+            if "Cmd" in statement
+        }
+        return cls(data, feeds, enclosing)
+
+    def scripts(self, owner: dict, directories: tuple[Path | None, ...]) -> list[str]:
+        """Return each script a shell statement may read from its standard input, to be judged one by one.
+
+        A `<(...)` argument, or both a pipe and an inherited redirection whose order the hook does
+        not track, leave the script to run time, so they are refused rather than guessed.
+        """
+        if reads_process_substitution(owner.get("Cmd", owner), self.data):
+            raise computed_input()
+        if redirected_inputs(owner, self.data):
+            return redirected_scripts(owner, self.data, directories)
+        outer, feed = self.enclosing.get(id(owner)), self.feeds.get(id(owner))
+        if outer is not None and feed is not None:
+            raise computed_input()
+        if outer is not None:
+            return redirected_scripts(outer, self.data, directories)
+        return [piped_script(feed, self.data)] if feed is not None else []
 
 
 def is_pipe(node: dict, data: bytes) -> bool:
@@ -27,23 +69,21 @@ def is_pipe(node: dict, data: bytes) -> bool:
     return data[offset : offset + 1] == b"|" and data[offset + 1 : offset + 2] != b"|"
 
 
-def redirected_script(owner: dict, data: bytes, directories: tuple[Path | None, ...]) -> str:
-    """Return the script a redirection of the shell's standard input supplies, or "" without one.
+def redirected_inputs(statement: dict, data: bytes) -> list[tuple[dict, str]]:
+    operators = ((redirect, stdin_operator(redirect, data)) for redirect in statement.get("Redirs", []))
+    return [(redirect, operator) for redirect, operator in operators if operator]
 
-    A `<(...)` argument, a duplicated descriptor, or several redirections of standard input leave
-    the script to run time, so they are refused rather than guessed.
-    """
-    operators = [(redirect, stdin_operator(redirect, data)) for redirect in owner.get("Redirs", [])]
-    inputs = [(redirect, operator) for redirect, operator in operators if operator]
-    if reads_process_substitution(owner.get("Cmd", owner), data) or len(inputs) > 1:
+
+def redirected_scripts(statement: dict, data: bytes, directories: tuple[Path | None, ...]) -> list[str]:
+    """Return the scripts a redirection of standard input supplies; a duplicated or repeated one is refused."""
+    inputs = redirected_inputs(statement, data)
+    if len(inputs) > 1:
         raise computed_input()
-    if not inputs:
-        return ""
     redirect, operator = inputs[0]
     if operator == "<<":
-        return heredoc_text(redirect)
+        return [heredoc_text(redirect)]
     if operator == "<<<":
-        return static_script(redirect["Word"], data) + "\n"
+        return [static_script(redirect["Word"], data) + "\n"]
     if operator != "<":
         raise computed_input()
     return file_scripts(Path(static_script(redirect["Word"], data)), directories)
@@ -55,7 +95,7 @@ def stdin_operator(redirect: dict, data: bytes) -> str:
 
 
 def reads_process_substitution(node: dict, data: bytes) -> bool:
-    parts = (part for word in node["Args"] for part in word.get("Parts", []))
+    parts = (part for word in node.get("Args", []) for part in word.get("Parts", []))
     return any(part.get("Type") == "ProcSubst" and source_text(part, data).startswith("<(") for part in parts)
 
 
@@ -67,7 +107,7 @@ def heredoc_text(redirect: dict) -> str:
     return "".join(part.get("Value", "") for part in parts)
 
 
-def file_scripts(path: Path, directories: tuple[Path | None, ...]) -> str:
+def file_scripts(path: Path, directories: tuple[Path | None, ...]) -> list[str]:
     """Read a script file now, in every directory the shell may run in; refuse one that cannot be found.
 
     Only a regular file is read, so a FIFO or device cannot stall the hook.
@@ -84,13 +124,11 @@ def file_scripts(path: Path, directories: tuple[Path | None, ...]) -> str:
         raise computed_input() from error
     if not scripts:
         raise computed_input()
-    return "".join(scripts)
+    return scripts
 
 
-def piped_script(statement: dict | None, data: bytes) -> str:
+def piped_script(statement: dict, data: bytes) -> str:
     """Return the text a literal echo or plain printf writes into the pipe, refusing any other source."""
-    if statement is None:
-        return ""
     command = statement.get("Cmd") or {}
     if command.get("Type") != "CallExpr" or not command.get("Args"):
         raise computed_input()

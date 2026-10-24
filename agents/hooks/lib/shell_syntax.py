@@ -166,7 +166,7 @@ def parse(source: str, depth: int = 0, directories: tuple[Path | None, ...] = ()
     if any(node.get("Type") not in ALLOWED_NODES for node in records):
         raise UnsupportedSyntax("dynamic or unsupported shell syntax requires explicit review", "expansion")
     data = source.encode()
-    feeds = shell_input.pipe_feeds(records, data)
+    sources = shell_input.InputSources.of(records, data)
     commands: list[Command] = []
     for node in records:
         if node.get("Type") != "CallExpr" or not node.get("Args"):
@@ -179,12 +179,14 @@ def parse(source: str, depth: int = 0, directories: tuple[Path | None, ...] = ()
             directories = reached_directories(directories, layer)
         innermost = layers[-1]
         if script := shell_script(innermost):
-            commands.extend(parse(script, innermost.wrapper_depth + 1, directories))
+            scripts = [script]
         elif Path(innermost.arguments[0]).name in SHELLS:
-            stdin = shell_input.redirected_script(owner, data, directories) or shell_input.piped_script(
-                feeds.get(id(owner)), data
-            )
-            commands.extend(parse(stdin, innermost.wrapper_depth + 1, directories))
+            scripts = sources.scripts(owner, directories)
+        else:
+            scripts = []
+        commands += [
+            nested for script in scripts for nested in parse(script, innermost.wrapper_depth + 1, directories)
+        ]
     return tuple(commands)
 
 

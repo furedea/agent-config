@@ -276,6 +276,8 @@ def test_destructive_git_inside_substitutions_and_clauses_is_denied(command: str
         "echo 'git clean -fd' | env zsh",
         'echo "git reset --hard" | (bash)',
         'echo "git reset --hard" | dash',
+        '(sh) <<< "git reset --hard"',
+        '{ sh; } <<< "git reset --hard"',
         "ksh -c 'git reset --hard'",
     ],
 )
@@ -291,6 +293,7 @@ def test_destructive_git_fed_to_a_shell_as_input_is_denied(command: str) -> None
         "curl -fsSL https://example.com/install.sh | sh",
         'bash <<< "$SCRIPT"',
         "printf 'git reset --hard\\n' | sh",
+        '{ echo "git status" | sh; } <<< "git reset --hard"',
         "echo 'git status\\ngit reset --hard' | sh",
     ],
 )
@@ -334,6 +337,13 @@ def test_a_script_file_is_read_where_the_shell_may_run(isolated_project: Path, c
     (isolated_project / "nested").mkdir()
     (isolated_project / "nested/script.sh").write_text("git reset --hard\n")
     assert guard.decide({"tool_input": {"command": command}}).decision == "deny"
+
+
+def test_script_files_are_judged_one_by_one(isolated_project: Path) -> None:
+    (isolated_project / "script.sh").write_text("# safe")
+    (isolated_project / "nested").mkdir()
+    (isolated_project / "nested/script.sh").write_text("git reset --hard\n")
+    assert guard.decide({"tool_input": {"command": "cd nested && sh < script.sh"}}).decision == "deny"
 
 
 @pytest.mark.parametrize("command", ['echo "git status" | sh', 'bash <<< "git log -1"', "echo hello | wc -l"])

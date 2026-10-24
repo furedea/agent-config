@@ -89,9 +89,11 @@ def policies(kind: str, directory: Path) -> Policy:
         ]
     if project := command_policy.project_file(name):
         try:
-            rules += command_policy.load_rules(project)
+            additions = command_policy.load_rules(project)
         except ValueError as error:
             raise ValueError(f"invalid project {kind} command rules: {project}") from error
+        if kind == "forbidden":
+            rules += additions  # A project may deny more, but must not widen what is allowed.
     return Policy(prefixes, rules)
 
 

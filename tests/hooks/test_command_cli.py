@@ -13,13 +13,6 @@ from tests.runtime import CliRunner
     "kind,pattern,command,status,reason",
     [
         (
-            "allowed",
-            r"^uv run --frozen --env-file \.env python src/main\.py organize-guidelines( .*)?$",
-            "uv run --frozen --env-file .env python src/main.py organize-guidelines run",
-            0,
-            "Project workflow",
-        ),
-        (
             "forbidden",
             "^git status --porcelain$",
             "git status --porcelain",
@@ -28,7 +21,7 @@ from tests.runtime import CliRunner
         ),
     ],
 )
-def test_project_policy_is_combined_with_global_policy(
+def test_project_policy_adds_to_forbidden_commands(
     *, run_cli: CliRunner, git_project: Path, kind: str, pattern: str, command: str, status: int, reason: str
 ) -> None:
     policy = git_project / f".agents/hooks/rules/{kind}_commands.json"
@@ -138,3 +131,14 @@ def test_implicit_push_uses_the_real_repository_branch(
     assert result.returncode == status
     if status:
         assert "main" in result.stderr
+
+
+def test_project_rules_cannot_widen_the_allowed_commands(run_cli: CliRunner, git_project: Path) -> None:
+    command = "gh api repos/o/r/issues/1 --method DELETE"
+    policy = git_project / ".agents/hooks/rules/allowed_commands.json"
+    policy.parent.mkdir(parents=True)
+    policy.write_text(
+        json.dumps({"version": 1, "rules": [{"patterns": [f"^{command}$"], "justification": "Project cleanup"}]})
+    )
+    result = run_cli("agents/hooks/guard_command.py", "allowed", payload={"tool_input": {"command": command}})
+    assert "not in allowlist" in result.stdout

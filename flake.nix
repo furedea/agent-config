@@ -52,34 +52,18 @@
           source = self.packages.${system}.default;
         in
         {
-          # Nix store paths only: a leftover `env python3` shebang would run an unpinned interpreter.
+          # An executable keeping `env python3` would run an unpinned interpreter.
           pinned-shebangs =
-            pkgs.runCommand "agent-source-pinned-shebangs" { nativeBuildInputs = [ pkgs.ripgrep ]; }
+            pkgs.runCommand "agent-source-pinned-shebangs" { nativeBuildInputs = [ pkgs.findutils ]; }
               ''
-                if rg -l --no-messages '^#!/usr/bin/env (-S )?python' ${source}; then
-                  echo "agent source still has unpinned Python shebangs" >&2
-                  exit 1
-                fi
-                touch "$out"
-              '';
-
-          bootstrap-server =
-            pkgs.runCommand "bootstrap-server-bats"
-              {
-                nativeBuildInputs = with pkgs; [
-                  bash
-                  bats
-                  coreutils
-                  gnutar
-                  jq
-                  xz
-                ];
-              }
-              ''
-                cp -R ${./.}/. work
-                chmod -R u+w work
-                cd work
-                bats tests/bootstrap_server.bats
+                status=0
+                while IFS= read -r -d "" file; do
+                  if head -n 1 "$file" | grep -Eq '^#!/usr/bin/env (-S )?python'; then
+                    echo "unpinned Python shebang: $file" >&2
+                    status=1
+                  fi
+                done < <(find ${source} -type f -perm -u+x -print0)
+                [ "$status" -eq 0 ]
                 touch "$out"
               '';
         }

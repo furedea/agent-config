@@ -1,5 +1,51 @@
 {
   "nodes": {
+    "agent-harness": {
+      "inputs": {
+        "home-manager": "home-manager",
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "nixpkgs-unstable": [
+          "nixpkgs-unstable"
+        ]
+      },
+      "locked": {
+        "lastModified": 1792689304,
+        "narHash": "sha256-u1O7QjhgutReH1msiQ/XtX5pgjzLmacgPsF8+32R5mg=",
+        "owner": "furedea",
+        "repo": "agent-harness",
+        "rev": "c3103784ef35faeeea4d44d6fa3aafb27b6c490a",
+        "type": "github"
+      },
+      "original": {
+        "owner": "furedea",
+        "repo": "agent-harness",
+        "type": "github"
+      }
+    },
+    "home-manager": {
+      "inputs": {
+        "nixpkgs": [
+          "agent-harness",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1792274446,
+        "narHash": "sha256-AM1HmBeDnB2B3dSiXuCYeu7Me+lHNpz/P39lVxGJBuQ=",
+        "owner": "nix-community",
+        "repo": "home-manager",
+        "rev": "ab3823b4b24c0c3ca984c1f3ee577fd6d667424c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "ref": "release-26.05",
+        "repo": "home-manager",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1792285535,
@@ -34,6 +80,7 @@
     },
     "root": {
       "inputs": {
+        "agent-harness": "agent-harness",
         "nixpkgs": "nixpkgs",
         "nixpkgs-unstable": "nixpkgs-unstable"
       }

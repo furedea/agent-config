@@ -306,6 +306,7 @@ def test_globs_expand_in_the_payload_directory_not_the_hook_process_directory(
     project.mkdir()
     elsewhere.mkdir()
     (project / ".env").write_text("fixture\n")
+    monkeypatch.setenv("AGENT_SECRET_PATH_POLICY", str(REPO_ROOT / "agents/hooks/rules/secret_path_policy.json"))
     monkeypatch.chdir(elsewhere)
     payload = {"cwd": str(project), "tool_input": {"command": "cat .en*"}}
     with pytest.raises(ValueError, match=r"\.env"):

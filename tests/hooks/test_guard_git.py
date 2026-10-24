@@ -317,6 +317,8 @@ def test_a_shell_reading_a_process_substitution_is_left_to_the_user(command: str
         ("git status\n", 'sh < "$SCRIPT"', "ask"),
         ("git status\n", "sh <<< '\"' <<< 'git reset --hard #\"'", "ask"),
         ("git status\n", "sh <<< 'git status' < script.sh", "ask"),
+        ("git status\n", "echo 'git reset --hard' | sh 3<<< 'git status'", "deny"),
+        ("git status\n", "sh 0<&3", "ask"),
     ],
 )
 def test_a_shell_reading_a_script_file_from_its_input_is_judged_by_its_content(
@@ -324,6 +326,14 @@ def test_a_shell_reading_a_script_file_from_its_input_is_judged_by_its_content(
 ) -> None:
     (isolated_project / "script.sh").write_text(script)
     assert guard.decide({"tool_input": {"command": command}}).decision == decision
+
+
+@pytest.mark.parametrize("command", ["cd nested && sh < script.sh", "(cd nested; sh < script.sh)"])
+def test_a_script_file_is_read_where_the_shell_may_run(isolated_project: Path, command: str) -> None:
+    (isolated_project / "script.sh").write_text("git status\n")
+    (isolated_project / "nested").mkdir()
+    (isolated_project / "nested/script.sh").write_text("git reset --hard\n")
+    assert guard.decide({"tool_input": {"command": command}}).decision == "deny"
 
 
 @pytest.mark.parametrize("command", ['echo "git status" | sh', 'bash <<< "git log -1"', "echo hello | wc -l"])

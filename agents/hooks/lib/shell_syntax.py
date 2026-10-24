@@ -1,14 +1,14 @@
 """Inspect a conservative shell subset using shfmt's parser, never by executing input."""
 
 from dataclasses import dataclass, replace
-from collections.abc import Iterator
 import json
 from pathlib import Path
 import re
 import subprocess
 from typing import Self
 
-from shell_words import UnsupportedSyntax, literal_word, source_text, spreads
+import shell_input
+from shell_words import UnsupportedSyntax, literal_word, nodes, source_text, spreads
 
 
 COMMAND_PREVIEW_LIMIT = 200
@@ -29,8 +29,6 @@ ALLOWED_NODES = frozenset(
 DIRECTORY_CHANGES = frozenset({"cd", "pushd", "popd"})
 SHELLS = frozenset({"bash", "dash", "ksh", "sh", "zsh"})
 COMMAND_LOOKUP = frozenset({"-v", "-V"})
-# Options of echo, which writes its remaining arguments; the backslash escapes they toggle are refused.
-ECHO_OPTIONS = re.compile(r"-[neE]+")
 ASSIGNMENT = re.compile(r"[A-Za-z_][A-Za-z0-9_]*=")
 # Process wrappers run their trailing arguments as a command. Each entry lists the flags without an
 # operand and the options whose operand is the next token; unknown options are refused, not skipped.
@@ -152,8 +150,13 @@ def command_preview(source: str) -> str:
     return preview
 
 
-def parse(source: str, depth: int = 0) -> tuple[Command, ...]:
-    """Parse literal commands, including static shell and process wrappers, and reject unknown syntax."""
+def parse(source: str, depth: int = 0, directories: tuple[Path | None, ...] = ()) -> tuple[Command, ...]:
+    """Parse literal commands, including static shell and process wrappers, and reject unknown syntax.
+
+    `directories` are where the source may start running, the working directory by default; a
+    script file a shell reads is looked up in each directory the source may have reached.
+    """
+    directories = directories or (Path.cwd(),)
     if not source.strip():
         return ()
     if depth > 8:
@@ -163,22 +166,25 @@ def parse(source: str, depth: int = 0) -> tuple[Command, ...]:
     if any(node.get("Type") not in ALLOWED_NODES for node in records):
         raise UnsupportedSyntax("dynamic or unsupported shell syntax requires explicit review", "expansion")
     data = source.encode()
-    feeds = pipe_feeds(records, data)
+    feeds = shell_input.pipe_feeds(records, data)
     commands: list[Command] = []
     for node in records:
         if node.get("Type") != "CallExpr" or not node.get("Args"):
             continue
         owner = owners.get(id(node), node)
         command = replace(literal_command(node, owner, data), wrapper_depth=depth)
-        commands.append(command)
-        commands.extend(unwrapped(command))
-        innermost = commands[-1]
+        layers = [command, *unwrapped(command)]
+        commands += layers
+        for layer in layers:
+            directories = reached_directories(directories, layer)
+        innermost = layers[-1]
         if script := shell_script(innermost):
-            commands.extend(parse(script, innermost.wrapper_depth + 1))
-        elif Path(innermost.arguments[0]).name in SHELLS and (
-            stdin := input_script(owner, feeds.get(id(owner)), data)
-        ):
-            commands.extend(parse(stdin, innermost.wrapper_depth + 1))
+            commands.extend(parse(script, innermost.wrapper_depth + 1, directories))
+        elif Path(innermost.arguments[0]).name in SHELLS:
+            stdin = shell_input.redirected_script(owner, data, directories) or shell_input.piped_script(
+                feeds.get(id(owner)), data
+            )
+            commands.extend(parse(stdin, innermost.wrapper_depth + 1, directories))
     return tuple(commands)
 
 
@@ -249,114 +255,6 @@ def is_one_simple_command(source: str) -> bool:
     )
 
 
-def pipe_feeds(records: tuple[dict, ...], data: bytes) -> dict[int, dict]:
-    """Map each statement on the reading side of a pipe to the statement whose output it reads.
-
-    Records list an outer pipeline before the pipelines inside it, so the nearest pipe wins.
-    """
-    pipes = (node for node in records if node.get("Type") == "BinaryCmd" and is_pipe(node, data))
-    return {id(statement): pipe["X"] for pipe in pipes for statement in nodes(pipe["Y"]) if "Cmd" in statement}
-
-
-def is_pipe(node: dict, data: bytes) -> bool:
-    """Whether a binary command is a pipe (| or |&), judged by its operator text, not by parser codes."""
-    offset = node["OpPos"]["Offset"]
-    return data[offset : offset + 1] == b"|" and data[offset + 1 : offset + 2] != b"|"
-
-
-def input_script(owner: dict, feed: dict | None, data: bytes) -> str:
-    """Return the static script a shell reads from its input; a redirection replaces a pipe.
-
-    A `<(...)` argument hands the shell a script known only at run time, and of several input
-    redirections only one reaches the shell, so both are refused rather than guessed.
-    """
-    inputs = [redirect for redirect in owner.get("Redirs", []) if redirect_operator(redirect, data) in {"<", "<<<"}]
-    if reads_process_substitution(owner.get("Cmd", owner), data) or len(inputs) > 1:
-        raise computed_input()
-    if script := heredoc_script(owner) + here_string_script(owner, data) + file_script(owner, data):
-        return script
-    return piped_script(feed, data) if feed else ""
-
-
-def reads_process_substitution(node: dict, data: bytes) -> bool:
-    parts = (part for word in node["Args"] for part in word.get("Parts", []))
-    return any(part.get("Type") == "ProcSubst" and source_text(part, data).startswith("<(") for part in parts)
-
-
-def here_string_script(owner: dict, data: bytes) -> str:
-    words = [
-        redirect["Word"]
-        for redirect in owner.get("Redirs", [])
-        if redirect.get("Word") and redirect_operator(redirect, data) == "<<<"
-    ]
-    return "".join(static_script(word, data) + "\n" for word in words)
-
-
-def file_script(owner: dict, data: bytes) -> str:
-    """Return the scripts a shell reads from redirected files, read now; refuse any that is not a readable file.
-
-    Only a regular file is read, so a FIFO or device cannot stall the hook.
-    """
-    words = [
-        redirect["Word"]
-        for redirect in owner.get("Redirs", [])
-        if redirect.get("Word") and not redirect.get("Hdoc") and redirect_operator(redirect, data) == "<"
-    ]
-    return "".join(read_script(Path(static_script(word, data))) for word in words)
-
-
-def read_script(path: Path) -> str:
-    try:
-        if not path.is_file():
-            raise computed_input()
-        return path.read_text()
-    except (OSError, UnicodeDecodeError) as error:
-        raise computed_input() from error
-
-
-def piped_script(statement: dict, data: bytes) -> str:
-    """Return the text a literal echo or plain printf writes into the pipe, refusing any other source."""
-    command = statement.get("Cmd") or {}
-    if command.get("Type") != "CallExpr" or not command.get("Args"):
-        raise computed_input()
-    program, *arguments = (static_script(word, data) for word in command["Args"])
-    name = Path(program).name
-    if name == "echo":
-        while arguments and ECHO_OPTIONS.fullmatch(arguments[0]):
-            arguments.pop(0)
-        text = " ".join(arguments)
-    elif name == "printf" and len(arguments) == 1 and "%" not in arguments[0]:
-        text = arguments[0]
-    else:
-        raise computed_input()
-    # echo and printf may turn a backslash escape into a line break, which separates commands.
-    if "\\" in text:
-        raise computed_input()
-    return text
-
-
-def static_script(word: dict, data: bytes) -> str:
-    value, dynamic = literal_word(word, data)
-    if dynamic:
-        raise computed_input()
-    return value
-
-
-def computed_input() -> UnsupportedSyntax:
-    return UnsupportedSyntax("a shell reading a computed script from its input requires explicit review", "wrapper")
-
-
-def heredoc_script(owner: dict) -> str:
-    """Return the static script a shell reads from a heredoc, refusing one the shell computes."""
-    bodies = [redirect["Hdoc"] for redirect in owner.get("Redirs", []) if redirect.get("Hdoc")]
-    if not bodies:
-        return ""
-    parts = [part for body in bodies for part in body.get("Parts", [])]
-    if any(part.get("Type") != "Lit" for part in parts):
-        raise UnsupportedSyntax("a shell heredoc whose text is computed requires explicit review", "heredoc")
-    return "".join(part.get("Value", "") for part in parts)
-
-
 def syntax_tree(source: str) -> dict:
     """Obtain shfmt's syntax tree, refusing to guess about input it cannot parse."""
     try:
@@ -368,17 +266,6 @@ def syntax_tree(source: str) -> dict:
         return json.loads(result.stdout)
     except (OSError, subprocess.TimeoutExpired, json.JSONDecodeError) as error:
         raise UnsupportedSyntax("shell parser unavailable; command cannot be validated", "parse-failure") from error
-
-
-def nodes(value: object) -> Iterator[dict]:
-    """Walk parser records without interpreting position metadata as executable code."""
-    if isinstance(value, dict):
-        yield value
-        for child in value.values():
-            yield from nodes(child)
-    elif isinstance(value, list):
-        for child in value:
-            yield from nodes(child)
 
 
 def literal_command(node: dict, owner: dict, data: bytes) -> Command:

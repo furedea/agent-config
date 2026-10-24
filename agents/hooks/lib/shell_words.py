@@ -157,3 +157,14 @@ def home_directory() -> str:
             "the home directory is unknown, so its expansion requires explicit review", "expansion"
         )
     return home
+
+
+def nodes(value: object) -> Iterator[dict]:
+    """Walk parser records without interpreting position metadata as executable code."""
+    if isinstance(value, dict):
+        yield value
+        for child in value.values():
+            yield from nodes(child)
+    elif isinstance(value, list):
+        for child in value:
+            yield from nodes(child)

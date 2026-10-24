@@ -155,13 +155,62 @@ def test_commit_reports_all_sensitive_files(run_cli: CliRunner, git_project: Pat
     assert ".env" in result.stderr and "secrets" in result.stderr
 
 
-@pytest.mark.parametrize("command", ["git status", "echo hello", "git commit"])
+@pytest.mark.parametrize("command", ["git status", "echo hello", "echo commit", "git commit"])
 def test_no_relevant_staged_commit(run_cli: CliRunner, git_project: Path, command: str) -> None:
     if command != "git commit":
         stage(git_project, ".env")
     result = run_cli(SCRIPT, "commit", payload={"tool_input": {"command": command}})
     assert result.returncode == 0
     assert result.stdout == result.stderr == ""
+
+
+@pytest.fixture
+def nested_project(git_project: Path) -> Path:
+    """A second repository inside the working directory, reached only through cd or git -C."""
+    nested = git_project / "nested"
+    nested.mkdir()
+    subprocess.run(["git", "init", "--quiet", str(nested)], check=True, capture_output=True)
+    return nested
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        'cd nested && git commit -m "fixture"',
+        'git -C nested commit -m "fixture"',
+        "cd nested; git status; git commit",
+        'git --git-dir=nested/.git --work-tree=nested commit -m "fixture"',
+        'bash -c "cd nested && git commit"',
+    ],
+)
+def test_commits_in_another_repository_check_its_staged_files(
+    run_cli: CliRunner, nested_project: Path, command: str
+) -> None:
+    stage(nested_project, ".env")
+    result = run_cli(SCRIPT, "commit", payload={"tool_input": {"command": command}})
+    assert result.returncode == 2
+    assert ".env" in result.stderr
+
+
+@pytest.mark.parametrize("command", ["cd nested && git commit", "git -C nested commit"])
+def test_commits_in_another_repository_ignore_the_starting_repository(
+    run_cli: CliRunner, git_project: Path, nested_project: Path, command: str
+) -> None:
+    stage(git_project, ".env")
+    result = run_cli(SCRIPT, "commit", payload={"tool_input": {"command": command}})
+    assert result.returncode == 0
+    assert result.stdout == result.stderr == ""
+
+
+@pytest.mark.parametrize(
+    "command", ['cd "$REPOSITORY" && git commit', 'git -C "$REPOSITORY" commit', "cd - && git commit"]
+)
+def test_commits_in_a_repository_known_only_at_run_time_are_blocked(
+    run_cli: CliRunner, git_project: Path, command: str
+) -> None:
+    result = run_cli(SCRIPT, "commit", payload={"tool_input": {"command": command}})
+    assert result.returncode == 2
+    assert "repository" in result.stderr
 
 
 @pytest.mark.parametrize("valid", [True, False])

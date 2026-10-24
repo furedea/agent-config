@@ -14,7 +14,15 @@ sys.path.insert(0, str(ROOT / "lib"))
 
 import audit_log
 from command_policy import regex_matches
+import git_safety
 import hook_input
+import shell_syntax
+
+
+UNKNOWN_REPOSITORY = (
+    "cannot tell which repository this commit uses, because a shell expansion or a directory stack picks it.\n\n"
+    "Run git commit from the repository, or name it with a literal cd or git -C path."
+)
 
 
 def policy_path(environment: str, name: str, directory: Path) -> Path:
@@ -68,9 +76,13 @@ def validate_filename_rule(rule: object) -> None:
     regex_matches(rule["pattern"], "")
 
 
-def staged_filename_matches(rules: list[dict]) -> list[tuple[str, str]]:
+def staged_filename_matches(rules: list[dict], location: tuple[str, ...]) -> list[tuple[str, str]]:
     """Return rejected filenames and policy reasons, never staged file contents."""
-    result = subprocess.run(["git", "diff", "--cached", "--name-only", "-z"], capture_output=True, check=True)
+    result = subprocess.run(
+        ["git", "-c", "core.fsmonitor=false", *location, "diff", "--cached", "--name-only", "-z"],
+        capture_output=True,
+        check=True,
+    )
     matches = []
     for raw in result.stdout.split(b"\0"):
         if not raw:
@@ -83,10 +95,12 @@ def staged_filename_matches(rules: list[dict]) -> list[tuple[str, str]]:
 
 
 def commit_reason(command: str, directory: Path) -> str:
-    if not re.match(r"^\s*git\s+commit", command):
+    locations = commit_locations(command)
+    if not locations:
         return ""
     path = policy_path("AGENT_SECRET_COMMIT_POLICY", "secret_commit_policy.json", directory)
-    matches = staged_filename_matches(commit_filename_rules(path))
+    rules = commit_filename_rules(path)
+    matches = [match for location in locations for match in staged_filename_matches(rules, location)]
     if not matches:
         return ""
     files = "\n".join(f"  - {name} ({reason})" for name, reason in matches)
@@ -95,6 +109,65 @@ def commit_reason(command: str, directory: Path) -> str:
         f"The following files match sensitive filename patterns and must not be committed:\n{files}\n\n"
         "Unstage these files and exclude secrets from version control. Ask the user if unsure."
     )
+
+
+def commit_locations(command: str) -> list[tuple[str, ...]]:
+    """The Git options that select the repository of each commit, following any cd before it.
+
+    Only path options are kept: a -c from the command would let it run configured programs here.
+    """
+    directory: Path | None = Path.cwd()
+    try:
+        commands = shell_syntax.parse(command)
+    except shell_syntax.UnsupportedSyntax:
+        return [("-C", str(directory))] if re.match(r"^\s*git\s+commit", command) else []
+    locations = []
+    for item in commands:
+        if Path(item.arguments[0]).name in {"cd", "pushd", "popd"}:
+            directory = changed_directory(directory, item)
+        elif (options := commit_path_options(item)) is None:
+            continue
+        elif directory is None:
+            raise ValueError(UNKNOWN_REPOSITORY)
+        else:
+            locations.append(("-C", str(directory), *options))
+    return list(dict.fromkeys(locations))
+
+
+def changed_directory(directory: Path | None, item: shell_syntax.Command) -> Path | None:
+    """Follow a cd or pushd to a literal directory; any other change leaves the directory unknown."""
+    name, arguments = Path(item.arguments[0]).name, item.arguments
+    operands = [index for index, argument in enumerate(arguments[1:], 1) if not argument.startswith("-")]
+    if directory is None or name == "popd" or "-" in arguments or (name == "pushd" and not operands):
+        return None
+    if not operands:
+        return Path.home()
+    index = operands[0]
+    return None if item.dynamic[index] else directory / arguments[index]
+
+
+def commit_path_options(item: shell_syntax.Command) -> tuple[str, ...] | None:
+    """The global path options of a git commit, or None for any other command."""
+    if Path(item.arguments[0]).name != "git":
+        return None
+    try:
+        globals_, command = git_safety.git_arguments(item.arguments)
+    except ValueError:
+        return None
+    if command[:1] != ("commit",):
+        return None
+    if any(item.dynamic[1 : 1 + len(globals_)]):
+        raise ValueError(UNKNOWN_REPOSITORY)
+    options: list[str] = []
+    index = 0
+    while index < len(globals_):
+        option = globals_[index]
+        if option in {"-C", "--git-dir", "--work-tree"}:
+            options += globals_[index : index + 2]
+        elif option.startswith(("--git-dir=", "--work-tree=")):
+            options.append(option)
+        index += 2 if option in {"-C", "-c", "--git-dir", "--work-tree"} else 1
+    return tuple(options)
 
 
 def content_text(mode: str, payload: dict) -> str:

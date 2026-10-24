@@ -114,7 +114,7 @@ def test_staged_filename_policy_does_not_guess_from_generic_secret_words(tmp_pat
 def test_failed_staged_file_enumeration_is_not_an_empty_success(mocker: MockerFixture) -> None:
     mocker.patch.object(files.subprocess, "run", side_effect=files.subprocess.CalledProcessError(128, "git"))
     with pytest.raises(files.subprocess.CalledProcessError):
-        files.staged_filename_matches([])
+        files.staged_filename_matches([], ())
 
 
 def test_content_source_keeps_both_write_fields() -> None:

@@ -170,6 +170,8 @@ def test_secret_paths(run_cli: CliRunner, harness: Path, mode: str, payload: dic
         ("cat {README,api_key}.*", "api_key.json", "api_key.json"),
         ("rg -g '*.json' token", "api_key.json", ""),
         ("cat **/*.json", "nested/deeper/api_key.json", "nested/deeper/api_key.json"),
+        ("cat nested/**", "nested/deeper/api_key.json", "nested/deeper/api_key.json"),
+        ("cat nested/**", "", ""),
         ("cat < .en*", ".env", ".env"),
     ],
 )

@@ -96,6 +96,8 @@ class GlobWalk:
         if not segments:
             return [directory]
         head, rest = segments[0], segments[1:]
+        if head == "**" and not rest:
+            return self._descendants(directory)
         if head == "**":
             deeper = (path for child in self._descendable(directory) for path in self._match(child, segments))
             return [*self._match(directory, rest), *deeper]
@@ -109,6 +111,17 @@ class GlobWalk:
         ]
         children = (directory / name for name in names)
         return [path for child in children if not rest or child.is_dir() for path in self._match(child, rest)]
+
+    def _descendants(self, directory: Path) -> list[Path]:
+        """Every non-hidden file and directory below, as a trailing `**` matches them."""
+        visible = [entry for entry in self._entries(directory) if not entry.name.startswith(".")]
+        deeper = (
+            path
+            for entry in visible
+            if entry.is_dir(follow_symlinks=False)
+            for path in self._descendants(Path(entry.path))
+        )
+        return [*(Path(entry.path) for entry in visible), *deeper]
 
     def _descendable(self, directory: Path) -> list[Path]:
         return [

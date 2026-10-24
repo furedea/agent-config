@@ -101,6 +101,5 @@
   },
   "effortLevel": "medium",
   "autoMemoryEnabled": false,
-  "skipAutoPermissionPrompt": true,
-  "editorMode": "vim"
+  "skipAutoPermissionPrompt": true
 }

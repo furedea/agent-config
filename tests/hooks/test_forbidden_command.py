@@ -289,6 +289,7 @@ def test_global_prefix_rejects_home_manager_activation(capsys: pytest.CaptureFix
         "function f { bash -c 'echo hi'; }",
         "cat script.sh | sh",
         'sh <<< "$SCRIPT"',
+        'sh <(echo "rm -rf build")',
     ],
 )
 def test_uninspectable_commands_are_left_to_the_user(kind: str, command: str) -> None:

@@ -221,10 +221,20 @@ def is_pipe(node: dict, data: bytes) -> bool:
 
 
 def input_script(owner: dict, feed: dict | None, data: bytes) -> str:
-    """Return the static script a shell reads from its input; a heredoc or here-string replaces a pipe."""
-    if script := heredoc_script(owner) + here_string_script(owner, data):
+    """Return the static script a shell reads from its input; a redirection replaces a pipe.
+
+    A `<(...)` argument hands the shell a script known only at run time, so it is refused.
+    """
+    if reads_process_substitution(owner.get("Cmd", owner), data):
+        raise computed_input()
+    if script := heredoc_script(owner) + here_string_script(owner, data) + file_script(owner, data):
         return script
     return piped_script(feed, data) if feed else ""
+
+
+def reads_process_substitution(node: dict, data: bytes) -> bool:
+    parts = (part for word in node["Args"] for part in word.get("Parts", []))
+    return any(part.get("Type") == "ProcSubst" and source_text(part, data).startswith("<(") for part in parts)
 
 
 def here_string_script(owner: dict, data: bytes) -> str:
@@ -234,6 +244,28 @@ def here_string_script(owner: dict, data: bytes) -> str:
         if redirect.get("Word") and redirect_operator(redirect, data) == "<<<"
     ]
     return "".join(static_script(word, data) + "\n" for word in words)
+
+
+def file_script(owner: dict, data: bytes) -> str:
+    """Return the scripts a shell reads from redirected files, read now; refuse any that is not a readable file.
+
+    Only a regular file is read, so a FIFO or device cannot stall the hook.
+    """
+    words = [
+        redirect["Word"]
+        for redirect in owner.get("Redirs", [])
+        if redirect.get("Word") and not redirect.get("Hdoc") and redirect_operator(redirect, data) == "<"
+    ]
+    return "".join(read_script(Path(static_script(word, data))) for word in words)
+
+
+def read_script(path: Path) -> str:
+    try:
+        if not path.is_file():
+            raise computed_input()
+        return path.read_text()
+    except (OSError, UnicodeDecodeError) as error:
+        raise computed_input() from error
 
 
 def piped_script(statement: dict, data: bytes) -> str:

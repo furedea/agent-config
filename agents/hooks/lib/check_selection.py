@@ -6,8 +6,9 @@ import fnmatch
 import json
 import os
 from pathlib import Path
-import re
 import tomllib
+
+from javascript_runner import javascript_runner, package_manager, runner_arguments
 
 
 LANGUAGES = ("bats", "python", "javascript_typescript", "rust")
@@ -74,18 +75,6 @@ RULE_ARRAYS = {
 }
 PYTEST = ("uv", "run", "--frozen", "pytest", "--no-header", "-q")
 RUST_FULL_SUITE = Invocation("rust", "full suite", ("cargo", "test", "--quiet"))
-RUNNER_PREFIXES = {
-    "pnpm": ("pnpm", "exec"),
-    "npm": ("npm", "exec", "--"),
-    "yarn": ("yarn", "exec"),
-    "bun": ("bun", "x"),
-}
-LOCKFILE_MANAGERS = (
-    ("pnpm-lock.yaml", "pnpm"),
-    ("yarn.lock", "yarn"),
-    ("bun.lock", "bun"),
-    ("bun.lockb", "bun"),
-)
 
 
 def load_defaults(path: Path) -> dict:
@@ -272,6 +261,8 @@ def scope_plan(
         return [], []
     if not triggered and not explicit and delegated(scope, covered):
         return [], []
+    if not explicit and removed(scope):
+        return [], []
     if error := missing_marker(scope, affected=affected):
         return [], [error]
     matched, unresolved = matching_targets(scope)
@@ -309,13 +300,38 @@ def delegated(scope: LanguageScope, covered: dict[str, set[str]]) -> bool:
     return bool(sources) and sources <= others
 
 
+def removed(scope: LanguageScope) -> bool:
+    """Whether the change deletes a language's whole project, leaving no marker, changed file, or source."""
+    if recognizable(scope):
+        return False
+    rule = scope.rule
+    reaching = {path for path in scope.changed if changed_language(rule, (path,)) or suite_triggered(rule, (path,))}
+    if any((scope.root / path).exists() for path in reaching):
+        return False
+    extensions = tuple(rule["source_extensions"])
+    return not any(path.name.endswith(extensions) for path in searched_files(scope.root, {**rule, "test_dirs": ["."]}))
+
+
 def missing_marker(scope: LanguageScope, *, affected: bool) -> str:
     """Explain a missing project marker, or return an empty string when the project is recognizable."""
-    markers = ("package.json",) if scope.language == "javascript_typescript" else scope.rule.get("project_markers", ())
-    if not markers or any((scope.root / name).is_file() for name in markers):
+    if recognizable(scope):
         return ""
+    markers = project_markers(scope)
     subject = f"Changed {scope.language} sources" if affected else f"Configured {scope.language} tests"
     return f"{subject} require a project marker such as {markers[0]}."
+
+
+def recognizable(scope: LanguageScope) -> bool:
+    """Whether the language declares no project marker or one of its markers exists."""
+    markers = project_markers(scope)
+    return not markers or any((scope.root / name).is_file() for name in markers)
+
+
+def project_markers(scope: LanguageScope) -> tuple[str, ...]:
+    """Name the files whose presence identifies a language's project."""
+    if scope.language == "javascript_typescript":
+        return ("package.json",)
+    return tuple(scope.rule.get("project_markers", ()))
 
 
 def matching_targets(scope: LanguageScope) -> tuple[set[str], set[str]]:
@@ -432,7 +448,7 @@ def javascript_plan(selection: Selection) -> list[Invocation]:
     runner = javascript_runner(package, test_script)
     if not runner:
         return script_plan(selection, manager, test_script)
-    arguments = ("node", "--test") if runner == "node" else (*RUNNER_PREFIXES.get(manager, ("false",)), runner)
+    arguments = runner_arguments(manager, runner)
     if runner == "vitest":
         return vitest_plan(selection, arguments)
     if selection.full:
@@ -440,23 +456,6 @@ def javascript_plan(selection: Selection) -> list[Invocation]:
     targets = selection.targets
     scope = f"{len(targets)} related tests" if targets else "full suite"
     return [Invocation(runner, scope, (*arguments, *sorted(targets)))]
-
-
-def package_manager(root: Path, package: dict) -> str:
-    """Prefer the declared package manager, then the lockfile present, then npm."""
-    manager = package.get("packageManager", "").split("@", 1)[0]
-    if manager:
-        return manager
-    return next((name for lock, name in LOCKFILE_MANAGERS if (root / lock).is_file()), "npm")
-
-
-def javascript_runner(package: dict, test_script: str) -> str:
-    """Name the JavaScript test runner the project depends on, or an empty string when none is known."""
-    dependencies = dict(package.get("dependencies") or {}, **(package.get("devDependencies") or {}))
-    runner = next((name for name in ("vitest", "jest") if dependencies.get(name) is not None), "")
-    if not runner and re.search(r"(^|\s)node\s+--test(\s|$)", test_script):
-        return "node"
-    return runner
 
 
 def script_plan(selection: Selection, manager: str, test_script: str) -> list[Invocation]:

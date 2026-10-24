@@ -108,9 +108,49 @@ def test_configuration_changes_do_not_degrade_to_partial_tests(tmp_path: Path) -
 
 def test_deleted_project_marker_is_reported_instead_of_passing(tmp_path: Path) -> None:
     rules = project(tmp_path, {})
+    touch_all(tmp_path, ["tests/test_app.py"])
     commands, errors = selection.language_plan(tmp_path, rules, ("pyproject.toml",))
     assert not commands
     assert errors and "pyproject.toml" in errors[0]
+
+
+@pytest.mark.parametrize(
+    "changed",
+    [
+        ("package.json", "package-lock.json"),
+        ("pyproject.toml", "uv.lock", "app.py"),
+        ("Cargo.toml", "Cargo.lock", "src/main.rs"),
+    ],
+)
+def test_removing_a_whole_language_project_skips_its_verification(tmp_path: Path, changed: tuple[str, ...]) -> None:
+    rules = project(tmp_path, {})
+    commands, errors = selection.language_plan(tmp_path, rules, changed)
+    assert not errors
+    assert commands == []
+
+
+def test_javascript_sources_without_a_project_marker_report_instead_of_passing(tmp_path: Path) -> None:
+    rules = project(tmp_path, {})
+    touch_all(tmp_path, ["src/app.ts"])
+    commands, errors = selection.language_plan(tmp_path, rules, ("package.json", "src/app.ts"))
+    assert not commands
+    assert errors and "package.json" in errors[0]
+
+
+def test_remaining_project_configuration_without_a_marker_is_reported(tmp_path: Path) -> None:
+    rules = project(tmp_path, {})
+    touch_all(tmp_path, ["package-lock.json"])
+    commands, errors = selection.language_plan(tmp_path, rules, ("package.json", "package-lock.json"))
+    assert not commands
+    assert errors and "package.json" in errors[0]
+
+
+def test_deleted_sources_still_run_their_remaining_tests(tmp_path: Path) -> None:
+    rules = project(tmp_path, {})
+    touch_all(tmp_path, ["pyproject.toml", "tests/test_foo.py"])
+    commands, errors = selection.language_plan(tmp_path, rules, ("foo.py",))
+    assert not errors
+    assert [item.arguments for item in commands] == [(*PYTEST, "tests/test_foo.py")]
 
 
 def test_deleted_configuration_still_selects_the_full_suite(tmp_path: Path) -> None:
@@ -140,6 +180,7 @@ def test_mapped_sources_stay_within_their_declared_targets(tmp_path: Path) -> No
 
 def test_sources_without_a_project_marker_report_instead_of_passing(tmp_path: Path) -> None:
     rules = project(tmp_path, {})
+    touch_all(tmp_path, ["script.py"])
     commands, errors = selection.language_plan(tmp_path, rules, ("script.py",))
     assert not commands
     assert errors and "pyproject.toml" in errors[0]

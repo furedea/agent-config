@@ -31,6 +31,7 @@ known_first_party = [
   "hook_decision",
   "hook_dispatch",
   "hook_input",
+  "javascript_runner",
   "lib",
   "lint_format",
   "patch_input",

@@ -275,7 +275,7 @@ setup() {
   [ "$(jq -r '.default_permissions' <<<"$_codex")" = "guarded" ]
   [ "$(jq -r '.permissions.guarded.network.enabled' <<<"$_codex")" = "true" ]
   [ "$(jq -c '.permissions.guarded.filesystem | [.[":root"], .[":tmpdir"], .[":slash_tmp"], .[":workspace_roots"], .["~/.config/gh/hosts.yml"]]' <<<"$_codex")" \
-    = '["read","write","write",{".":"write"},"deny"]' ]
+    = '["read","write","write",{"src":"read",".":"write"},"deny"]' ]
   [ "$(jq -r '.permissions.guarded.filesystem["~/.codex/config.toml"]' <<<"$_codex")" = "read" ]
   [ "$(jq -r '.model' <<<"$_codex")" = "gpt" ]
 }
@@ -307,15 +307,92 @@ setup() {
   [ "$(codex_config_json | jq -r '.shell_environment_policy.set.GH_CONFIG_DIR')" = "$HOME_DIR/.config/agent-harness/gh" ]
 }
 
-@test "keeps non-ASCII text in the Codex config readable" {
+@test "merges the Codex token settings into the generated workspace roots" {
   write_host_env 'AGENT_GITHUB_APP_ID=123' "AGENT_GITHUB_APP_PRIVATE_KEY=$HOME_DIR/app.pem"
-  mkdir -p "$HOME_DIR/.codex"
-  printf '%s\n' 'developer_instructions = "be nice 😀 日本語"' >|"$HOME_DIR/.codex/config.toml"
 
   run bootstrap_server
 
   [ "$status" -eq 0 ]
-  [ "$(codex_config_json | jq -r '.developer_instructions')" = "be nice 😀 日本語" ]
+  [ "$(codex_config_json | jq -c '.permissions.guarded.filesystem[":workspace_roots"]')" = '{"src":"read",".":"write"}' ]
+}
+
+@test "keeps the user's own Codex settings and comments" {
+  write_host_env 'AGENT_GITHUB_APP_ID=123' "AGENT_GITHUB_APP_PRIVATE_KEY=$HOME_DIR/app.pem"
+  mkdir -p "$HOME_DIR/.codex"
+  printf '%s\n' '# user-config' '# my note' '[projects."/srv"]' 'trust = "x" # inline' >|"$HOME_DIR/.codex/config.toml"
+
+  run bootstrap_server
+
+  [ "$status" -eq 0 ]
+  grep -Fxq '# my note' "$HOME_DIR/.codex/config.toml"
+  grep -Fxq 'trust = "x" # inline' "$HOME_DIR/.codex/config.toml"
+  [ "$(codex_config_json | jq -r '.default_permissions')" = "guarded" ]
+}
+
+@test "keeps every generated Codex value across the token merge" {
+  write_host_env 'AGENT_GITHUB_APP_ID=123' "AGENT_GITHUB_APP_PRIVATE_KEY=$HOME_DIR/app.pem"
+
+  run bootstrap_server
+
+  [ "$status" -eq 0 ]
+  local _codex
+  _codex="$(codex_config_json)"
+  [ "$(jq -r '.developer_instructions' <<<"$_codex")" = "be nice 😀 日本語" ]
+  [ "$(jq -r '.created' <<<"$_codex")" = "2026-01-02T03:04:05Z" ]
+  [ "$(jq -r '.plugins["documents@openai"].enabled' <<<"$_codex")" = "true" ]
+  [ "$(jq -r '.hooks[0].name' <<<"$_codex")" = "first" ]
+}
+
+@test "produces the same Codex config on every run" {
+  write_host_env 'AGENT_GITHUB_APP_ID=123' "AGENT_GITHUB_APP_PRIVATE_KEY=$HOME_DIR/app.pem"
+  run bootstrap_server
+  [ "$status" -eq 0 ]
+  cp "$HOME_DIR/.codex/config.toml" "$BATS_TEST_TMPDIR/first.toml"
+
+  run bootstrap_server
+
+  [ "$status" -eq 0 ]
+  cmp "$BATS_TEST_TMPDIR/first.toml" "$HOME_DIR/.codex/config.toml"
+}
+
+@test "removes the Codex token settings once the host no longer names a GitHub App" {
+  write_host_env 'AGENT_GITHUB_APP_ID=123' "AGENT_GITHUB_APP_PRIVATE_KEY=$HOME_DIR/app.pem"
+  run bootstrap_server
+  [ "$status" -eq 0 ]
+  write_host_env 'PYTHON_VERSION=3.14'
+
+  run bootstrap_server
+
+  [ "$status" -eq 0 ]
+  [ "$(codex_config_json | jq -r '.default_permissions // "unset"')" = "unset" ]
+  [ "$(codex_config_json | jq -c '.shell_environment_policy')" = "{}" ]
+  [ "$(codex_config_json | jq -r '.permissions.guarded.network // "unset"')" = "unset" ]
+}
+
+@test "runs the Codex token merge with the managed Python" {
+  write_host_env 'AGENT_GITHUB_APP_ID=123' "AGENT_GITHUB_APP_PRIVATE_KEY=$HOME_DIR/app.pem"
+  local _log="$BATS_TEST_TMPDIR/python-calls"
+  write_stub "$BATS_TEST_TMPDIR/logging-python" '#!/bin/sh' \
+    "printf '%s\\n' \"\$*\" >>'$_log'" \
+    "exec '$(command -v python3)' \"\$@\""
+
+  run bootstrap_server FAKE_PYTHON="$BATS_TEST_TMPDIR/logging-python"
+
+  [ "$status" -eq 0 ]
+  grep -Eq '^-I - ' "$_log"
+}
+
+@test "stops with a clear message when the managed Python cannot read TOML" {
+  write_host_env 'AGENT_GITHUB_APP_ID=123' "AGENT_GITHUB_APP_PRIVATE_KEY=$HOME_DIR/app.pem"
+  write_stub "$BATS_TEST_TMPDIR/old-python" '#!/bin/sh' \
+    'case "$*" in *tomllib*) exit 1 ;; esac' \
+    "exec '$(command -v python3)' \"\$@\""
+
+  run bootstrap_server FAKE_PYTHON="$BATS_TEST_TMPDIR/old-python" PYTHON_VERSION=3.10
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"Python 3.11"*"PYTHON_VERSION"* ]]
+  ! grep -Fq "github-app-token" "$AGENT_HARNESS_ARGS_FILE"
 }
 
 @test "leaves the Codex config alone when the host names no GitHub App" {

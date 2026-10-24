@@ -377,3 +377,24 @@ def test_dry_run_reports_ignored_files_that_keep_a_worktree(primary: Path, merge
     assert "notes.ignored" in result.stdout
     assert "remove worktree" not in result.stdout
     assert path.exists()
+
+
+def test_an_ignored_file_under_a_tracked_cache_named_directory_keeps_the_worktree(
+    primary: Path, merged: dict[str, str]
+) -> None:
+    path = task_worktree(primary, "feat/done")
+    (path / "result").mkdir()
+    (path / "result/tracked.txt").write_text("fixture\n")
+    (path / ".gitignore").write_text("*.ignored\n")
+    git("add", ".", cwd=path)
+    git("commit", "--quiet", "-m", "fixtures", cwd=path)
+    merged["feat/done"] = git("rev-parse", "HEAD", cwd=path)
+    (path / "result/notes.ignored").write_text("x\n")
+    result = cleanup(primary)
+    assert path.exists()
+    assert "notes.ignored" in result.stdout
+
+
+def test_a_kept_worktree_alone_does_not_fast_forward_main(primary: Path, merged: dict[str, str]) -> None:
+    merged_worktree_with_ignored(primary, merged, "notes.ignored")
+    assert "fast-forward" not in cleanup(primary).stdout

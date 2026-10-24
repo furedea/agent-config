@@ -172,6 +172,7 @@ def cleanup(primary: Path, current: Path | None, *, dry_run: bool) -> list[str]:
     checked_out = {worktree.branch for worktree in worktrees} | {current_branch(primary)}
     workspaces = herdr_workspaces(primary)
     report = []
+    kept = []
     removed = set()
     for worktree in worktrees:
         if (
@@ -181,7 +182,7 @@ def cleanup(primary: Path, current: Path | None, *, dry_run: bool) -> list[str]:
         ):
             continue
         if kept := irreplaceable_ignored_paths(primary, worktree):
-            report.append(f"keep worktree {worktree.path}: ignored files would be lost: {', '.join(kept)}")
+            kept.append(f"keep worktree {worktree.path}: ignored files would be lost: {', '.join(kept)}")
             continue
         removed.add(worktree.path)
         report.append(f"remove worktree {worktree.path} and branch {worktree.branch}")
@@ -201,7 +202,7 @@ def cleanup(primary: Path, current: Path | None, *, dry_run: bool) -> list[str]:
         worktree.path != primary and (not dry_run or worktree.path not in removed) for worktree in remaining
     ):
         report += close_primary_workspaces(primary, dry_run=dry_run)
-    return report
+    return report + kept
 
 
 def worktree_is_clean(primary: Path, worktree: Worktree) -> bool:
@@ -234,23 +235,29 @@ def worktree_is_clean(primary: Path, worktree: Worktree) -> bool:
 
 def irreplaceable_ignored_paths(primary: Path, worktree: Worktree) -> list[str]:
     """List ignored paths that are not regenerable caches, which a forced removal would delete."""
+    command = ("git", f"--git-dir={worktree.admin_dir}", f"--work-tree={worktree.path}")
     output = run(
-        "git",
-        f"--git-dir={worktree.admin_dir}",
-        f"--work-tree={worktree.path}",
+        *command,
         "status",
         "--porcelain",
         "--ignored=matching",
+        "--untracked-files=normal",
         "--ignore-submodules=all",
         "-z",
         cwd=primary,
     )
     paths = [entry.removeprefix("!! ") for entry in output.split("\0") if entry.startswith("!! ")]
-    return [path for path in paths if not is_regenerable(path)]
+    return [path for path in paths if not is_regenerable(primary, command, path)]
 
 
-def is_regenerable(path: str) -> bool:
-    return any(part in REGENERABLE_NAMES or part.startswith(REGENERABLE_PREFIXES) for part in Path(path).parts)
+def is_regenerable(primary: Path, command: tuple[str, ...], path: str) -> bool:
+    """A cache name counts only for an ancestor that holds no tracked file."""
+    parts = Path(path).parts
+    return any(
+        (part in REGENERABLE_NAMES or part.startswith(REGENERABLE_PREFIXES))
+        and not run(*command, "ls-files", "--", "/".join(parts[: index + 1]), cwd=primary)
+        for index, part in enumerate(parts)
+    )
 
 
 def recorded_primary_workspaces(primary: Path) -> dict[str, dict]:

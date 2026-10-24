@@ -5,7 +5,7 @@
 - Originally: furedea/dotfiles ADR-0031
 
 In the context of the command policy that Claude Code and Codex enforce through the shared hooks
-from [dotfiles ADR-0026](https://github.com/furedea/dotfiles/blob/main/docs/adr/0026_use_python_for_automation_logic.md), facing a deny list that grew from a
+from [ADR-0016](0016_inspect_shell_syntax_in_the_supplementary_command_guards.md), facing a deny list that grew from a
 Codex-era blocklist, left most commands to a non-deterministic classifier, and was bypassed by
 process wrappers, install paths, and Git global options, we decided for three tiers chosen by
 reversibility and blast radius, evaluated on the canonical command that a wrapper eventually runs,

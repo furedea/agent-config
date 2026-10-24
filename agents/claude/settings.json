@@ -102,5 +102,5 @@
   "effortLevel": "medium",
   "autoMemoryEnabled": false,
   "skipAutoPermissionPrompt": true,
-  "editorMode": "vim"
+  "editorMode": "normal"
 }

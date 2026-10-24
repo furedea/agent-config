@@ -294,6 +294,8 @@ def test_destructive_git_fed_to_a_shell_as_input_is_denied(command: str) -> None
         'bash <<< "$SCRIPT"',
         "printf 'git reset --hard\\n' | sh",
         '{ echo "git status" | sh; } <<< "git reset --hard"',
+        "echo git {reset,--hard} | sh",
+        "echo git status * | sh",
         "echo 'git status\\ngit reset --hard' | sh",
     ],
 )

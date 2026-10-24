@@ -5,7 +5,7 @@ from pathlib import Path
 import re
 from typing import Self
 
-from shell_words import UnsupportedSyntax, literal_word, nodes, source_text
+from shell_words import UnsupportedSyntax, literal_word, nodes, source_text, spreads
 
 
 # Options of echo, which writes its remaining arguments; the backslash escapes they toggle are refused.
@@ -130,7 +130,12 @@ def file_scripts(path: Path, directories: tuple[Path | None, ...]) -> list[str]:
 def piped_script(statement: dict, data: bytes) -> str:
     """Return the text a literal echo or plain printf writes into the pipe, refusing any other source."""
     command = statement.get("Cmd") or {}
-    if command.get("Type") != "CallExpr" or not command.get("Args"):
+    # A word the shell splits or expands, braces included, writes other text than the hook decodes.
+    if (
+        command.get("Type") != "CallExpr"
+        or not command.get("Args")
+        or any(spreads(word, data) for word in command["Args"])
+    ):
         raise computed_input()
     program, *arguments = (static_script(word, data) for word in command["Args"])
     name = Path(program).name

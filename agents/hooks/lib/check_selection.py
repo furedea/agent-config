@@ -309,7 +309,7 @@ def removed(scope: LanguageScope) -> bool:
     reaching = {path for path in scope.changed if changed_language(rule, (path,)) or suite_triggered(rule, (path,))}
     if any((scope.root / path).exists() for path in reaching):
         return False
-    return not remaining_sources(scope.root, tuple(rule["source_extensions"]))
+    return not remaining_sources(scope.root, tuple(rule["source_extensions"]), frozenset(rule.get("exclude_dirs", ())))
 
 
 def missing_marker(scope: LanguageScope, *, affected: bool) -> str:

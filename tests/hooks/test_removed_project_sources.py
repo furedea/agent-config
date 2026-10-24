@@ -67,3 +67,11 @@ def test_outside_git_every_remaining_source_counts(tmp_path: Path) -> None:
     commands, errors = selection.language_plan(tmp_path, rules, ("package.json",))
     assert not commands
     assert errors and "package.json" in errors[0]
+
+
+def test_outside_git_excluded_directories_do_not_count(tmp_path: Path) -> None:
+    rules = rules_for(tmp_path)
+    touch(tmp_path, "node_modules/dep/index.js")
+    commands, errors = selection.language_plan(tmp_path, rules, ("package.json",))
+    assert not errors
+    assert commands == []

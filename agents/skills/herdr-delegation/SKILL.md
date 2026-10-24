@@ -28,10 +28,10 @@ the request, evaluates the returned work, and reports the outcome to the user.
 
 ## Choose the Task and Recipient
 
-| Request                                    | Default recipient                                                  | Authority                                              |
-| ------------------------------------------ | ------------------------------------------------------------------ | ------------------------------------------------------ |
-| Review a plan                              | Claude for a Codex-authored plan; Codex for a Claude-authored plan | Findings only; do not rewrite the plan or implement it |
-| Review code                                | Claude for Codex-authored code; Codex for Claude-authored code     | Findings only; do not edit the reviewed source         |
+| Request                                    | Default recipient                                                                   | Authority                                              |
+| ------------------------------------------ | ----------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| Review a plan                              | Claude for a Codex-authored plan; Codex for a Claude-authored plan                  | Findings only; do not rewrite the plan or implement it |
+| Review code                                | Claude for Codex-authored code; Codex for Claude-authored code                      | Findings only; do not edit the reviewed source         |
 | Implement in another directory or worktree | A separate Claude session, since a Codex session cannot commit in a linked worktree | Changes limited to the delegated scope                 |
 
 When the user asks for Codex to implement, Codex implements and Claude reviews. The lane runs
@@ -39,11 +39,21 @@ When the user asks for Codex to implement, Codex implements and Claude reviews. 
 as one command with no dollar sign in the task text and no pipe or redirect, then reads the diff,
 runs the checks Codex cannot (Nix hashes and nix builds), commits, pushes, and opens the PR.
 The lane then starts the reviewer itself: an Opus subagent with only the requirements and the
-diff when Codex implemented, or the Codex review command when Claude implemented. The lane has
-Codex fix accepted findings and waits for CI. It ends its final message with `LANE-READY` only
-when CI is green and no review finding is open; otherwise it ends with `LANE-BLOCKED` and the
-reason. The lane never types into the parent's pane with `herdr agent prompt` or `send-text`:
-text typed there is indistinguishable from the user's own input.
+diff when Codex implemented, or
+`node <codex plugin>/scripts/codex-companion.mjs task "<prompt>"` without `--write` (read only)
+when Claude implemented. The prompt names where the requirements are (a local file or the text
+itself, since Codex has no network), the diff range `origin/main...HEAD`, and that the review is
+read only; it says any file may be read to verify a claim, asks for each finding tagged P0 to
+P3, prefers no finding over a weak one, and forbids style and naming findings. Run at most two
+reviews, the first and one confirming review. The lane has Codex fix only P0 and P1 findings,
+and records P2 and below and design judgments in the PR body or an Issue for the user. `review`
+is not used for now because the verification hook rejects its thread
+(furedea/agent-config#19). Use `adversarial-review` only to have Codex challenge the design of a
+high-risk or design-heavy change. The lane waits for CI. It ends its final message with
+`LANE-READY` only when CI is green and no P0 or P1 finding is open; otherwise it ends with
+`LANE-BLOCKED` and the reason. The lane never types into the parent's pane with
+`herdr agent prompt` or `send-text`: text typed there is indistinguishable from the user's own
+input.
 
 Honor an explicit provider choice. Keep plan review, code review, and implementation as distinct
 assignments; asking for findings does not authorize the reviewer to fix them.

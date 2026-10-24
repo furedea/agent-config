@@ -49,9 +49,18 @@ Rules:
   works for Claude and Codex lanes alike.
 - The lane runs the whole loop: asks Codex to implement, verifies, commits, pushes, opens the PR,
   then starts the reviewer itself. For Codex's implementation, use an Opus subagent with only
-  the requirements and the diff; for Claude's, use the Codex review command. The lane has Codex
-  fix accepted findings and waits for CI. It ends its final message with `LANE-READY` only when
-  CI is green and no review finding is open; otherwise it ends with `LANE-BLOCKED` and the reason.
+  the requirements and the diff; for Claude's, run
+  `node <codex plugin>/scripts/codex-companion.mjs task "<prompt>"` without `--write`, so it is
+  read only. The prompt names where the requirements are (a local file or the text itself, since
+  Codex has no network), the diff range `origin/main...HEAD`, and that the review is read only;
+  it says any file may be read to verify a claim, asks for each finding tagged P0 to P3, prefers
+  no finding over a weak one, and forbids style and naming findings. Run at most two reviews, the
+  first and one confirming review. The lane has Codex fix only P0 and P1 findings, and records P2
+  and below and design judgments in the PR body or an Issue for the user. `review` is not used
+  for now because the verification hook rejects its thread (furedea/agent-config#19). Use
+  `adversarial-review` only to have Codex challenge the design of a high-risk or design-heavy
+  change. The lane waits for CI. It ends its final message with `LANE-READY` only when CI is
+  green and no P0 or P1 finding is open; otherwise it ends with `LANE-BLOCKED` and the reason.
 - The lane never types into the parent's pane with `herdr agent prompt` or `send-text`: text
   typed there is indistinguishable from the user's own input.
 - Open the primary checkout's workspace yourself when `workspace list` shows none, and pass its

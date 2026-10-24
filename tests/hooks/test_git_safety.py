@@ -48,6 +48,40 @@ def test_non_destructive_operations_remain_available(arguments: tuple[str, ...])
     assert not git.reason(arguments)
 
 
+@pytest.mark.parametrize(
+    "arguments",
+    [
+        ("git", "reset", "--har"),
+        ("git", "reset", "--ha", "HEAD~1"),
+        ("git", "push", "--force-w", "origin", "topic"),
+        ("git", "push", "--force-with=origin/topic", "origin", "topic"),
+        ("git", "checkout", "--forc", "topic"),
+        ("git", "switch", "--disc", "topic"),
+        ("git", "rm", "--fo", "file.py"),
+        ("git", "worktree", "remove", "--f", "../topic"),
+        ("git", "gc", "--pru"),
+        ("git", "commit", "--gpg", "-m", "feat"),
+        ("git", "push", "--set-up", "origin", "topic"),
+    ],
+)
+def test_unique_abbreviations_of_long_options_are_judged_as_the_full_option(arguments: tuple[str, ...]) -> None:
+    assert git.reason(arguments)
+
+
+@pytest.mark.parametrize(
+    "arguments",
+    [
+        ("git", "reset", "--m", "HEAD~1"),
+        ("git", "push", "--forc", "origin", "topic"),
+        ("git", "restore", "--stag", "file.py"),
+        ("git", "reset", "--so", "HEAD~1"),
+        ("git", "rm", "--cached", "--", "--fo"),
+    ],
+)
+def test_ambiguous_or_harmless_abbreviations_are_not_rejected(arguments: tuple[str, ...]) -> None:
+    assert not git.reason(arguments)
+
+
 def test_unicode_and_quotes_do_not_shift_command_boundaries() -> None:
     commands = syntax.parse('echo "日本語; unchanged"; git push origin "feature/topic"')
     assert commands[0].arguments == ("echo", "日本語; unchanged")

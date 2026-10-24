@@ -22,6 +22,41 @@ OPTION_VERBS = frozenset({*DANGEROUS_OPTIONS, "push", "restore"})
 """Verbs whose verdict depends on their arguments, so a run-time argument can hide a destructive form."""
 SUBCOMMAND_VERBS = {"worktree": {"remove"}, "reflog": set()}
 """Verbs judged by a subcommand, mapped to the subcommands whose verdict also depends on their arguments."""
+LONG_OPTIONS = {
+    verb: frozenset(names.split())
+    for verb, names in {
+        "reset": "--auto-advance --hard --intent-to-add --inter-hunk-context --keep --merge --mixed --no-refresh "
+        "--patch --pathspec-file-nul --pathspec-from-file --quiet --recurse-submodules --refresh --soft --unified",
+        "push": "--all --atomic --branches --delete --dry-run --exec --follow-tags --force --force-if-includes "
+        "--force-with-lease --ipv4 --ipv6 --mirror --no-verify --porcelain --progress --prune --push-option --quiet "
+        "--receive-pack --recurse-submodules --repo --set-upstream --signed --tags --thin --verbose --verify",
+        "checkout": "--auto-advance --conflict --detach --force --guess --ignore-other-worktrees "
+        "--ignore-skip-worktree-bits --inter-hunk-context --merge --orphan --ours --overlay --overwrite-ignore "
+        "--patch --pathspec-file-nul --pathspec-from-file --progress --quiet --recurse-submodules --theirs --track "
+        "--unified",
+        "switch": "--conflict --create --detach --discard-changes --force --force-create --guess "
+        "--ignore-other-worktrees --merge --orphan --overwrite-ignore --progress --quiet --recurse-submodules --track",
+        "restore": "--conflict --ignore-skip-worktree-bits --ignore-unmerged --inter-hunk-context --merge --ours "
+        "--overlay --patch --pathspec-file-nul --pathspec-from-file --progress --quiet --recurse-submodules --source "
+        "--staged --theirs --unified --worktree",
+        "rm": "--cached --dry-run --force --ignore-unmatch --pathspec-file-nul --pathspec-from-file --quiet --sparse",
+        "mv": "--dry-run --force --sparse --verbose",
+        "gc": "--aggressive --auto --cruft --detach --expire-to --force --keep-largest-pack --max-cruft-size --prune "
+        "--quiet",
+        "symbolic-ref": "--delete --no-recurse --quiet --recurse --short",
+        "update-ref": "--batch-updates --create-reflog --deref --no-deref --stdin",
+        "worktree": "--force",
+        "commit": "--ahead-behind --all --allow-empty --allow-empty-message --amend --author --branch --cleanup --date "
+        "--dry-run --edit --file --fixup --gpg-sign --include --inter-hunk-context --interactive --long --message "
+        "--no-post-rewrite --no-verify --null --only --patch --pathspec-file-nul --pathspec-from-file --porcelain "
+        "--post-rewrite --quiet --reedit-message --reset-author --reuse-message --short --signoff --squash --status "
+        "--template --trailer --unified --untracked-files --verbose --verify",
+        "tag": "--annotate --cleanup --color --column --contains --create-reflog --delete --edit --file --force "
+        "--format --ignore-case --list --local-user --merged --message --no-column --no-contains --no-merged "
+        "--omit-empty --points-at --sign --sort --trailer --verify",
+    }.items()
+}
+"""The long options of each judged verb, as `git <verb> -h` lists them, so an abbreviation reads as git reads it."""
 
 
 def branch(arguments: tuple[str, ...] = ()) -> str:
@@ -113,20 +148,36 @@ def git_reason(arguments: tuple[str, ...]) -> str:
     globals_, command = git_arguments(arguments)
     if not command:
         return ""
-    verb, *remaining = command
-    if sandboxed := sandbox_form_reason(verb, tuple(remaining)):
+    verb, *rest = command
+    remaining = spelled_out(verb, tuple(rest))
+    if sandboxed := sandbox_form_reason(verb, remaining):
         return sandboxed
     options = {argument.split("=", 1)[0] for argument in remaining}
     if verb == "push":
-        return push_reason(tuple(remaining), globals_)
+        return push_reason(remaining, globals_)
     destructive = verb in DESTRUCTIVE_VERBS
     destructive |= verb == "worktree" and bool(remaining) and remaining[0] in {"move", "repair"}
-    destructive |= verb == "worktree" and remaining[:1] == ["remove"] and bool(options & FORCE_FLAGS)
+    destructive |= verb == "worktree" and remaining[:1] == ("remove",) and bool(options & FORCE_FLAGS)
     destructive |= verb == "reflog" and bool(remaining) and remaining[0] in {"delete", "expire"}
     destructive |= bool(options & DANGEROUS_OPTIONS.get(verb, set()))
     if verb == "restore":
         destructive = not bool(options & {"--staged", "-S"}) or bool(options & {"--worktree", "-W", "--source", "-s"})
     return f"destructive git operation: {verb}" if destructive else ""
+
+
+def spelled_out(verb: str, arguments: tuple[str, ...]) -> tuple[str, ...]:
+    """Read each option before `--` under its full name; git accepts a unique abbreviation and rejects others."""
+    end = arguments.index("--") if "--" in arguments else len(arguments)
+    names = LONG_OPTIONS.get(verb, frozenset())
+    return tuple(full_option(argument, names) for argument in arguments[:end]) + arguments[end:]
+
+
+def full_option(argument: str, names: frozenset[str]) -> str:
+    key, separator, value = argument.partition("=")
+    if not key.startswith("--") or key in names:
+        return argument
+    matches = [name for name in names if name.startswith(key)]
+    return matches[0] + separator + value if len(matches) == 1 else argument
 
 
 def sandbox_form_reason(verb: str, arguments: tuple[str, ...]) -> str:

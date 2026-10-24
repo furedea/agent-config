@@ -38,6 +38,7 @@ pytestmark = pytest.mark.usefixtures("isolated_project")
         pytest.param("gh pr merge 42 --rebase", 0, [], id="allows gh pr merge with rebase"),
         pytest.param("ls -la", 0, [], id="passes through ls"),
         pytest.param("git status", 0, [], id="passes through git status"),
+        pytest.param("git reset --har", 2, ["reset"], id="blocks an abbreviated --hard"),
         pytest.param("git push --force origin feature/foo", 2, ["force-push flag"], id="blocks --force"),
         pytest.param("git push -f origin feature/foo", 2, [], id="blocks -f short flag"),
         pytest.param(

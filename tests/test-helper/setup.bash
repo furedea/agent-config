@@ -23,7 +23,7 @@ function create_bootstrap_server_fixtures() {
   # shellcheck disable=SC2034  # asserted by the .bats file
   BIN_DIR="$HOME_DIR/.local/bin"
   RELEASES="$BATS_TEST_TMPDIR/releases"
-  FAKE_PYTHON="$BATS_TEST_TMPDIR/python3.14"
+  FAKE_PYTHON="$BATS_TEST_TMPDIR/python3.15.1"
   UV_ARGS_FILE="$BATS_TEST_TMPDIR/uv-args"
   AGENT_HARNESS_ARGS_FILE="$BATS_TEST_TMPDIR/agent-harness-args"
   SANDBOX_TOOLS_DIR="$BATS_TEST_TMPDIR/sandbox-tools"
@@ -152,6 +152,12 @@ function write_fake_uv() {
   /bin/cat >|"$1" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
+case "${1:-} ${2:-}" in
+  "--version "*)
+    printf 'uv %s\n' "${FAKE_UV_VERSION:-0.13.5}"
+    exit 0
+    ;;
+esac
 printf '%s\n' "$*" >>"${UV_ARGS_FILE:?}"
 case "${1:-} ${2:-}" in
   "python install") ;;

@@ -87,13 +87,61 @@ setup() {
   [ -f "$_prefix/libexec/bats-core/bats" ]
 }
 
-@test "installs the requested Python through uv" {
-  run bootstrap_server PYTHON_VERSION=3.15
+@test "installs Python 3.15.1 through uv by default" {
+  run bootstrap_server
 
   [ "$status" -eq 0 ]
   run /bin/cat "$UV_ARGS_FILE"
-  [ "${lines[0]}" = "python install 3.15" ]
-  [[ "$output" == *"python find"*"3.15"* ]]
+  [ "${lines[0]}" = "python install 3.15.1" ]
+  [[ "$output" == *"python find"*"3.15.1"* ]]
+}
+
+@test "installs the requested Python through uv" {
+  run bootstrap_server PYTHON_VERSION=3.16
+
+  [ "$status" -eq 0 ]
+  run /bin/cat "$UV_ARGS_FILE"
+  [ "${lines[0]}" = "python install 3.16" ]
+  [[ "$output" == *"python find"*"3.16"* ]]
+}
+
+@test "downloads the uv installer of the pinned version" {
+  local _curl_log="$BATS_TEST_TMPDIR/curl-urls"
+  mkdir -p "$BATS_TEST_TMPDIR/logging-curl"
+  write_stub "$BATS_TEST_TMPDIR/logging-curl/curl" \
+    '#!/bin/sh' \
+    "printf '%s\\n' \"\$*\" >>'$_curl_log'" \
+    'case "$*" in *astral.sh*) exit 22 ;; esac' \
+    "exec '$(command -v curl)' \"\$@\""
+
+  run bootstrap_server PATH="$BATS_TEST_TMPDIR/logging-curl:$SANDBOX_TOOLS_DIR:$PATH" UV_INSTALLER_URL=
+
+  [ "$status" -ne 0 ]
+  grep -Fq "https://astral.sh/uv/0.13.5/install.sh" "$_curl_log"
+}
+
+@test "stops when the installed uv is older than the pinned version" {
+  run bootstrap_server FAKE_UV_VERSION=0.13.4
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"0.13.4"*"0.13.5"* ]]
+  [ ! -e "$UV_ARGS_FILE" ]
+}
+
+@test "stops when a kept uv is older than the pinned version" {
+  run bootstrap_server
+  [ "$status" -eq 0 ]
+
+  run bootstrap_server FAKE_UV_VERSION=0.12.9 UV_INSTALLER_URL="file://$RELEASES/missing.sh"
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"0.12.9"*"0.13.5"* ]]
+}
+
+@test "accepts a uv newer than the pinned version" {
+  run bootstrap_server FAKE_UV_VERSION=0.14.0
+
+  [ "$status" -eq 0 ]
 }
 
 @test "refuses machines without release binaries before downloading anything" {
@@ -359,7 +407,7 @@ setup() {
   write_host_env 'AGENT_GITHUB_APP_ID=123' "AGENT_GITHUB_APP_PRIVATE_KEY=$HOME_DIR/app.pem"
   run bootstrap_server
   [ "$status" -eq 0 ]
-  write_host_env 'PYTHON_VERSION=3.14'
+  write_host_env 'PYTHON_VERSION=3.16'
 
   run bootstrap_server
 

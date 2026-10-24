@@ -1,5 +1,10 @@
 # Design
 
+<p align="center">
+  <a href="DESIGN.md"><img alt="English" src="https://img.shields.io/badge/lang-English-0969da"></a>
+  <a href="DESIGN_ja.md"><img alt="日本語" src="https://img.shields.io/badge/lang-%E6%97%A5%E6%9C%AC%E8%AA%9E-8c959f"></a>
+</p>
+
 How work flows from a request to a merged pull request, which session owns each step, which skill
 the agent follows there, and how the hooks verify and police the work. Decisions and their reasons
 live in [`docs/adr/`](adr/).

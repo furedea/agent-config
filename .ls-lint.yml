@@ -1,6 +1,6 @@
 ls:
   .dir: regex:\.?[a-z0-9]+(-[a-z0-9]+)*
-  .md: regex:[a-z0-9]*([._][a-z0-9]+)* | regex:(README|CONTRIBUTING|DESIGN|CHANGELOG|AGENTS|CLAUDE|SKILL)
+  .md: regex:[a-z0-9]*([._][a-z0-9]+)* | regex:(README|CONTRIBUTING|DESIGN|CHANGELOG|AGENTS|CLAUDE|SKILL) | regex:(README|DESIGN)(_ja)?
   .py: regex:[a-z0-9]*([._][a-z0-9]+)* | regex:__[a-z0-9]+__
   .*: regex:[a-z0-9]*([._][a-z0-9]+)*
 

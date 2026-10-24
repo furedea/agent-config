@@ -1,5 +1,10 @@
 # agent-config
 
+<p align="center">
+  <a href="README.md"><img alt="English" src="https://img.shields.io/badge/lang-English-0969da"></a>
+  <a href="README_ja.md"><img alt="日本語" src="https://img.shields.io/badge/lang-%E6%97%A5%E6%9C%AC%E8%AA%9E-8c959f"></a>
+</p>
+
 Personal source for [agent-harness](https://github.com/furedea/agent-harness): the provider-neutral
 instructions, skills, hooks, and permission rules that render into `~/.claude` and `~/.codex`.
 

@@ -50,7 +50,7 @@ bash scripts/bootstrap_server.sh
 
 ## 検証とフック
 
-フックは各セッションの worktree を登録し，変更を自動的に検証する．状態，有効期限，300 秒のチェック時間の上限，allow，ask，deny のポリシーは [`docs/DESIGN.md`](docs/DESIGN_ja.md) に記述している．そこにある開発サイクルが，作業がマージ済みのプルリクエストに至る流れである．
+フックは各セッションの worktree を登録し，変更を自動的に検証する．状態，有効期限，300 秒のチェック時間の上限，allow，ask，deny のポリシーは [`docs/DESIGN_ja.md`](docs/DESIGN_ja.md) に記述している．そこにある開発サイクルが，作業がマージ済みのプルリクエストに至る流れである．
 
 ## 開発
 

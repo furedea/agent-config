@@ -78,7 +78,6 @@
     },
     "network": {
       "allowedDomains": [
-        "api.day.app",
         "channels.nixos.org",
         "files.pythonhosted.org",
         "pypi.org",

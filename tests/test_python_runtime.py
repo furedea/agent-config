@@ -61,6 +61,24 @@ def test_rendered_hooks_load_adjacent_modules(rendered: Path, environment: dict[
 
 
 @pytest.mark.integration
+def test_rendered_entry_points_are_executable(rendered: Path) -> None:
+    for name in (
+        ".claude/hooks/guard_command.py",
+        ".claude/hooks/verification_session.py",
+        ".claude/statusline/statusline.py",
+        *(f"{directory}/hook_adapter.py" for directory in ADAPTERS),
+    ):
+        assert os.access(rendered / name, os.X_OK), name
+
+
+@pytest.mark.integration
+def test_rendered_statusline_renders_the_context_segment(rendered: Path, environment: dict[str, str]) -> None:
+    result = run(rendered / ".claude/statusline/statusline.py", [], {}, environment)
+    assert result.returncode == 0, result.stderr
+    assert "Ctx:" in result.stdout
+
+
+@pytest.mark.integration
 @pytest.mark.parametrize("directory", ADAPTERS)
 @pytest.mark.parametrize(
     "case",

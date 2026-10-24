@@ -5,14 +5,14 @@ repository policy. It does not require Nix environment setup.
 
 ## Command Ownership
 
-Use the public `repo` command. In the dotfiles checkout, command behavior is defined by
-`github/repo.py`. The policy payloads are
-`github/repo_settings.json` and `github/ruleset.json`; inspect these instead of reproducing their
-settings here. Use `repo create --help` or `repo configure --help` for current arguments.
+`repo` is a command of the user's dotfiles, not part of this source. Its behavior is defined by
+the dotfiles checkout's `github/repo.py`, and the policy payloads are `github/repo_settings.json`
+and `github/ruleset.json`; inspect these instead of reproducing their settings here. Use
+`repo create --help` or `repo configure --help` for current arguments.
 
-If `repo` is unavailable, locate the user's dotfiles checkout and run its `github/repo.py` entry
-point with `python3 -I -B`. Do not assume a fixed home-directory layout or replace it with a workflow that skips
-its standard configuration.
+If `repo` is unavailable, stop and ask the user to provide it. Do not search for the dotfiles
+checkout, run its entry point directly, or replace it with a workflow that skips the standard
+configuration.
 
 ## New GitHub Repository
 

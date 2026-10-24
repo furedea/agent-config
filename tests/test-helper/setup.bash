@@ -206,7 +206,7 @@ render() {
   printf '%s\n' '"""Shared policy."""' >|"$_prefix/.claude/hooks/lib/policy.py"
   printf '%s\n' '#!/usr/bin/env -S python3 -IB' >|"$_prefix/.claude/hooks/lib/not_executable.py"
   printf '%s\n' \
-    '{"model":"fable","sandbox":{"enabled":true,"excludedCommands":["gh *","herdr *"],"network":{"allowedDomains":["api.day.app"]}}}' \
+    '{"model":"fable","sandbox":{"enabled":true,"excludedCommands":["gh *","herdr *"],"network":{"allowedDomains":["pypi.org"]}}}' \
     >|"$_prefix/.claude/settings.json"
   printf '%s\n' '{"hooks":{"managed":true}}' >|"$_prefix/.config/devin/config.json"
   mkdir -p "$_prefix/.codex"

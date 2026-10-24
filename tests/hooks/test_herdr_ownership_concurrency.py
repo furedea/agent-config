@@ -10,7 +10,7 @@ from threading import Event
 import pytest
 from pytest_mock import MockerFixture
 
-from tests.agents.hooks.herdr_runtime import CREATE, created
+from tests.hooks.herdr_runtime import CREATE, created
 
 import herdr_ownership
 import session_store as store

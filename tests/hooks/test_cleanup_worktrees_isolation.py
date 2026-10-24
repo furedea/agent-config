@@ -8,7 +8,7 @@ import shutil
 import pytest
 import pytest_mock
 
-from tests.agents.hooks.cleanup_worktrees_runtime import branches, cleanup, git, task_worktree
+from tests.hooks.cleanup_worktrees_runtime import branches, cleanup, git, task_worktree
 from tests.runtime import real_git
 
 import cleanup_worktrees

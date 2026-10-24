@@ -1,10 +1,10 @@
-REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
+REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
 export REPO_ROOT
 # Keep bsdtar from adding AppleDouble entries to fixture archives.
 export COPYFILE_DISABLE=1
 
 # Offline stand-ins for the release downloads and installers used by
-# scripts/agents/bootstrap_server.sh. Every fixture lives under BATS_TEST_TMPDIR.
+# scripts/bootstrap_server.sh. Every fixture lives under BATS_TEST_TMPDIR.
 function create_bootstrap_server_fixtures() {
   HOME_DIR="$BATS_TEST_TMPDIR/home"
   # shellcheck disable=SC2034  # asserted by the .bats file

@@ -1,8 +1,9 @@
-"""Shared process and disposable-project fixtures for repository tests."""
+"""Shared process, disposable-project, and agent-harness fixtures for repository tests."""
 
 import json
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import textwrap
@@ -45,9 +46,16 @@ def git_project(isolated_project: Path) -> Path:
 
 @pytest.fixture
 def isolated_project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    """Keep working files and state writes inside the test's project."""
+    """Keep working files, state writes, and agent policy discovery inside the test's project."""
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path / "state"))
+    for name in ("CLAUDE_PROJECT_DIR", "AGENT_PROJECT_DIR"):
+        monkeypatch.setenv(name, str(tmp_path))
+    monkeypatch.setenv("AGENT_COMMAND_PERMISSIONS", str(REPO_ROOT / "agents/command_permissions.json"))
+    for kind in ("ALLOWED", "FORBIDDEN"):
+        monkeypatch.setenv(
+            f"AGENT_{kind}_COMMAND_RULES", str(REPO_ROOT / f"agents/hooks/rules/{kind.lower()}_commands.json")
+        )
     return tmp_path
 
 
@@ -72,5 +80,27 @@ def run_cli(isolated_project: Path) -> CliRunner:
             timeout=30,
             check=False,
         )
+
+    return run
+
+
+@pytest.fixture(scope="session")
+def agent_harness() -> CliRunner:
+    """Render the repository's provider configuration with the real harness CLI."""
+    executable = shutil.which(os.environ.get("AGENT_HARNESS_BIN", "agent-harness"))
+    if executable is None:
+        pytest.fail("agent-harness is required for provider integration tests")
+
+    def run(*arguments: str) -> subprocess.CompletedProcess[str]:
+        result = subprocess.run(
+            [executable, "--profile", "minimal", *arguments, "--source", str(REPO_ROOT / "agents")],
+            cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
+        assert result.returncode == 0, result.stderr
+        return result
 
     return run

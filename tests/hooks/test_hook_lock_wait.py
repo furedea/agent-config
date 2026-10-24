@@ -10,7 +10,7 @@ import time
 
 import pytest
 
-from tests.agents.hooks.herdr_runtime import CREATE, created, hook, set_agents
+from tests.hooks.herdr_runtime import CREATE, created, hook, set_agents
 
 import herdr_ownership
 import session_store as store

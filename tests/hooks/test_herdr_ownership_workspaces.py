@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from tests.runtime import REPO_ROOT
-from tests.agents.hooks.herdr_runtime import (
+from tests.hooks.herdr_runtime import (
     CLOSE,
     CREATE,
     PRIMARY,

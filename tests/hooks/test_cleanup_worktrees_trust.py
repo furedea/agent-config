@@ -9,7 +9,7 @@ from collections.abc import Iterator
 
 import pytest
 
-from tests.agents.hooks.cleanup_worktrees_runtime import (
+from tests.hooks.cleanup_worktrees_runtime import (
     branches,
     cleanup,
     cleanup_with_real_policy,

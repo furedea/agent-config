@@ -9,7 +9,7 @@ import pytest
 from pytest_mock import MockerFixture
 
 from tests.runtime import REPO_ROOT
-from tests.agents.hooks.herdr_runtime import after, decision, hook, run, set_agents, start_agent
+from tests.hooks.herdr_runtime import after, decision, hook, run, set_agents, start_agent
 
 
 sys.path.insert(0, str(REPO_ROOT / "agents/hooks/lib"))

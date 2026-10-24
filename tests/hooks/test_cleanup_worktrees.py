@@ -8,7 +8,7 @@ import sys
 
 import pytest
 
-from tests.agents.hooks.cleanup_worktrees_runtime import SCRIPT, branches, cleanup, git, task_worktree
+from tests.hooks.cleanup_worktrees_runtime import SCRIPT, branches, cleanup, git, task_worktree
 from tests.runtime import real_git
 
 import herdr_ownership

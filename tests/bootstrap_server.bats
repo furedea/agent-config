@@ -5,7 +5,7 @@ bats_require_minimum_version 1.5.0
 
 setup() {
   load test-helper/setup
-  SCRIPT="$REPO_ROOT/scripts/agents/bootstrap_server.sh"
+  SCRIPT="$REPO_ROOT/scripts/bootstrap_server.sh"
   create_bootstrap_server_fixtures
 }
 

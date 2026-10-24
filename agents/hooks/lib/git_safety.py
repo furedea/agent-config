@@ -15,7 +15,7 @@ DANGEROUS_OPTIONS = {
     "update-ref": {"-d", "--delete"},
     "gc": {"--prune"},
     "reset": {"--hard", "--keep", "--merge"},
-    "switch": {"-f", "--force", "-C", "--discard-changes"},
+    "switch": {"-f", "--force", "-C", "--force-create", "--discard-changes"},
     "checkout": {"-f", "--force", "-B", "--", "."},
 }
 OPTION_VERBS = frozenset({*DANGEROUS_OPTIONS, "push", "restore"})

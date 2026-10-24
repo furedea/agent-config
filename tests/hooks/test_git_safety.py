@@ -57,6 +57,8 @@ def test_non_destructive_operations_remain_available(arguments: tuple[str, ...])
         ("git", "push", "--force-with=origin/topic", "origin", "topic"),
         ("git", "checkout", "--forc", "topic"),
         ("git", "switch", "--disc", "topic"),
+        ("git", "switch", "--force-create", "main"),
+        ("git", "switch", "--force-c", "main"),
         ("git", "rm", "--fo", "file.py"),
         ("git", "worktree", "remove", "--f", "../topic"),
         ("git", "gc", "--pru"),

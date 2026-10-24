@@ -19,8 +19,11 @@ import hook_input
 import shell_syntax
 
 
+# Environment variables through which a commit can use another repository or index than the directory's own.
+REPOSITORY_VARIABLE = re.compile(r"\bGIT_(DIR|WORK_TREE|INDEX_FILE|COMMON_DIR|OBJECT_DIRECTORY)=")
 UNKNOWN_REPOSITORY = (
-    "cannot tell which repository this commit uses, because a shell expansion or a directory stack picks it.\n\n"
+    "cannot tell which repository this commit uses, because a shell expansion, a directory stack, "
+    "or a GIT_DIR-like variable picks it.\n\n"
     "Run git commit from the repository, or name it with a literal cd or git -C path."
 )
 
@@ -139,6 +142,8 @@ def commit_locations(command: str) -> list[tuple[str, ...]]:
         commands = shell_syntax.parse(command)
     except shell_syntax.UnsupportedSyntax:
         return unparsed_commit_locations(command)
+    if REPOSITORY_VARIABLE.search(command) and any(commit_path_options(item) is not None for item in commands):
+        raise ValueError(UNKNOWN_REPOSITORY)
     directories: list[Path | None] = [Path.cwd()]
     locations = []
     for item in commands:

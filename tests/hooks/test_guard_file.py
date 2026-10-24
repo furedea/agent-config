@@ -238,7 +238,15 @@ def test_run_time_configuration_values_do_not_hide_the_repository(run_cli: CliRu
 
 
 @pytest.mark.parametrize(
-    "command", ['cd "$REPOSITORY" && git commit', 'git -C "$REPOSITORY" commit', "cd - && git commit"]
+    "command",
+    [
+        'cd "$REPOSITORY" && git commit',
+        'git -C "$REPOSITORY" commit',
+        "cd - && git commit",
+        "GIT_DIR=nested/.git git commit",
+        "env GIT_WORK_TREE=nested git commit",
+        "export GIT_INDEX_FILE=other; git commit",
+    ],
 )
 def test_commits_in_a_repository_known_only_at_run_time_are_blocked(
     run_cli: CliRunner, git_project: Path, command: str

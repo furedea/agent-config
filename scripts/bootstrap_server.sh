@@ -41,7 +41,6 @@ readonly CONFIG_DIR="$CONFIG_HOME/agent-config"
 # TODO: Stop reading the dotfiles location after the release that introduced CONFIG_DIR.
 readonly LEGACY_CONFIG_DIR="$CONFIG_HOME/dotfiles"
 readonly ENV_SNIPPET="$CONFIG_DIR/agent_env.sh"
-readonly AGENT_ENVIRONMENT="$REPO_ROOT/agent_environment.json"
 readonly SOURCE_SHEBANG="#!/usr/bin/env -S python3"
 readonly DEFAULT_STATE_HOME="$HOME/.local/state"
 readonly AGENT_GITHUB_TOKEN_CONFIG_DIR="$CONFIG_HOME/agent-harness/gh"
@@ -520,7 +519,7 @@ function write_env_snippet() {
       "  *) export PATH=\"$BIN_DIR:\$PATH\" ;;" \
       'esac'
     write_env_exports XDG_CONFIG_HOME XDG_CACHE_HOME
-    "$BIN_DIR/jq" -r 'to_entries[] | "export \(.key)=\(.value | @sh)"' "$AGENT_ENVIRONMENT"
+    printf '%s\n' 'export DEVIN_PERMISSION_MODE=smart'
   } >|"$ENV_SNIPPET"
   printf 'Add this line to the login shell profile (~/.profile or ~/.bashrc):\n    . "%s"\n' "$ENV_SNIPPET"
 }

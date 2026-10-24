@@ -138,6 +138,20 @@ setup() {
   [[ "$output" == *"0.12.9"*"0.13.5"* ]]
 }
 
+@test "accepts a uv version with a local or pre-release suffix" {
+  run bootstrap_server FAKE_UV_VERSION=0.13.5+local
+
+  [ "$status" -eq 0 ]
+}
+
+@test "ignores UV_VERSION and PYTHON_VERSION leaking from the caller's environment" {
+  UV_VERSION=9.9.9 PYTHON_VERSION=3.99 run bootstrap_server
+
+  [ "$status" -eq 0 ]
+  run /bin/cat "$UV_ARGS_FILE"
+  [ "${lines[0]}" = "python install 3.15.1" ]
+}
+
 @test "accepts a uv newer than the pinned version" {
   run bootstrap_server FAKE_UV_VERSION=0.14.0
 

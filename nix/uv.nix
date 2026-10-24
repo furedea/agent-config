@@ -29,7 +29,7 @@ let
   target = targets.${stdenvNoCC.hostPlatform.system};
 in
 # TODO: Return to pkgs.uv once the nixpkgs input ships uv 0.13.5 or later; the nixpkgs
-# input still ships 0.11.x or 0.13.0, which predate the managed CPython 3.14.9 and 3.15.1.
+# input still ships 0.11.x or 0.13.0, which predate the managed CPython releases installed here.
 stdenvNoCC.mkDerivation {
   pname = "uv";
   inherit version;

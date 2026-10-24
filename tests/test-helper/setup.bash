@@ -23,7 +23,7 @@ function create_bootstrap_server_fixtures() {
   # shellcheck disable=SC2034  # asserted by the .bats file
   BIN_DIR="$HOME_DIR/.local/bin"
   RELEASES="$BATS_TEST_TMPDIR/releases"
-  FAKE_PYTHON="$BATS_TEST_TMPDIR/python3.15.1"
+  FAKE_PYTHON="$BATS_TEST_TMPDIR/python3.15"
   UV_ARGS_FILE="$BATS_TEST_TMPDIR/uv-args"
   AGENT_HARNESS_ARGS_FILE="$BATS_TEST_TMPDIR/agent-harness-args"
   SANDBOX_TOOLS_DIR="$BATS_TEST_TMPDIR/sandbox-tools"
@@ -44,7 +44,7 @@ function create_bootstrap_server_fixtures() {
 
 # Runs the script with the sandbox tools present unless PATH is overridden.
 function bootstrap_server() {
-  env -u XDG_CONFIG_HOME -u XDG_STATE_HOME -u XDG_CACHE_HOME -u BIN_DIR \
+  env -u XDG_CONFIG_HOME -u XDG_STATE_HOME -u XDG_CACHE_HOME -u BIN_DIR -u UV_VERSION -u PYTHON_VERSION \
     HOME="$HOME_DIR" \
     PATH="$SANDBOX_TOOLS_DIR:$PATH" \
     BOOTSTRAP_SERVER_MACHINE=x86_64 \

@@ -94,7 +94,7 @@ readonly SHELLCHECK_VERSION="${SHELLCHECK_VERSION:-0.11.0}"
 # renovate: datasource=github-releases depName=bats-core/bats-core extractVersion=^v(?<version>.+)$
 readonly BATS_VERSION="${BATS_VERSION:-1.13.0}"
 readonly BATS_PREFIX="${BATS_PREFIX:-${XDG_DATA_HOME:-$HOME/.local/share}/bats-core}"
-# Older uv cannot install the managed CPython this script requests (0.13.4 fails on 3.14.9).
+# Older uv cannot install the managed CPython this script requests.
 # renovate: datasource=github-releases depName=astral-sh/uv
 readonly UV_VERSION="${UV_VERSION:-0.13.5}"
 readonly UV_INSTALLER_URL="${UV_INSTALLER_URL:-https://astral.sh/uv/${UV_VERSION}/install.sh}"
@@ -267,6 +267,7 @@ function require_uv_version() {
   _output="$("$BIN_DIR/uv" --version)"
   _found="${_output#uv }"
   _found="${_found%% *}"
+  _found="${_found%%[!0-9.]*}"
   version_at_least "$_found" "$UV_VERSION" && return 0
   printf '%s is uv %s, but %s or newer is required; remove it and run again.\n' \
     "$BIN_DIR/uv" "$_found" "$UV_VERSION" >&2

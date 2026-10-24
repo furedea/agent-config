@@ -12,12 +12,13 @@ import shell_syntax
 
 
 GLOB = re.compile(r"[*?[]")
-# Brace expansion multiplies; past this many words the rest are left unjudged rather than stall the hook.
+# Brace expansion multiplies; past this many words the command needs review rather than stall the hook.
 BRACE_EXPANSION_LIMIT = 256
+HOME_VARIABLE = re.compile(r"\$(?:HOME\b|\{HOME\})")
 
 
-class UnknownDirectory(ValueError):
-    """A glob would expand in a directory known only at run time."""
+class UnexpandableGlob(ValueError):
+    """A glob whose expansion depends on a value known only at run time."""
 
 
 def command_paths(command: str) -> list[str]:
@@ -55,12 +56,15 @@ def with_variants(words: list[str]) -> list[str]:
 
 def expanded_paths(pattern: str, directories: tuple[Path | None, ...]) -> list[str]:
     """Expand a glob as the shell would: from the home directory, from the root, or from each reachable directory."""
+    pattern = HOME_VARIABLE.sub(lambda _: str(Path.home()), pattern)
+    if "$" in pattern or "`" in pattern:
+        raise UnexpandableGlob(f"cannot expand {pattern}, whose value is known only at run time")
     if pattern.startswith("~"):
         return glob.glob(os.path.expanduser(pattern))
     if os.path.isabs(pattern):
         return glob.glob(pattern)
     if None in directories:
-        raise UnknownDirectory(f"cannot expand {pattern} in a directory known only at run time")
+        raise UnexpandableGlob(f"cannot expand {pattern} in a directory known only at run time")
     return [path for directory in directories if directory for path in glob.glob(pattern, root_dir=directory)]
 
 
@@ -74,7 +78,10 @@ def unquoted_words(source: str) -> list[str]:
 
 def brace_expansions(word: str) -> list[str]:
     """Expand comma braces as the shell does before globbing, so {.env,x} is judged as .env and x."""
-    return list(islice(brace_words(word), BRACE_EXPANSION_LIMIT))
+    words = list(islice(brace_words(word), BRACE_EXPANSION_LIMIT + 1))
+    if len(words) > BRACE_EXPANSION_LIMIT:
+        raise UnexpandableGlob(f"{word} expands to more than {BRACE_EXPANSION_LIMIT} words")
+    return words
 
 
 def brace_words(word: str) -> Iterator[str]:

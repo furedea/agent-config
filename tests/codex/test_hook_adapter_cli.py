@@ -197,7 +197,26 @@ def test_home_globs_expand_against_the_home_directory(run_cli: CliRunner, harnes
     assert result.returncode == (2 if present else 0)
 
 
-@pytest.mark.parametrize("command", ['cd "$DIR" && cat *.json', "cd - && cat .*"])
+@pytest.mark.parametrize("variable", ["$HOME", "${HOME}"])
+def test_home_variable_globs_expand_against_the_home_directory(
+    run_cli: CliRunner, harness: Path, variable: str
+) -> None:
+    ssh = Path.home() / ".ssh"
+    ssh.mkdir()
+    (ssh / "id_rsa").write_text("fixture")
+    payload = {"tool_input": {"command": f"cat {variable}/.ssh/id_*"}}
+    result = run_cli(SCRIPT, "paths", "command", payload=payload)
+    assert result.returncode == 2
+
+
+def test_brace_expansions_beyond_the_limit_need_review(run_cli: CliRunner, harness: Path) -> None:
+    command = "cat {" + ",".join(f"safe{index}" for index in range(256)) + ",.env}"
+    result = run_cli(SCRIPT, "paths", "command", payload={"tool_input": {"command": command}})
+    assert result.returncode == 2
+    assert "review" in result.stderr.lower()
+
+
+@pytest.mark.parametrize("command", ['cd "$DIR" && cat *.json', "cd - && cat .*", "cat $DIR/*.json"])
 def test_globs_in_an_unknown_directory_need_review(run_cli: CliRunner, harness: Path, command: str) -> None:
     result = run_cli(SCRIPT, "paths", "command", payload={"tool_input": {"command": command}})
     assert result.returncode == 2

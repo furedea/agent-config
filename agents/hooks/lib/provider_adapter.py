@@ -191,7 +191,7 @@ class Adapter:
             candidates = (
                 edit_targets(context) if mode == "patch" else command_paths(command_text(context["tool_input"]))
             )
-        except shell_paths.UnknownDirectory as error:
+        except shell_paths.UnexpandableGlob as error:
             audit_log.blocked(secret_path_refusal(mode, "", context))
             return hook_decision.emit(hook_decision.ask(f"Needs review: {error}.").hardened())
         for value in candidates:

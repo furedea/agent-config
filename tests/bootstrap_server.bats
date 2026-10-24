@@ -533,15 +533,14 @@ setup() {
   [ "$output" = "$BIN_DIR/rg" ]
 }
 
-@test "exports the shared agent environment from the shell snippet" {
+@test "exports the Devin permission mode from the shell snippet" {
   run bootstrap_server
 
   [ "$status" -eq 0 ]
-  local _snippet="$HOME_DIR/.config/agent-config/agent_env.sh" _expected
-  _expected="$(jq -er '.DEVIN_PERMISSION_MODE' "$REPO_ROOT/agent_environment.json")"
+  local _snippet="$HOME_DIR/.config/agent-config/agent_env.sh"
   run env -i PATH=/usr/bin:/bin /bin/bash -c "source '$_snippet' && printenv DEVIN_PERMISSION_MODE"
   [ "$status" -eq 0 ]
-  [ "$output" = "$_expected" ]
+  [ "$output" = "smart" ]
 }
 
 @test "prints usage for --help" {

@@ -32,9 +32,6 @@
       uvFor = pkgs: pkgs.callPackage ./nix/uv.nix { };
     in
     {
-      # Environment variables every agent host exports; scripts/bootstrap_server.sh reads the same file.
-      lib.agentEnvironment = builtins.fromJSON (builtins.readFile ./agent_environment.json);
-
       packages = forAllSystems (
         system:
         let

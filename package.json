@@ -1,0 +1,11 @@
+{
+  "name": "agent-config-ci-tools",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Locked JavaScript tools used by the agent tests.",
+  "devDependencies": {
+    "@openai/codex": "0.162.1",
+    "oxfmt": "0.73.0",
+    "oxlint": "1.67.0"
+  }
+}

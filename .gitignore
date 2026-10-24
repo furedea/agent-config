@@ -44,3 +44,4 @@ docs/_build/
 
 # Jupyter
 .ipynb_checkpoints
+node_modules/

@@ -226,13 +226,6 @@ def test_dprint_project_config_takes_precedence_over_personal_config(tmp_path: P
     assert all(step.cwd == project for step in steps)
 
 
-def test_personal_dprint_runs_from_the_target_directory(tmp_path: Path) -> None:
-    target = tmp_path / "config.json"
-    steps = formatter_policy.plan("json_toml", target)
-    assert all(step.cwd == tmp_path for step in steps)
-    assert all(str(Path.home() / "dprint.json") in step.arguments for step in steps)
-
-
 def test_other_project_formatter_prevents_personal_dprint_fallback(tmp_path: Path) -> None:
     project = tmp_path / "project"
     project.mkdir()

@@ -49,6 +49,8 @@ def test_rendered_hooks_load_adjacent_modules(rendered: Path, environment: dict[
         ".claude/hooks/lint_format.py",
         ".claude/hooks/lib/shell_syntax.py",
         ".claude/hooks/lib/provider_adapter.py",
+        ".claude/hooks/defaults/dprint.json",
+        ".claude/hooks/defaults/prettier.json",
         ".claude/statusline/statusline.py",
         *(f"{directory}/hook_adapter.py" for directory in ADAPTERS),
     ):

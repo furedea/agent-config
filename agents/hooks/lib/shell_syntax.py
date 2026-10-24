@@ -183,13 +183,34 @@ def parse(source: str, depth: int = 0) -> tuple[Command, ...]:
 
 
 def reached_directories(directories: tuple[Path | None, ...], command: Command) -> tuple[Path | None, ...]:
-    """Add where a cd, pushd, or popd may lead to the directories reachable so far; None is one known only at run time.
+    """Add where a cd, pushd, popd, or env -C may lead to the directories reachable so far; None is one known only at run time.
 
     Earlier directories stay reachable, since a cd inside a subshell or before || may not take effect.
     """
-    if Path(command.arguments[0]).name not in DIRECTORY_CHANGES:
+    name = Path(command.arguments[0]).name
+    if name == "env" and (target := env_directory(command)) != "":
+        reached = [None if target is None or directory is None else directory / target for directory in directories]
+    elif name in DIRECTORY_CHANGES:
+        reached = [changed_directory(directory, command) for directory in directories]
+    else:
         return directories
-    return tuple(dict.fromkeys([*directories, *(changed_directory(directory, command) for directory in directories)]))
+    return tuple(dict.fromkeys([*directories, *reached]))
+
+
+def env_directory(command: Command) -> str | None:
+    """The directory env -C or --chdir runs its command in: "" without the option, None when known only at run time."""
+    for index, argument in enumerate(command.arguments[1:], 1):
+        if argument in {"-C", "--chdir"}:
+            index += 1
+            value = command.arguments[index] if index < len(command.arguments) else ""
+        elif argument.startswith(("--chdir=", "-C")):
+            value = argument.removeprefix("--chdir=") if argument.startswith("--") else argument[2:]
+        elif argument.startswith("-") or ASSIGNMENT.match(argument):
+            continue
+        else:
+            return ""
+        return None if command.dynamic[index] else value
+    return ""
 
 
 def changed_directory(directory: Path | None, item: Command) -> Path | None:

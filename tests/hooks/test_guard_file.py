@@ -181,6 +181,8 @@ def nested_project(git_project: Path) -> Path:
         "cd nested; git status; git commit",
         'git --git-dir=nested/.git --work-tree=nested commit -m "fixture"',
         'bash -c "cd nested && git commit"',
+        "env -C nested git commit",
+        "env --chdir=nested git commit",
     ],
 )
 def test_commits_in_another_repository_check_its_staged_files(
@@ -249,6 +251,8 @@ def test_run_time_configuration_values_do_not_hide_the_repository(run_cli: CliRu
         "GIT_DIR=nested/.git git commit",
         "env GIT_WORK_TREE=nested git commit",
         "export GIT_INDEX_FILE=other; git commit",
+        "env GIT_''INDEX_FILE=other git commit",
+        'export GIT_"DIR"=other; git commit',
     ],
 )
 def test_commits_in_a_repository_known_only_at_run_time_are_blocked(

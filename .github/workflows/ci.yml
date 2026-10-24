@@ -187,6 +187,29 @@ jobs:
           REQUIRE_CODEX_EXECPOLICY: "1"
         run: nix develop --command bats --print-output-on-failure tests/codex/execpolicy.bats
 
+  bootstrap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      # An empty home exercises every download the script pins, as on a fresh server.
+      - name: Run the server bootstrap in an empty home
+        run: |
+          home="$RUNNER_TEMP/bootstrap-home"
+          mkdir -p "$home"
+          HOME="$home" scripts/bootstrap_server.sh
+
+      - name: Verify the bootstrapped harness
+        run: |
+          home="$RUNNER_TEMP/bootstrap-home"
+          HOME="$home" PATH="$home/.local/bin:$PATH" agent-harness verify --source agents --prefix "$home"
+
   shell-lint:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -249,7 +272,7 @@ jobs:
 
   all-green:
     if: always()
-    needs: [nix-lint, lint, typecheck, test, bats, render, execpolicy, shell-lint, nix-check, audit]
+    needs: [nix-lint, lint, typecheck, test, bats, bootstrap, render, execpolicy, shell-lint, nix-check, audit]
     runs-on: ubuntu-latest
     timeout-minutes: 1
     permissions: {}

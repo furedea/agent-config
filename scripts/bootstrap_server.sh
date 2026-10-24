@@ -46,6 +46,7 @@ readonly SOURCE_SHEBANG="#!/usr/bin/env -S python3"
 readonly DEFAULT_STATE_HOME="$HOME/.local/state"
 readonly AGENT_GITHUB_TOKEN_CONFIG_DIR="$CONFIG_HOME/agent-harness/gh"
 readonly CLAUDE_SETTINGS="$HARNESS_PREFIX/.claude/settings.json"
+readonly CODEX_CONFIG="$HARNESS_PREFIX/.codex/config.toml"
 
 # Prints the agent-config location of a host file, or the legacy one while only that exists.
 function host_config_file() {
@@ -127,7 +128,7 @@ function main() {
   render_harness
   pin_python_shebangs "$_python"
   apply_claude_settings_override
-  configure_agent_github_token
+  configure_agent_github_token "$_python"
   write_env_snippet
   verify_harness
   warn_missing_sandbox_tools
@@ -331,7 +332,9 @@ function pin_python_shebang() {
 # authenticate with a GitHub App token, and the App key stays unreadable there. It runs after
 # the host override, whose arrays would otherwise replace these entries.
 function configure_agent_github_token() {
+  local _python="$1"
   [[ -n "${AGENT_GITHUB_APP_ID:-}" ]] || return 0
+  require_toml_python "$_python"
   local _refresh=("$BIN_DIR/agent-harness" github-app-token refresh --app-id "$AGENT_GITHUB_APP_ID")
   if [[ -n "${AGENT_GITHUB_APP_INSTALLATION_ID:-}" ]]; then
     _refresh+=(--installation-id "$AGENT_GITHUB_APP_INSTALLATION_ID")
@@ -339,6 +342,7 @@ function configure_agent_github_token() {
   _refresh+=(--private-key "$AGENT_GITHUB_APP_PRIVATE_KEY" --config-dir "$AGENT_GITHUB_TOKEN_CONFIG_DIR")
   "${_refresh[@]}"
   allow_agent_github_token
+  allow_codex_agent_github_token "$_python"
   report_token_refresh "${_refresh[@]}"
 }
 
@@ -357,6 +361,101 @@ function allow_agent_github_token() {
     | .sandbox.filesystem.denyRead |= append_unique([$key])
   ' "$CLAUDE_SETTINGS" >|"$_merged"
   install -m 0600 "$_merged" "$CLAUDE_SETTINGS"
+}
+
+# Matches the Home Manager token module for Codex: shell commands read the token, and the
+# guarded profile writes what Claude may write, reaches the network, and hides the App key.
+# The settings go into the generated Codex source, which agent-harness then syncs into the
+# user's config: its comments and own keys stay, and the settings vanish with the App.
+function allow_codex_agent_github_token() {
+  local _python="$1"
+  local _generated="$WORK_DIR/codex_generated.toml"
+  local _merged="$WORK_DIR/codex_config.toml"
+  "$BIN_DIR/agent-harness" generate-codex-config-source --source "$REPO_ROOT/agents" --output "$_generated"
+  "$_python" -I - "$_generated" "$CLAUDE_SETTINGS" "$AGENT_GITHUB_TOKEN_CONFIG_DIR" \
+    "$AGENT_GITHUB_APP_PRIVATE_KEY" >|"$_merged" <<'PY'
+import json
+import sys
+import tomllib
+
+sys.stdout.reconfigure(encoding="utf-8")
+config_path, claude_settings_path, config_dir, private_key = sys.argv[1:]
+with open(config_path, "rb") as file:
+    config = tomllib.load(file)
+with open(claude_settings_path, encoding="utf-8") as file:
+    claude_settings = json.load(file)
+
+# Relative allowWrite entries name Claude's working directory, which :workspace_roots covers.
+cache_writes = [
+    path
+    for path in claude_settings.get("sandbox", {}).get("filesystem", {}).get("allowWrite", [])
+    if path.startswith(("/", "~/"))
+]
+config.setdefault("shell_environment_policy", {}).setdefault("set", {})["GH_CONFIG_DIR"] = config_dir
+config["default_permissions"] = "guarded"
+guarded = config.setdefault("permissions", {}).setdefault("guarded", {})
+filesystem = guarded.setdefault("filesystem", {})
+workspace_roots = {**filesystem.get(":workspace_roots", {}), ".": "write"}
+filesystem.update(
+    {path: "write" for path in cache_writes}
+    | {
+        ":root": "read",
+        ":tmpdir": "write",
+        ":slash_tmp": "write",
+        ":workspace_roots": workspace_roots,
+        "~/.config/gh/hosts.yml": "deny",
+        private_key: "deny",
+    }
+)
+guarded.setdefault("network", {})["enabled"] = True
+
+
+def key(name):
+    return json.dumps(name, ensure_ascii=False)
+
+
+def inline(value):
+    if isinstance(value, dict):
+        return "{ " + ", ".join(f"{key(k)} = {inline(v)}" for k, v in value.items()) + " }"
+    if isinstance(value, list):
+        return "[" + ", ".join(inline(item) for item in value) + "]"
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, str):
+        return json.dumps(value, ensure_ascii=False)
+    return value.isoformat() if hasattr(value, "isoformat") else repr(value)
+
+
+def is_table_array(value):
+    return isinstance(value, list) and bool(value) and all(isinstance(item, dict) for item in value)
+
+
+def emit(table, path):
+    nested = {k: v for k, v in table.items() if isinstance(v, dict) or is_table_array(v)}
+    for name, value in table.items():
+        if name not in nested:
+            print(f"{key(name)} = {inline(value)}")
+    for name, value in nested.items():
+        child = [*path, key(name)]
+        for item in value if isinstance(value, list) else [value]:
+            print()
+            print(("[[" if isinstance(value, list) else "[") + ".".join(child) + ("]]" if isinstance(value, list) else "]"))
+            emit(item, child)
+
+
+emit(config, [])
+PY
+  "$_python" -I -c 'import sys, tomllib; tomllib.load(open(sys.argv[1], "rb"))' "$_merged"
+  "$BIN_DIR/agent-harness" sync-codex-config --source "$_merged" --target "$CODEX_CONFIG"
+}
+
+# The token merge reads the generated Codex source with the standard-library TOML parser.
+function require_toml_python() {
+  local _python="$1"
+  "$_python" -I -c 'import tomllib' 2>/dev/null && return 0
+  printf 'The Codex token settings need Python 3.11 or newer (tomllib); %s is older. Set PYTHON_VERSION to 3.11 or newer.\n' \
+    "$_python" >&2
+  exit 1
 }
 
 # The token expires after an hour; scheduling its refresh is left to the host owner.

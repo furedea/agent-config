@@ -84,6 +84,12 @@ function write_stub() {
   chmod 0755 "$_path"
 }
 
+# Prints the rendered Codex config as JSON.
+function codex_config_json() {
+  python3 -c 'import json, sys, tomllib; json.dump(tomllib.load(sys.stdin.buffer), sys.stdout, default=lambda v: v.isoformat().replace("+00:00", "Z"))' \
+    <"$HOME_DIR/.codex/config.toml"
+}
+
 function write_host_env() {
   mkdir -p "$HOME_DIR/.config/agent-config"
   printf '%s\n' "$@" >|"$HOME_DIR/.config/agent-config/bootstrap_server.env"
@@ -197,7 +203,45 @@ render() {
     '{"model":"fable","sandbox":{"enabled":true,"excludedCommands":["gh *","herdr *"],"network":{"allowedDomains":["api.day.app"]}}}' \
     >|"$_prefix/.claude/settings.json"
   printf '%s\n' '{"hooks":{"managed":true}}' >|"$_prefix/.config/devin/config.json"
+  mkdir -p "$_prefix/.codex"
+  write_codex_baseline "$_prefix/.codex/baseline.toml"
+  merge_codex_config "$_prefix/.codex/baseline.toml" "$_prefix/.codex/config.toml"
+  rm "$_prefix/.codex/baseline.toml"
   printf '%s\n' 'plugins:' '  enabled:' '    - agent-harness-hooks' >|"$_prefix/.hermes/managed-config.yaml"
+}
+
+write_codex_baseline() {
+  printf '%s\n' \
+    'model = "gpt"' \
+    'developer_instructions = "be nice 😀 日本語"' \
+    'created = 2026-01-02T03:04:05Z' \
+    'shell_environment_policy = {}' \
+    '' \
+    '[permissions.guarded.filesystem]' \
+    '"~/.codex/config.toml" = "read"' \
+    '' \
+    '[permissions.guarded.filesystem.":workspace_roots"]' \
+    '"src" = "read"' \
+    '' \
+    '[plugins."documents@openai"]' \
+    'enabled = true' \
+    '' \
+    '[[hooks]]' \
+    'name = "first"' >|"$1"
+}
+
+# Like the real sync: the source owns what it names, and everything the user wrote
+# below the marker line stays as written, comments included.
+merge_codex_config() {
+  local _source="$1" _target="$2" _user=""
+  if [[ -f "$_target" ]]; then
+    _user="$(sed -n '/^# user-config$/,$p' "$_target")"
+  fi
+  {
+    /bin/cat "$_source"
+    [[ -z "$_user" ]] || printf '\n%s\n' "$_user"
+  } >|"$_target.new"
+  mv "$_target.new" "$_target"
 }
 
 merge_json() {
@@ -215,6 +259,12 @@ case "${1:-}" in
     ;;
   sync-claude-settings | sync-devin-config)
     merge_json "$(option_value --source "$@")" "$(option_value --target "$@")"
+    ;;
+  generate-codex-config-source)
+    write_codex_baseline "$(option_value --output "$@")"
+    ;;
+  sync-codex-config)
+    merge_codex_config "$(option_value --source "$@")" "$(option_value --target "$@")"
     ;;
   sync-hermes-config)
     /bin/cat "$(option_value --source "$@")" >>"$(option_value --target "$@")"

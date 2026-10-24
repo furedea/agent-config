@@ -40,9 +40,12 @@ as one command with no dollar sign in the task text and no pipe or redirect, the
 runs the checks Codex cannot (Nix hashes and nix builds), commits, pushes, and opens the PR.
 The lane then starts the reviewer itself: an Opus subagent with only the requirements and the
 diff when Codex implemented, or
-`node <codex plugin>/scripts/codex-companion.mjs adversarial-review --wait --base origin/main`
-when Claude implemented, never `review`, whose separate review thread skips SessionStart and so
-has its `git diff` rejected as "Missing verification registration". The lane has
+`node <codex plugin>/scripts/codex-companion.mjs task "<prompt>"` without `--write` (read only)
+when Claude implemented. The prompt names where the requirements are (a local file or the text
+itself, since Codex has no network), the diff range `origin/main...HEAD`, the review focus, and
+that the review is read only. Never use `review`: its separate review thread skips SessionStart,
+so its `git diff` is rejected as "Missing verification registration". Use `adversarial-review`
+only to have Codex challenge the design of a high-risk or design-heavy change. The lane has
 Codex fix accepted findings and waits for CI. It ends its final message with `LANE-READY` only
 when CI is green and no review finding is open; otherwise it ends with `LANE-BLOCKED` and the
 reason. The lane never types into the parent's pane with `herdr agent prompt` or `send-text`:

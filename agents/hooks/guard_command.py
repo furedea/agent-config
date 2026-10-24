@@ -39,9 +39,12 @@ REMOTE_REASON = (
 # rule at all for curl and wget.
 LITERAL_PROGRAMS = frozenset({"curl", "gh", "herdr", "wget"})
 # Characters through which any shell may expand or run something; a command holding one anywhere
-# outside single quotes, in the program name, an assignment, or a redirect included, gets no
+# outside quotes, in the program name, an assignment, or a redirect included, gets no
 # literal_words rule.
 EXPANDING_TEXT = re.compile(r"[$`~*?\[\]{}]|\\\n")
+# Inside double quotes the shell still expands only these, and `!` for history expansion; glob
+# characters there are literal.
+DOUBLE_QUOTE_EXPANDING_TEXT = re.compile(r"[$`\\!]")
 # Filter words must stay literal even with zsh extended_glob; quote everything else with single quotes.
 FILTER_LITERAL_TEXT = re.compile(r"[A-Za-z0-9_./:=,%+ \t\n-]*")
 SAFE_WRITE_OUT = re.compile(
@@ -318,8 +321,10 @@ def allows_literal_rules(command: str, commands: tuple[shell_syntax.Command, ...
     try:
         if not shell_syntax.is_one_simple_command(command):
             return False
-        literal_text = shell_inspection.text_outside_single_quotes(command)
-        return not EXPANDING_TEXT.search(literal_text)
+        return not (
+            EXPANDING_TEXT.search(shell_inspection.text_outside_quotes(command))
+            or DOUBLE_QUOTE_EXPANDING_TEXT.search(shell_inspection.double_quoted_text(command))
+        )
     except shell_syntax.UnsupportedSyntax:
         return False
 

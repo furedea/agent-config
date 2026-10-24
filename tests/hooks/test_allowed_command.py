@@ -82,6 +82,22 @@ pytestmark = pytest.mark.usefixtures("isolated_project")
             "gh api --header 'X-GitHub-Api-Version: 2022-11-28' repos/o/r/releases --jq .name",
             id="GitHub reads with a version header",
         ),
+        pytest.param(
+            'gh api "repos/o/r/contents/f?ref=x" -H "Accept: application/vnd.github.raw"',
+            id="a double-quoted query beside a double-quoted header",
+        ),
+        pytest.param(
+            "gh api 'repos/o/r/contents/f?ref=x' -H 'Accept: application/vnd.github.raw'",
+            id="a single-quoted query beside a single-quoted header",
+        ),
+        pytest.param(
+            'herdr worktree open --cwd /r --label "a*b [x] {y} ~z"',
+            id="a Herdr form with double-quoted glob characters",
+        ),
+        pytest.param(
+            "gh api -H 'Accept: x' repos/o/r/pulls --jq \".[0].number\"",
+            id="a double-quoted jq filter beside a header",
+        ),
         pytest.param("herdr agent read lane-a --source recent --lines 80", id="Herdr agent reads"),
         pytest.param(
             "gh api -H 'Accept: application/vnd.github.raw' repos/o/r/contents/README.md", id="a plain header read"
@@ -323,16 +339,26 @@ def test_commands_whose_effects_the_checks_can_see_pass(capsys: pytest.CaptureFi
             [],
             id="an unquoted question mark beside a header",
         ),
+        pytest.param('gh api -H "Accept: x" "repos/o/r/$f?ref=v1"', [], id="a double-quoted expansion with a query"),
         pytest.param(
-            "gh api -H 'Accept: x' \"repos/o/r/contents/README.md?ref=v1\"",
-            [],
-            id="a double-quoted question mark beside a header",
+            'gh api -H "Accept: x" "repos/o/r/contents/f?ref=\\x"', [], id="a backslash inside double quotes"
         ),
         pytest.param(
-            "gh api -H 'Accept: x' repos/o/r/pulls --jq \".[0].number\"",
-            [],
-            id="a double-quoted jq filter beside a header",
+            'gh api -H "Accept: x" "repos/o/r/contents/f?ref=`id`"', [], id="a backtick inside double quotes"
         ),
+        pytest.param('gh api -H "Accept: x" "repos/o/r/contents/f?ref=!x"', [], id="a bang inside double quotes"),
+        pytest.param(
+            'gh api -H "Accept: x" "repos/o/r/contents/f?ref=$(id)"', [], id="a substitution inside double quotes"
+        ),
+        pytest.param(
+            'gh api -H "Accept: application/vnd.github.raw" "repos/o/r/contents/f?ref=x"*',
+            [],
+            id="an unquoted glob after a double-quoted word",
+        ),
+        pytest.param(
+            'herdr worktree open --cwd /r --label "a b"{x,y}', [], id="an unquoted brace after a double-quoted word"
+        ),
+        pytest.param('curl -s "http://localhost:3000/a?b=c"~', [], id="an unquoted tilde after a double-quoted word"),
         pytest.param(
             "gh api -H 'Accept: x' 'repos/o/r'\"$HOME[idx]\"", [], id="an expansion adjacent to a single quote"
         ),
@@ -341,9 +367,6 @@ def test_commands_whose_effects_the_checks_can_see_pass(capsys: pytest.CaptureFi
         pytest.param("gh api -H 'Accept: x' 'repos/o/r", [], id="an unterminated single quote"),
         pytest.param("gh api -H 'Accept: x' $'repos/o/r?x'", [], id="ANSI-C quoting"),
         pytest.param("gh api -H 'Accept: x' \"it's $HOME\"", [], id="a single quote inside double quotes"),
-        pytest.param(
-            'herdr worktree open --cwd /r --label "a*b"', [], id="a Herdr form with a double-quoted glob character"
-        ),
         pytest.param("herdr worktree open --cwd ~/repo --branch x", [], id="a tilde in a new Herdr form"),
         pytest.param('herdr worktree list --cwd "$(pwd)"', [], id="a substitution in a new Herdr form"),
         pytest.param("herdr pane split --pane w1:p2 --cwd $W --no-focus", [], id="unquoted words in Herdr panes"),
@@ -441,6 +464,22 @@ def test_unlisted_forms_of_commands_that_reach_github_or_the_network_ask(
     for fragment in fragments:
         assert fragment in verdict.reason
     assert capsys.readouterr() == ("", "")
+
+
+@pytest.mark.parametrize(
+    "command,expected",
+    [
+        pytest.param('curl -s "http://localhost:3000/a?b=c"', True, id="curl with a double-quoted query"),
+        pytest.param('herdr worktree open --label "a*b [x] {y} ~z"', True, id="herdr with double-quoted globs"),
+        pytest.param('gh api "repos/o/r/contents/f?ref=x"', True, id="gh with a double-quoted query"),
+        pytest.param("curl -s http://localhost:3000/a?b=c", False, id="curl with an unquoted query"),
+        pytest.param('curl -s "http://localhost:3000/$p?b=c"', False, id="curl with a double-quoted expansion"),
+        pytest.param('curl -s "http://localhost:3000/a\\?b=c"', False, id="curl with a double-quoted backslash"),
+        pytest.param('curl -s "http://localhost:3000/a?b=c"?', False, id="curl with a glob beside a quoted word"),
+    ],
+)
+def test_literal_rules_treat_double_quoted_globs_as_literal(command: str, expected: bool) -> None:
+    assert guard.allows_literal_rules(command, guard.shell_syntax.parse(command)) is expected
 
 
 def test_commit_messages_inline_through_a_quoted_heredoc_pass() -> None:

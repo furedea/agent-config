@@ -257,6 +257,7 @@ def test_literal_wrapper_commands_are_inspected_recursively() -> None:
         ("caffeinate -i git status", ("git", "status")),
         ("sudo git status", ("git", "status")),
         ("sudo -n -u root git status", ("git", "status")),
+        ("sudo FOO=1 git status", ("git", "status")),
         ("sudo -uroot --user=root -E -- git status", ("git", "status")),
         ("echo x | xargs -0 -I {} git add {}", ("git", "add", "{}")),
         ("command git status", ("git", "status")),
@@ -293,6 +294,12 @@ def test_unknown_wrapper_options_are_not_silently_skipped() -> None:
         syntax.parse("xargs --unknown-option git add .")
     with pytest.raises(syntax.UnsupportedSyntax):
         syntax.parse("sudo --unknown-option git status")
+
+
+@pytest.mark.parametrize("command", ["sudo -D /other git commit", "sudo -R /other git status", "sudo -D/other git x"])
+def test_sudo_directory_changes_need_review_since_they_are_not_tracked(command: str) -> None:
+    with pytest.raises(syntax.UnsupportedSyntax):
+        syntax.parse(command)
 
 
 @pytest.mark.parametrize(

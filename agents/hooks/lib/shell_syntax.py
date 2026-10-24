@@ -30,6 +30,7 @@ DIRECTORY_CHANGES = frozenset({"cd", "pushd", "popd"})
 SHELLS = frozenset({"bash", "dash", "ksh", "sh", "zsh"})
 COMMAND_LOOKUP = frozenset({"-v", "-V"})
 ASSIGNMENT = re.compile(r"[A-Za-z_][A-Za-z0-9_]*=")
+ASSIGNING_WRAPPERS = frozenset({"env", "sudo"})
 # Process wrappers run their trailing arguments as a command. Each entry lists the flags without an
 # operand and the options whose operand is the next token; unknown options are refused, not skipped.
 WRAPPERS: dict[str, tuple[frozenset[str], frozenset[str]]] = {
@@ -43,7 +44,7 @@ WRAPPERS: dict[str, tuple[frozenset[str], frozenset[str]]] = {
         frozenset(
             {"-n", "-S", "-E", "-H", "-k", "-b", "-B", "-P", "-A", "--non-interactive", "--stdin", "--set-home"}
         ),
-        frozenset({"-u", "-g", "-p", "-C", "-D", "-R", "-T", "-U", "-r", "-t", "--user", "--group", "--prompt"}),
+        frozenset({"-u", "-g", "-p", "-C", "-T", "-U", "-r", "-t", "--user", "--group", "--prompt"}),
     ),
     "time": (frozenset({"-p", "-l", "-h", "-a", "--portability"}), frozenset({"-o", "-f", "--output", "--format"})),
     "timeout": (
@@ -336,7 +337,7 @@ def wrapped_index(arguments: tuple[str, ...]) -> int | None:
             return None
         if token in valued:
             index += 2
-        elif (name == "env" and ASSIGNMENT.match(token)) or is_flag(name, token):
+        elif (name in ASSIGNING_WRAPPERS and ASSIGNMENT.match(token)) or is_flag(name, token):
             index += 1
         elif token.startswith("-"):
             raise UnsupportedSyntax(f"{name} option requires explicit review: {token}", "wrapper")

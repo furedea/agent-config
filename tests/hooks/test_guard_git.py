@@ -60,6 +60,7 @@ pytestmark = pytest.mark.usefixtures("isolated_project")
         pytest.param("nice -n 5 git push --force origin feature/foo", 2, [], id="blocks nice wrapper around --force"),
         pytest.param("sudo git reset --hard", 2, [], id="blocks sudo wrapper around --hard"),
         pytest.param("sudo -u root git push --force origin feature/foo", 2, [], id="blocks sudo -u around --force"),
+        pytest.param("sudo FOO=1 git reset --hard", 2, [], id="blocks sudo with an assignment around --hard"),
         pytest.param("sudo git status", 0, [], id="allows sudo around a read-only command"),
         pytest.param("env -u XDG_CONFIG_HOME git status", 0, [], id="allows env wrapper around a read-only command"),
         pytest.param("command -v git", 0, [], id="allows command lookups"),

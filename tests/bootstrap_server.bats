@@ -427,7 +427,7 @@ setup() {
 
   [ "$status" -eq 0 ]
   [ "$(codex_config_json | jq -r '.default_permissions // "unset"')" = "unset" ]
-  [ "$(codex_config_json | jq -c '.shell_environment_policy')" = "{}" ]
+  [ "$(codex_config_json | jq -c '.shell_environment_policy.set | keys')" = '["NVIM_LOG_FILE"]' ]
   [ "$(codex_config_json | jq -r '.permissions.guarded.network // "unset"')" = "unset" ]
 }
 
@@ -457,12 +457,48 @@ setup() {
   ! grep -Fq "github-app-token" "$AGENT_HARNESS_ARGS_FILE"
 }
 
-@test "leaves the Codex config alone when the host names no GitHub App" {
+@test "leaves the Codex permissions alone when the host names no GitHub App" {
   run bootstrap_server
 
   [ "$status" -eq 0 ]
   [ "$(codex_config_json | jq -r '.default_permissions // "unset"')" = "unset" ]
-  [ "$(codex_config_json | jq -c '.shell_environment_policy')" = "{}" ]
+  [ "$(codex_config_json | jq -c '.shell_environment_policy.set | keys')" = '["NVIM_LOG_FILE"]' ]
+}
+
+@test "keeps Neovim's log out of the working directory for Claude commands" {
+  run bootstrap_server
+
+  [ "$status" -eq 0 ]
+  [ "$(jq -r '.env.NVIM_LOG_FILE' "$HOME_DIR/.claude/settings.json")" = "$HOME_DIR/.local/state/agent-harness/nvim.log" ]
+  [ -d "$HOME_DIR/.local/state/agent-harness" ]
+}
+
+@test "keeps Neovim's log out of the working directory for Codex commands" {
+  run bootstrap_server
+
+  [ "$status" -eq 0 ]
+  [ "$(codex_config_json | jq -r '.shell_environment_policy.set.NVIM_LOG_FILE')" = "$HOME_DIR/.local/state/agent-harness/nvim.log" ]
+}
+
+@test "keeps Neovim's log setting beside the GitHub token settings" {
+  write_host_env 'AGENT_GITHUB_APP_ID=123' "AGENT_GITHUB_APP_PRIVATE_KEY=$HOME_DIR/app.pem"
+
+  run bootstrap_server
+
+  [ "$status" -eq 0 ]
+  [ "$(jq -r '.env.NVIM_LOG_FILE' "$HOME_DIR/.claude/settings.json")" = "$HOME_DIR/.local/state/agent-harness/nvim.log" ]
+  [ "$(codex_config_json | jq -cS '.shell_environment_policy.set')" \
+    = '{"GH_CONFIG_DIR":"'"$HOME_DIR"'/.config/agent-harness/gh","NVIM_LOG_FILE":"'"$HOME_DIR"'/.local/state/agent-harness/nvim.log"}' ]
+}
+
+@test "keeps Neovim's log setting over the host settings override" {
+  mkdir -p "$HOME_DIR/.config/agent-config"
+  printf '%s\n' '{"env":{"NVIM_LOG_FILE":"/elsewhere/nvim.log"}}' >|"$HOME_DIR/.config/agent-config/claude_settings_override.json"
+
+  run bootstrap_server
+
+  [ "$status" -eq 0 ]
+  [ "$(jq -r '.env.NVIM_LOG_FILE' "$HOME_DIR/.claude/settings.json")" = "$HOME_DIR/.local/state/agent-harness/nvim.log" ]
 }
 
 @test "leaves GitHub out of the sandbox when the host names no GitHub App" {

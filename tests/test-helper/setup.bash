@@ -71,7 +71,7 @@ function path_without_sandbox_tools() {
   local _directory="$BATS_TEST_TMPDIR/host-tools" _command
   mkdir -p "$_directory"
   for _command in bash sh env cat curl tar xz gzip install mktemp rm cp mv ln mkdir chmod \
-    head tail find dirname uname sha256sum jq python3 grep; do
+    head tail find dirname uname sha256sum jq python3 grep sed; do
     ln -sf "$(command -v "$_command")" "$_directory/$_command"
   done
   printf '%s\n' "$_directory"

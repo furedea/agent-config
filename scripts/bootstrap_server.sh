@@ -502,11 +502,11 @@ PY
   "$BIN_DIR/agent-harness" sync-codex-config --source "$_merged" --target "$CODEX_CONFIG"
 }
 
-# The token merge reads the generated Codex source with the standard-library TOML parser.
+# The Codex config render reads the generated Codex source with the standard-library TOML parser.
 function require_toml_python() {
   local _python="$1"
   "$_python" -I -c 'import tomllib' 2>/dev/null && return 0
-  printf 'The Codex token settings need Python 3.11 or newer (tomllib); %s is older. Set PYTHON_VERSION to 3.11 or newer.\n' \
+  printf 'The Codex config settings need Python 3.11 or newer (tomllib); %s is older. Set PYTHON_VERSION to 3.11 or newer.\n' \
     "$_python" >&2
   exit 1
 }

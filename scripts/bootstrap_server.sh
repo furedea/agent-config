@@ -550,13 +550,23 @@ function report_missing_profile_line() {
   sourcing_location "$ENV_SNIPPET" >/dev/null && return 0
   # The legacy snippet's notice already tells to change that line, which would source this one twice.
   [[ -e "$LEGACY_CONFIG_DIR/agent_env.sh" ]] && sourcing_location "$LEGACY_CONFIG_DIR/agent_env.sh" >/dev/null && return 0
-  printf 'Add this line to the login shell profile (~/.profile or ~/.bashrc):\n    %s\n' "$(append_profile_command)"
+  printf 'Add this line to the login shell profile (~/%s):\n    %s\n' \
+    "$(login_profile_name)" "$(append_profile_command)"
+}
+
+# A bash login shell reads only the first of these that exists.
+function login_profile_name() {
+  local _name
+  for _name in .bash_profile .bash_login; do
+    [[ -e "$HOME/$_name" ]] && printf '%s\n' "$_name" && return 0
+  done
+  printf '%s\n' .profile
 }
 
 function append_profile_command() {
   local _line
   _line=". $(home_relative_double_quoted "$ENV_SNIPPET")"
-  printf '%s%s%s\n' "printf '%s\\n' '" "${_line//\'/\'\\\'\'}" "' >> ~/.profile"
+  printf '%s%s%s%s\n' "printf '%s\\n' '" "${_line//\'/\'\\\'\'}" "' >> ~/" "$(login_profile_name)"
 }
 
 # Prints the path in double quotes, written with $HOME when it lies under the home directory.
@@ -583,11 +593,11 @@ function escape_double_quoted() {
   printf '%s\n' "$_escaped"
 }
 
-# Prints "FILE LINE" of the first login profile line that sources the file, `.` or `source`,
-# written with an absolute path, ~/ or $HOME.
+# Prints "FILE LINE" of the first line of the login profile bash reads, or ~/.bashrc, that
+# sources the file, `.` or `source`, written with an absolute path, ~/ or $HOME.
 function sourcing_location() {
   local _target="$1" _profile _line _number _word _argument
-  for _profile in "$HOME/.profile" "$HOME/.bashrc"; do
+  for _profile in "$HOME/$(login_profile_name)" "$HOME/.bashrc"; do
     [[ -f "$_profile" ]] || continue
     _number=0
     while IFS= read -r _line || [[ -n "$_line" ]]; do

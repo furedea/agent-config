@@ -560,7 +560,7 @@ setup() {
   local _snippet="$HOME_DIR/.config/agent-config/agent_env.sh"
   local _spelling
   for _spelling in ". \"$_snippet\"" "source $_snippet" '. "$HOME/.config/agent-config/agent_env.sh"' \
-    'source "${HOME}/.config/agent-config/agent_env.sh"' ". '~/.config/agent-config/agent_env.sh'"; do
+    'source "${HOME}/.config/agent-config/agent_env.sh"' '. ~/.config/agent-config/agent_env.sh'; do
     printf '%s\n' "$_spelling" >|"$HOME_DIR/.bashrc"
 
     run bootstrap_server
@@ -571,6 +571,70 @@ setup() {
       return 1
     }
   done
+}
+
+@test "asks for the snippet when a profile quotes a path the shell would not expand" {
+  local _spelling
+  for _spelling in ". '~/.config/agent-config/agent_env.sh'" ". \"~/.config/agent-config/agent_env.sh\"" \
+    ". '\$HOME/.config/agent-config/agent_env.sh'"; do
+    printf '%s\n' "$_spelling" >|"$HOME_DIR/.bashrc"
+
+    run bootstrap_server
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Add this line"* ]] || {
+      echo "hint missing for: $_spelling"
+      return 1
+    }
+  done
+}
+
+@test "detects a profile that sources the snippet without depending on grep" {
+  printf '%s\n' '. "$HOME/.config/agent-config/agent_env.sh"' >|"$HOME_DIR/.profile"
+  mkdir -p "$BATS_TEST_TMPDIR/failing-grep"
+  write_stub "$BATS_TEST_TMPDIR/failing-grep/grep" '#!/bin/sh' 'exit 2'
+
+  run bootstrap_server PATH="$BATS_TEST_TMPDIR/failing-grep:$PATH"
+
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"Add this line"* ]]
+}
+
+@test "prints an append command that makes the next run quiet" {
+  run bootstrap_server
+  [ "$status" -eq 0 ]
+  local _command
+  _command="$(grep -F "printf '%s" <<<"$output" | sed 's/^ *//')"
+  HOME="$HOME_DIR" run /bin/bash -c "$_command"
+  [ "$status" -eq 0 ]
+
+  run bootstrap_server
+
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"Add this line"* ]]
+}
+
+@test "does not ask for the snippet when the legacy snippet is still sourced and gets replaced" {
+  mkdir -p "$HOME_DIR/.config/dotfiles"
+  printf '%s\n' '# old' >|"$HOME_DIR/.config/dotfiles/agent_env.sh"
+  printf '%s\n' '. "$HOME/.config/dotfiles/agent_env.sh"' >|"$HOME_DIR/.profile"
+
+  run bootstrap_server
+
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"Add this line"* ]]
+  [[ "$output" == *"line 1 of $HOME_DIR/.profile still sources it"* ]]
+}
+
+@test "lists the profile change before the rm of the legacy snippet" {
+  mkdir -p "$HOME_DIR/.config/dotfiles"
+  printf '%s\n' '# old' >|"$HOME_DIR/.config/dotfiles/agent_env.sh"
+  printf '%s\n' '. "$HOME/.config/dotfiles/agent_env.sh"' >|"$HOME_DIR/.profile"
+
+  run bootstrap_server
+
+  local _before_rm="${output%%rm -- *}"
+  [[ "$_before_rm" == *"still sources it"* ]]
 }
 
 @test "still asks for the snippet when a profile only mentions it in a comment" {
@@ -587,8 +651,8 @@ setup() {
   run bootstrap_server
 
   [ "$status" -eq 0 ]
-  ! [[ "$output" == *"Add this line"* ]]
-  ! [[ "$output" == *"notice:"* ]]
+  [[ "$output" != *"Add this line"* ]]
+  [[ "$output" != *"notice:"* ]]
 }
 
 @test "suggests the mv that moves each legacy host file into agent-config" {
@@ -623,9 +687,11 @@ setup() {
   run bootstrap_server
 
   [ "$status" -eq 0 ]
-  ! [[ "$output" == *"mv "* ]]
-  [[ "$output" == *"ignored because $HOME_DIR/.config/agent-config/claude_settings_override.json exists"* ]]
+  [[ "$output" != *"mv -- "* ]]
+  [[ "$output" == *"$HOME_DIR/.config/dotfiles/claude_settings_override.json is ignored"* ]]
+  [[ "$output" == *"already reads $HOME_DIR/.config/agent-config/claude_settings_override.json"* ]]
   [[ "$output" == *"rm -- $HOME_DIR/.config/dotfiles/claude_settings_override.json"* ]]
+  [[ "$output" == *"mv -f -- $HOME_DIR/.config/dotfiles/claude_settings_override.json $HOME_DIR/.config/agent-config/claude_settings_override.json"* ]]
   [ -f "$HOME_DIR/.config/dotfiles/claude_settings_override.json" ]
 }
 
@@ -637,7 +703,7 @@ setup() {
 
   [ "$status" -eq 0 ]
   [[ "$output" == *"rm -- $HOME_DIR/.config/dotfiles/agent_env.sh"* ]]
-  ! [[ "$output" == *"still sources it"* ]]
+  [[ "$output" != *"still sources it"* ]]
   [ -f "$HOME_DIR/.config/dotfiles/agent_env.sh" ]
 }
 

@@ -548,6 +548,8 @@ function write_env_snippet() {
 
 function report_missing_profile_line() {
   sourcing_location "$ENV_SNIPPET" >/dev/null && return 0
+  # The legacy snippet's notice already tells to change that line, which would source this one twice.
+  [[ -e "$LEGACY_CONFIG_DIR/agent_env.sh" ]] && sourcing_location "$LEGACY_CONFIG_DIR/agent_env.sh" >/dev/null && return 0
   printf 'Add this line to the login shell profile (~/.profile or ~/.bashrc):\n    %s\n' "$(append_profile_command)"
 }
 
@@ -592,8 +594,7 @@ function sourcing_location() {
       ((++_number))
       read -r _word _argument _ <<<"$_line"
       [[ "$_word" == . || "$_word" == source ]] || continue
-      _argument="${_argument//[\"\']/}"
-      path_spellings "$_target" | grep -Fxq -- "$_argument" || continue
+      shell_resolves_to "$_argument" "$_target" || continue
       printf '%s %s\n' "$_profile" "$_number"
       return 0
     done <"$_profile"
@@ -601,11 +602,20 @@ function sourcing_location() {
   return 1
 }
 
-function path_spellings() {
-  local _path="$1"
-  printf '%s\n' "$_path"
-  [[ "$_path" == "$HOME"/* ]] || return 0
-  printf '%s\n' "\$HOME${_path#"$HOME"}" "\${HOME}${_path#"$HOME"}" "~${_path#"$HOME"}"
+# Succeeds when the shell expands the profile word to the path: single quotes expand nothing,
+# double quotes expand $HOME, and only an unquoted word expands ~.
+function shell_resolves_to() {
+  local _word="$1" _path="$2" _quote=none
+  case "$_word" in
+    \'*) _quote=single ;;
+    \"*) _quote=double ;;
+  esac
+  _word="${_word//[\"\']/}"
+  [[ "$_word" == "$_path" ]] && return 0
+  [[ "$_quote" != single && "$_path" == "$HOME"/* ]] || return 1
+  local _rest="${_path#"$HOME"}"
+  [[ "$_word" == "\$HOME$_rest" || "$_word" == "\${HOME}$_rest" ]] && return 0
+  [[ "$_quote" == none && "$_word" == "~$_rest" ]]
 }
 
 function write_env_exports() {
@@ -643,8 +653,9 @@ function report_legacy_host_file() {
   local _name="$1"
   local _legacy="$LEGACY_CONFIG_DIR/$_name" _current="$CONFIG_DIR/$_name"
   if [[ -e "$_current" ]]; then
-    printf 'notice: %s is ignored because %s exists; keep the one you want, then remove the legacy file:\n    rm -- %q\n' \
-      "$_legacy" "$_current" "$_legacy" >&2
+    printf 'notice: %s is ignored: bootstrap already reads %s.\n' "$_legacy" "$_current" >&2
+    printf '    keep the agent-config file:  rm -- %q\n' "$_legacy" >&2
+    printf '    use the legacy file instead: mv -f -- %q %q\n' "$_legacy" "$_current" >&2
     return 0
   fi
   printf 'notice: %s is read for one more release; move it to %s/:\n    mv -- %q %q\n' \
@@ -654,12 +665,14 @@ function report_legacy_host_file() {
 function report_legacy_env_snippet() {
   local _legacy="$LEGACY_CONFIG_DIR/agent_env.sh" _location _profile _number
   [[ -e "$_legacy" ]] || return 0
-  printf 'notice: %s is no longer updated; source %s from the login shell instead, then remove it:\n    rm -- %q\n' \
-    "$_legacy" "$ENV_SNIPPET" "$_legacy" >&2
-  _location="$(sourcing_location "$_legacy")" || return 0
-  read -r _profile _number <<<"$_location"
-  printf '    line %s of %s still sources it; change it to:  . %s\n' \
-    "$_number" "$_profile" "$(home_relative_double_quoted "$ENV_SNIPPET")" >&2
+  printf 'notice: %s is no longer updated; source %s from the login shell instead.\n' \
+    "$_legacy" "$ENV_SNIPPET" >&2
+  if _location="$(sourcing_location "$_legacy")"; then
+    read -r _profile _number <<<"$_location"
+    printf '    line %s of %s still sources it; change it first to:  . %s\n' \
+      "$_number" "$_profile" "$(home_relative_double_quoted "$ENV_SNIPPET")" >&2
+  fi
+  printf '    then remove the legacy file:  rm -- %q\n' "$_legacy" >&2
 }
 
 main "$@"

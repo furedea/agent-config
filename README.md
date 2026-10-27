@@ -30,13 +30,13 @@ Home Manager module. Without Nix, clone this repository and run `scripts/bootstr
 On an x86_64 Linux server without Nix or root access, clone this repository and run the bootstrap:
 
 ```sh
-mkdir -p "$HOME/ghq/github.com/furedea"
-git clone https://github.com/furedea/agent-config \
-  "$HOME/ghq/github.com/furedea/agent-config"
-cd "$HOME/ghq/github.com/furedea/agent-config"
-bash scripts/bootstrap_server.sh
-. "$HOME/.config/agent-config/agent_env.sh"
+git clone https://github.com/furedea/agent-config ~/agent-config
+bash ~/agent-config/scripts/bootstrap_server.sh
+. ~/.config/agent-config/agent_env.sh
 ```
+
+The script finds the repository from its own location, so any clone location works; keep the clone
+for updates.
 
 The script downloads pinned x86_64 Linux release binaries (`agent-harness`, `shfmt`, `rg`, `jq`,
 `ruff`, `dprint`, `shellcheck`, `bats`, and `uv`) into `~/.local/bin`, installs Python 3.15.1 through
@@ -49,15 +49,17 @@ The final command updates the current shell's `PATH`. Add the same line to `~/.p
 `~/.bashrc` to load the tools in future shells. To update an existing server, run:
 
 ```sh
-cd "$HOME/ghq/github.com/furedea/agent-config"
-git pull --ff-only
-bash scripts/bootstrap_server.sh
+git -C ~/agent-config pull --ff-only
+bash ~/agent-config/scripts/bootstrap_server.sh
 ```
+
+Claude Code's Linux sandbox needs `bubblewrap` and `socat` installed on the server.
 
 Host-specific settings stay outside the repository in `~/.config/agent-config/`:
 `bootstrap_server.env` sets locations such as `BIN_DIR`, `UV_PYTHON_INSTALL_DIR`, `UV_CACHE_DIR`,
 and `XDG_CACHE_HOME` (see `--help`), and `claude_settings_override.json` is merged into the rendered
-Claude Code settings. Hook state stays in `~/.local/state`. See
+Claude Code settings. `bootstrap_server.env` can also set `AGENT_GITHUB_APP_ID` and
+`AGENT_GITHUB_APP_PRIVATE_KEY` (the absolute path of the key) for the agent GitHub token. Hook state stays in `~/.local/state`. See
 [ADR-0012](docs/adr/0012_keep_the_personal_agent_source_in_its_own_repository.md) for why the source
 has its own repository.
 

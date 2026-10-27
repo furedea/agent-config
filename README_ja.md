@@ -28,25 +28,25 @@ Nix では，`inputs.agent-config.packages.${system}.default` を agent-harness 
 Nix も root 権限もない x86_64 の Linux サーバーでは，このリポジトリをクローンしてブートストラップを実行する：
 
 ```sh
-mkdir -p "$HOME/ghq/github.com/furedea"
-git clone https://github.com/furedea/agent-config \
-  "$HOME/ghq/github.com/furedea/agent-config"
-cd "$HOME/ghq/github.com/furedea/agent-config"
-bash scripts/bootstrap_server.sh
-. "$HOME/.config/agent-config/agent_env.sh"
+git clone https://github.com/furedea/agent-config ~/agent-config
+bash ~/agent-config/scripts/bootstrap_server.sh
+. ~/.config/agent-config/agent_env.sh
 ```
+
+スクリプトは自身の場所からリポジトリを見つけるので，クローン先はどこでもよい．更新に使うため，クローンは残しておく．
 
 このスクリプトは，バージョンを固定した x86_64 Linux 向けのリリースバイナリ（`agent-harness`，`shfmt`，`rg`，`jq`，`ruff`，`dprint`，`shellcheck`，`bats`，`uv`）を `~/.local/bin` にダウンロードし，uv で Python 3.15.1 をインストールし，同じ `agent-harness` CLI で `agents/` をホームディレクトリにレンダリングし，フックのシバンをそのインタプリタに固定し，Claude Code が実行時に書き込んだ設定を保持し，ログインシェルが読み込む `~/.config/agent-config/agent_env.sh` を書き出す．他のアーキテクチャでは何もインストールする前に終了する．ソースからビルドする手順はスクリプトを参照．
 
 最後のコマンドは現在のシェルの `PATH` を更新する．今後のシェルでもツールを使えるように，同じ行を `~/.profile` か `~/.bashrc` に追加する．既存のサーバーを更新するには，次を実行する：
 
 ```sh
-cd "$HOME/ghq/github.com/furedea/agent-config"
-git pull --ff-only
-bash scripts/bootstrap_server.sh
+git -C ~/agent-config pull --ff-only
+bash ~/agent-config/scripts/bootstrap_server.sh
 ```
 
-ホスト固有の設定はリポジトリの外の `~/.config/agent-config/` に置く．`bootstrap_server.env` は `BIN_DIR`，`UV_PYTHON_INSTALL_DIR`，`UV_CACHE_DIR`，`XDG_CACHE_HOME` などの場所を設定し（`--help` を参照），`claude_settings_override.json` はレンダリングされた Claude Code の設定にマージされる．フックの状態は `~/.local/state` に残る．ソースが独自のリポジトリを持つ理由は [ADR-0012](docs/adr/0012_keep_the_personal_agent_source_in_its_own_repository.md) を参照．
+Claude Code の Linux 用サンドボックスには，サーバーに `bubblewrap` と `socat` がインストールされている必要がある．
+
+ホスト固有の設定はリポジトリの外の `~/.config/agent-config/` に置く．`bootstrap_server.env` は `BIN_DIR`，`UV_PYTHON_INSTALL_DIR`，`UV_CACHE_DIR`，`XDG_CACHE_HOME` などの場所を設定し（`--help` を参照），`claude_settings_override.json` はレンダリングされた Claude Code の設定にマージされる．`bootstrap_server.env` では，エージェントの GitHub トークン用に `AGENT_GITHUB_APP_ID` と `AGENT_GITHUB_APP_PRIVATE_KEY`（鍵の絶対パス）も設定できる．フックの状態は `~/.local/state` に残る．ソースが独自のリポジトリを持つ理由は [ADR-0012](docs/adr/0012_keep_the_personal_agent_source_in_its_own_repository.md) を参照．
 
 ## 検証とフック
 

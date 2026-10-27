@@ -548,6 +548,111 @@ setup() {
   [ -f "$HOME_DIR/.config/agent-config/agent_env.sh" ]
 }
 
+@test "prints a copy-paste command that appends the snippet when no profile sources it" {
+  run bootstrap_server
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Add this line"* ]]
+  [[ "$output" == *"printf '%s\\n' '. \"\$HOME/.config/agent-config/agent_env.sh\"' >> ~/.profile"* ]]
+}
+
+@test "stays quiet about the snippet when a profile already sources it" {
+  local _snippet="$HOME_DIR/.config/agent-config/agent_env.sh"
+  local _spelling
+  for _spelling in ". \"$_snippet\"" "source $_snippet" '. "$HOME/.config/agent-config/agent_env.sh"' \
+    'source "${HOME}/.config/agent-config/agent_env.sh"' ". '~/.config/agent-config/agent_env.sh'"; do
+    printf '%s\n' "$_spelling" >|"$HOME_DIR/.bashrc"
+
+    run bootstrap_server
+
+    [ "$status" -eq 0 ]
+    ! [[ "$output" == *"Add this line"* ]] || {
+      echo "hint printed for: $_spelling"
+      return 1
+    }
+  done
+}
+
+@test "still asks for the snippet when a profile only mentions it in a comment" {
+  printf '%s\n' '# . "$HOME/.config/agent-config/agent_env.sh"' >|"$HOME_DIR/.profile"
+
+  run bootstrap_server
+
+  [[ "$output" == *"Add this line"* ]]
+}
+
+@test "prints nothing about profiles or legacy files when everything is already migrated" {
+  printf '%s\n' '. "$HOME/.config/agent-config/agent_env.sh"' >|"$HOME_DIR/.profile"
+
+  run bootstrap_server
+
+  [ "$status" -eq 0 ]
+  ! [[ "$output" == *"Add this line"* ]]
+  ! [[ "$output" == *"notice:"* ]]
+}
+
+@test "suggests the mv that moves each legacy host file into agent-config" {
+  mkdir -p "$HOME_DIR/.config/dotfiles"
+  printf '%s\n' "BIN_DIR=\"$BIN_DIR\"" >|"$HOME_DIR/.config/dotfiles/bootstrap_server.env"
+  printf '%s\n' '{}' >|"$HOME_DIR/.config/dotfiles/claude_settings_override.json"
+
+  run bootstrap_server
+
+  [ "$status" -eq 0 ]
+  local _legacy="$HOME_DIR/.config/dotfiles" _current="$HOME_DIR/.config/agent-config"
+  [[ "$output" == *"mv -- $_legacy/bootstrap_server.env $_current/bootstrap_server.env"* ]]
+  [[ "$output" == *"mv -- $_legacy/claude_settings_override.json $_current/claude_settings_override.json"* ]]
+  [ -f "$_legacy/bootstrap_server.env" ]
+}
+
+@test "quotes a suggested mv so that a path with spaces is safe to paste" {
+  mkdir -p "$HOME_DIR/my config/dotfiles"
+  printf '%s\n' '{}' >|"$HOME_DIR/my config/dotfiles/claude_settings_override.json"
+
+  run bootstrap_server XDG_CONFIG_HOME="$HOME_DIR/my config"
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"mv -- ${HOME_DIR}/my\\ config/dotfiles/claude_settings_override.json "* ]]
+}
+
+@test "does not suggest mv over a host file that already exists in agent-config" {
+  mkdir -p "$HOME_DIR/.config/dotfiles" "$HOME_DIR/.config/agent-config"
+  printf '%s\n' '{"old":true}' >|"$HOME_DIR/.config/dotfiles/claude_settings_override.json"
+  printf '%s\n' '{"new":true}' >|"$HOME_DIR/.config/agent-config/claude_settings_override.json"
+
+  run bootstrap_server
+
+  [ "$status" -eq 0 ]
+  ! [[ "$output" == *"mv "* ]]
+  [[ "$output" == *"ignored because $HOME_DIR/.config/agent-config/claude_settings_override.json exists"* ]]
+  [[ "$output" == *"rm -- $HOME_DIR/.config/dotfiles/claude_settings_override.json"* ]]
+  [ -f "$HOME_DIR/.config/dotfiles/claude_settings_override.json" ]
+}
+
+@test "suggests the rm of the legacy snippet" {
+  mkdir -p "$HOME_DIR/.config/dotfiles"
+  printf '%s\n' '# old' >|"$HOME_DIR/.config/dotfiles/agent_env.sh"
+
+  run bootstrap_server
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"rm -- $HOME_DIR/.config/dotfiles/agent_env.sh"* ]]
+  ! [[ "$output" == *"still sources it"* ]]
+  [ -f "$HOME_DIR/.config/dotfiles/agent_env.sh" ]
+}
+
+@test "names the profile line that still sources the legacy snippet" {
+  mkdir -p "$HOME_DIR/.config/dotfiles"
+  printf '%s\n' '# old' >|"$HOME_DIR/.config/dotfiles/agent_env.sh"
+  printf '%s\n' 'export A=1' '. "$HOME/.config/dotfiles/agent_env.sh"' >|"$HOME_DIR/.bashrc"
+
+  run bootstrap_server
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"line 2 of $HOME_DIR/.bashrc still sources it"* ]]
+  [[ "$output" == *'. "$HOME/.config/agent-config/agent_env.sh"'* ]]
+}
+
 @test "refuses a relocated hook state directory before downloading anything" {
   write_host_env "XDG_STATE_HOME=\"$BATS_TEST_TMPDIR/state\""
 
@@ -563,7 +668,7 @@ setup() {
 
   [ "$status" -eq 0 ]
   local _snippet="$HOME_DIR/.config/agent-config/agent_env.sh"
-  [[ "$output" == *"$_snippet"* ]]
+  [ -f "$_snippet" ]
   run env -i PATH=/usr/bin:/bin /bin/bash -c "source '$_snippet' && command -v rg"
   [ "$status" -eq 0 ]
   [ "$output" = "$BIN_DIR/rg" ]

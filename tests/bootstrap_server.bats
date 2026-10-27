@@ -175,8 +175,8 @@ setup() {
   run bootstrap_server
 
   [ "$status" -eq 0 ]
-  ! [[ "$output" == *"bwrap"* ]]
-  ! [[ "$output" == *"socat"* ]]
+  [[ "$output" != *"bwrap"* ]]
+  [[ "$output" != *"socat"* ]]
 }
 
 @test "warns about missing bubblewrap and socat without stopping" {
@@ -584,6 +584,54 @@ setup() {
     [ "$status" -eq 0 ]
     [[ "$output" == *"Add this line"* ]] || {
       echo "hint missing for: $_spelling"
+      return 1
+    }
+  done
+}
+
+@test "appends to ~/.bash_profile when bash reads it instead of ~/.profile" {
+  : >|"$HOME_DIR/.bash_profile"
+  : >|"$HOME_DIR/.profile"
+
+  run bootstrap_server
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *">> ~/.bash_profile"* ]]
+  [[ "$output" != *">> ~/.profile"* ]]
+}
+
+@test "appends to ~/.bash_login when it is the first profile bash reads" {
+  : >|"$HOME_DIR/.bash_login"
+  : >|"$HOME_DIR/.profile"
+
+  run bootstrap_server
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *">> ~/.bash_login"* ]]
+}
+
+@test "asks for the snippet when only a profile that bash skips sources it" {
+  : >|"$HOME_DIR/.bash_profile"
+  printf '%s\n' '. "$HOME/.config/agent-config/agent_env.sh"' >|"$HOME_DIR/.profile"
+
+  run bootstrap_server
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Add this line"* ]]
+}
+
+@test "stays quiet when the profile bash reads or ~/.bashrc sources the snippet" {
+  local _file
+  for _file in .bash_profile .bashrc; do
+    : >|"$HOME_DIR/.bash_profile"
+    : >|"$HOME_DIR/.bashrc"
+    printf '%s\n' '. "$HOME/.config/agent-config/agent_env.sh"' >|"$HOME_DIR/$_file"
+
+    run bootstrap_server
+
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"Add this line"* ]] || {
+      echo "hint printed with the snippet sourced from $_file"
       return 1
     }
   done

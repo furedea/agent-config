@@ -68,7 +68,8 @@
         "~/.local/share/pnpm"
       ],
       "denyRead": [
-        "~/.codex/auth.json"
+        "~/.codex/auth.json",
+        "~/Library/Group Containers/2BUA8C4S2C.com.1password/**"
       ],
       "denyWrite": [
         "~/**/.git/hooks",

@@ -3573,6 +3573,13 @@
         "repair"
       ],
       "justification": "Do not move or repair worktrees from an agent session; report stale worktrees instead."
+    },
+    {
+      "decision": "deny",
+      "prefix": [
+        "op"
+      ],
+      "justification": "Do not read the password vault from an agent session; the user runs commands that need secrets."
     }
   ]
 }

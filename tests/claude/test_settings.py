@@ -132,6 +132,11 @@ def test_sandboxed_commands_cannot_read_the_codex_login() -> None:
     assert "~/.codex/auth.json" in sandbox["filesystem"]["denyRead"]
 
 
+def test_sandboxed_commands_cannot_read_1password_data_or_agent_sockets() -> None:
+    sandbox = json.loads((REPO_ROOT / "agents/claude/settings.json").read_text())["sandbox"]
+    assert "~/Library/Group Containers/2BUA8C4S2C.com.1password/**" in sandbox["filesystem"]["denyRead"]
+
+
 def test_claude_code_tools_cannot_read_the_codex_login() -> None:
     permissions = json.loads((REPO_ROOT / "agents/claude/settings.json").read_text())["permissions"]
     assert "Read(~/.codex/auth.json)" in permissions["deny"]

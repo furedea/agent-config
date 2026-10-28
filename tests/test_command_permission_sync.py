@@ -180,6 +180,17 @@ def test_watching_lanes_and_their_worktrees_runs_without_approval(prefix: tuple[
     assert prefix in ALLOW
 
 
+def test_the_1password_cli_is_denied_for_every_subcommand(
+    generated_permissions: dict, agent_harness: CliRunner, tmp_path: Path
+) -> None:
+    deny = {tuple(rule["prefix"]) for rule in POLICY["rules"] if rule["decision"] == "deny"}
+    assert ("op",) in deny
+    assert "op" in bash_prefixes(generated_permissions, "deny")
+    rules = tmp_path / "default.rules"
+    agent_harness("generate-codex-rules", "--output", str(rules))
+    assert 'pattern = ["op"],\n    decision = "forbidden"' in rules.read_text()
+
+
 def test_rm_asks_and_recursive_rm_is_denied_by_the_shared_prefixes() -> None:
     assert ("rm",) in ASK
     deny = {tuple(rule["prefix"]) for rule in POLICY["rules"] if rule["decision"] == "deny"}

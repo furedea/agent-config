@@ -96,6 +96,28 @@ def test_read_only_inspection_stays_allowed(command: str) -> None:
     assert decide(command).decision == "allow"
 
 
+@pytest.mark.parametrize(
+    "command",
+    [
+        pytest.param(
+            "docker run --mount=type=bind,source=/tmp,src=$HOME/.ssh,target=/x alpine", id="last source wins"
+        ),
+        pytest.param("docker run --mount Type=bind,Source=$HOME/.ssh,target=/x alpine", id="keys in any case"),
+        pytest.param("docker run --mount type=BIND,source=$HOME/.ssh,target=/x alpine", id="type in any case"),
+        pytest.param(f"docker run --mount 'type=bind,\"source={HOME}/.ssh\",target=/x' alpine", id="csv quoted field"),
+        pytest.param(f"docker run -itv{HOME}/.ssh:/x alpine", id="cluster with an attached value"),
+        pytest.param('docker run -itv"$HOME/.ssh:/x" alpine', id="cluster with a quoted attached value"),
+        pytest.param("cd ~ && docker run -v .:/h alpine", id="dot after cd home"),
+        pytest.param('cd ~/.ssh && docker run -v "$PWD":/x alpine', id="PWD after cd"),
+        pytest.param("cd ~ && docker run -v ./.ssh:/x alpine", id="relative path after cd"),
+        pytest.param("docker run -v $HOME/.SSH:/x alpine", id="case-insensitive file system"),
+        pytest.param("docker-compose run -v ~/.ssh:/x app ls", id="standalone compose"),
+    ],
+)
+def test_forms_that_hide_a_secret_mount_still_ask(command: str) -> None:
+    assert decide(command).decision == "ask"
+
+
 def test_a_mount_whose_source_is_known_only_at_run_time_asks() -> None:
     verdict = decide("docker run -v $SOURCE:/x alpine ls")
 

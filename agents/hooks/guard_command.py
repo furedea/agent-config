@@ -32,6 +32,7 @@ import trusted_owners
 
 
 REQUEST_PROGRAMS = frozenset({"curl", "wget"})
+DOCKER_PROGRAMS = frozenset({"docker", "docker-compose"})
 REMOTE_REASON = (
     "Needs review: remote curl/wget can send local data. Read web pages with the web-fetch tool, "
     "or use gh api / nix store prefetch-file for exact values and files."
@@ -251,12 +252,14 @@ def command_verdict(kind: str, payload: dict, policy: Policy) -> Verdict:
 
 def mount_objection(commands: tuple[shell_syntax.Command, ...], secret_policy: Path | None) -> Verdict:
     """Ask when a docker call, which runs outside the sandbox, bind mounts a path the sandbox denies."""
-    docker = [item for item in map(command_policy.canonical, commands) if item.arguments[0] == "docker"]
-    if not docker or secret_policy is None:
+    if secret_policy is None or not any(Path(item.arguments[0]).name in DOCKER_PROGRAMS for item in commands):
         return hook_decision.ALLOW
     rules = secret_path_policy.load(secret_policy)
-    for item in docker:
-        for found in docker_mounts.exposures(item, rules):
+    directories: tuple[Path | None, ...] = (Path.cwd(),)
+    for segment in commands:
+        directories = shell_syntax.reached_directories(directories, segment)
+        item = command_policy.canonical(segment)
+        for found in docker_mounts.exposures(item, rules, directories):
             return hook_decision.ask(
                 f"Needs review: docker bind mount of {found.path} reaches outside the sandbox: {found.reason}"
                 f"\n\nCommand: {shell_syntax.command_preview(item.raw)}",

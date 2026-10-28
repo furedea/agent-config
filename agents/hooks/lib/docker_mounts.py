@@ -4,6 +4,7 @@ Docker runs outside the sandbox, so a bind mount can expose files the sandbox de
 are not read: only `-v`, `--volume`, and `--mount` on the command line count.
 """
 
+import csv
 from dataclasses import dataclass
 import os
 from pathlib import Path
@@ -19,10 +20,13 @@ DOCKER_VALUED = frozenset({"-H", "--host", "-c", "--context", "--config", "-l", 
 DOCKER_VALUED |= frozenset({"--tlscacert", "--tlscert", "--tlskey"})
 COMPOSE_VALUED = frozenset({"-f", "--file", "-p", "--project-name", "--profile", "--env-file", "--project-directory"})
 COMPOSE_VALUED |= frozenset({"--ansi", "--progress", "--parallel"})
-VOLUME_OPTION = re.compile(r"--volume|-[A-Za-z]*v")
-ATTACHED_VOLUME = re.compile(r"(?:--volume=|-v=?)(.+)")
-ATTACHED_MOUNT = re.compile(r"--mount=(.+)")
+# `-v` may follow boolean short flags in one cluster and take the rest of the word as its value.
+SHORT_VOLUME = re.compile(r"-[itdPq]*v=?(.*)")
+LONG_VOLUME = re.compile(r"--volume(?:=(.*))?")
+LONG_MOUNT = re.compile(r"--mount(?:=(.*))?")
 WORKING_DIRECTORY = re.compile(r"\$(?:PWD\b|\{PWD\})")
+# Stands for a --mount value that is not valid CSV: its source cannot be known, so it asks.
+RUN_TIME_SOURCE = "$(unreadable --mount value)"
 
 
 @dataclass(frozen=True, slots=True)
@@ -33,18 +37,22 @@ class Exposure:
     reason: str
 
 
-def exposures(command: shell_syntax.Command, rules: list[dict]) -> list[Exposure]:
-    """The secret exposures of one docker call; a call that does not create a container has none."""
-    words = words_after_subcommand(command)
-    found = (exposure(source, rules) for source in bind_sources(words))
-    return [item for item in found if item is not None]
+def exposures(
+    command: shell_syntax.Command, rules: list[dict], directories: tuple[Path | None, ...]
+) -> list[Exposure]:
+    """The secret exposures of one docker call in each directory it may run in; other calls have none."""
+    sources = bind_sources(words_after_subcommand(command))
+    found = (exposure(source, rules, base) for base in directories for source in sources)
+    return list(dict.fromkeys(item for item in found if item is not None))
 
 
 def words_after_subcommand(command: shell_syntax.Command) -> list[str]:
     """The words after `docker [container|compose] run|create`, or none for any other call."""
-    if command.arguments[0] != "docker":
+    if command.arguments[0] not in {"docker", "docker-compose"}:
         return []
     words = [unquoted(word, dynamic) for word, dynamic in zip(command.arguments, command.dynamic, strict=True)]
+    if words[0] == "docker-compose":
+        return called(after_options(words[1:], COMPOSE_VALUED), {"run"})
     rest = after_options(words[1:], DOCKER_VALUED)
     if rest[:1] == ["compose"]:
         return called(after_options(rest[1:], COMPOSE_VALUED), {"run"})
@@ -75,14 +83,10 @@ def bind_sources(words: list[str]) -> list[str]:
     sources: list[str] = []
     for index, word in enumerate(words):
         following = words[index + 1] if index + 1 < len(words) else ""
-        if match := ATTACHED_VOLUME.fullmatch(word):
-            sources += volume_source(match[1])
-        elif VOLUME_OPTION.fullmatch(word):
-            sources += volume_source(following)
-        elif match := ATTACHED_MOUNT.fullmatch(word):
-            sources += mount_source(match[1])
-        elif word == "--mount":
-            sources += mount_source(following)
+        if match := SHORT_VOLUME.fullmatch(word) or LONG_VOLUME.fullmatch(word):
+            sources += volume_source(match[1] or following)
+        elif match := LONG_MOUNT.fullmatch(word):
+            sources += mount_source(match[1] or following)
     return sources
 
 
@@ -92,21 +96,31 @@ def volume_source(value: str) -> list[str]:
 
 
 def mount_source(value: str) -> list[str]:
-    options = dict(part.partition("=")[::2] for part in value.split(","))
-    if options.get("type") != "bind":
+    """Read the value as docker does: CSV fields, keys and type in any case, the last source key wins."""
+    try:
+        fields = next(csv.reader([value]), [])
+    except csv.Error:
+        return [RUN_TIME_SOURCE]
+    pairs = [(key.strip().lower(), item) for key, _, item in (field.partition("=") for field in fields)]
+    sources = [item for key, item in pairs if key in {"source", "src"}]
+    if dict(pairs).get("type", "").lower() != "bind":
         return []
-    return [options.get("source") or options.get("src") or ""]
+    return sources[-1:] or [""]
 
 
-def exposure(source: str, rules: list[dict]) -> Exposure | None:
-    """Judge one source; a named volume or a path clear of every read rule has no exposure."""
-    source = WORKING_DIRECTORY.sub(lambda _: str(Path.cwd()), source)
+def exposure(source: str, rules: list[dict], base: Path | None) -> Exposure | None:
+    """Judge one source relative to the directory the call runs in; a named volume has no exposure."""
+    if base is not None:
+        source = WORKING_DIRECTORY.sub(lambda _: str(base), source)
     source = shell_paths.HOME_VARIABLE.sub(lambda _: str(Path.home()), source)
     if "$" in source or "`" in source:
         return Exposure(source, "its source is known only at run time")
     if not is_host_path(source):
         return None
-    path = os.path.normpath(Path.cwd() / os.path.expanduser(source))
+    expanded = os.path.expanduser(source)
+    if base is None and not os.path.isabs(expanded):
+        return Exposure(source, "the directory it is relative to is known only at run time")
+    path = os.path.normpath(os.path.join(base or "/", expanded))
     if reason := protected_reason(path, rules):
         return Exposure(shown(path), reason)
     return None
@@ -117,15 +131,32 @@ def is_host_path(source: str) -> bool:
 
 
 def protected_reason(path: str, rules: list[dict]) -> str:
-    """Why the path or something inside it is protected, or an empty string."""
+    """Why the path or something inside it is protected, or an empty string.
+
+    Paths compare without regard to case, as on a case-insensitive file system.
+    """
     home = str(Path.home())
     if path == home or home.startswith(path.rstrip("/") + "/"):
         return "the home directory holds credential files and directories."
+    folded = fold_case(path)
+    patterns = [{**rule, "pattern": rule["pattern"].lower()} for rule in rules]
     # A directory is judged as its own entries are, so `secrets` is read as `secrets/`.
-    if rule := secret_path_policy.blocked_rule(path, rules) or secret_path_policy.blocked_rule(path + "/", rules):
+    if rule := secret_path_policy.blocked_rule(folded, patterns) or secret_path_policy.blocked_rule(
+        folded + "/", patterns
+    ):
         return rule["reason"]
-    inside = next((rule for rule in rules if is_below(literal_prefix(rule["pattern"]), path)), None)
+    inside = next((rule for rule in patterns if is_below(literal_prefix(rule["pattern"]), folded)), None)
     return f"it contains protected files. {inside['reason']}" if inside else ""
+
+
+def fold_case(path: str) -> str:
+    """Lowercase everything below the home directory, whose own spelling the policy normalizes by."""
+    home = str(Path.home())
+    if path.lower() == home.lower():
+        return home
+    if path.lower().startswith(home.lower() + "/"):
+        return home + path[len(home) :].lower()
+    return path.lower()
 
 
 def literal_prefix(pattern: str) -> str:

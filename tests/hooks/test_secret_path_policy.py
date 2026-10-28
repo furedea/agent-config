@@ -40,6 +40,19 @@ def test_credential_paths_are_denied(path: str) -> None:
 @pytest.mark.parametrize(
     "path",
     [
+        "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock",
+        "~/Library/Group Containers/2BUA8C4S2C.com.1password/Library/Application Support/1Password/Data/1password.sqlite",
+    ],
+)
+def test_1password_data_and_sockets_are_denied_for_reading(path: str) -> None:
+    rule = policy.blocked_rule(path, RULES)
+    assert rule is not None
+    assert "read" in rule["access"]
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
         ".venv/lib/python3.15/site-packages/pygments/token.py",
         ".envrc",
         "src/tokenizer.rs",

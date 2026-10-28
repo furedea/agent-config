@@ -37,6 +37,10 @@ def test_codex_keeps_asking_before_leaving_the_sandbox() -> None:
     assert codex_config()["approval_policy"] == "on-request"
 
 
+def test_codex_stores_its_login_in_the_keyring_instead_of_auth_json() -> None:
+    assert codex_config()["cli_auth_credentials_store"] == "keyring"
+
+
 def test_codex_git_matches_the_claude_git_environment() -> None:
     claude = json.loads((REPO_ROOT / "agents/claude/settings.json").read_text())["env"]
     codex = codex_config()["shell_environment_policy"]["set"]
@@ -60,6 +64,7 @@ def test_generated_codex_config_keeps_the_sandbox_and_git_environment(
     config = tomllib.loads(path.read_text())
     assert config["sandbox_mode"] == "workspace-write"
     assert config["sandbox_workspace_write"]["network_access"] is True
+    assert config["cli_auth_credentials_store"] == "keyring"
     assert git_config(config["shell_environment_policy"]["set"])["core.fsmonitor"] == "false"
 
 

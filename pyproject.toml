@@ -21,6 +21,7 @@ known_first_party = [
   "check_selection",
   "cleanup_worktrees",
   "command_policy",
+  "docker_mounts",
   "git_safety",
   "guard_command",
   "guard_file",

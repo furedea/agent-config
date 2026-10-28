@@ -145,8 +145,10 @@ def test_unlisted_docker_forms_are_held_for_review_in_every_provider(
 
 
 @pytest.mark.parametrize("provider", PROVIDERS)
-@pytest.mark.parametrize("command", ["docker ps", "docker compose logs web"])
-def test_read_only_docker_inspection_passes_in_every_provider(
+@pytest.mark.parametrize(
+    "command", ["docker ps", "docker compose logs web", "docker run alpine", "docker build .", "docker compose up"]
+)
+def test_docker_forms_the_provider_prompts_for_itself_or_allows_reach_it_in_every_provider(
     run_cli: CliRunner, harness: Path, provider: str, command: str
 ) -> None:
     payload = {"session_id": "adapter-session", "tool_input": {"command": command}}

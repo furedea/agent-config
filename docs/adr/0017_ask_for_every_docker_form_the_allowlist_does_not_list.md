@@ -13,5 +13,7 @@ rule flagged `ask_unlisted`, so that read-only inspection (`docker ps|images|log
 `docker compose ps|logs`) runs unprompted and every other form asks, and against a catch-all `ask`
 prefix and against a parser of docker's mounts, to keep the allow and deny prefixes in effect,
 because providers let an ask or deny prefix override the allow prefixes beneath it, so `docker`
-ask would also prompt for `docker ps`, accepting that Codex, whose hooks cannot ask, denies the same
-forms, and that a run-time program name such as `$d run` is not seen.
+ask would also prompt for `docker ps`, and leaving forms that already have an ask prefix (`docker
+run`, `docker build`) to the provider's own prompt so that Codex, whose hooks cannot ask, keeps
+prompting for them, accepting that Codex denies the other unlisted forms, and that a run-time
+program name such as `$d run` is not seen.

@@ -22,7 +22,6 @@ pytestmark = pytest.mark.usefixtures("isolated_project")
         "docker buildx build .",
         "docker --context remote ps",
         "docker -H tcp://example.com:2375 ps",
-        "docker run --env-file /Users/kaito/.env alpine env",
         "docker-compose up",
         "docker-compose ps",
         "/usr/local/bin/docker cp a web:/tmp/",
@@ -53,6 +52,21 @@ def test_docker_forms_other_than_read_only_inspection_ask(command: str) -> None:
     ],
 )
 def test_docker_read_only_inspection_passes(command: str) -> None:
+    assert guard.decide("allowed", {"tool_input": {"command": command}}).decision == "allow"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "docker build .",
+        "docker run alpine",
+        "docker run --env-file /Users/kaito/.env alpine env",
+        "docker exec web sh",
+        "docker compose up",
+        "docker compose down",
+    ],
+)
+def test_forms_with_an_ask_prefix_are_left_to_the_provider_prompt(command: str) -> None:
     assert guard.decide("allowed", {"tool_input": {"command": command}}).decision == "allow"
 
 

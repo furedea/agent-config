@@ -74,4 +74,5 @@ flowchart LR
 - 拒否は，deny プレフィックス，禁止パターン，危険な Git 操作，シークレットのポリシー，検証登録の欠落に限る．
 - 承認済みのファミリー内にあって，精密なルールに載っていない形式のコマンド，静的な検査で解読できないコマンド，worktree とセッションの一時ディレクトリのどちらの外にもあるツールの対象は，拒否せずプロバイダの権限プロンプトに回す．[ADR-0006](adr/0006_escalate_unrecognized_command_forms_to_the_provider_prompt.md) を参照．
 - スクリプトの実行，インプレースの編集，任意の引数での読み取り専用の調査など，影響をサンドボックスが封じ込めるコマンドは，プロンプトなしで実行する．サンドボックスを越える，または元に戻せない影響だけが確認を求める．[ADR-0007](adr/0007_ask_only_for_effects_that_escape_the_sandbox.md) を参照．これは [ADR-0009](adr/0009_review_only_commands_that_reach_past_the_sandbox.md) で具体化されている．
+- Docker はサンドボックスの外で動くため，読み取り専用の調査だけをプロンプトなしで実行し，それ以外の形式はすべて確認を求める．[ADR-0017](adr/0017_ask_for_every_docker_form_the_allowlist_does_not_list.md) を参照．
 - 補助のガードは，静的に判定できるシェルのテキストだけを判定し，残りは確認を求める．[ADR-0015](adr/0015_judge_only_statically_determinable_shell_text_in_the_guards.md) と [ADR-0016](adr/0016_inspect_shell_syntax_in_the_supplementary_command_guards.md) を参照．

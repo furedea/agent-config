@@ -168,6 +168,12 @@ def governed_objection(candidate: shell_syntax.Command, policy: Policy, preview:
             "herdr",
         )
     governed = command_policy.prefix_rule(candidate.arguments, prefixes, "allow")
+    if governed is None and candidate.arguments[0] in command_policy.asking_programs(rules):
+        return hook_decision.ask(
+            f"Needs review: '{candidate.arguments[0]}' reaches host files and networks outside the sandbox, "
+            f"and only read-only inspection runs without approval.\n\nCommand: {preview}",
+            candidate.arguments[0],
+        )
     if governed is None or (
         not candidate.appends_input and not candidate.hides_options and is_listed(candidate, policy.listing_rules)
     ):

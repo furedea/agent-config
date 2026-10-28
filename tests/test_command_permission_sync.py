@@ -126,6 +126,19 @@ def test_container_execution_requires_approval(prefix: tuple[str, ...]) -> None:
     assert prefix not in ALLOW
 
 
+def test_docker_catch_all_is_a_hook_rule_because_a_prefix_ask_would_override_the_allows(
+    generated_permissions: dict,
+) -> None:
+    assert ("docker",) not in ASK and ("docker-compose",) not in ASK
+    assert {"docker", "docker-compose"}.isdisjoint(bash_prefixes(generated_permissions, "ask"))
+    assert {"docker ps", "docker images", "docker logs", "docker compose ps", "docker compose logs"} <= bash_prefixes(
+        generated_permissions, "allow"
+    )
+    rules = json.loads((REPO_ROOT / "agents/hooks/rules/allowed_commands.json").read_text())["rules"]
+    asking = {program for rule in rules if rule.get("ask_unlisted") for program in rule["programs"]}
+    assert asking == {"docker", "docker-compose"}
+
+
 @pytest.mark.parametrize(
     "prefix",
     [

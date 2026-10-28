@@ -94,6 +94,9 @@ see [ADR-0003](adr/0003_register_verification_in_native_hooks.md).
   sandbox or cannot be undone ask; see
   [ADR-0007](adr/0007_ask_only_for_effects_that_escape_the_sandbox.md), refined by
   [ADR-0009](adr/0009_review_only_commands_that_reach_past_the_sandbox.md).
+- Docker runs outside the sandbox, so only its read-only inspection forms run without a prompt and
+  every other form asks; see
+  [ADR-0017](adr/0017_ask_for_every_docker_form_the_allowlist_does_not_list.md).
 - The supplementary guards judge only statically determinable shell text and ask for the rest; see
   [ADR-0015](adr/0015_judge_only_statically_determinable_shell_text_in_the_guards.md) and
   [ADR-0016](adr/0016_inspect_shell_syntax_in_the_supplementary_command_guards.md).

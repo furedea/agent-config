@@ -79,7 +79,7 @@ MACHINE="${BOOTSTRAP_SERVER_MACHINE:-$(uname -m)}"
 readonly MACHINE
 # Renovate updates the versions below from the release named on each comment.
 # renovate: datasource=github-releases depName=furedea/agent-harness extractVersion=^agent-harness-v(?<version>.+)$
-readonly AGENT_HARNESS_VERSION="${AGENT_HARNESS_VERSION:-0.9.8}"
+readonly AGENT_HARNESS_VERSION="${AGENT_HARNESS_VERSION:-0.9.9}"
 # renovate: datasource=github-releases depName=mvdan/sh extractVersion=^v(?<version>.+)$
 readonly SHFMT_VERSION="${SHFMT_VERSION:-3.13.1}"
 # renovate: datasource=github-releases depName=BurntSushi/ripgrep

@@ -71,6 +71,21 @@
     },
     {
       "programs": [
+        "docker",
+        "docker-compose"
+      ],
+      "ask_unlisted": true,
+      "patterns": [
+        "^docker ps( |$)",
+        "^docker images( |$)",
+        "^docker logs( |$)",
+        "^docker compose ps( |$)",
+        "^docker compose logs( |$)"
+      ],
+      "justification": "Allow read-only container inspection; docker runs outside the sandbox and reaches host files through mounts, copies, env files, build contexts, and compose files, so every other form, including global options and docker-compose, asks."
+    },
+    {
+      "programs": [
         "herdr"
       ],
       "patterns": [

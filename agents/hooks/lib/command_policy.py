@@ -72,6 +72,8 @@ def validate_rule(rule: object, prefixes: bool) -> None:
         raise ValueError("invalid exception list")
     if not prefixes and not isinstance(rule.get("literal_words", False), bool):
         raise ValueError("invalid literal word flag")
+    if not prefixes and not isinstance(rule.get("ask_unlisted", False), bool):
+        raise ValueError("invalid ask-unlisted flag")
 
 
 def is_name_list(value: object) -> bool:
@@ -86,6 +88,15 @@ def literal_rules(rules: list[dict], *, literal: bool) -> list[dict]:
 def governed_programs(rules: list[dict]) -> frozenset[str]:
     """Programs whose effects reach past the sandbox, so only their listed forms pass unreviewed."""
     return frozenset(program for rule in rules for program in rule.get("programs", ()))
+
+
+def asking_programs(rules: list[dict]) -> frozenset[str]:
+    """Governed programs that ask for every form no allow prefix lists, not only for unlisted allowed forms.
+
+    A prefix ask rule cannot express this: providers let an ask or deny prefix override the allow
+    prefixes beneath it, so a catch-all would stop the listed forms from running unprompted.
+    """
+    return frozenset(program for rule in rules if rule.get("ask_unlisted", False) for program in rule["programs"])
 
 
 def project_root() -> Path | None:

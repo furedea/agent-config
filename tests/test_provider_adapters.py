@@ -134,6 +134,28 @@ def test_escalations_are_denied_for_providers_whose_hooks_cannot_ask(
 
 
 @pytest.mark.parametrize("provider", PROVIDERS)
+@pytest.mark.parametrize("command", ["docker cp a web:/tmp/", "docker compose run web sh", "docker-compose up"])
+def test_unlisted_docker_forms_are_held_for_review_in_every_provider(
+    run_cli: CliRunner, harness: Path, provider: str, command: str
+) -> None:
+    payload = {"session_id": "adapter-session", "tool_input": {"command": command}}
+    result = run_cli(script(provider), "shell", "allowed", payload=payload)
+    assert result.returncode == 2
+    assert "review" in result.stderr
+
+
+@pytest.mark.parametrize("provider", PROVIDERS)
+@pytest.mark.parametrize(
+    "command", ["docker ps", "docker compose logs web", "docker run alpine", "docker build .", "docker compose up"]
+)
+def test_docker_forms_the_provider_prompts_for_itself_or_allows_reach_it_in_every_provider(
+    run_cli: CliRunner, harness: Path, provider: str, command: str
+) -> None:
+    payload = {"session_id": "adapter-session", "tool_input": {"command": command}}
+    assert run_cli(script(provider), "shell", "allowed", payload=payload).returncode == 0
+
+
+@pytest.mark.parametrize("provider", PROVIDERS)
 @pytest.mark.parametrize("raw", ["{", "null", "[]"])
 def test_non_object_payloads_are_rejected(run_cli: CliRunner, harness: Path, provider: str, raw: str) -> None:
     result = run_cli(script(provider), "shell", "git", payload=raw)

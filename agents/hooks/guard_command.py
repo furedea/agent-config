@@ -20,10 +20,12 @@ sys.path.insert(0, str(ROOT / "lib"))
 
 import audit_log
 import command_policy
+import docker_mounts
 import herdr_grammar
 import hook_decision
 import hook_input
 from hook_decision import Verdict
+import secret_path_policy
 import shell_inspection
 import shell_syntax
 import trusted_owners
@@ -66,6 +68,7 @@ class Policy:
     rules: list[dict]
     literal_words: bool = True
     ignored: trusted_owners.Ignored | None = None
+    secret_policy: Path | None = None
 
     @property
     def listing_rules(self) -> list[dict]:
@@ -192,7 +195,10 @@ def settings_objection(command: str, commands: tuple[shell_syntax.Command, ...])
 def decide(kind: str, payload: dict, directory: Path = ROOT) -> Verdict:
     """Decide for an already decoded provider payload, recording every denial and escalation."""
     try:
-        policy = policies(kind, directory)
+        secret_policy = Path(
+            os.environ.get("AGENT_SECRET_PATH_POLICY", str(directory / "rules/secret_path_policy.json"))
+        )
+        policy = replace(policies(kind, directory), secret_policy=secret_policy)
         if not isinstance(payload, dict):
             raise ValueError("failed to parse tool input JSON: expected an object")
         with hook_input.payload_directory(payload):
@@ -232,6 +238,8 @@ def command_verdict(kind: str, payload: dict, policy: Policy) -> Verdict:
         return verdict
     if kind == "allowed" and (verdict := cleanup_objection(command, commands)).decision != "allow":
         return verdict
+    if kind == "allowed" and (verdict := mount_objection(commands, policy.secret_policy)).decision != "allow":
+        return verdict
     if not allows_literal_rules(command, commands):
         policy = replace(policy, literal_words=False)
     verdicts = (objection(kind, item, policy) for item in commands)
@@ -239,6 +247,22 @@ def command_verdict(kind: str, payload: dict, policy: Policy) -> Verdict:
     if kind == "allowed" and verdict.decision == "allow":
         return settings_objection(command, commands)
     return verdict
+
+
+def mount_objection(commands: tuple[shell_syntax.Command, ...], secret_policy: Path | None) -> Verdict:
+    """Ask when a docker call, which runs outside the sandbox, bind mounts a path the sandbox denies."""
+    docker = [item for item in map(command_policy.canonical, commands) if item.arguments[0] == "docker"]
+    if not docker or secret_policy is None:
+        return hook_decision.ALLOW
+    rules = secret_path_policy.load(secret_policy)
+    for item in docker:
+        for found in docker_mounts.exposures(item, rules):
+            return hook_decision.ask(
+                f"Needs review: docker bind mount of {found.path} reaches outside the sandbox: {found.reason}"
+                f"\n\nCommand: {shell_syntax.command_preview(item.raw)}",
+                "docker mount",
+            )
+    return hook_decision.ALLOW
 
 
 def cleanup_objection(command: str, commands: tuple[shell_syntax.Command, ...]) -> Verdict:

@@ -73,6 +73,7 @@ def test_scanner_receives_only_added_lines() -> None:
         (".jsx", "js"),
         (".tsx", "js"),
         (".rs", "rs"),
+        (".go", "go"),
         (".nix", "nix"),
         (".md", "md"),
         (".markdown", "md"),

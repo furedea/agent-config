@@ -37,6 +37,7 @@ def test_missing_project_marker_has_no_invented_root(tmp_path: Path) -> None:
         ("js", "file.js", ("oxlint",)),
         ("json_toml", "file.json", ("dprint", "dprint")),
         ("rs", "file.rs", ("rustfmt",)),
+        ("go", "file.go", ("gofmt",)),
         ("nix", "file.nix", ("nixfmt", "statix", "statix", "deadnix")),
         ("lua", "file.lua", ("stylua", "selene")),
         ("tex", "file.tex", ("tex-fmt", "chktex")),
@@ -413,3 +414,37 @@ def test_formatted_replacement_preserves_file_permissions(tmp_path: Path) -> Non
     lint_engine.replace_formatted_file(target, b"after")
     assert target.read_bytes() == b"after"
     assert target.stat().st_mode & 0o777 == 0o640
+
+
+@pytest.mark.parametrize("name", [".golangci.yml", ".golangci.yaml", ".golangci.toml"])
+def test_golangci_formatters_section_adopts_golangci_lint_fmt(tmp_path: Path, name: str) -> None:
+    (tmp_path / "go.mod").write_text("module example\n")
+    section = '[formatters]\nenable = ["gofmt"]\n' if name.endswith("toml") else "formatters:\n  enable: [gofmt]\n"
+    (tmp_path / name).write_text(section)
+    target = tmp_path / "pkg" / "file.go"
+    steps = formatter_policy.plan("go", target)
+    assert [(step.label, step.arguments, step.mutates) for step in steps] == [
+        ("golangci-lint fmt", ("golangci-lint", "fmt", str(target)), True)
+    ]
+    assert steps[0].cwd == tmp_path
+
+
+@pytest.mark.parametrize("config", [None, "linters:\n  enable: [govet]\n", 'version: "2"\n'])
+def test_go_without_golangci_formatters_uses_gofmt(tmp_path: Path, config: str | None) -> None:
+    (tmp_path / "go.mod").write_text("module example\n")
+    if config is not None:
+        (tmp_path / ".golangci.yml").write_text(config)
+    target = tmp_path / "file.go"
+    steps = formatter_policy.plan("go", target)
+    assert [(step.label, step.arguments, step.mutates) for step in steps] == [
+        ("gofmt format", ("gofmt", "-w", str(target)), True)
+    ]
+
+
+def test_go_formatting_does_not_run_project_wide_lint(tmp_path: Path) -> None:
+    (tmp_path / ".golangci.yml").write_text("formatters:\n  enable: [gofmt]\n")
+    assert all("run" not in step.arguments for step in formatter_policy.plan("go", tmp_path / "file.go"))
+
+
+def test_readonly_go_plan_has_no_steps(tmp_path: Path) -> None:
+    assert formatter_policy.plan("go", tmp_path / "file.go", readonly=True) == ()

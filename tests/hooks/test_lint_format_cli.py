@@ -31,6 +31,7 @@ def additional_context(output: str) -> str:
         ("js", "const x = 1;\nconsole.log(x);\n", "const x = 1;", ""),
         ("js", "const   x=1\nconst y  =  2;\nconsole.log(x,y);\n", "const x = 1;", ""),
         ("rs", 'fn main(){let x=1;println!("{}",x);}\n', "fn main() {", ""),
+        ("go", "package main\nfunc main(){x:=1;_=x}\n", "func main() {", ""),
     ],
 )
 def test_real_formatters_fix_files_without_residual_notifications(
@@ -38,6 +39,8 @@ def test_real_formatters_fix_files_without_residual_notifications(
 ) -> None:
     if kind == "rs" and not shutil.which("rustfmt"):
         pytest.skip("rustfmt not installed")
+    if kind == "go" and not shutil.which("gofmt"):
+        pytest.skip("gofmt not installed")
     if kind == "py":
         (tmp_path / "pyproject.toml").write_text("[tool.ruff]\n[tool.ruff.format]\n")
     if kind == "js":

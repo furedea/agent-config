@@ -46,8 +46,9 @@ For new projects, the user's defaults are:
 | Project                  | Template                      | Development conventions       |
 | ------------------------ | ----------------------------- | ----------------------------- |
 | Python / uv              | `furedea/template-python`     | `python-style`                |
-| TypeScript / Node / pnpm | `furedea/template-typescript` | Existing project conventions  |
+| TypeScript / Node / pnpm | `furedea/template-typescript` | `typescript-style`            |
 | Rust / Cargo             | `furedea/template-rust`       | `rust-style`                  |
+| Go                       | `furedea/template-go`         | `go-style`                    |
 | TeX / LaTeX              | `furedea/template-tex`        | Existing project conventions  |
 | Other languages          | `furedea/template-minimal`    | Relevant language conventions |
 

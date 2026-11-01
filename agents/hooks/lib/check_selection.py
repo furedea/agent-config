@@ -8,15 +8,18 @@ import os
 from pathlib import Path
 import tomllib
 
+from go_selection import GO_FULL_SUITE, go_files, go_package_exists, go_test_arguments
 from javascript_runner import javascript_runner, package_manager, runner_arguments
+from rust_targets import rust_test_target
 from source_listing import remaining_sources
 
 
-LANGUAGES = ("bats", "python", "javascript_typescript", "rust")
+LANGUAGES = ("bats", "python", "javascript_typescript", "rust", "go")
 TARGET_LANGUAGES = {
     ".bats": "bats",
     ".py": "python",
     ".rs": "rust",
+    ".go": "go",
     ".js": "javascript_typescript",
     ".jsx": "javascript_typescript",
     ".ts": "javascript_typescript",
@@ -286,6 +289,8 @@ def selection_plan(selection: Selection) -> tuple[list[Invocation], list[str]]:
             return [python_invocation(selection)], []
         case "rust":
             return rust_plan(selection), []
+        case "go":
+            return [go_invocation(selection)], []
         case _:
             return javascript_plan(selection), []
 
@@ -347,6 +352,10 @@ def matching_targets(scope: LanguageScope) -> tuple[set[str], set[str]]:
         return set(), unresolved
     if scope.language == "python":
         return python_targets(root, rule, changed)
+    if scope.language == "go":
+        return set(), {
+            path for path in go_files(rule["source_extensions"], changed) if not go_package_exists(root, path)
+        }
     targets, resolved = matching_tests(root, rule, changed)
     return targets, {source for source, matched in resolved.items() if not matched}
 
@@ -418,25 +427,14 @@ def rust_plan(selection: Selection) -> list[Invocation]:
     return invocations or [RUST_FULL_SUITE]
 
 
-def rust_test_target(root: Path, filename: str) -> str:
-    """Resolve an integration test file to its declared or auto-discovered Cargo target."""
-    try:
-        manifest = tomllib.loads((root / "Cargo.toml").read_text())
-    except OSError, tomllib.TOMLDecodeError:
-        return ""
-    path = Path(filename)
-    entries = [entry for entry in manifest.get("test", []) if "path" in entry and "name" in entry]
-    for entry in sorted(entries, key=lambda entry: len(Path(entry["path"]).parent.parts), reverse=True):
-        declared = Path(entry["path"])
-        if path == declared or (
-            declared.parent != Path("tests")
-            and declared.parent.is_relative_to("tests")
-            and path.is_relative_to(declared.parent)
-        ):
-            return entry["name"]
-    if len(path.parts) > 2 and (root / "tests" / path.parts[1] / "main.rs").is_file():
-        return path.parts[1]
-    return path.stem if len(path.parts) == 2 else ""
+def go_invocation(selection: Selection) -> Invocation:
+    """Test the packages that contain changed or mapped Go files, or the whole module when unsure."""
+    rule, changed = selection.scope.rule, selection.scope.changed
+    files = go_files(rule["source_extensions"], changed) | {path for path in selection.targets if path.endswith(".go")}
+    arguments = go_test_arguments(files, full=selection.full)
+    return Invocation(
+        "go", "full suite" if arguments == GO_FULL_SUITE else f"{len(arguments) - 2} packages", arguments
+    )
 
 
 def javascript_plan(selection: Selection) -> list[Invocation]:

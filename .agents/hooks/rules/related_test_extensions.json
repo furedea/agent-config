@@ -47,6 +47,7 @@
   ],
   "agents/hooks/rules/related_test_*.json": [
     "tests/hooks/test_check_selection.py",
+    "tests/hooks/test_go_check_selection.py",
     "tests/hooks/test_verification_rule.py",
     "tests/test_related_test_extensions.py",
     "tests/hooks/test_verification_status.py",
@@ -173,8 +174,15 @@
     "tests/hooks/test_lint_format.py",
     "tests/test_python_runtime.py"
   ],
+  "agents/hooks/lib/go_selection.py": [
+    "tests/hooks/test_go_check_selection.py"
+  ],
+  "agents/hooks/lib/rust_targets.py": [
+    "tests/hooks/test_check_selection.py"
+  ],
   "agents/hooks/lib/check_*.py": [
     "tests/hooks/test_check_selection.py",
+    "tests/hooks/test_go_check_selection.py",
     "tests/hooks/test_check_evidence.py",
     "tests/hooks/test_session_gate.py",
     "tests/hooks/test_native_session.py",

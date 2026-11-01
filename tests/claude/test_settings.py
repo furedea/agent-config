@@ -109,6 +109,20 @@ def test_pnpm_installs_into_its_shared_store_from_inside_the_sandbox() -> None:
     assert {"~/.local/share/pnpm"} <= set(sandbox["filesystem"]["allowWrite"])
 
 
+def test_go_downloads_and_verifies_modules_inside_the_sandbox() -> None:
+    sandbox = json.loads((REPO_ROOT / "agents/claude/settings.json").read_text())["sandbox"]
+    domains = set(sandbox["network"]["allowedDomains"])
+    assert {"proxy.golang.org", "sum.golang.org"} <= domains
+    assert "direct" not in domains
+
+
+def test_go_builds_and_lints_into_the_default_macos_caches_from_inside_the_sandbox() -> None:
+    sandbox = json.loads((REPO_ROOT / "agents/claude/settings.json").read_text())["sandbox"]
+    writable = set(sandbox["filesystem"]["allowWrite"])
+    assert {"~/go/pkg/mod", "~/Library/Caches/go-build", "~/Library/Caches/golangci-lint"} <= writable
+    assert "~/Library/Application Support/go" not in writable
+
+
 def test_dev_servers_and_end_to_end_tests_can_listen_on_local_ports() -> None:
     sandbox = json.loads((REPO_ROOT / "agents/claude/settings.json").read_text())["sandbox"]
     assert sandbox["network"]["allowLocalBinding"] is True

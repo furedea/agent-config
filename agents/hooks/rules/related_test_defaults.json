@@ -38,7 +38,7 @@
     "fallback_on_unmatched_source": true
   },
   "javascript_typescript": {
-    "source_extensions": [".js", ".jsx", ".ts", ".tsx"],
+    "source_extensions": [".js", ".jsx", ".ts", ".tsx", ".mts", ".cts", ".mjs", ".cjs"],
     "project_markers": ["package.json", "pnpm-lock.yaml", "tsconfig.json"],
     "test_dirs": ["."],
     "exclude_dirs": ["node_modules", ".venv", "dist", "build", "coverage", "__pycache__"],
@@ -50,7 +50,15 @@
       "{stem}.test.ts",
       "{stem}.spec.ts",
       "{stem}.test.tsx",
-      "{stem}.spec.tsx"
+      "{stem}.spec.tsx",
+      "{stem}.test.mts",
+      "{stem}.spec.mts",
+      "{stem}.test.cts",
+      "{stem}.spec.cts",
+      "{stem}.test.mjs",
+      "{stem}.spec.mjs",
+      "{stem}.test.cjs",
+      "{stem}.spec.cjs"
     ],
     "self_test_globs": [
       "*.test.js",
@@ -60,7 +68,15 @@
       "*.test.ts",
       "*.spec.ts",
       "*.test.tsx",
-      "*.spec.tsx"
+      "*.spec.tsx",
+      "*.test.mts",
+      "*.spec.mts",
+      "*.test.cts",
+      "*.spec.cts",
+      "*.test.mjs",
+      "*.spec.mjs",
+      "*.test.cjs",
+      "*.spec.cjs"
     ],
     "full_suite_triggers": [
       "package.json",

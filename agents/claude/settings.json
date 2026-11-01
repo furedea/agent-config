@@ -65,7 +65,10 @@
         "~/Library/Caches/dprint",
         "~/.cache/dprint",
         "~/.local/state/agent-harness",
-        "~/.local/share/pnpm"
+        "~/.local/share/pnpm",
+        "~/go/pkg/mod",
+        "~/Library/Caches/go-build",
+        "~/Library/Caches/golangci-lint"
       ],
       "denyRead": [
         "~/.codex/auth.json",
@@ -81,8 +84,10 @@
       "allowedDomains": [
         "channels.nixos.org",
         "files.pythonhosted.org",
+        "proxy.golang.org",
         "pypi.org",
-        "registry.npmjs.org"
+        "registry.npmjs.org",
+        "sum.golang.org"
       ],
       "allowUnixSockets": [
         "/nix/var/nix/daemon-socket/socket"

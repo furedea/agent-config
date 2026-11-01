@@ -27,7 +27,16 @@ def test_defaults_define_repository_test_conventions() -> None:
     assert "src" in rules["rust"]["source_dirs"]
     assert rules["go"]["source_extensions"] == [".go"]
     assert rules["go"]["project_markers"] == ["go.mod"]
-    assert rules["javascript_typescript"]["source_extensions"] == [".js", ".jsx", ".ts", ".tsx"]
+    assert rules["javascript_typescript"]["source_extensions"] == [
+        ".js",
+        ".jsx",
+        ".ts",
+        ".tsx",
+        ".mts",
+        ".cts",
+        ".mjs",
+        ".cjs",
+    ]
     assert "{stem}.test.ts" in rules["javascript_typescript"]["test_patterns"]
 
 

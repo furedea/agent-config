@@ -24,6 +24,10 @@ TARGET_LANGUAGES = {
     ".jsx": "javascript_typescript",
     ".ts": "javascript_typescript",
     ".tsx": "javascript_typescript",
+    ".mts": "javascript_typescript",
+    ".cts": "javascript_typescript",
+    ".mjs": "javascript_typescript",
+    ".cjs": "javascript_typescript",
 }
 
 
@@ -480,7 +484,7 @@ def vitest_plan(selection: Selection, arguments: tuple[str, ...]) -> list[Invoca
     sources = sorted(
         path
         for path in selection.scope.changed
-        if Path(path).suffix in {".js", ".jsx", ".ts", ".tsx"}
+        if TARGET_LANGUAGES.get(Path(path).suffix) == "javascript_typescript"
         and not is_test(selection.scope.rule, path)
         and (root / path).is_file()
     )

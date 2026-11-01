@@ -123,6 +123,14 @@ For pnpm projects, run `pnpm install` in the project environment and verify the 
 scripts. Use `pnpm init` only when the manifest is missing. Retain the template's oxlint/oxfmt
 setup unless a concrete need, such as existing upstream conventions, justifies different tools.
 
+### Go
+
+Inspect `go.mod` for the required Go version and verify `go version` from the project
+environment. Use the Nix-provided toolchain with `GOTOOLCHAIN=local` so Go never downloads
+another one; resolve a version mismatch in the Nix declaration. Use `go mod init` only for a
+missing module file; a build smoke check can be `direnv exec . go build ./...`. Pin development
+tools through `go.mod` `tool` directives instead of global installs.
+
 ### TeX / LaTeX
 
 Inspect the engine, source entry point, fonts, bibliography tools, and build configuration.

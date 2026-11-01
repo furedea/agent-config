@@ -15,7 +15,7 @@ A red-green stack records the Red observation from `tsdd` as CI evidence that ou
 
 Expected-failure markers: pytest `@pytest.mark.xfail(strict=True, reason=...)`, Vitest
 `test.fails`, Jest `test.failing`, Playwright `test.fail()`. The marker and its comment follow the
-relevant `*-style` skill. Rust and Bats have no strict marker; do not use a stack for them.
+relevant `*-style` skill. Rust, Go, and Bats have no strict marker; do not use a stack for them.
 
 Green on layer 1 proves only that the test fails, not why. Confirm the failure reason locally
 before publishing, as `tsdd` requires for Red.

@@ -10,6 +10,9 @@ verification level. The conventions below govern TypeScript test tooling and str
 - Inject time and randomness as arguments (for example an `Rng` function) instead of reading
   `Date.now()` or `Math.random()` inside logic.
 - Use temporary directories for filesystem tests. Do not touch the real home directory.
+- Record a reproduced defect with Vitest `test.fails` and a comment naming the condition for
+  removing it; `test.fails` fails the run when the test unexpectedly passes. Remove the marker in
+  the change that fixes the defect.
 
 ## Mutation Testing
 

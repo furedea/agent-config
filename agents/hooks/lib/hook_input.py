@@ -16,6 +16,7 @@ EXTENSIONS = {
     ".jsx": "js",
     ".tsx": "js",
     ".rs": "rs",
+    ".go": "go",
     ".nix": "nix",
     ".md": "md",
     ".markdown": "md",

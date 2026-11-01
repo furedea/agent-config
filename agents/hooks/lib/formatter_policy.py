@@ -20,6 +20,7 @@ OTHER_FORMATTER_CONFIG_NAMES = (
     "biome.json",
     "biome.jsonc",
 )
+GOLANGCI_CONFIG_NAMES = (".golangci.yml", ".golangci.yaml", ".golangci.toml")
 OXFMT_CONFIG_NAMES = (".oxfmtrc", ".oxfmtrc.json", ".oxfmtrc.jsonc")
 JS_FORMATTER_PACKAGES = {"prettier": "prettier", "@biomejs/biome": "biome", "oxfmt": "oxfmt"}
 PERSONAL_DPRINT_CONFIG_NAME = "dprint.json"
@@ -288,6 +289,29 @@ def javascript_plan(path: Path) -> tuple[Step, ...]:
     )
 
 
+def golangci_formats(config: Path) -> bool | None:
+    """Whether a golangci-lint config declares a `formatters` section; None when it cannot be read."""
+    if config.suffix == ".toml":
+        data = toml_data(config)
+        return None if data is None else "formatters" in data
+    try:
+        return re.search(r"^formatters\s*:", config.read_text(errors="replace"), re.MULTILINE) is not None
+    except OSError:
+        return None
+
+
+def go_plan(path: Path) -> tuple[Step, ...]:
+    """Format with golangci-lint when the project adopts its formatters, otherwise with gofmt."""
+    configs = project_files(path.parent, GOLANGCI_CONFIG_NAMES)
+    if configs:
+        adopted = golangci_formats(configs[0])
+        if adopted is None:
+            return (policy_step(path, f"Project config {configs[0].name} is unreadable.", configs[0].parent),)
+        if adopted:
+            return (Step("golangci-lint fmt", ("golangci-lint", "fmt", str(path)), configs[0].parent, mutates=True),)
+    return (Step("gofmt format", ("gofmt", "-w", str(path)), mutates=True),)
+
+
 def plan(kind: str, path: Path, *, readonly: bool = False) -> tuple[Step, ...]:
     """Choose the existing quality tools without running any of them."""
     steps = _plan(kind, path)
@@ -378,6 +402,7 @@ def workflow_plan(path: Path) -> tuple[Step, ...]:
 LANGUAGE_PLANS = {
     "py": python_plan,
     "js": javascript_plan,
+    "go": go_plan,
     "json_toml": dprint_plan,
     "lua": lua_plan,
     "tex": tex_plan,

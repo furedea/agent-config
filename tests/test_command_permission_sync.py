@@ -22,6 +22,10 @@ VERIFICATION_PREFIXES = [
     "cargo check",
     "cargo clippy",
     "cargo fmt --check",
+    "go test",
+    "go vet",
+    "golangci-lint run",
+    "govulncheck",
     "commitlint",
     "deadnix",
     "dprint check",
@@ -209,3 +213,39 @@ def test_rm_asks_and_recursive_rm_is_denied_by_the_shared_prefixes() -> None:
     deny = {tuple(rule["prefix"]) for rule in POLICY["rules"] if rule["decision"] == "deny"}
     recursive = {("rm", flag) for flag in ("-r", "-rf", "-fr", "-R", "-Rf", "--recursive")}
     assert recursive <= deny
+
+
+GO_ALLOW = [
+    "go build",
+    "go test",
+    "go vet",
+    "go run",
+    "go tool",
+    "go list",
+    "go env",
+    "go version",
+    "go mod download",
+    "golangci-lint run",
+    "golangci-lint fmt",
+    "govulncheck",
+]
+GO_ASK = ["go mod tidy", "go get"]
+
+
+@pytest.mark.parametrize("prefix", GO_ALLOW)
+def test_go_builds_verification_and_inspection_are_allowed(generated_permissions: dict, prefix: str) -> None:
+    assert tuple(prefix.split()) in ALLOW
+    assert prefix in bash_prefixes(generated_permissions, "allow")
+    assert prefix not in bash_prefixes(generated_permissions, "ask")
+
+
+@pytest.mark.parametrize("prefix", GO_ASK)
+def test_go_dependency_changes_require_approval(generated_permissions: dict, prefix: str) -> None:
+    assert tuple(prefix.split()) in ASK
+    assert tuple(prefix.split()) not in ALLOW
+    assert prefix in bash_prefixes(generated_permissions, "ask")
+
+
+def test_go_install_stays_denied() -> None:
+    assert any(rule["decision"] == "deny" and rule["prefix"] == ["go", "install"] for rule in POLICY["rules"])
+    assert ("go", "install") not in ALLOW | ASK

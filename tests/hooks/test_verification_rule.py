@@ -15,7 +15,7 @@ def test_rule_file_is_a_json_object() -> None:
 
 def test_defaults_define_repository_test_conventions() -> None:
     rules = json.loads(DEFAULTS.read_text())
-    assert set(rules) == {"bats", "python", "rust", "javascript_typescript"}
+    assert set(rules) == {"bats", "python", "rust", "javascript_typescript", "go"}
     assert rules["bats"]["source_extensions"] == [".sh", ".bats"]
     assert {"{stem}.bats", "test_{stem}.bats"} <= set(rules["bats"]["test_patterns"])
     assert rules["python"]["source_extensions"] == [".py"]
@@ -25,6 +25,8 @@ def test_defaults_define_repository_test_conventions() -> None:
     assert "Cargo.toml" in rules["rust"]["project_markers"]
     assert rules["rust"]["integration_test_dir"] == "tests"
     assert "src" in rules["rust"]["source_dirs"]
+    assert rules["go"]["source_extensions"] == [".go"]
+    assert rules["go"]["project_markers"] == ["go.mod"]
     assert rules["javascript_typescript"]["source_extensions"] == [".js", ".jsx", ".ts", ".tsx"]
     assert "{stem}.test.ts" in rules["javascript_typescript"]["test_patterns"]
 

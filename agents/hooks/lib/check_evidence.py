@@ -8,6 +8,7 @@ ANSI = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
 DISPLAY_ORDER = {
     "pytest": 0,
     "rust": 1,
+    "go": 1,
     "vitest": 2,
     "jest": 2,
     "node": 2,
@@ -38,6 +39,8 @@ def summarize(label: str, output: str) -> Evidence:
     lines = ANSI.sub("", output).splitlines()
     if label == "bats":
         return summarize_bats(lines)
+    if label == "go":
+        return summarize_go(lines)
     if label == "pytest":
         summaries = [
             line
@@ -65,6 +68,22 @@ def summarize(label: str, output: str) -> Evidence:
         elif label == "node" and (match := re.match(r"^# (?:pass|fail) (\d+)", line)):
             observed.append(int(match[1]))
     return Evidence("; ".join(summaries) or "test count unavailable", sum(observed) if observed else None)
+
+
+def summarize_go(lines: list[str]) -> Evidence:
+    """Count packages whose tests ran; `go test` without -v reports no per-test counts."""
+    tested = untested = 0
+    for line in lines:
+        if re.match(r"^(ok|FAIL)\s", line) and "[no tests to run]" not in line:
+            tested += 1
+        elif re.match(r"^(\?|ok)\s", line) and re.search(r"\[no (test files|tests to run)\]", line):
+            untested += 1
+    if not tested and not untested:
+        return Evidence("test count unavailable", None)
+    summary = f"{tested} packages tested"
+    if untested:
+        summary += f", {untested} without tests"
+    return Evidence(summary, tested)
 
 
 def summarize_bats(lines: list[str]) -> Evidence:

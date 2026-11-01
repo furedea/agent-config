@@ -126,6 +126,23 @@
         "^herdr worktree open( --(workspace|cwd|path|branch|label) ('[^']*'|\"([^\"\\\\]|\\\\.)*\"|[^ '\"]+)| --(no-)?focus)*$"
       ],
       "justification": "Allow watching lanes and their worktrees; every word must be literal, so no expansion can add an option such as --trust-repository."
+    },
+    {
+      "programs": [
+        "go"
+      ],
+      "patterns": [
+        "^go build( |$)",
+        "^go test( |$)",
+        "^go vet( |$)",
+        "^go tool( |$)",
+        "^go list( |$)",
+        "^go version( |$)",
+        "^go mod download( |$)",
+        "^go env( -json| -changed| [A-Z][A-Za-z0-9_]*)*$",
+        "^go run( [^@ ]+)*$"
+      ],
+      "justification": "Allow local Go builds, verification, and inspection; go env -w and -u change user-level Go configuration, and go run pkg@version fetches and executes a remote module the project's go.mod does not pin, so those forms ask."
     }
   ]
 }

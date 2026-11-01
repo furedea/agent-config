@@ -104,5 +104,21 @@
       "**/rust-toolchain.toml"
     ],
     "fallback_on_unmatched_source": true
+  },
+  "go": {
+    "source_extensions": [".go"],
+    "project_markers": ["go.mod"],
+    "exclude_dirs": ["vendor"],
+    "full_suite_triggers": [
+      "go.mod",
+      "**/go.mod",
+      "go.sum",
+      "**/go.sum",
+      "go.work",
+      "**/go.work",
+      "go.work.sum",
+      "**/go.work.sum"
+    ],
+    "fallback_on_unmatched_source": true
   }
 }

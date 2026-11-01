@@ -131,6 +131,102 @@
     {
       "decision": "allow",
       "prefix": [
+        "go",
+        "build"
+      ],
+      "justification": "Allow explicit Go artifact builds that are not verification gates."
+    },
+    {
+      "decision": "allow",
+      "prefix": [
+        "go",
+        "test"
+      ],
+      "justification": "Allow local verification needed for the requested work; reuse successful hook results."
+    },
+    {
+      "decision": "allow",
+      "prefix": [
+        "go",
+        "vet"
+      ],
+      "justification": "Allow local verification needed for the requested work; reuse successful hook results."
+    },
+    {
+      "decision": "allow",
+      "prefix": [
+        "go",
+        "run"
+      ],
+      "justification": "Allow explicit Go program execution that is not a verification gate."
+    },
+    {
+      "decision": "allow",
+      "prefix": [
+        "go",
+        "tool"
+      ],
+      "justification": "Allow explicit execution of tools that the Go module declares; it is not a verification gate."
+    },
+    {
+      "decision": "allow",
+      "prefix": [
+        "go",
+        "list"
+      ],
+      "justification": "Allow read-only Go package and module queries."
+    },
+    {
+      "decision": "allow",
+      "prefix": [
+        "go",
+        "env"
+      ],
+      "justification": "Allow read-only Go environment queries."
+    },
+    {
+      "decision": "allow",
+      "prefix": [
+        "go",
+        "version"
+      ],
+      "justification": "Allow read-only Go toolchain version queries."
+    },
+    {
+      "decision": "allow",
+      "prefix": [
+        "go",
+        "mod",
+        "download"
+      ],
+      "justification": "Allow filling the Go module cache; it leaves go.mod and the sources unchanged."
+    },
+    {
+      "decision": "allow",
+      "prefix": [
+        "golangci-lint",
+        "run"
+      ],
+      "justification": "Allow local verification needed for the requested work; reuse successful hook results."
+    },
+    {
+      "decision": "allow",
+      "prefix": [
+        "golangci-lint",
+        "fmt"
+      ],
+      "justification": "Allow explicit formatting because it changes files instead of duplicating verification."
+    },
+    {
+      "decision": "allow",
+      "prefix": [
+        "govulncheck"
+      ],
+      "justification": "Allow read-only Go vulnerability scans; they write no project files."
+    },
+    {
+      "decision": "allow",
+      "prefix": [
         "commitlint"
       ],
       "justification": "Allow local verification needed for the requested work; reuse successful hook results."
@@ -2036,6 +2132,23 @@
       "prefix": [
         "cargo",
         "update"
+      ],
+      "justification": "Ask before changing dependencies or lock files; the request should name the change."
+    },
+    {
+      "decision": "ask",
+      "prefix": [
+        "go",
+        "get"
+      ],
+      "justification": "Ask before changing dependencies or lock files; the request should name the change."
+    },
+    {
+      "decision": "ask",
+      "prefix": [
+        "go",
+        "mod",
+        "tidy"
       ],
       "justification": "Ask before changing dependencies or lock files; the request should name the change."
     },

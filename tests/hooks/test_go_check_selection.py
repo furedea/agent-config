@@ -86,3 +86,23 @@ def test_removing_a_whole_go_project_skips_its_verification(tmp_path: Path) -> N
     commands, errors = selection.language_plan(tmp_path, rules, ("go.mod", "go.sum", "main.go"))
     assert not errors
     assert commands == []
+
+
+def test_deleting_the_last_go_file_of_a_package_selects_the_full_suite(tmp_path: Path) -> None:
+    rules = go_project(tmp_path, ["pkg/old/README.md", "pkg/live/live.go"])
+    commands, errors = selection.language_plan(tmp_path, rules, ("pkg/old/old.go",))
+    assert not errors
+    assert [item.arguments for item in commands] == [("go", "test", "./...")]
+
+
+def test_a_package_that_keeps_other_go_files_is_still_selected(tmp_path: Path) -> None:
+    rules = go_project(tmp_path, ["pkg/live/live.go"])
+    commands, errors = selection.language_plan(tmp_path, rules, ("pkg/live/gone.go",))
+    assert not errors
+    assert [item.arguments for item in commands] == [("go", "test", "./pkg/live")]
+
+
+def test_nested_go_files_do_not_make_their_parent_directory_a_package(tmp_path: Path) -> None:
+    rules = go_project(tmp_path, ["pkg/deep/inner/inner.go"])
+    commands, _ = selection.language_plan(tmp_path, rules, ("pkg/deep/old.go",))
+    assert [item.arguments for item in commands] == [("go", "test", "./...")]

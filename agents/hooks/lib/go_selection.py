@@ -11,10 +11,12 @@ def go_files(extensions: list[str], changed: tuple[str, ...]) -> set[str]:
 
 
 def go_package_exists(root: Path, filename: str) -> bool:
-    """Whether the file sits in a directory the go tool can address as a package."""
+    """Whether the file sits in a directory that still holds Go files the go tool can address as a package."""
     parent = Path(filename).parent
-    ignored = any(part == "testdata" or part.startswith((".", "_")) for part in parent.parts)
-    return not ignored and (root / parent).is_dir()
+    if any(part == "testdata" or part.startswith((".", "_")) for part in parent.parts):
+        return False
+    directory = root / parent
+    return directory.is_dir() and any(child.suffix == ".go" for child in directory.iterdir() if child.is_file())
 
 
 def go_test_arguments(files: set[str], *, full: bool) -> tuple[str, ...]:

@@ -14,6 +14,7 @@
   "agents/hooks/rules/allowed_commands.json": [
     "tests/test_command_permission_sync.py",
     "tests/hooks/test_allowed_command.py",
+    "tests/hooks/test_allowed_go_command.py",
     "tests/hooks/test_command_cli.py",
     "tests/hooks/test_command_policy.py",
     "tests/hooks/test_allowed_gh_api.py",
@@ -183,6 +184,7 @@
   "agents/hooks/lib/check_*.py": [
     "tests/hooks/test_check_selection.py",
     "tests/hooks/test_go_check_selection.py",
+    "tests/hooks/test_go_verification_execution.py",
     "tests/hooks/test_check_evidence.py",
     "tests/hooks/test_session_gate.py",
     "tests/hooks/test_native_session.py",

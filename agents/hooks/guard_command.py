@@ -11,7 +11,6 @@ import json
 import os
 from pathlib import Path
 import re
-import shutil
 import sys
 
 
@@ -130,17 +129,12 @@ def objection(kind: str, item: shell_syntax.Command, policy: Policy) -> Verdict:
 
 
 def ledger_objection(item: shell_syntax.Command, candidate: shell_syntax.Command, policy: Policy) -> Verdict:
-    """Trust only the installed ledger, and let `ledger hold` run only what would run unprompted on its own.
+    """Let `ledger hold` run only what would run unprompted on its own, named without a path.
 
     A prefix allow rule of a provider matches the whole command, so it cannot see an ask rule of the
     wrapped command; requiring that command's own allow prefix keeps hold from skipping its review.
     """
     preview = shell_syntax.command_preview(item.raw)
-    if candidate.arguments[0] == "ledger" and not runs_installed_ledger(item):
-        return hook_decision.ask(
-            f"Needs review: only the installed {LEDGER_INSTALLED} runs without approval.\n\nCommand: {preview}",
-            "ledger",
-        )
     if item.held and (
         "/" in item.arguments[0] or command_policy.prefix_rule(candidate.arguments, policy.prefixes, "allow") is None
     ):
@@ -219,16 +213,32 @@ def governed_objection(candidate: shell_syntax.Command, policy: Policy, preview:
     )
 
 
-def runs_installed_ledger(item: shell_syntax.Command) -> bool:
-    """Whether the call certainly starts the installed ledger: its own path, or the PATH lookup resolving to it.
+def installed_ledger_objection(command: str, commands: tuple[shell_syntax.Command, ...]) -> Verdict:
+    """Run the root-owned ledger unprompted only as the one command of the line, by its absolute path.
 
-    An assignment prefix or env could point PATH at a directory the agent writes, so any assignment fails.
+    A PATH lookup, a leading assignment, a wrapper, or an earlier statement can change what runs
+    after this check, so each of them, the bare name included, asks.
     """
-    program = item.arguments[0]
-    if item.assigned or not item.raw.startswith(item.words[0]) or item.program_is_dynamic:
-        return False
-    found = program if "/" in program else shutil.which(program)
-    return found == str(LEDGER_INSTALLED)
+    calls = [item for item in commands if command_policy.canonical(item).arguments[0] == "ledger"]
+    if not calls:
+        return hook_decision.ALLOW
+    installed = LEDGER_INSTALLED.is_file() and os.access(LEDGER_INSTALLED, os.X_OK)
+    try:
+        single = shell_syntax.is_one_simple_command(command)
+    except shell_syntax.UnsupportedSyntax:
+        single = False
+    if installed and single and all(is_installed_call(item) for item in calls):
+        return hook_decision.ALLOW
+    return hook_decision.ask(
+        f"Needs review: ledger runs without approval only as the single command {LEDGER_INSTALLED} <subcommand>, "
+        f"with no assignment, wrapper, or other statement, and only while it is installed and executable."
+        f"\n\nCommand: {shell_syntax.command_preview(command)}",
+        "ledger",
+    )
+
+
+def is_installed_call(item: shell_syntax.Command) -> bool:
+    return item.arguments[0] == str(LEDGER_INSTALLED) and not item.wrapper_depth and not item.program_is_dynamic
 
 
 def settings_objection(command: str, commands: tuple[shell_syntax.Command, ...]) -> Verdict:
@@ -281,6 +291,8 @@ def command_verdict(kind: str, payload: dict, policy: Policy) -> Verdict:
     if kind == "forbidden" and (verdict := companion_objection(command, commands)).decision != "allow":
         return verdict
     if kind == "allowed" and (verdict := cleanup_objection(command, commands)).decision != "allow":
+        return verdict
+    if kind == "allowed" and (verdict := installed_ledger_objection(command, commands)).decision != "allow":
         return verdict
     if not allows_literal_rules(command, commands):
         policy = replace(policy, literal_words=False)

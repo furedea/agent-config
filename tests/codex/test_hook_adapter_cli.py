@@ -370,6 +370,8 @@ def test_a_new_suppression_is_denied_in_codex_since_its_hooks_cannot_ask(run_cli
     [
         ("ledger hold --failure build-42 -- rm build/output.txt", True),
         ("PATH=/tmp/shadow ledger ping", True),
+        ("ledger ping", True),
+        ("PATH=/tmp/shadow command /usr/local/bin/ledger ping", True),
         ("ledger hold --failure build-42 -- unknown-tool", True),
         ("ledger report --failure build-42 --spool-root /tmp/fake", True),
         ("ledger --spool-root /tmp/fake ping", True),

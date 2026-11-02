@@ -55,6 +55,12 @@ bash ~/agent-config/scripts/bootstrap_server.sh
 
 Claude Code's Linux sandbox needs `bubblewrap` and `socat` installed on the server.
 
+On hosts that run the fleet ledger, agents write its spool (`/var/spool/fleet-ledger/outbox` and `holds`) and run
+`ledger` without a prompt only as a single command written with the absolute path, such as
+`/usr/local/bin/ledger report --failure NAME`: the bare name `ledger`, a leading assignment or wrapper, another statement
+on the line, and options such as `--spool-root` ask. `ledger hold ... -- <command>` runs `<command>` only if it would run
+on its own without a prompt. A tmux server started before the user joined `fleet-agents` must be restarted.
+
 Host-specific settings stay outside the repository in `~/.config/agent-config/`:
 `bootstrap_server.env` sets locations such as `BIN_DIR`, `UV_PYTHON_INSTALL_DIR`, `UV_CACHE_DIR`,
 and `XDG_CACHE_HOME` (see `--help`), and `claude_settings_override.json` is merged into the rendered

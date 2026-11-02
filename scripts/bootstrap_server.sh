@@ -437,18 +437,14 @@ with open(claude_settings_path, encoding="utf-8") as file:
 environment = config.setdefault("shell_environment_policy", {}).setdefault("set", {})
 environment["NVIM_LOG_FILE"] = nvim_log_file
 
-# Relative allowWrite entries name Claude's working directory, which :workspace_roots covers.
-cache_writes = [
-    path
-    for path in claude_settings.get("sandbox", {}).get("filesystem", {}).get("allowWrite", [])
-    if path.startswith(("/", "~/"))
-]
-
 if config_dir:
     environment["GH_CONFIG_DIR"] = config_dir
-# The guarded profile is also what makes absolute write paths, such as the fleet ledger spool, writable:
-# agent-harness syncs permissions.guarded but not sandbox_workspace_write.writable_roots.
-if config_dir or any(path.startswith("/") for path in cache_writes):
+    # Relative allowWrite entries name Claude's working directory, which :workspace_roots covers.
+    cache_writes = [
+        path
+        for path in claude_settings.get("sandbox", {}).get("filesystem", {}).get("allowWrite", [])
+        if path.startswith(("/", "~/"))
+    ]
     config["default_permissions"] = "guarded"
     guarded = config.setdefault("permissions", {}).setdefault("guarded", {})
     filesystem = guarded.setdefault("filesystem", {})
@@ -460,8 +456,9 @@ if config_dir or any(path.startswith("/") for path in cache_writes):
             ":tmpdir": "write",
             ":slash_tmp": "write",
             ":workspace_roots": workspace_roots,
+            "~/.config/gh/hosts.yml": "deny",
+            private_key: "deny",
         }
-        | ({"~/.config/gh/hosts.yml": "deny", private_key: "deny"} if config_dir else {})
     )
     guarded.setdefault("network", {})["enabled"] = True
 
@@ -502,6 +499,45 @@ emit(config, [])
 PY
   "$_python" -I -c 'import sys, tomllib; tomllib.load(open(sys.argv[1], "rb"))' "$_merged"
   "$BIN_DIR/agent-harness" sync-codex-config --source "$_merged" --target "$CODEX_CONFIG"
+  sync_codex_writable_roots "$_python" "$_config_dir"
+}
+
+# agent-harness does not sync sandbox_workspace_write, so the writable roots of a host without the guarded
+# profile are kept as lines of their own, marked as managed, in the user's config. Hosts with the profile get
+# the same paths through it, so any managed lines are removed there.
+function sync_codex_writable_roots() {
+  local _python="$1" _config_dir="$2" _roots="[]"
+  if [[ -z "$_config_dir" ]]; then
+    _roots="$("$BIN_DIR/jq" -c '[.sandbox.filesystem.allowWrite // [] | .[] | select(startswith("/"))]' "$CLAUDE_SETTINGS")"
+  fi
+  [[ -f "$CODEX_CONFIG" ]] || return 0
+  local _updated="$WORK_DIR/codex_writable_roots.toml"
+  "$_python" -I - "$CODEX_CONFIG" "$_roots" >|"$_updated" <<'PY'
+import json
+import re
+import sys
+import tomllib
+
+sys.stdout.reconfigure(encoding="utf-8")
+MARK = "# agent-config-managed"
+path, roots = sys.argv[1], json.loads(sys.argv[2])
+lines = [line for line in open(path, encoding="utf-8").read().splitlines() if not line.endswith(MARK)]
+if roots:
+    table = tomllib.loads("\n".join(lines)).get("sandbox_workspace_write")
+    managed = "writable_roots = " + json.dumps(roots) + " " + MARK
+    if table is None:
+        lines += ["[sandbox_workspace_write] " + MARK, managed]
+    elif "writable_roots" in table:
+        sys.exit("sandbox_workspace_write.writable_roots is already set in " + path + "; add these roots to it: " + ", ".join(roots))
+    else:
+        header = next((i for i, line in enumerate(lines) if re.fullmatch(r"\[sandbox_workspace_write\]\s*(#.*)?", line)), None)
+        if header is None:
+            sys.exit("cannot add writable_roots: sandbox_workspace_write is not a plain table in " + path)
+        lines.insert(header + 1, managed)
+print("\n".join(lines))
+tomllib.loads("\n".join(lines))
+PY
+  install -m 0600 "$_updated" "$CODEX_CONFIG"
 }
 
 # The Codex config render reads the generated Codex source with the standard-library TOML parser.

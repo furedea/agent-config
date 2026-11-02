@@ -380,22 +380,74 @@ function use_shipped_sandbox_write_list() {
   [ "$(jq -c '[keys[] | select(startswith("/opt/fleet-ledger", "/etc/fleet-ledger", "/var/lib/fleet-ledger"))]' <<<"$_filesystem")" = '[]' ]
 }
 
-@test "lets Codex write only the fleet ledger outbox and holds when the host names no GitHub App" {
+@test "adds only the fleet ledger spool directories to the writable roots of a host without a GitHub App" {
   use_shipped_sandbox_write_list
 
   run bootstrap_server
 
   [ "$status" -eq 0 ]
-  local _codex _filesystem
+  local _codex
   _codex="$(codex_config_json)"
-  _filesystem="$(jq -c '.permissions.guarded.filesystem' <<<"$_codex")"
-  [ "$(jq -r '.default_permissions' <<<"$_codex")" = "guarded" ]
-  [ "$(jq -r '.permissions.guarded.network.enabled' <<<"$_codex")" = "true" ]
-  [ "$(jq -c '[keys[] | select(startswith("/var/spool"))]' <<<"$_filesystem")" \
-    = '["/var/spool/fleet-ledger/holds","/var/spool/fleet-ledger/outbox"]' ]
-  [ "$(jq -c '[.[":root"], .[":tmpdir"], .[":workspace_roots"]]' <<<"$_filesystem")" = '["read","write",{"src":"read",".":"write"}]' ]
-  [ "$(jq -r 'has("~/.config/gh/hosts.yml")' <<<"$_filesystem")" = "false" ]
-  [ "$(codex_config_json | jq -r '.shell_environment_policy.set | has("GH_CONFIG_DIR")')" = "false" ]
+  [ "$(jq -c '.sandbox_workspace_write.writable_roots' <<<"$_codex")" \
+    = '["/var/spool/fleet-ledger/outbox","/var/spool/fleet-ledger/holds"]' ]
+  [ "$(jq -r '.default_permissions // "unset"' <<<"$_codex")" = "unset" ]
+  [ "$(jq -r '.permissions.guarded.network // "unset"' <<<"$_codex")" = "unset" ]
+  [ "$(jq -r '.permissions.guarded.filesystem | has(":tmpdir")' <<<"$_codex")" = "false" ]
+}
+
+@test "keeps the Codex permissions of a host without a GitHub App except the writable roots" {
+  use_shipped_sandbox_write_list
+  mkdir -p "$HOME_DIR/.codex"
+  printf '%s\n' '# user-config' '[sandbox_workspace_write]' 'network_access = true' '[projects."/srv"]' 'trust = "x"' \
+    >|"$HOME_DIR/.codex/config.toml"
+
+  run bootstrap_server
+
+  [ "$status" -eq 0 ]
+  local _codex
+  _codex="$(codex_config_json)"
+  [ "$(jq -r '.sandbox_workspace_write.network_access' <<<"$_codex")" = "true" ]
+  [ "$(jq -c '.sandbox_workspace_write.writable_roots' <<<"$_codex")" \
+    = '["/var/spool/fleet-ledger/outbox","/var/spool/fleet-ledger/holds"]' ]
+  [ "$(jq -r '.projects["/srv"].trust' <<<"$_codex")" = "x" ]
+  [ "$(jq -r '.default_permissions // "unset"' <<<"$_codex")" = "unset" ]
+}
+
+@test "writes the Codex writable roots once however often bootstrap runs" {
+  use_shipped_sandbox_write_list
+  run bootstrap_server
+  [ "$status" -eq 0 ]
+  cp "$HOME_DIR/.codex/config.toml" "$BATS_TEST_TMPDIR/first.toml"
+
+  run bootstrap_server
+
+  [ "$status" -eq 0 ]
+  cmp "$BATS_TEST_TMPDIR/first.toml" "$HOME_DIR/.codex/config.toml"
+  [ "$(grep -c 'writable_roots' "$HOME_DIR/.codex/config.toml")" -eq 1 ]
+}
+
+@test "refuses to merge the spool into writable roots the user already set" {
+  use_shipped_sandbox_write_list
+  mkdir -p "$HOME_DIR/.codex"
+  printf '%s\n' '# user-config' '[sandbox_workspace_write]' 'writable_roots = ["/srv/data"]' >|"$HOME_DIR/.codex/config.toml"
+
+  run bootstrap_server
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"writable_roots"* ]]
+}
+
+@test "removes the managed Codex writable roots once the host names a GitHub App" {
+  use_shipped_sandbox_write_list
+  run bootstrap_server
+  [ "$status" -eq 0 ]
+  write_host_env 'AGENT_GITHUB_APP_ID=123' "AGENT_GITHUB_APP_PRIVATE_KEY=$HOME_DIR/app.pem"
+
+  run bootstrap_server
+
+  [ "$status" -eq 0 ]
+  [ "$(codex_config_json | jq -r '.sandbox_workspace_write // "unset"')" = "unset" ]
+  [ "$(codex_config_json | jq -r '.permissions.guarded.filesystem["/var/spool/fleet-ledger/outbox"]')" = "write" ]
 }
 
 @test "leaves the Codex permissions alone when no sandbox write path is absolute" {
@@ -407,6 +459,7 @@ function use_shipped_sandbox_write_list() {
 
   [ "$status" -eq 0 ]
   [ "$(codex_config_json | jq -r '.default_permissions // "unset"')" = "unset" ]
+  [ "$(codex_config_json | jq -r '.sandbox_workspace_write // "unset"')" = "unset" ]
 }
 
 @test "applies the Codex token settings again on a repeated run" {

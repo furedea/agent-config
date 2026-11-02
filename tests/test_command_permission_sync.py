@@ -249,3 +249,10 @@ def test_go_dependency_changes_require_approval(generated_permissions: dict, pre
 def test_go_install_stays_denied() -> None:
     assert any(rule["decision"] == "deny" and rule["prefix"] == ["go", "install"] for rule in POLICY["rules"])
     assert ("go", "install") not in ALLOW | ASK
+
+
+def test_fleet_ledger_prefixes_name_the_installed_program_by_its_absolute_path() -> None:
+    subcommands = {"ping", "report", "claim", "status", "release", "result", "hold"}
+    absolute = {prefix[1] for prefix in ALLOW if prefix[0] == "/usr/local/bin/ledger" and len(prefix) == 2}
+    assert absolute == subcommands
+    assert {prefix[1] for prefix in ALLOW if prefix[0] == "ledger" and len(prefix) == 2} == subcommands

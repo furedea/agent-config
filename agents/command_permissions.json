@@ -1707,6 +1707,62 @@
     {
       "decision": "allow",
       "prefix": [
+        "/usr/local/bin/ledger",
+        "ping"
+      ],
+      "justification": "Allow the fleet ledger's local spool commands; the CLI never uses the network, and the hooks accept only the documented options."
+    },
+    {
+      "decision": "allow",
+      "prefix": [
+        "/usr/local/bin/ledger",
+        "report"
+      ],
+      "justification": "Allow the fleet ledger's local spool commands; the CLI never uses the network, and the hooks accept only the documented options."
+    },
+    {
+      "decision": "allow",
+      "prefix": [
+        "/usr/local/bin/ledger",
+        "claim"
+      ],
+      "justification": "Allow the fleet ledger's local spool commands; the CLI never uses the network, and the hooks accept only the documented options."
+    },
+    {
+      "decision": "allow",
+      "prefix": [
+        "/usr/local/bin/ledger",
+        "status"
+      ],
+      "justification": "Allow the fleet ledger's local spool commands; the CLI never uses the network, and the hooks accept only the documented options."
+    },
+    {
+      "decision": "allow",
+      "prefix": [
+        "/usr/local/bin/ledger",
+        "release"
+      ],
+      "justification": "Allow the fleet ledger's local spool commands; the CLI never uses the network, and the hooks accept only the documented options."
+    },
+    {
+      "decision": "allow",
+      "prefix": [
+        "/usr/local/bin/ledger",
+        "result"
+      ],
+      "justification": "Allow the fleet ledger's local spool commands; the CLI never uses the network, and the hooks accept only the documented options."
+    },
+    {
+      "decision": "allow",
+      "prefix": [
+        "/usr/local/bin/ledger",
+        "hold"
+      ],
+      "justification": "Allow holding a fleet ledger claim around a command; the hooks judge the wrapped command on its own and ask unless it would run unprompted."
+    },
+    {
+      "decision": "allow",
+      "prefix": [
         "cd"
       ],
       "justification": "Allow directory changes; the verification scope check asks for targets outside the worktree and temp directories."

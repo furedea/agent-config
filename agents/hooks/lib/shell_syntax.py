@@ -71,8 +71,7 @@ class Command:
     than the home directory); such arguments carry their source text. `writes` lists the files
     that output redirections would create or overwrite. `appends_input` marks a command that xargs
     runs with further arguments read from its input. `spreading` flags arguments that may become
-    several words at run time, options included. `assigned` marks a command that an assignment prefix
-    or an assigning wrapper such as env may have given a different environment. `held` marks a command that runs under
+    several words at run time, options included. `held` marks a command that runs under
     `ledger hold`, directly or through further wrappers.
     """
 
@@ -87,7 +86,6 @@ class Command:
     appends_input: bool = False
     spreading: tuple[bool, ...] = ()
     held: bool = False
-    assigned: bool = False
 
     def __post_init__(self) -> None:
         if not self.words:
@@ -327,12 +325,10 @@ def unwrapped(command: Command) -> list[Command]:
         name = Path(command.arguments[0]).name
         appends_input = command.appends_input or name == "xargs"
         held = command.held or name == "ledger"
-        assigned = command.assigned or any(ASSIGNMENT.match(token) for token in command.arguments[1:index])
         command = replace(
             command.rebased(index, depth=command.wrapper_depth + 1),
             appends_input=appends_input,
             held=held,
-            assigned=assigned,
         )
         exposed.append(command)
     return exposed

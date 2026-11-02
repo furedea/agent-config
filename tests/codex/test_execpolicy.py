@@ -155,6 +155,11 @@ def test_generated_policy_decides_without_running_the_command(
     [
         "ledger",
         "ledger frobnicate",
+        "/usr/local/bin/ledger",
+        "/usr/local/bin/ledger frobnicate",
+        "/usr/local/bin/ledger --spool-root /tmp/fake report --failure build-42",
+        "/usr/local/bin/ledger --timeout 600 ping",
+        "/usr/local/bin/ledger --help",
         "ledger --spool-root /tmp/fake report --failure build-42",
         "ledger --timeout 600 ping",
         "/tmp/ledger ping",

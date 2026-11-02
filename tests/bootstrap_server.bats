@@ -437,6 +437,77 @@ function use_shipped_sandbox_write_list() {
   [[ "$output" == *"writable_roots"* ]]
 }
 
+# A Codex config that an earlier bootstrap left behind, with the managed table and the user's own keys under it.
+function write_codex_config_with_managed_table() {
+  mkdir -p "$HOME_DIR/.codex"
+  printf '%s\n' '# user-config' \
+    '[sandbox_workspace_write] # agent-config-managed' \
+    'writable_roots = ["/old"] # agent-config-managed' \
+    "$@" >|"$HOME_DIR/.codex/config.toml"
+}
+
+@test "keeps keys the user added under the managed Codex table when the managed roots go away" {
+  use_shipped_sandbox_write_list
+  write_codex_config_with_managed_table 'network_access = true'
+  write_host_env 'AGENT_GITHUB_APP_ID=123' "AGENT_GITHUB_APP_PRIVATE_KEY=$HOME_DIR/app.pem"
+
+  run bootstrap_server
+
+  [ "$status" -eq 0 ]
+  [ "$(codex_config_json | jq -c '.sandbox_workspace_write')" = '{"network_access":true}' ]
+  ! grep -Fq 'agent-config-managed' "$HOME_DIR/.codex/config.toml"
+}
+
+@test "removes the managed Codex table once nothing else sits under it" {
+  use_shipped_sandbox_write_list
+  write_codex_config_with_managed_table '# a comment' '' '[projects."/srv"]' 'trust = "x"'
+  write_host_env 'AGENT_GITHUB_APP_ID=123' "AGENT_GITHUB_APP_PRIVATE_KEY=$HOME_DIR/app.pem"
+
+  run bootstrap_server
+
+  [ "$status" -eq 0 ]
+  ! grep -Fq 'sandbox_workspace_write' "$HOME_DIR/.codex/config.toml"
+  [ "$(codex_config_json | jq -r '.projects["/srv"].trust')" = "x" ]
+}
+
+@test "does not move the user's keys when the managed Codex table is followed by another table" {
+  use_shipped_sandbox_write_list
+  write_codex_config_with_managed_table 'network_access = true' '[projects."/srv"]' 'trust = "x"'
+
+  run bootstrap_server
+
+  [ "$status" -eq 0 ]
+  [ "$(codex_config_json | jq -c '.sandbox_workspace_write')" \
+    = '{"writable_roots":["/var/spool/fleet-ledger/outbox","/var/spool/fleet-ledger/holds"],"network_access":true}' ]
+  [ "$(codex_config_json | jq -r '.projects["/srv"].trust')" = "x" ]
+}
+
+@test "finds the user's Codex table however its header is quoted or indented" {
+  use_shipped_sandbox_write_list
+  mkdir -p "$HOME_DIR/.codex"
+  local _header
+  for _header in '["sandbox_workspace_write"]' '  [sandbox_workspace_write]  # mine' '[ sandbox_workspace_write ]' "['sandbox_workspace_write']"; do
+    printf '%s\n' '# user-config' "$_header" 'network_access = true' >|"$HOME_DIR/.codex/config.toml"
+
+    run bootstrap_server
+
+    [ "$status" -eq 0 ]
+    [ "$(codex_config_json | jq -c '.sandbox_workspace_write')" \
+      = '{"writable_roots":["/var/spool/fleet-ledger/outbox","/var/spool/fleet-ledger/holds"],"network_access":true}' ]
+  done
+}
+
+@test "refuses a Codex table that exists only through a subtable" {
+  use_shipped_sandbox_write_list
+  mkdir -p "$HOME_DIR/.codex"
+  printf '%s\n' '# user-config' '[sandbox_workspace_write.extra]' 'key = 1' >|"$HOME_DIR/.codex/config.toml"
+
+  run bootstrap_server
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"sandbox_workspace_write"* ]]
+}
+
 @test "removes the managed Codex writable roots once the host names a GitHub App" {
   use_shipped_sandbox_write_list
   run bootstrap_server

@@ -251,8 +251,37 @@ def test_go_install_stays_denied() -> None:
     assert ("go", "install") not in ALLOW | ASK
 
 
-def test_fleet_ledger_prefixes_name_the_installed_program_by_its_absolute_path() -> None:
-    subcommands = {"ping", "report", "claim", "status", "release", "result", "hold"}
-    absolute = {prefix[1] for prefix in ALLOW if prefix[0] == "/usr/local/bin/ledger" and len(prefix) == 2}
-    assert absolute == subcommands
-    assert {prefix[1] for prefix in ALLOW if prefix[0] == "ledger" and len(prefix) == 2} == subcommands
+LEDGER_SUBCOMMANDS = {"ping", "report", "claim", "status", "release", "result", "hold"}
+
+
+def ledger_rules() -> list[dict]:
+    return [rule for rule in POLICY["rules"] if rule["prefix"][0] in {"ledger", "/usr/local/bin/ledger"}]
+
+
+def test_fleet_ledger_has_exactly_one_allow_prefix_per_subcommand_by_name_and_by_absolute_path() -> None:
+    prefixes = sorted((tuple(rule["prefix"]), rule["decision"]) for rule in ledger_rules())
+    expected = sorted(
+        ((program, subcommand), "allow")
+        for program in ("ledger", "/usr/local/bin/ledger")
+        for subcommand in LEDGER_SUBCOMMANDS
+    )
+    assert prefixes == expected
+
+
+@pytest.mark.parametrize("program", ["ledger", "/usr/local/bin/ledger"])
+def test_no_allow_prefix_covers_every_ledger_subcommand_or_an_unknown_one(program: str) -> None:
+    assert (program,) not in ALLOW
+    assert not [
+        prefix
+        for prefix in ALLOW
+        if prefix[0] == program and prefix[1:2] not in {(name,) for name in LEDGER_SUBCOMMANDS}
+    ]
+    assert not [prefix for prefix in ALLOW if prefix[0] == program and any(token.startswith("-") for token in prefix)]
+
+
+@pytest.mark.parametrize("subcommand", sorted(LEDGER_SUBCOMMANDS))
+def test_generated_permissions_allow_each_ledger_subcommand_by_absolute_path(
+    generated_permissions: dict, subcommand: str
+) -> None:
+    assert f"/usr/local/bin/ledger {subcommand}" in bash_prefixes(generated_permissions, "allow")
+    assert "/usr/local/bin/ledger" not in bash_prefixes(generated_permissions, "allow")

@@ -216,7 +216,8 @@ def governed_objection(candidate: shell_syntax.Command, policy: Policy, preview:
 def installed_ledger_objection(command: str, commands: tuple[shell_syntax.Command, ...]) -> Verdict:
     """Run the root-owned ledger unprompted only as the one command of the line, by its absolute path.
 
-    A PATH lookup, a leading assignment, a wrapper, or an earlier statement can change what runs
+    A PATH lookup, a leading assignment, a wrapper, an earlier statement, or an expansion such as
+    "$((HOME=0))" or "$(cmd)" in any word, the wrapped command's included, can change what runs
     after this check, so each of them, the bare name included, asks.
     """
     calls = [item for item in commands if command_policy.canonical(item).arguments[0] == "ledger"]
@@ -224,14 +225,14 @@ def installed_ledger_objection(command: str, commands: tuple[shell_syntax.Comman
         return hook_decision.ALLOW
     installed = LEDGER_INSTALLED.is_file() and os.access(LEDGER_INSTALLED, os.X_OK)
     try:
-        single = shell_syntax.is_one_simple_command(command)
+        single = shell_syntax.is_one_simple_command(command) and has_literal_words(command)
     except shell_syntax.UnsupportedSyntax:
         single = False
     if installed and single and all(is_installed_call(item) for item in calls):
         return hook_decision.ALLOW
     return hook_decision.ask(
         f"Needs review: ledger runs without approval only as the single command {LEDGER_INSTALLED} <subcommand>, "
-        f"with no assignment, wrapper, or other statement, and only while it is installed and executable."
+        f"with literal words only (no expansion), no assignment, wrapper, or other statement, and only while it is installed and executable."
         f"\n\nCommand: {shell_syntax.command_preview(command)}",
         "ledger",
     )
@@ -383,12 +384,17 @@ def allows_literal_rules(command: str, commands: tuple[shell_syntax.Command, ...
     try:
         if not shell_syntax.is_one_simple_command(command):
             return False
-        return not (
-            EXPANDING_TEXT.search(shell_inspection.text_outside_quotes(command))
-            or DOUBLE_QUOTE_EXPANDING_TEXT.search(shell_inspection.double_quoted_text(command))
-        )
+        return has_literal_words(command)
     except shell_syntax.UnsupportedSyntax:
         return False
+
+
+def has_literal_words(command: str) -> bool:
+    """Whether no word can expand at run time: no parameter, arithmetic, command or process substitution, glob, or tilde."""
+    return not (
+        EXPANDING_TEXT.search(shell_inspection.text_outside_quotes(command))
+        or DOUBLE_QUOTE_EXPANDING_TEXT.search(shell_inspection.double_quoted_text(command))
+    )
 
 
 def is_read_only_filter(command: shell_syntax.Command) -> bool:

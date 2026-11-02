@@ -514,25 +514,64 @@ function sync_codex_writable_roots() {
   local _updated="$WORK_DIR/codex_writable_roots.toml"
   "$_python" -I - "$CODEX_CONFIG" "$_roots" >|"$_updated" <<'PY'
 import json
-import re
 import sys
 import tomllib
 
 sys.stdout.reconfigure(encoding="utf-8")
 MARK = "# agent-config-managed"
+TABLE = "sandbox_workspace_write"
 path, roots = sys.argv[1], json.loads(sys.argv[2])
-lines = [line for line in open(path, encoding="utf-8").read().splitlines() if not line.endswith(MARK)]
+
+
+def is_header(line):
+    """Whether the line alone is a plain `[sandbox_workspace_write]` header, however it is quoted or indented."""
+    if not line.strip().startswith("[") or line.strip().startswith("[["):
+        return False
+    try:
+        return tomllib.loads(line) == {TABLE: {}}
+    except tomllib.TOMLDecodeError:
+        return False
+
+
+def starts_table(line):
+    return line.strip().startswith("[")
+
+
+def is_data(line):
+    return bool(line.strip()) and not line.strip().startswith("#")
+
+
+def drop_unused_managed_header(lines):
+    """Drops a header this script created once nothing else sits under it; otherwise the table becomes the user's."""
+    kept = []
+    for index, line in enumerate(lines):
+        if not (line.endswith(MARK) and is_header(line)):
+            kept.append(line)
+            continue
+        body = []
+        for following in lines[index + 1 :]:
+            if starts_table(following):
+                break
+            body.append(following)
+        if any(is_data(item) for item in body):
+            kept.append(line.removesuffix(MARK).rstrip())
+    return kept
+
+
+text = open(path, encoding="utf-8").read().splitlines()
+lines = [line for line in text if not (line.endswith(MARK) and line.lstrip().startswith("writable_roots"))]
+lines = drop_unused_managed_header(lines)
 if roots:
-    table = tomllib.loads("\n".join(lines)).get("sandbox_workspace_write")
+    table = tomllib.loads("\n".join(lines)).get(TABLE)
     managed = "writable_roots = " + json.dumps(roots) + " " + MARK
     if table is None:
-        lines += ["[sandbox_workspace_write] " + MARK, managed]
+        lines += ["[" + TABLE + "] " + MARK, managed]
     elif "writable_roots" in table:
-        sys.exit("sandbox_workspace_write.writable_roots is already set in " + path + "; add these roots to it: " + ", ".join(roots))
+        sys.exit(TABLE + ".writable_roots is already set in " + path + "; add these roots to it: " + ", ".join(roots))
     else:
-        header = next((i for i, line in enumerate(lines) if re.fullmatch(r"\[sandbox_workspace_write\]\s*(#.*)?", line)), None)
+        header = next((i for i, line in enumerate(lines) if is_header(line)), None)
         if header is None:
-            sys.exit("cannot add writable_roots: sandbox_workspace_write is not a plain table in " + path)
+            sys.exit("cannot add writable_roots: " + TABLE + " is not a plain table in " + path)
         lines.insert(header + 1, managed)
 print("\n".join(lines))
 tomllib.loads("\n".join(lines))

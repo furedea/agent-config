@@ -52,7 +52,6 @@ def verdict(kind: str, command: str) -> str:
         "@ledger hold --failure build-42 -- git status",
         "@ledger hold --failure build-42 --refresh-seconds 2.5 --release-on-failure -- uv run --frozen pytest",
         "@ledger hold --failure build-42 --request-id retry-1 -- nix flake check",
-        '@ledger claim --failure "$FAILURE"',
     ],
 )
 def test_documented_ledger_forms_run_without_a_prompt(command: str) -> None:
@@ -266,3 +265,42 @@ def test_hold_without_the_documented_options_and_separator_asks(command: str) ->
 )
 def test_hold_neither_trusts_a_command_path_nor_loses_track_of_a_reparsed_script(command: str) -> None:
     assert verdict("allowed", command) == "ask"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        '@ledger claim --failure "$((HOME=0))"',
+        "@ledger claim --failure $((HOME=0))",
+        "@ledger claim --failure \"$(python3 -c 'print(1)')\"",
+        "@ledger claim --failure $(id)",
+        '@ledger claim --failure "`id`"',
+        '@ledger claim --failure "$FAILURE"',
+        "@ledger claim --failure $FAILURE",
+        "@ledger claim --failure ${FAILURE:=x}",
+        "@ledger claim --failure <(id)",
+        "@ledger claim --failure ~",
+        "@ledger claim --failure build-*",
+        "@ledger claim --failure build-?",
+        "@ledger claim --failure b{a,b}",
+        '@ledger report --failure build-42 --body "$((HOME=0))"',
+        '@ledger hold --failure f -- git status "$((HOME=0))"',
+        "@ledger hold --failure f -- git status $(id)",
+        '@ledger hold --failure f -- git status "$HOME"',
+        "@ledger hold --failure f -- git status *",
+        '@ledger hold --failure "$F" -- git status',
+    ],
+)
+def test_an_expansion_in_any_word_of_ledger_or_the_command_it_holds_asks(command: str) -> None:
+    assert verdict("allowed", command) == "ask"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "@ledger report --failure build-42 --body 'costs $5 and $(id) and *'",
+        "@ledger hold --failure f -- git status 'a$b'",
+    ],
+)
+def test_single_quoted_text_is_literal_and_runs_without_a_prompt(command: str) -> None:
+    assert verdict("allowed", command) == "allow"

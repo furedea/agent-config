@@ -46,12 +46,6 @@ bash ~/agent-config/scripts/bootstrap_server.sh
 
 Claude Code の Linux 用サンドボックスには，サーバーに `bubblewrap` と `socat` がインストールされている必要がある．
 
-fleet ledger を使うホストでは，エージェントは spool (`/var/spool/fleet-ledger/outbox` と `holds`) に書き，`ledger` を確認なしで実行できる．
-ただし絶対パスで書いた単独のコマンド (例: `/usr/local/bin/ledger report --failure NAME`) に限る．
-裸の `ledger`，先頭の代入やラッパー，同じ行の別の文，`--spool-root` などのオプションは確認になる．
-`ledger hold ... -- <command>` の `<command>` は，単独で確認なしに実行できる場合だけ実行される．
-`fleet-agents` に加わる前に起動した tmux サーバーは，再起動が必要である．
-
 ホスト固有の設定はリポジトリの外の `~/.config/agent-config/` に置く．`bootstrap_server.env` は `BIN_DIR`，`UV_PYTHON_INSTALL_DIR`，`UV_CACHE_DIR`，`XDG_CACHE_HOME` などの場所を設定し（`--help` を参照），`claude_settings_override.json` はレンダリングされた Claude Code の設定にマージされる．`bootstrap_server.env` では，エージェントの GitHub トークン用に `AGENT_GITHUB_APP_ID` と `AGENT_GITHUB_APP_PRIVATE_KEY`（鍵の絶対パス）も設定できる．フックの状態は `~/.local/state` に残る．ソースが独自のリポジトリを持つ理由は [ADR-0012](docs/adr/0012_keep_the_personal_agent_source_in_its_own_repository.md) を参照．
 
 ## 検証とフック

@@ -30,8 +30,6 @@ import trusted_owners
 
 
 REQUEST_PROGRAMS = frozenset({"curl", "wget"})
-# The root-owned fleet ledger wrapper; a program of the same name anywhere else is agent-writable code.
-LEDGER_INSTALLED = Path("/usr/local/bin/ledger")
 REMOTE_REASON = (
     "Needs review: remote curl/wget can send local data. Read web pages with the web-fetch tool, "
     "or use gh api / nix store prefetch-file for exact values and files."
@@ -123,27 +121,7 @@ def objection(kind: str, item: shell_syntax.Command, policy: Policy) -> Verdict:
     preview = shell_syntax.command_preview(item.raw)
     if kind == "forbidden":
         return forbidden_objection(item, candidate, policy)
-    if (verdict := ledger_objection(item, candidate, policy)).decision != "allow":
-        return verdict
     return governed_objection(candidate, policy, preview)
-
-
-def ledger_objection(item: shell_syntax.Command, candidate: shell_syntax.Command, policy: Policy) -> Verdict:
-    """Let `ledger hold` run only what would run unprompted on its own, named without a path.
-
-    A prefix allow rule of a provider matches the whole command, so it cannot see an ask rule of the
-    wrapped command; requiring that command's own allow prefix keeps hold from skipping its review.
-    """
-    preview = shell_syntax.command_preview(item.raw)
-    if item.held and (
-        "/" in item.arguments[0] or command_policy.prefix_rule(candidate.arguments, policy.prefixes, "allow") is None
-    ):
-        return hook_decision.ask(
-            "Needs review: ledger hold runs without approval only a command named without a path that would run on its "
-            f"own without approval.\n\nCommand: {preview}",
-            "ledger hold",
-        )
-    return hook_decision.ALLOW
 
 
 def is_listed(candidate: shell_syntax.Command, rules: list[dict]) -> bool:
@@ -213,35 +191,6 @@ def governed_objection(candidate: shell_syntax.Command, policy: Policy, preview:
     )
 
 
-def installed_ledger_objection(command: str, commands: tuple[shell_syntax.Command, ...]) -> Verdict:
-    """Run the root-owned ledger unprompted only as the one command of the line, by its absolute path.
-
-    A PATH lookup, a leading assignment, a wrapper, an earlier statement, or an expansion such as
-    "$((HOME=0))" or "$(cmd)" in any word, the wrapped command's included, can change what runs
-    after this check, so each of them, the bare name included, asks.
-    """
-    calls = [item for item in commands if command_policy.canonical(item).arguments[0] == "ledger"]
-    if not calls:
-        return hook_decision.ALLOW
-    installed = LEDGER_INSTALLED.is_file() and os.access(LEDGER_INSTALLED, os.X_OK)
-    try:
-        single = shell_syntax.is_one_simple_command(command) and has_literal_words(command)
-    except shell_syntax.UnsupportedSyntax:
-        single = False
-    if installed and single and all(is_installed_call(item) for item in calls):
-        return hook_decision.ALLOW
-    return hook_decision.ask(
-        f"Needs review: ledger runs without approval only as the single command {LEDGER_INSTALLED} <subcommand>, "
-        f"with literal words only (no expansion), no assignment, wrapper, or other statement, and only while it is installed and executable."
-        f"\n\nCommand: {shell_syntax.command_preview(command)}",
-        "ledger",
-    )
-
-
-def is_installed_call(item: shell_syntax.Command) -> bool:
-    return item.arguments[0] == str(LEDGER_INSTALLED) and not item.wrapper_depth and not item.program_is_dynamic
-
-
 def settings_objection(command: str, commands: tuple[shell_syntax.Command, ...]) -> Verdict:
     """Ask when a curl or wget call shares its command with settings that could send it elsewhere."""
     requests = any(command_policy.canonical(item).arguments[0] in REQUEST_PROGRAMS for item in commands)
@@ -293,7 +242,7 @@ def command_verdict(kind: str, payload: dict, policy: Policy) -> Verdict:
         return verdict
     if kind == "allowed" and (verdict := cleanup_objection(command, commands)).decision != "allow":
         return verdict
-    if kind == "allowed" and (verdict := installed_ledger_objection(command, commands)).decision != "allow":
+    if kind == "allowed" and (verdict := pinned_program_objection(command, commands, policy)).decision != "allow":
         return verdict
     if not allows_literal_rules(command, commands):
         policy = replace(policy, literal_words=False)
@@ -324,6 +273,54 @@ def cleanup_objection(command: str, commands: tuple[shell_syntax.Command, ...]) 
         return hook_decision.ALLOW
     return hook_decision.ask(
         "Needs review: run cleanup_worktrees.py as one bare call or with --dry-run only.", "cleanup_worktrees.py"
+    )
+
+
+def pinned_program_objection(command: str, commands: tuple[shell_syntax.Command, ...], policy: Policy) -> Verdict:
+    """A program whose rule pins a path runs unprompted only as the one command of the line, by that path, in a listed form.
+
+    A PATH lookup, an assignment, a wrapper, another statement, or an expansion can change what runs
+    after this check, so each of them, the bare name included, asks.
+    """
+    pinned = command_policy.pinned_programs(policy.rules)
+    calls = [(name, item) for item in commands if (name := command_policy.canonical(item).arguments[0]) in pinned]
+    if not calls:
+        return hook_decision.ALLOW
+    try:
+        single = shell_syntax.is_one_simple_command(command) and has_literal_words(command)
+    except shell_syntax.UnsupportedSyntax:
+        single = False
+    offending = next(
+        (name for name, item in calls if not single or not is_listed_pinned_call(item, pinned, policy)), None
+    )
+    if offending is None:
+        return hook_decision.ALLOW
+    return hook_decision.ask(
+        f"Needs review: '{offending}' runs without approval only as the single command {pinned[offending]} "
+        "<arguments>, with literal words only (no expansion), no assignment, wrapper, or other statement, and "
+        f"only while that file is an executable regular file.\n\nCommand: {shell_syntax.command_preview(command)}",
+        offending,
+    )
+
+
+def is_listed_pinned_call(item: shell_syntax.Command, pinned: dict[str, str], policy: Policy) -> bool:
+    """A pinned program is its own allowlist: a project cannot add provider prefixes, so only a listed form passes."""
+    candidate = command_policy.canonical(item)
+    return (
+        is_pinned_call(item, pinned[candidate.arguments[0]])
+        and not candidate.hides_options
+        and is_listed(candidate, policy.listing_rules)
+    )
+
+
+def is_pinned_call(item: shell_syntax.Command, path: str) -> bool:
+    program = Path(path)
+    return (
+        item.arguments[0] == path
+        and not item.wrapper_depth
+        and not item.program_is_dynamic
+        and program.is_file()
+        and os.access(program, os.X_OK)
     )
 
 

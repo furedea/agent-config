@@ -3,7 +3,7 @@
 from collections.abc import Sequence
 import json
 import os
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import re
 import subprocess
 
@@ -74,6 +74,23 @@ def validate_rule(rule: object, prefixes: bool) -> None:
         raise ValueError("invalid literal word flag")
     if not prefixes and not isinstance(rule.get("ask_unlisted", False), bool):
         raise ValueError("invalid ask-unlisted flag")
+    if not prefixes and "program_path" in rule:
+        validate_program_path(rule)
+
+
+def validate_program_path(rule: dict) -> None:
+    """A pinned path is a normalized absolute file path, and the one program the rule governs is named by it."""
+    path = rule["program_path"]
+    if (
+        not isinstance(path, str)
+        or not path.startswith("/")
+        or any(character in path for character in " \t\n*?[]{}$`\\'\"~")
+    ):
+        raise ValueError("invalid program path")
+    if str(PurePosixPath(path)) != path or ".." in PurePosixPath(path).parts or path == "/":
+        raise ValueError("program path is not normalized")
+    if rule.get("programs") != [PurePosixPath(path).name]:
+        raise ValueError("program path must pin the one program the rule governs")
 
 
 def is_name_list(value: object) -> bool:
@@ -158,3 +175,8 @@ def rule_matches(rule: dict, raw: str) -> bool:
 
 def all_patterns(rules: list[dict]) -> list[str]:
     return [pattern for rule in rules for pattern in rule.get("patterns", ())]
+
+
+def pinned_programs(rules: list[dict]) -> dict[str, str]:
+    """Programs that may run unprompted only by one absolute path, with that path."""
+    return {rule["programs"][0]: rule["program_path"] for rule in rules if "program_path" in rule}

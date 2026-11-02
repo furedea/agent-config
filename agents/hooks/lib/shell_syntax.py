@@ -31,9 +31,6 @@ SHELLS = frozenset({"bash", "dash", "ksh", "sh", "zsh"})
 COMMAND_LOOKUP = frozenset({"-v", "-V"})
 ASSIGNMENT = re.compile(r"[A-Za-z_][A-Za-z0-9_]*=")
 ASSIGNING_WRAPPERS = frozenset({"env", "sudo"})
-# `ledger hold` runs the command after `--` while it keeps a claim alive; these are its documented options.
-LEDGER_HOLD_VALUED = frozenset({"--failure", "--request-id", "--refresh-seconds"})
-LEDGER_HOLD_FLAGS = frozenset({"--release-on-failure"})
 # Process wrappers run their trailing arguments as a command. Each entry lists the flags without an
 # operand and the options whose operand is the next token; unknown options are refused, not skipped.
 WRAPPERS: dict[str, tuple[frozenset[str], frozenset[str]]] = {
@@ -71,8 +68,7 @@ class Command:
     than the home directory); such arguments carry their source text. `writes` lists the files
     that output redirections would create or overwrite. `appends_input` marks a command that xargs
     runs with further arguments read from its input. `spreading` flags arguments that may become
-    several words at run time, options included. `held` marks a command that runs under
-    `ledger hold`, directly or through further wrappers.
+    several words at run time, options included.
     """
 
     raw: str
@@ -85,7 +81,6 @@ class Command:
     writes: tuple[str, ...] = ()
     appends_input: bool = False
     spreading: tuple[bool, ...] = ()
-    held: bool = False
 
     def __post_init__(self) -> None:
         if not self.words:
@@ -196,11 +191,9 @@ def parse(source: str, depth: int = 0, directories: tuple[Path | None, ...] = ()
             scripts = sources.scripts(owner, directories)
         else:
             scripts = []
-        nested_commands = [
+        commands += [
             nested for script in scripts for nested in parse(script, innermost.wrapper_depth + 1, directories)
         ]
-        # A script a held command runs is held too, however its commands are spelled.
-        commands += [replace(nested, held=True) for nested in nested_commands] if innermost.held else nested_commands
     return tuple(commands)
 
 
@@ -322,14 +315,8 @@ def unwrapped(command: Command) -> list[Command]:
     """Peel process wrappers so policy sees the program they eventually run."""
     exposed: list[Command] = []
     while (index := wrapped_index(command.arguments)) is not None:
-        name = Path(command.arguments[0]).name
-        appends_input = command.appends_input or name == "xargs"
-        held = command.held or name == "ledger"
-        command = replace(
-            command.rebased(index, depth=command.wrapper_depth + 1),
-            appends_input=appends_input,
-            held=held,
-        )
+        appends_input = command.appends_input or Path(command.arguments[0]).name == "xargs"
+        command = replace(command.rebased(index, depth=command.wrapper_depth + 1), appends_input=appends_input)
         exposed.append(command)
     return exposed
 
@@ -337,8 +324,6 @@ def unwrapped(command: Command) -> list[Command]:
 def wrapped_index(arguments: tuple[str, ...]) -> int | None:
     """Locate the command a process wrapper runs, or None when the call is not a wrapper invocation."""
     name = Path(arguments[0]).name
-    if name == "ledger":
-        return ledger_hold_index(arguments)
     if name not in WRAPPERS:
         return None
     _, valued = WRAPPERS[name]
@@ -361,24 +346,6 @@ def wrapped_index(arguments: tuple[str, ...]) -> int | None:
     if name == "timeout":
         index += 1
     return index if index < len(arguments) else None
-
-
-def ledger_hold_index(arguments: tuple[str, ...]) -> int | None:
-    """Locate the command `ledger hold` runs, which must follow `--` after documented options only."""
-    if arguments[1:2] != ("hold",):
-        return None
-    index = 2
-    while index < len(arguments):
-        token = arguments[index]
-        if token == "--":
-            return index + 1 if index + 1 < len(arguments) else None
-        if token in LEDGER_HOLD_VALUED:
-            index += 2
-        elif token in LEDGER_HOLD_FLAGS:
-            index += 1
-        else:
-            raise UnsupportedSyntax(f"ledger hold option requires explicit review: {token}", "wrapper")
-    return None
 
 
 def is_flag(name: str, token: str) -> bool:

@@ -143,22 +143,6 @@
         "^go run( [^@ ]+)*$"
       ],
       "justification": "Allow local Go builds, verification, and inspection; go env -w and -u change user-level Go configuration, and go run pkg@version fetches and executes a remote module the project's go.mod does not pin, so those forms ask."
-    },
-    {
-      "programs": [
-        "ledger"
-      ],
-      "ask_unlisted": true,
-      "patterns": [
-        "^ledger ping$",
-        "^ledger report( --failure [A-Za-z0-9_][A-Za-z0-9._-]{0,127}| --request-id [A-Za-z0-9_][A-Za-z0-9._-]{0,127}| --body ('[^']*'|\"[^\"$`\\\\!]*\"|[A-Za-z0-9_][A-Za-z0-9._-]*))*$",
-        "^ledger claim( --failure [A-Za-z0-9_][A-Za-z0-9._-]{0,127}| --request-id [A-Za-z0-9_][A-Za-z0-9._-]{0,127})*$",
-        "^ledger status( --failure [A-Za-z0-9_][A-Za-z0-9._-]{0,127}| --request-id [A-Za-z0-9_][A-Za-z0-9._-]{0,127})*$",
-        "^ledger release( --failure [A-Za-z0-9_][A-Za-z0-9._-]{0,127}| --request-id [A-Za-z0-9_][A-Za-z0-9._-]{0,127}| --generation [0-9]+)*$",
-        "^ledger result( --failure [A-Za-z0-9_][A-Za-z0-9._-]{0,127}| --request-id [A-Za-z0-9_][A-Za-z0-9._-]{0,127}| --generation [0-9]+| --result ('[^']*'|\"[^\"$`\\\\!]*\"|[A-Za-z0-9_][A-Za-z0-9._-]*))*$",
-        "^ledger hold( --failure [A-Za-z0-9_][A-Za-z0-9._-]{0,127}| --request-id [A-Za-z0-9_][A-Za-z0-9._-]{0,127}| --refresh-seconds [0-9]+(\\.[0-9]+)?| --release-on-failure)* -- .+$"
-      ],
-      "justification": "Allow the fleet ledger's local spool commands in their documented forms; options that move the spool root or the answer timeout, other programs named ledger, and every other form ask, and the command a hold wraps is judged on its own."
     }
   ]
 }

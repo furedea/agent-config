@@ -108,13 +108,6 @@ def codex_policy(agent_harness: CliRunner, tmp_path_factory: pytest.TempPathFact
         ("allow", "cd src"),
         ("allow", "awk '{print $1}' README.md"),
         ("allow", "cp a.md b.md"),
-        ("allow", "/usr/local/bin/ledger ping"),
-        ("allow", "/usr/local/bin/ledger report --failure build-42 --body 'pytest failed'"),
-        ("allow", "/usr/local/bin/ledger claim --failure build-42"),
-        ("allow", "/usr/local/bin/ledger status --failure build-42"),
-        ("allow", "/usr/local/bin/ledger release --failure build-42 --generation 3"),
-        ("allow", "/usr/local/bin/ledger result --failure build-42 --generation 3 --result fixed"),
-        ("allow", "/usr/local/bin/ledger hold --failure build-42 -- git status"),
         ("prompt", "uvx ruff check"),
         ("prompt", "nix flake update nixpkgs"),
         ("prompt", "npx cowsay hello"),
@@ -148,33 +141,3 @@ def test_generated_policy_decides_without_running_the_command(
     )
     assert result.returncode == 0, result.stderr
     assert json.loads(result.stdout)["decision"] == decision
-
-
-@pytest.mark.parametrize(
-    "command",
-    [
-        "ledger",
-        "ledger frobnicate",
-        "/usr/local/bin/ledger",
-        "/usr/local/bin/ledger frobnicate",
-        "/usr/local/bin/ledger --spool-root /tmp/fake report --failure build-42",
-        "/usr/local/bin/ledger --timeout 600 ping",
-        "/usr/local/bin/ledger --help",
-        "ledger --spool-root /tmp/fake report --failure build-42",
-        "ledger --timeout 600 ping",
-        "/tmp/ledger ping",
-    ],
-)
-def test_ledger_forms_outside_the_listed_subcommands_match_no_allow_rule(
-    codex_policy: tuple[str, Path], command: str
-) -> None:
-    executable, rules = codex_policy
-    result = subprocess.run(
-        [executable, "execpolicy", "check", "--rules", str(rules), "--", *shlex.split(command)],
-        text=True,
-        capture_output=True,
-        timeout=10,
-        check=False,
-    )
-    assert result.returncode == 0, result.stderr
-    assert json.loads(result.stdout).get("decision") != "allow"

@@ -462,6 +462,7 @@ if config_dir:
     )
     guarded.setdefault("network", {})["enabled"] = True
 
+
 def key(name):
     return json.dumps(name, ensure_ascii=False)
 
@@ -499,84 +500,6 @@ emit(config, [])
 PY
   "$_python" -I -c 'import sys, tomllib; tomllib.load(open(sys.argv[1], "rb"))' "$_merged"
   "$BIN_DIR/agent-harness" sync-codex-config --source "$_merged" --target "$CODEX_CONFIG"
-  sync_codex_writable_roots "$_python" "$_config_dir"
-}
-
-# agent-harness does not sync sandbox_workspace_write, so the writable roots of a host without the guarded
-# profile are kept as lines of their own, marked as managed, in the user's config. Hosts with the profile get
-# the same paths through it, so any managed lines are removed there.
-function sync_codex_writable_roots() {
-  local _python="$1" _config_dir="$2" _roots="[]"
-  if [[ -z "$_config_dir" ]]; then
-    _roots="$("$BIN_DIR/jq" -c '[.sandbox.filesystem.allowWrite // [] | .[] | select(startswith("/"))]' "$CLAUDE_SETTINGS")"
-  fi
-  [[ -f "$CODEX_CONFIG" ]] || return 0
-  local _updated="$WORK_DIR/codex_writable_roots.toml"
-  "$_python" -I - "$CODEX_CONFIG" "$_roots" >|"$_updated" <<'PY'
-import json
-import sys
-import tomllib
-
-sys.stdout.reconfigure(encoding="utf-8")
-MARK = "# agent-config-managed"
-TABLE = "sandbox_workspace_write"
-path, roots = sys.argv[1], json.loads(sys.argv[2])
-
-
-def is_header(line):
-    """Whether the line alone is a plain `[sandbox_workspace_write]` header, however it is quoted or indented."""
-    if not line.strip().startswith("[") or line.strip().startswith("[["):
-        return False
-    try:
-        return tomllib.loads(line) == {TABLE: {}}
-    except tomllib.TOMLDecodeError:
-        return False
-
-
-def starts_table(line):
-    return line.strip().startswith("[")
-
-
-def is_data(line):
-    return bool(line.strip()) and not line.strip().startswith("#")
-
-
-def drop_unused_managed_header(lines):
-    """Drops a header this script created once nothing else sits under it; otherwise the table becomes the user's."""
-    kept = []
-    for index, line in enumerate(lines):
-        if not (line.endswith(MARK) and is_header(line)):
-            kept.append(line)
-            continue
-        body = []
-        for following in lines[index + 1 :]:
-            if starts_table(following):
-                break
-            body.append(following)
-        if any(is_data(item) for item in body):
-            kept.append(line.removesuffix(MARK).rstrip())
-    return kept
-
-
-text = open(path, encoding="utf-8").read().splitlines()
-lines = [line for line in text if not (line.endswith(MARK) and line.lstrip().startswith("writable_roots"))]
-lines = drop_unused_managed_header(lines)
-if roots:
-    table = tomllib.loads("\n".join(lines)).get(TABLE)
-    managed = "writable_roots = " + json.dumps(roots) + " " + MARK
-    if table is None:
-        lines += ["[" + TABLE + "] " + MARK, managed]
-    elif "writable_roots" in table:
-        sys.exit(TABLE + ".writable_roots is already set in " + path + "; add these roots to it: " + ", ".join(roots))
-    else:
-        header = next((i for i, line in enumerate(lines) if is_header(line)), None)
-        if header is None:
-            sys.exit("cannot add writable_roots: " + TABLE + " is not a plain table in " + path)
-        lines.insert(header + 1, managed)
-print("\n".join(lines))
-tomllib.loads("\n".join(lines))
-PY
-  install -m 0600 "$_updated" "$CODEX_CONFIG"
 }
 
 # The Codex config render reads the generated Codex source with the standard-library TOML parser.

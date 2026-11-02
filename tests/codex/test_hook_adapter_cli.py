@@ -363,20 +363,3 @@ def test_a_new_suppression_is_denied_in_codex_since_its_hooks_cannot_ask(run_cli
     )
     assert result.returncode == 2
     assert "suppression" in result.stderr
-
-
-@pytest.mark.parametrize(
-    ("command", "blocked"),
-    [
-        ("ledger hold --failure build-42 -- rm build/output.txt", True),
-        ("PATH=/tmp/shadow ledger ping", True),
-        ("ledger ping", True),
-        ("PATH=/tmp/shadow command /usr/local/bin/ledger ping", True),
-        ("ledger hold --failure build-42 -- unknown-tool", True),
-        ("ledger report --failure build-42 --spool-root /tmp/fake", True),
-        ("ledger --spool-root /tmp/fake ping", True),
-    ],
-)
-def test_codex_judges_ledger_calls_and_the_command_hold_wraps(run_cli: CliRunner, command: str, blocked: bool) -> None:
-    result = run_cli(SCRIPT, "shell", "allowed", payload={"tool_input": {"command": command}})
-    assert result.returncode == (2 if blocked else 0), result.stderr

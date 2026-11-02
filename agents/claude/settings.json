@@ -75,9 +75,7 @@
         "~/.cargo/.package-cache",
         "~/.cargo/.package-cache-mutate",
         "~/.cargo/.global-cache",
-        "~/.cargo/.global-cache-journal",
-        "/var/spool/fleet-ledger/outbox",
-        "/var/spool/fleet-ledger/holds"
+        "~/.cargo/.global-cache-journal"
       ],
       "denyRead": [
         "~/.codex/auth.json",

@@ -207,27 +207,3 @@ def test_sandboxed_commands_cannot_read_1password_data_or_agent_sockets() -> Non
 def test_claude_code_tools_cannot_read_the_codex_login() -> None:
     permissions = json.loads((REPO_ROOT / "agents/claude/settings.json").read_text())["permissions"]
     assert "Read(~/.codex/auth.json)" in permissions["deny"]
-
-
-FLEET_LEDGER_SPOOL = "/var/spool/fleet-ledger"
-FLEET_LEDGER_PRIVATE_ROOTS = ("/opt/fleet-ledger", "/etc/fleet-ledger", "/var/lib/fleet-ledger")
-
-
-def test_fleet_ledger_requests_and_hold_markers_are_writable_inside_the_sandbox() -> None:
-    sandbox = json.loads((REPO_ROOT / "agents/claude/settings.json").read_text())["sandbox"]
-    assert {f"{FLEET_LEDGER_SPOOL}/outbox", f"{FLEET_LEDGER_SPOOL}/holds"} <= set(sandbox["filesystem"]["allowWrite"])
-
-
-def test_only_the_fleet_ledger_outbox_and_holds_are_writable_under_its_spool() -> None:
-    sandbox = json.loads((REPO_ROOT / "agents/claude/settings.json").read_text())["sandbox"]
-    spool = [path for path in sandbox["filesystem"]["allowWrite"] if path.startswith("/var/spool")]
-    assert sorted(spool) == [f"{FLEET_LEDGER_SPOOL}/holds", f"{FLEET_LEDGER_SPOOL}/outbox"]
-
-
-def test_fleet_ledger_keys_sync_code_and_service_settings_stay_unwritable_inside_the_sandbox() -> None:
-    sandbox = json.loads((REPO_ROOT / "agents/claude/settings.json").read_text())["sandbox"]
-    assert [
-        path
-        for path in sandbox["filesystem"]["allowWrite"]
-        if path.startswith(FLEET_LEDGER_PRIVATE_ROOTS) or path in {"/", "/var", "/var/spool", "/opt", "/etc"}
-    ] == []

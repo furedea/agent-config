@@ -140,7 +140,7 @@ def test_docker_catch_all_is_a_hook_rule_because_a_prefix_ask_would_override_the
     )
     rules = json.loads((REPO_ROOT / "agents/hooks/rules/allowed_commands.json").read_text())["rules"]
     asking = {program for rule in rules if rule.get("ask_unlisted") for program in rule["programs"]}
-    assert asking == {"docker", "docker-compose", "ledger"}
+    assert asking == {"docker", "docker-compose"}
 
 
 @pytest.mark.parametrize(
@@ -249,39 +249,3 @@ def test_go_dependency_changes_require_approval(generated_permissions: dict, pre
 def test_go_install_stays_denied() -> None:
     assert any(rule["decision"] == "deny" and rule["prefix"] == ["go", "install"] for rule in POLICY["rules"])
     assert ("go", "install") not in ALLOW | ASK
-
-
-LEDGER_SUBCOMMANDS = {"ping", "report", "claim", "status", "release", "result", "hold"}
-
-
-def ledger_rules() -> list[dict]:
-    return [rule for rule in POLICY["rules"] if rule["prefix"][0] in {"ledger", "/usr/local/bin/ledger"}]
-
-
-def test_fleet_ledger_has_exactly_one_allow_prefix_per_subcommand_by_name_and_by_absolute_path() -> None:
-    prefixes = sorted((tuple(rule["prefix"]), rule["decision"]) for rule in ledger_rules())
-    expected = sorted(
-        ((program, subcommand), "allow")
-        for program in ("ledger", "/usr/local/bin/ledger")
-        for subcommand in LEDGER_SUBCOMMANDS
-    )
-    assert prefixes == expected
-
-
-@pytest.mark.parametrize("program", ["ledger", "/usr/local/bin/ledger"])
-def test_no_allow_prefix_covers_every_ledger_subcommand_or_an_unknown_one(program: str) -> None:
-    assert (program,) not in ALLOW
-    assert not [
-        prefix
-        for prefix in ALLOW
-        if prefix[0] == program and prefix[1:2] not in {(name,) for name in LEDGER_SUBCOMMANDS}
-    ]
-    assert not [prefix for prefix in ALLOW if prefix[0] == program and any(token.startswith("-") for token in prefix)]
-
-
-@pytest.mark.parametrize("subcommand", sorted(LEDGER_SUBCOMMANDS))
-def test_generated_permissions_allow_each_ledger_subcommand_by_absolute_path(
-    generated_permissions: dict, subcommand: str
-) -> None:
-    assert f"/usr/local/bin/ledger {subcommand}" in bash_prefixes(generated_permissions, "allow")
-    assert "/usr/local/bin/ledger" not in bash_prefixes(generated_permissions, "allow")

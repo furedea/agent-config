@@ -30,6 +30,8 @@ import trusted_owners
 
 
 REQUEST_PROGRAMS = frozenset({"curl", "wget"})
+# The only spellings of the root-owned fleet ledger wrapper; any other program named ledger is not it.
+LEDGER_PROGRAMS = frozenset({"ledger", "/usr/local/bin/ledger"})
 REMOTE_REASON = (
     "Needs review: remote curl/wget can send local data. Read web pages with the web-fetch tool, "
     "or use gh api / nix store prefetch-file for exact values and files."
@@ -121,7 +123,29 @@ def objection(kind: str, item: shell_syntax.Command, policy: Policy) -> Verdict:
     preview = shell_syntax.command_preview(item.raw)
     if kind == "forbidden":
         return forbidden_objection(item, candidate, policy)
+    if (verdict := ledger_objection(item, candidate, policy)).decision != "allow":
+        return verdict
     return governed_objection(candidate, policy, preview)
+
+
+def ledger_objection(item: shell_syntax.Command, candidate: shell_syntax.Command, policy: Policy) -> Verdict:
+    """Trust only the installed ledger, and let `ledger hold` run only what would run unprompted on its own.
+
+    A prefix allow rule of a provider matches the whole command, so it cannot see an ask rule of the
+    wrapped command; requiring that command's own allow prefix keeps hold from skipping its review.
+    """
+    preview = shell_syntax.command_preview(item.raw)
+    if candidate.arguments[0] == "ledger" and item.arguments[0] not in LEDGER_PROGRAMS:
+        return hook_decision.ask(
+            f"Needs review: only the installed ledger program runs without approval.\n\nCommand: {preview}", "ledger"
+        )
+    if item.held and command_policy.prefix_rule(candidate.arguments, policy.prefixes, "allow") is None:
+        return hook_decision.ask(
+            "Needs review: ledger hold runs without approval only a command that would run on its own "
+            f"without approval.\n\nCommand: {preview}",
+            "ledger hold",
+        )
+    return hook_decision.ALLOW
 
 
 def is_listed(candidate: shell_syntax.Command, rules: list[dict]) -> bool:

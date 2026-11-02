@@ -358,6 +358,50 @@ setup() {
   [ "$(jq -r '.["'"$HOME_DIR"'/app.pem"]' <<<"$_filesystem")" = "deny" ]
 }
 
+# Lets the host override carry the same sandbox write list as the shipped Claude settings.
+function use_shipped_sandbox_write_list() {
+  mkdir -p "$HOME_DIR/.config/agent-config"
+  jq '{sandbox: {filesystem: {allowWrite: .sandbox.filesystem.allowWrite}}}' "$REPO_ROOT/agents/claude/settings.json" \
+    >|"$HOME_DIR/.config/agent-config/claude_settings_override.json"
+}
+
+@test "lets Codex write only the fleet ledger outbox and holds when the host names a GitHub App" {
+  write_host_env 'AGENT_GITHUB_APP_ID=123' "AGENT_GITHUB_APP_PRIVATE_KEY=$HOME_DIR/app.pem"
+  use_shipped_sandbox_write_list
+
+  run bootstrap_server
+
+  [ "$status" -eq 0 ]
+  local _filesystem
+  _filesystem="$(codex_config_json | jq -c '.permissions.guarded.filesystem')"
+  [ "$(jq -c '[.["/var/spool/fleet-ledger/outbox"], .["/var/spool/fleet-ledger/holds"]]' <<<"$_filesystem")" = '["write","write"]' ]
+  [ "$(jq -c '[keys[] | select(startswith("/var/spool"))]' <<<"$_filesystem")" \
+    = '["/var/spool/fleet-ledger/holds","/var/spool/fleet-ledger/outbox"]' ]
+  [ "$(jq -c '[keys[] | select(startswith("/opt/fleet-ledger", "/etc/fleet-ledger", "/var/lib/fleet-ledger"))]' <<<"$_filesystem")" = '[]' ]
+}
+
+@test "lets Codex write only the fleet ledger outbox and holds when the host names no GitHub App" {
+  use_shipped_sandbox_write_list
+
+  run bootstrap_server
+
+  [ "$status" -eq 0 ]
+  [ "$(codex_config_json | jq -c '.sandbox_workspace_write.writable_roots')" \
+    = '["/var/spool/fleet-ledger/outbox","/var/spool/fleet-ledger/holds"]' ]
+  [ "$(codex_config_json | jq -r '.default_permissions // "unset"')" = "unset" ]
+}
+
+@test "leaves the Codex writable roots alone when no sandbox write path is absolute" {
+  mkdir -p "$HOME_DIR/.config/agent-config"
+  printf '%s\n' '{"sandbox":{"filesystem":{"allowWrite":["~/.cache/uv","relative/dir"]}}}' \
+    >|"$HOME_DIR/.config/agent-config/claude_settings_override.json"
+
+  run bootstrap_server
+
+  [ "$status" -eq 0 ]
+  [ "$(codex_config_json | jq -r '.sandbox_workspace_write // "unset"')" = "unset" ]
+}
+
 @test "applies the Codex token settings again on a repeated run" {
   write_host_env 'AGENT_GITHUB_APP_ID=123' "AGENT_GITHUB_APP_PRIVATE_KEY=$HOME_DIR/app.pem"
   run bootstrap_server

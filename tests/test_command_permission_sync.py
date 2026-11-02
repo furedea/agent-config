@@ -140,7 +140,7 @@ def test_docker_catch_all_is_a_hook_rule_because_a_prefix_ask_would_override_the
     )
     rules = json.loads((REPO_ROOT / "agents/hooks/rules/allowed_commands.json").read_text())["rules"]
     asking = {program for rule in rules if rule.get("ask_unlisted") for program in rule["programs"]}
-    assert asking == {"docker", "docker-compose"}
+    assert asking == {"docker", "docker-compose", "ledger"}
 
 
 @pytest.mark.parametrize(

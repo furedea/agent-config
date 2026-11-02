@@ -437,14 +437,15 @@ with open(claude_settings_path, encoding="utf-8") as file:
 environment = config.setdefault("shell_environment_policy", {}).setdefault("set", {})
 environment["NVIM_LOG_FILE"] = nvim_log_file
 
+# Relative allowWrite entries name Claude's working directory, which :workspace_roots covers.
+cache_writes = [
+    path
+    for path in claude_settings.get("sandbox", {}).get("filesystem", {}).get("allowWrite", [])
+    if path.startswith(("/", "~/"))
+]
+
 if config_dir:
     environment["GH_CONFIG_DIR"] = config_dir
-    # Relative allowWrite entries name Claude's working directory, which :workspace_roots covers.
-    cache_writes = [
-        path
-        for path in claude_settings.get("sandbox", {}).get("filesystem", {}).get("allowWrite", [])
-        if path.startswith(("/", "~/"))
-    ]
     config["default_permissions"] = "guarded"
     guarded = config.setdefault("permissions", {}).setdefault("guarded", {})
     filesystem = guarded.setdefault("filesystem", {})
@@ -461,6 +462,9 @@ if config_dir:
         }
     )
     guarded.setdefault("network", {})["enabled"] = True
+elif absolute_writes := [path for path in cache_writes if path.startswith("/")]:
+    # Without the guarded profile, the workspace-write sandbox takes extra writable directories as absolute paths.
+    config.setdefault("sandbox_workspace_write", {})["writable_roots"] = absolute_writes
 
 
 def key(name):

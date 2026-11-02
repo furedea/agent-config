@@ -69,7 +69,13 @@
         "~/go/pkg/mod",
         "~/go/pkg/sumdb",
         "~/Library/Caches/go-build",
-        "~/Library/Caches/golangci-lint"
+        "~/Library/Caches/golangci-lint",
+        "~/.cargo/registry",
+        "~/.cargo/git",
+        "~/.cargo/.package-cache",
+        "~/.cargo/.package-cache-mutate",
+        "~/.cargo/.global-cache",
+        "~/.cargo/.global-cache-journal"
       ],
       "denyRead": [
         "~/.codex/auth.json",
@@ -83,11 +89,14 @@
     },
     "network": {
       "allowedDomains": [
+        "api.osv.dev",
         "channels.nixos.org",
         "files.pythonhosted.org",
+        "index.crates.io",
         "proxy.golang.org",
         "pypi.org",
         "registry.npmjs.org",
+        "static.crates.io",
         "sum.golang.org",
         "vuln.go.dev"
       ],

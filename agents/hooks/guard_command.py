@@ -38,10 +38,10 @@ REMOTE_REASON = (
 # The only programs the literal_words rules govern; through any wrapper they get main's rules, or no
 # rule at all for curl and wget.
 LITERAL_PROGRAMS = frozenset({"curl", "gh", "herdr", "wget"})
-# Characters through which any shell may expand or run something; a command holding one anywhere
-# outside quotes, in the program name, an assignment, or a redirect included, gets no
-# literal_words rule.
-EXPANDING_TEXT = re.compile(r"[$`~*?\[\]{}]|\\\n")
+# Characters through which any shell may expand or run something, and a word starting with `=` (zsh
+# looks it up on PATH); a command holding one anywhere outside quotes, in the program name, an
+# assignment, or a redirect included, gets no literal_words rule.
+EXPANDING_TEXT = re.compile(r"[$`~*?\[\]{}]|\\\n|(?:^|[ \t])=")
 # Inside double quotes the shell still expands only these, and `!` for history expansion; glob
 # characters there are literal.
 DOUBLE_QUOTE_EXPANDING_TEXT = re.compile(r"[$`\\!]")
@@ -102,6 +102,9 @@ def policies(kind: str, directory: Path) -> Policy:
         raise ValueError(f"invalid project {kind} command rules: {project}") from error
     if kind == "allowed" and (ignored := ignored_project_rules(root, directory)):
         return Policy(prefixes, rules, ignored=ignored)
+    taken = command_policy.governed_programs(rules) & set(command_policy.pinned_programs(project_rules))
+    if taken:
+        raise ValueError(f"project rule pins a program the global rules govern: {', '.join(sorted(taken))}: {project}")
     return Policy(prefixes, rules + project_rules)
 
 
@@ -283,7 +286,7 @@ def pinned_program_objection(command: str, commands: tuple[shell_syntax.Command,
     after this check, so each of them, the bare name included, asks.
     """
     pinned = command_policy.pinned_programs(policy.rules)
-    calls = [(name, item) for item in commands if (name := command_policy.canonical(item).arguments[0]) in pinned]
+    calls = [(name, item) for item in commands if (name := pinned_name(item)) in pinned]
     if not calls:
         return hook_decision.ALLOW
     try:
@@ -303,11 +306,17 @@ def pinned_program_objection(command: str, commands: tuple[shell_syntax.Command,
     )
 
 
+def pinned_name(item: shell_syntax.Command) -> str:
+    """The program a call names, as the rules do; zsh's `=name` is a PATH lookup of `name`."""
+    return Path(item.arguments[0]).name.removeprefix("=")
+
+
 def is_listed_pinned_call(item: shell_syntax.Command, pinned: dict[str, str], policy: Policy) -> bool:
     """A pinned program is its own allowlist: a project cannot add provider prefixes, so only a listed form passes."""
-    candidate = command_policy.canonical(item)
+    name = pinned_name(item)
+    candidate = item.rebased(1, (name,))
     return (
-        is_pinned_call(item, pinned[candidate.arguments[0]])
+        is_pinned_call(item, pinned[name])
         and not candidate.hides_options
         and is_listed(candidate, policy.listing_rules)
     )

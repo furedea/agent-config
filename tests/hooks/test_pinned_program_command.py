@@ -1,60 +1,20 @@
-"""A rule's program_path lets its program run unprompted only as one literal call by that absolute path."""
+"""A rule's program_path lets its program run unprompted only as one literal call by an absolute path."""
 
 import json
 import os
 from pathlib import Path
-import subprocess
 
 import pytest
 
-from tests.runtime import REPO_ROOT, load_script_module
-
-guard = load_script_module("agents/hooks/guard_command.py", "guard_command")
-policy = load_script_module("agents/hooks/lib/command_policy.py", "command_policy")
-GLOBAL_RULES = REPO_ROOT / "agents/hooks/rules/allowed_commands.json"
-FORBIDDEN_RULES = REPO_ROOT / "agents/hooks/rules/forbidden_commands.json"
-NAME = "[A-Za-z0-9_][A-Za-z0-9._-]{0,127}"
-SUBCOMMANDS = ("ping", "report", "claim", "status", "release", "result")
-
-
-def pinned_rule(path: str, program: str = "fleetctl") -> dict:
-    """An example rule for a program that is not part of the shipped policy."""
-    return {
-        "programs": [program],
-        "program_path": path,
-        "patterns": [
-            f"^{program} ping$",
-            f"^{program} status( --target {NAME})*$",
-            f"^{program} run --target {NAME} --note ('[^']*'|[A-Za-z0-9_]+)$",
-        ],
-        "justification": "Allow the example tool in its documented forms.",
-    }
-
-
-def swe_conform_ledger_rule() -> dict:
-    """The rule swe-conform would ship: six subcommands, no hold, pinned to the installed wrapper."""
-    name = "[A-Za-z0-9_][A-Za-z0-9._-]{0,127}"
-    text = "('[^']*'|\"[^\"$`\\\\!]*\"|[A-Za-z0-9_][A-Za-z0-9._-]*)"
-    common = f" --failure {name}| --request-id {name}"
-    return {
-        "programs": ["ledger"],
-        "program_path": "/usr/local/bin/ledger",
-        "patterns": [
-            "^ledger ping$",
-            f"^ledger report({common}| --body {text})*$",
-            f"^ledger claim({common})*$",
-            f"^ledger status({common})*$",
-            f"^ledger release({common}| --generation [0-9]+)*$",
-            f"^ledger result({common}| --generation [0-9]+| --result {text})*$",
-        ],
-        "justification": "Allow the fleet ledger's local spool commands in their documented forms; every other form asks.",
-    }
-
-
-def write_rules(path: Path, rules: list[dict]) -> Path:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps({"version": 1, "rules": rules}))
-    return path
+from tests.hooks.pinned_program_support import (
+    GLOBAL_RULES,
+    PINNED,
+    guard,
+    pinned_rule,
+    policy,
+    verdict,
+    write_rules,
+)
 
 
 @pytest.fixture
@@ -75,16 +35,9 @@ def global_pin(program: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -
     return program
 
 
-def verdict(command: str, kind: str = "allowed") -> str:
-    return guard.decide(kind, {"tool_input": {"command": command.replace("@fleetctl", PATH[0])}}).decision
-
-
-PATH: list[str] = [""]
-
-
 @pytest.fixture(autouse=True)
 def installed_path(program: Path) -> None:
-    PATH[0] = str(program)
+    PINNED[0] = str(program)
 
 
 pytestmark = pytest.mark.usefixtures("isolated_project", "global_pin")
@@ -297,137 +250,54 @@ def test_a_program_path_without_a_program_list_is_rejected(tmp_path: Path) -> No
         policy.load_rules(write_rules(tmp_path / "rules.json", [rule]))
 
 
-@pytest.fixture
-def project(git_project: Path, program: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    """A repository whose own rules pin the example program; the global rules are the shipped ones."""
-    monkeypatch.setenv("AGENT_ALLOWED_COMMAND_RULES", str(GLOBAL_RULES))
-    write_rules(git_project / ".agents/hooks/rules/allowed_commands.json", [pinned_rule(str(program))])
-    owners = tmp_path / "owners.json"
-    owners.write_text(json.dumps({"owners": ["acme"], "exclude_forks": False}))
-    monkeypatch.setenv("AGENT_TRUSTED_OWNERS", str(owners))
-    return git_project
+@pytest.mark.parametrize("word", ["=fleetctl", '"=fleetctl"', "'=fleetctl'"])
+def test_a_zsh_equals_expansion_of_the_program_name_asks(word: str) -> None:
+    assert verdict(f"{word} ping") == "ask"
 
 
-def set_origin(project: Path, url: str) -> None:
-    subprocess.run(["git", "remote", "add", "origin", url], cwd=project, check=True, capture_output=True)
+def test_the_equals_expansion_of_a_pinned_program_whose_file_is_missing_still_asks(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    rule = {**pinned_rule("/nonexistent/true", "true"), "patterns": ["^true$"]}
+    rules = json.loads(GLOBAL_RULES.read_text())["rules"] + [rule]
+    monkeypatch.setenv("AGENT_ALLOWED_COMMAND_RULES", str(write_rules(tmp_path / "true_rules.json", rules)))
+    assert verdict("=true") == "ask"
+    assert verdict("true") == "ask"
 
 
-def test_a_trusted_project_rule_pins_its_program(project: Path) -> None:
-    set_origin(project, "https://github.com/acme/tool.git")
-    assert verdict("@fleetctl ping") == "allow"
-    assert verdict("PATH=/tmp/shadow @fleetctl ping") == "ask"
-    assert verdict("fleetctl ping") == "ask"
-    assert verdict("@fleetctl status --target web-1 --extra") == "ask"
-
-
-def test_an_untrusted_project_rule_is_ignored_and_never_widens_anything(project: Path) -> None:
-    set_origin(project, "https://github.com/someone/tool.git")
-    decision = guard.decide("allowed", {"tool_input": {"command": f"{PATH[0]} ping"}})
-    assert decision.decision == "allow"
-    assert "trusted_owners.json" in (decision.notice or "")
-    # Without the rule the program is ungoverned: the hook has no opinion on any form, pinned or not,
-    # and the provider's own permission rules decide, exactly as for any other unlisted program.
-    assert verdict("fleetctl ping") == "allow"
-
-
-def test_a_project_without_a_github_origin_is_untrusted(project: Path) -> None:
-    decision = guard.decide("allowed", {"tool_input": {"command": f"{PATH[0]} ping"}})
-    assert "trusted_owners.json" in (decision.notice or "")
-
-
-def test_a_project_rule_cannot_lift_a_global_forbidden_rule(project: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    set_origin(project, "https://github.com/acme/tool.git")
-    rule = {"programs": ["git"], "patterns": ["^git add \\.$"], "justification": "Try to allow git add ."}
-    write_rules(project / ".agents/hooks/rules/allowed_commands.json", [rule])
-    assert verdict("git add .", "forbidden") == "deny"
-    assert verdict("git add .", "allowed") != "deny"
-
-
-def test_a_project_rule_cannot_pin_a_program_to_a_path_for_a_global_governed_program(project: Path) -> None:
-    set_origin(project, "https://github.com/acme/tool.git")
-    rule = {**pinned_rule("/usr/local/bin/gh", "gh"), "patterns": ["^gh pr merge 1$"]}
-    write_rules(project / ".agents/hooks/rules/allowed_commands.json", [rule])
-    assert verdict("gh pr merge 1") == "ask"
-    assert verdict("/usr/local/bin/gh pr merge 1") == "ask"
-
-
-def swe_conform_project(project: Path, path: str) -> None:
-    write_rules(
-        project / ".agents/hooks/rules/allowed_commands.json", [{**swe_conform_ledger_rule(), "program_path": path}]
-    )
+def test_an_equals_word_anywhere_in_the_line_asks() -> None:
+    assert verdict("@fleetctl status --target =web") == "ask"
+    assert verdict("@fleetctl run --target web-1 --note 'a =b'") == "allow"
 
 
 @pytest.fixture
-def ledger(program: Path, project: Path) -> Path:
-    """The swe-conform rule, pinned to a stand-in path so the test never needs /usr/local/bin/ledger."""
-    stand_in = program.parent / "ledger"
-    stand_in.write_text("#!/bin/sh\n")
-    stand_in.chmod(0o755)
-    swe_conform_project(project, str(stand_in))
-    return stand_in
+def pinned_git(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """Git pinned to a temp path, whose listed form must not let git options through."""
+    git = tmp_path / "gitbin" / "git"
+    git.parent.mkdir()
+    git.write_text("#!/bin/sh\n")
+    git.chmod(0o755)
+    rule = {
+        "programs": ["git"],
+        "program_path": str(git),
+        "patterns": ["^git status$"],
+        "justification": "Allow only git status.",
+    }
+    rules = json.loads(GLOBAL_RULES.read_text())["rules"] + [rule]
+    monkeypatch.setenv("AGENT_ALLOWED_COMMAND_RULES", str(write_rules(tmp_path / "git_rules.json", rules)))
+    return git
 
 
 @pytest.mark.parametrize(
     "arguments",
     [
-        "ping",
-        "report --failure build-42 --body 'pytest failed'",
-        'report --failure build-42 --request-id r1 --body "pytest failed"',
-        "claim --failure build-42",
-        "status --failure build-42",
-        "release --failure build-42 --generation 3",
-        "result --failure build-42 --generation 3 --result fixed",
+        "-c core.fsmonitor=/tmp/evil status",
+        "-C /tmp status",
+        "--git-dir=/tmp/x status",
+        "status --porcelain",
+        "log",
     ],
 )
-def test_the_swe_conform_ledger_rule_runs_its_six_subcommands_in_a_trusted_project(
-    project: Path, ledger: Path, arguments: str
-) -> None:
-    set_origin(project, "https://github.com/acme/tool.git")
-    assert verdict(f"{ledger} {arguments}") == "allow"
-
-
-@pytest.mark.parametrize(
-    "arguments",
-    [
-        "hold --failure build-42 -- git status",
-        "--spool-root /tmp/fake ping",
-        "--timeout 600 ping",
-        "report --failure build-42 --spool-root /tmp/fake",
-        "ping --extra",
-        "frobnicate",
-        "",
-    ],
-)
-def test_the_swe_conform_ledger_rule_asks_for_hold_and_every_other_form(
-    project: Path, ledger: Path, arguments: str
-) -> None:
-    set_origin(project, "https://github.com/acme/tool.git")
-    assert verdict(f"{ledger} {arguments}".strip()) == "ask"
-
-
-@pytest.mark.parametrize(
-    "command",
-    [
-        "ledger ping",
-        "PATH=/tmp/shadow @ledger ping",
-        "env PATH=/tmp/shadow @ledger ping",
-        "echo body | @ledger report --failure build-42",
-        '@ledger claim --failure "$((HOME=0))"',
-        "@ledger hold --failure f -- git status",
-    ],
-)
-def test_the_swe_conform_ledger_rule_closes_the_earlier_bypasses(project: Path, ledger: Path, command: str) -> None:
-    set_origin(project, "https://github.com/acme/tool.git")
-    assert verdict(command.replace("@ledger", str(ledger))) == "ask"
-
-
-def test_the_swe_conform_ledger_rule_is_ignored_in_an_untrusted_project(project: Path, ledger: Path) -> None:
-    set_origin(project, "https://github.com/someone/tool.git")
-    decision = guard.decide("allowed", {"tool_input": {"command": f"PATH=/tmp/shadow ledger ping"}})
-    assert decision.decision == "allow"
-    assert "trusted_owners.json" in (decision.notice or "")
-
-
-def test_the_shipped_global_rules_pin_no_program() -> None:
-    assert policy.pinned_programs(policy.load_rules(GLOBAL_RULES)) == {}
-    assert policy.pinned_programs(policy.load_rules(FORBIDDEN_RULES)) == {}
+def test_options_the_git_canonical_form_drops_do_not_pass_the_listing(pinned_git: Path, arguments: str) -> None:
+    assert guard.decide("allowed", {"tool_input": {"command": f"{pinned_git} {arguments}"}}).decision == "ask"
+    assert guard.decide("allowed", {"tool_input": {"command": f"{pinned_git} status"}}).decision == "allow"

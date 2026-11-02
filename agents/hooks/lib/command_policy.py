@@ -179,4 +179,11 @@ def all_patterns(rules: list[dict]) -> list[str]:
 
 def pinned_programs(rules: list[dict]) -> dict[str, str]:
     """Programs that may run unprompted only by one absolute path, with that path."""
-    return {rule["programs"][0]: rule["program_path"] for rule in rules if "program_path" in rule}
+    pinned: dict[str, str] = {}
+    for rule in rules:
+        if "program_path" not in rule:
+            continue
+        program, path = rule["programs"][0], rule["program_path"]
+        if pinned.setdefault(program, path) != path:
+            raise ValueError(f"conflicting program_path for {program}: {pinned[program]} and {path}")
+    return pinned

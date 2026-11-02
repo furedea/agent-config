@@ -123,6 +123,18 @@ def test_go_builds_and_lints_into_the_default_macos_caches_from_inside_the_sandb
     assert "~/Library/Application Support/go" not in writable
 
 
+def test_go_records_the_verified_checksum_tree_head_from_inside_the_sandbox() -> None:
+    sandbox = json.loads((REPO_ROOT / "agents/claude/settings.json").read_text())["sandbox"]
+    writable = set(sandbox["filesystem"]["allowWrite"])
+    assert "~/go/pkg/sumdb" in writable
+    assert not {"~/go", "~/go/bin", "~/go/pkg"} & writable
+
+
+def test_govulncheck_downloads_the_go_vulnerability_database_inside_the_sandbox() -> None:
+    sandbox = json.loads((REPO_ROOT / "agents/claude/settings.json").read_text())["sandbox"]
+    assert "vuln.go.dev" in sandbox["network"]["allowedDomains"]
+
+
 def test_dev_servers_and_end_to_end_tests_can_listen_on_local_ports() -> None:
     sandbox = json.loads((REPO_ROOT / "agents/claude/settings.json").read_text())["sandbox"]
     assert sandbox["network"]["allowLocalBinding"] is True

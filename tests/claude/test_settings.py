@@ -135,6 +135,47 @@ def test_govulncheck_downloads_the_go_vulnerability_database_inside_the_sandbox(
     assert "vuln.go.dev" in sandbox["network"]["allowedDomains"]
 
 
+def test_cargo_fetches_crates_from_the_sparse_crates_io_registry_inside_the_sandbox() -> None:
+    sandbox = json.loads((REPO_ROOT / "agents/claude/settings.json").read_text())["sandbox"]
+    domains = set(sandbox["network"]["allowedDomains"])
+    assert {"index.crates.io", "static.crates.io"} <= domains
+    assert "github.com" not in domains
+
+
+def test_cargo_caches_fetched_sources_and_takes_its_cache_locks_from_inside_the_sandbox() -> None:
+    sandbox = json.loads((REPO_ROOT / "agents/claude/settings.json").read_text())["sandbox"]
+    writable = set(sandbox["filesystem"]["allowWrite"])
+    assert {
+        "~/.cargo/registry",
+        "~/.cargo/git",
+        "~/.cargo/.package-cache",
+        "~/.cargo/.package-cache-mutate",
+        "~/.cargo/.global-cache",
+        "~/.cargo/.global-cache-journal",
+    } <= writable
+
+
+def test_cargo_installed_binaries_and_configuration_stay_read_only_inside_the_sandbox() -> None:
+    sandbox = json.loads((REPO_ROOT / "agents/claude/settings.json").read_text())["sandbox"]
+    writable = set(sandbox["filesystem"]["allowWrite"])
+    assert (
+        not {
+            "~/.cargo",
+            "~/.cargo/bin",
+            "~/.cargo/config.toml",
+            "~/.cargo/credentials.toml",
+            "~/.cargo/.crates.toml",
+            "~/.cargo/.crates2.json",
+        }
+        & writable
+    )
+
+
+def test_uv_audit_queries_the_osv_vulnerability_service_inside_the_sandbox() -> None:
+    sandbox = json.loads((REPO_ROOT / "agents/claude/settings.json").read_text())["sandbox"]
+    assert "api.osv.dev" in sandbox["network"]["allowedDomains"]
+
+
 def test_dev_servers_and_end_to_end_tests_can_listen_on_local_ports() -> None:
     sandbox = json.loads((REPO_ROOT / "agents/claude/settings.json").read_text())["sandbox"]
     assert sandbox["network"]["allowLocalBinding"] is True

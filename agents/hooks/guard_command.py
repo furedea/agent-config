@@ -38,10 +38,10 @@ REMOTE_REASON = (
 # The only programs the literal_words rules govern; through any wrapper they get main's rules, or no
 # rule at all for curl and wget.
 LITERAL_PROGRAMS = frozenset({"curl", "gh", "herdr", "wget"})
-# Characters through which any shell may expand or run something; a command holding one anywhere
-# outside quotes, in the program name, an assignment, or a redirect included, gets no
-# literal_words rule.
-EXPANDING_TEXT = re.compile(r"[$`~*?\[\]{}]|\\\n")
+# Characters through which any shell may expand or run something, and a word starting with `=` (zsh
+# looks it up on PATH); a command holding one anywhere outside quotes, in the program name, an
+# assignment, or a redirect included, gets no literal_words rule.
+EXPANDING_TEXT = re.compile(r"[$`~*?\[\]{}]|\\\n|(?:^|[ \t])=")
 # Inside double quotes the shell still expands only these, and `!` for history expansion; glob
 # characters there are literal.
 DOUBLE_QUOTE_EXPANDING_TEXT = re.compile(r"[$`\\!]")
@@ -102,6 +102,9 @@ def policies(kind: str, directory: Path) -> Policy:
         raise ValueError(f"invalid project {kind} command rules: {project}") from error
     if kind == "allowed" and (ignored := ignored_project_rules(root, directory)):
         return Policy(prefixes, rules, ignored=ignored)
+    taken = command_policy.governed_programs(rules) & set(command_policy.pinned_programs(project_rules))
+    if taken:
+        raise ValueError(f"project rule pins a program the global rules govern: {', '.join(sorted(taken))}: {project}")
     return Policy(prefixes, rules + project_rules)
 
 
@@ -242,6 +245,8 @@ def command_verdict(kind: str, payload: dict, policy: Policy) -> Verdict:
         return verdict
     if kind == "allowed" and (verdict := cleanup_objection(command, commands)).decision != "allow":
         return verdict
+    if kind == "allowed" and (verdict := pinned_program_objection(command, commands, policy)).decision != "allow":
+        return verdict
     if not allows_literal_rules(command, commands):
         policy = replace(policy, literal_words=False)
     verdicts = (objection(kind, item, policy) for item in commands)
@@ -271,6 +276,60 @@ def cleanup_objection(command: str, commands: tuple[shell_syntax.Command, ...]) 
         return hook_decision.ALLOW
     return hook_decision.ask(
         "Needs review: run cleanup_worktrees.py as one bare call or with --dry-run only.", "cleanup_worktrees.py"
+    )
+
+
+def pinned_program_objection(command: str, commands: tuple[shell_syntax.Command, ...], policy: Policy) -> Verdict:
+    """A program whose rule pins a path runs unprompted only as the one command of the line, by that path, in a listed form.
+
+    A PATH lookup, an assignment, a wrapper, another statement, or an expansion can change what runs
+    after this check, so each of them, the bare name included, asks.
+    """
+    pinned = command_policy.pinned_programs(policy.rules)
+    calls = [(name, item) for item in commands if (name := pinned_name(item)) in pinned]
+    if not calls:
+        return hook_decision.ALLOW
+    try:
+        single = shell_syntax.is_one_simple_command(command) and has_literal_words(command)
+    except shell_syntax.UnsupportedSyntax:
+        single = False
+    offending = next(
+        (name for name, item in calls if not single or not is_listed_pinned_call(item, pinned, policy)), None
+    )
+    if offending is None:
+        return hook_decision.ALLOW
+    return hook_decision.ask(
+        f"Needs review: '{offending}' runs without approval only as the single command {pinned[offending]} "
+        "<arguments>, with literal words only (no expansion), no assignment, wrapper, or other statement, and "
+        f"only while that file is an executable regular file.\n\nCommand: {shell_syntax.command_preview(command)}",
+        offending,
+    )
+
+
+def pinned_name(item: shell_syntax.Command) -> str:
+    """The program a call names, as the rules do; zsh's `=name` is a PATH lookup of `name`."""
+    return Path(item.arguments[0]).name.removeprefix("=")
+
+
+def is_listed_pinned_call(item: shell_syntax.Command, pinned: dict[str, str], policy: Policy) -> bool:
+    """A pinned program is its own allowlist: a project cannot add provider prefixes, so only a listed form passes."""
+    name = pinned_name(item)
+    candidate = item.rebased(1, (name,))
+    return (
+        is_pinned_call(item, pinned[name])
+        and not candidate.hides_options
+        and is_listed(candidate, policy.listing_rules)
+    )
+
+
+def is_pinned_call(item: shell_syntax.Command, path: str) -> bool:
+    program = Path(path)
+    return (
+        item.arguments[0] == path
+        and not item.wrapper_depth
+        and not item.program_is_dynamic
+        and program.is_file()
+        and os.access(program, os.X_OK)
     )
 
 
@@ -331,12 +390,17 @@ def allows_literal_rules(command: str, commands: tuple[shell_syntax.Command, ...
     try:
         if not shell_syntax.is_one_simple_command(command):
             return False
-        return not (
-            EXPANDING_TEXT.search(shell_inspection.text_outside_quotes(command))
-            or DOUBLE_QUOTE_EXPANDING_TEXT.search(shell_inspection.double_quoted_text(command))
-        )
+        return has_literal_words(command)
     except shell_syntax.UnsupportedSyntax:
         return False
+
+
+def has_literal_words(command: str) -> bool:
+    """Whether no word can expand at run time: no parameter, arithmetic, command or process substitution, glob, or tilde."""
+    return not (
+        EXPANDING_TEXT.search(shell_inspection.text_outside_quotes(command))
+        or DOUBLE_QUOTE_EXPANDING_TEXT.search(shell_inspection.double_quoted_text(command))
+    )
 
 
 def is_read_only_filter(command: shell_syntax.Command) -> bool:

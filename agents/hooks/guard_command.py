@@ -11,6 +11,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import sys
 
 
@@ -30,8 +31,8 @@ import trusted_owners
 
 
 REQUEST_PROGRAMS = frozenset({"curl", "wget"})
-# The only spellings of the root-owned fleet ledger wrapper; any other program named ledger is not it.
-LEDGER_PROGRAMS = frozenset({"ledger", "/usr/local/bin/ledger"})
+# The root-owned fleet ledger wrapper; a program of the same name anywhere else is agent-writable code.
+LEDGER_INSTALLED = Path("/usr/local/bin/ledger")
 REMOTE_REASON = (
     "Needs review: remote curl/wget can send local data. Read web pages with the web-fetch tool, "
     "or use gh api / nix store prefetch-file for exact values and files."
@@ -135,14 +136,17 @@ def ledger_objection(item: shell_syntax.Command, candidate: shell_syntax.Command
     wrapped command; requiring that command's own allow prefix keeps hold from skipping its review.
     """
     preview = shell_syntax.command_preview(item.raw)
-    if candidate.arguments[0] == "ledger" and item.arguments[0] not in LEDGER_PROGRAMS:
+    if candidate.arguments[0] == "ledger" and not runs_installed_ledger(item):
         return hook_decision.ask(
-            f"Needs review: only the installed ledger program runs without approval.\n\nCommand: {preview}", "ledger"
+            f"Needs review: only the installed {LEDGER_INSTALLED} runs without approval.\n\nCommand: {preview}",
+            "ledger",
         )
-    if item.held and command_policy.prefix_rule(candidate.arguments, policy.prefixes, "allow") is None:
+    if item.held and (
+        "/" in item.arguments[0] or command_policy.prefix_rule(candidate.arguments, policy.prefixes, "allow") is None
+    ):
         return hook_decision.ask(
-            "Needs review: ledger hold runs without approval only a command that would run on its own "
-            f"without approval.\n\nCommand: {preview}",
+            "Needs review: ledger hold runs without approval only a command named without a path that would run on its "
+            f"own without approval.\n\nCommand: {preview}",
             "ledger hold",
         )
     return hook_decision.ALLOW
@@ -213,6 +217,18 @@ def governed_objection(candidate: shell_syntax.Command, policy: Policy, preview:
         f"Needs review: command not in allowlist. '{prefix}' is approved, but not in this form.\n\nCommand: {preview}",
         prefix,
     )
+
+
+def runs_installed_ledger(item: shell_syntax.Command) -> bool:
+    """Whether the call certainly starts the installed ledger: its own path, or the PATH lookup resolving to it.
+
+    An assignment prefix or env could point PATH at a directory the agent writes, so any assignment fails.
+    """
+    program = item.arguments[0]
+    if item.assigned or not item.raw.startswith(item.words[0]) or item.program_is_dynamic:
+        return False
+    found = program if "/" in program else shutil.which(program)
+    return found == str(LEDGER_INSTALLED)
 
 
 def settings_objection(command: str, commands: tuple[shell_syntax.Command, ...]) -> Verdict:

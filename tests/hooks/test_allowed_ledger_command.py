@@ -1,11 +1,31 @@
 """The fleet ledger CLI runs unprompted only in its documented forms, and hold never hides a command from review."""
 
+import os
+from pathlib import Path
+
 import pytest
 
 from tests.runtime import load_script_module
 
 guard = load_script_module("agents/hooks/guard_command.py", "guard_command")
 pytestmark = pytest.mark.usefixtures("isolated_project")
+
+
+def executable_ledger(directory: Path) -> Path:
+    directory.mkdir(parents=True, exist_ok=True)
+    program = directory / "ledger"
+    program.write_text("#!/bin/sh\n")
+    program.chmod(0o755)
+    return program
+
+
+@pytest.fixture(autouse=True)
+def installed_ledger(isolated_project: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """Stand in for /usr/local/bin/ledger, found first on PATH like the real one."""
+    installed = executable_ledger(isolated_project / "installed")
+    monkeypatch.setattr(guard, "LEDGER_INSTALLED", installed)
+    monkeypatch.setenv("PATH", f"{installed.parent}{os.pathsep}{os.environ['PATH']}")
+    return installed
 
 
 def verdict(kind: str, command: str) -> str:
@@ -20,6 +40,8 @@ def verdict(kind: str, command: str) -> str:
         "ledger report --failure build-42 --body 'pytest failed in tests/test_x.py'",
         "ledger report --failure build-42 --request-id retry-1 --body report_text",
         "ledger claim --failure build-42",
+        'ledger report --failure build-42 --body "pytest failed in tests"',
+        'ledger result --failure build-42 --generation 3 --result "fixed by pinning"',
         "ledger claim --failure build-42 --request-id retry-1",
         "ledger status --failure build-42",
         "ledger release --failure build-42 --generation 3",
@@ -29,7 +51,6 @@ def verdict(kind: str, command: str) -> str:
         "ledger hold --failure build-42 --refresh-seconds 2.5 --release-on-failure -- uv run --frozen pytest",
         "ledger hold --failure build-42 --request-id retry-1 -- nix flake check",
         "ledger hold --failure build-42 -- ledger ping",
-        "/usr/local/bin/ledger ping",
         "echo 'body from a pipe' | ledger report --failure build-42",
         'ledger claim --failure "$FAILURE"',
     ],
@@ -156,3 +177,62 @@ def test_a_command_chained_after_a_ledger_call_is_still_judged() -> None:
     assert verdict("allowed", "ledger ping && rm build/output.txt") == "allow"
     assert verdict("allowed", "ledger ping && ledger frobnicate") == "ask"
     assert verdict("forbidden", "ledger ping && git add .") == "deny"
+
+
+def test_the_installed_ledger_runs_by_its_own_path(installed_ledger: Path) -> None:
+    assert verdict("allowed", f"{installed_ledger} ping") == "allow"
+
+
+def test_a_ledger_earlier_on_path_than_the_installed_one_asks(
+    isolated_project: Path, installed_ledger: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    shadow = executable_ledger(isolated_project / "shadow")
+    monkeypatch.setenv("PATH", f"{shadow.parent}{os.pathsep}{os.environ['PATH']}")
+    assert verdict("allowed", "ledger ping") == "ask"
+    assert verdict("allowed", f"{installed_ledger} ping") == "allow"
+
+
+def test_a_ledger_in_the_working_directory_asks(isolated_project: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    executable_ledger(isolated_project)
+    monkeypatch.setenv("PATH", f".{os.pathsep}{os.environ['PATH']}")
+    assert verdict("allowed", "ledger ping") == "ask"
+    assert verdict("allowed", "./ledger ping") == "ask"
+
+
+def test_without_an_installed_ledger_nothing_runs_unprompted(
+    isolated_project: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(guard, "LEDGER_INSTALLED", isolated_project / "missing/ledger")
+    assert verdict("allowed", "ledger ping") == "ask"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "PATH=/tmp/shadow ledger ping",
+        "PATH=/tmp/shadow:$PATH ledger report --failure build-42",
+        "FOO=1 ledger ping",
+        "env PATH=/tmp/shadow ledger ping",
+        "env -i PATH=/tmp/shadow ledger ping",
+        "ledger hold --failure build-42 -- env PATH=/tmp/shadow ledger ping",
+        "ledger hold --failure build-42 -- git status && PATH=/tmp/shadow ledger ping",
+    ],
+)
+def test_an_environment_assignment_before_ledger_asks(command: str) -> None:
+    assert verdict("allowed", command) == "ask"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "ledger hold --failure build-42 -- /tmp/git status",
+        "ledger hold --failure build-42 -- ./git status",
+        "ledger hold --failure build-42 -- /usr/bin/git status",
+        "ledger hold --failure build-42 -- env /tmp/git status",
+        "ledger hold --failure build-42 -- bash -n +n -c 'gh pr merge 1 --squash'",
+        "ledger hold --failure build-42 -- bash -n +n -c 'rm build/output.txt'",
+        "ledger hold --failure build-42 -- timeout 5 bash -n +n -c 'rm build/output.txt'",
+    ],
+)
+def test_hold_neither_trusts_a_command_path_nor_loses_track_of_a_reparsed_script(command: str) -> None:
+    assert verdict("allowed", command) == "ask"

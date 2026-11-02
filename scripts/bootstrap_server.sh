@@ -446,6 +446,9 @@ cache_writes = [
 
 if config_dir:
     environment["GH_CONFIG_DIR"] = config_dir
+# The guarded profile is also what makes absolute write paths, such as the fleet ledger spool, writable:
+# agent-harness syncs permissions.guarded but not sandbox_workspace_write.writable_roots.
+if config_dir or any(path.startswith("/") for path in cache_writes):
     config["default_permissions"] = "guarded"
     guarded = config.setdefault("permissions", {}).setdefault("guarded", {})
     filesystem = guarded.setdefault("filesystem", {})
@@ -457,15 +460,10 @@ if config_dir:
             ":tmpdir": "write",
             ":slash_tmp": "write",
             ":workspace_roots": workspace_roots,
-            "~/.config/gh/hosts.yml": "deny",
-            private_key: "deny",
         }
+        | ({"~/.config/gh/hosts.yml": "deny", private_key: "deny"} if config_dir else {})
     )
     guarded.setdefault("network", {})["enabled"] = True
-elif absolute_writes := [path for path in cache_writes if path.startswith("/")]:
-    # Without the guarded profile, the workspace-write sandbox takes extra writable directories as absolute paths.
-    config.setdefault("sandbox_workspace_write", {})["writable_roots"] = absolute_writes
-
 
 def key(name):
     return json.dumps(name, ensure_ascii=False)

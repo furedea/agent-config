@@ -54,8 +54,11 @@ Rules:
   read only. The prompt names where the requirements are (a local file or the text itself, since
   Codex has no network), the diff range `origin/main...HEAD`, and that the review is read only;
   it says any file may be read to verify a claim, asks for each finding tagged P0 to P3, prefers
-  no finding over a weak one, and forbids style and naming findings. Run at most two reviews, the
-  first and one confirming review. The lane has Codex fix only P0 and P1 findings, and records P2
+  no finding over a weak one, and forbids style and naming findings. Whenever a review's P0 or P1
+  findings are fixed, run a confirming review of the fixed diff; finish when a review reports no
+  P0 or P1. If a review repeats a finding on the same grounds or the same area keeps failing, stop
+  with `LANE-BLOCKED` and the open findings instead of looping. The lane has Codex fix only P0
+  and P1 findings, and records P2
   and below and design judgments in the PR body or an Issue for the user. `review` is not used
   for now because the verification hook rejects its thread (furedea/agent-config#19). Use
   `adversarial-review` only to have Codex challenge the design of a high-risk or design-heavy

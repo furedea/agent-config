@@ -182,3 +182,44 @@ def test_untracked_nested_repository_is_not_read(repository: Path, monkeypatch: 
     assert "a.py" not in opened
     (nested / "a.py").write_text("two!")
     assert baseline.changed_paths(snapshot.capture(repository)) == ("clone/",)
+
+
+def test_tracked_file_under_a_linked_parent_is_not_read_outside_the_worktree(repository: Path, tmp_path: Path) -> None:
+    (repository / "package").mkdir()
+    (repository / "package/data.py").write_text("inside")
+    subprocess.run(["git", "-C", str(repository), "add", "package"], check=True)
+    outside = tmp_path / "outside_dir"
+    outside.mkdir()
+    (outside / "data.py").write_text("SECRET-PAYLOAD")
+    (repository / "package/data.py").unlink()
+    (repository / "package").rmdir()
+    (repository / "package").symlink_to(outside)
+    baseline = snapshot.capture(repository)
+    assert dict(baseline.entries)["package/data.py"].startswith("escaped:")
+    (outside / "data.py").write_text("changed outside")
+    assert baseline.changed_paths(snapshot.capture(repository)) == ()
+
+
+@pytest.mark.parametrize("tracked", [True, False])
+def test_retargeting_a_link_to_look_like_a_signature_is_detected(repository: Path, tracked: bool) -> None:
+    link = repository / "alias.py"
+    link.symlink_to("source.py")
+    if tracked:
+        subprocess.run(["git", "-C", str(repository), "add", "alias.py"], check=True)
+    baseline = snapshot.capture(repository)
+    forged = dict(baseline.entries)["alias.py"].removeprefix("linkfile:")
+    link.unlink()
+    link.symlink_to(f"source.py:{forged}")
+    assert baseline.changed_paths(snapshot.capture(repository)) == ("alias.py",)
+
+
+def test_input_whose_metadata_cannot_be_read_fails_instead_of_hiding_edits(repository: Path) -> None:
+    (repository / "private").mkdir()
+    (repository / "private/data.py").write_text("one")
+    subprocess.run(["git", "-C", str(repository), "add", "private"], check=True)
+    (repository / "private").chmod(0)
+    try:
+        with pytest.raises(snapshot.SnapshotError, match="Cannot inspect"):
+            snapshot.capture(repository)
+    finally:
+        (repository / "private").chmod(0o755)

@@ -1,7 +1,6 @@
 """Capture verification inputs without storing source content or a Git index."""
 
 from dataclasses import dataclass
-import errno
 import hashlib
 import json
 import os
@@ -90,21 +89,37 @@ def capture(root: Path, *, hash_content: bool = True) -> Snapshot:
         # Untracked content is neither hashed nor trusted: it is the unbounded, agent-generated part.
         tracked[name] = tracked.get(name, True) and tag != "?"
     entries = []
+    confined: dict[Path, bool] = {}
     for name in sorted(tracked):
-        signature = file_signature(root, root / name, hash_content=hash_content and tracked[name])
+        path = root / name
+        if not confined.setdefault(path.parent, is_confined(root, path.parent)):
+            # A parent directory replaced by a link must not lead the snapshot outside the worktree.
+            entries.append((name, f"escaped:{path.parent.resolve()}"))
+            continue
+        signature = file_signature(root, path, hash_content=hash_content and tracked[name])
         if signature is not None:
             entries.append((name, signature))
     return Snapshot(tuple(entries))
 
 
+def is_confined(root: Path, directory: Path) -> bool:
+    try:
+        return directory.resolve().is_relative_to(root)
+    except OSError, RuntimeError:
+        return False
+
+
 def file_signature(root: Path, path: Path, *, hash_content: bool = True) -> str | None:
-    """Sign one input without following links out of the worktree; None means it no longer exists."""
+    """Sign one input without following links out of the worktree; None means it no longer exists.
+
+    A path whose metadata cannot be read fails the snapshot: a fixed placeholder would hide later edits.
+    """
     try:
         metadata = path.lstat()
     except FileNotFoundError:
         return None
     except OSError as error:
-        return f"unavailable:{errno.errorcode.get(error.errno or 0, 'EIO')}"
+        raise SnapshotError(f"Cannot inspect {path}: {error}") from error
     if stat.S_ISLNK(metadata.st_mode):
         return link_signature(root, path, hash_content=hash_content)
     if stat.S_ISDIR(metadata.st_mode):
@@ -115,18 +130,22 @@ def file_signature(root: Path, path: Path, *, hash_content: bool = True) -> str 
     return stat_signature(metadata)
 
 
-def link_signature(root: Path, path: Path, *, hash_content: bool) -> str:
+def link_signature(root: Path, path: Path, *, hash_content: bool) -> str | None:
     """Record link text, and the target's signature only for a regular file inside the worktree."""
-    text = f"link:{os.readlink(path)}"
+    try:
+        text = os.readlink(path)
+    except FileNotFoundError:
+        return None
+    except OSError as error:
+        raise SnapshotError(f"Cannot inspect {path}: {error}") from error
     try:
         resolved = path.resolve(strict=True)
         inside = resolved.is_relative_to(root) and resolved.is_file()
     except OSError, RuntimeError:
-        return text
-    if not inside:
-        return text
-    target = file_signature(root, resolved, hash_content=hash_content)
-    return text if target is None else f"{text}:{target}"
+        return f"link:{text}"
+    target = file_signature(root, resolved, hash_content=hash_content) if inside else None
+    # A distinct prefix and JSON keep link text from being confused with a target signature.
+    return f"link:{text}" if target is None else f"linkfile:{json.dumps([text, target])}"
 
 
 def content_signature(path: Path, metadata: os.stat_result) -> str:

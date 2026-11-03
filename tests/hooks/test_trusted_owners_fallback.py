@@ -23,6 +23,7 @@ trusted_owners = load_script_module("agents/hooks/lib/trusted_owners.py", "trust
 sys.path.insert(0, str(REPO_ROOT / "agents/hooks/lib"))
 guard_command = load_script_module("agents/hooks/guard_command.py", "guard_command")
 
+REAL_GITHUB_ANSWER = trusted_owners.github_answer
 # An approved gh prefix in a form the global rules do not list: only a project rule lets it through.
 COMMAND = "gh label delete bug"
 PROJECT_ALLOW = {
@@ -67,9 +68,9 @@ def api(monkeypatch: pytest.MonkeyPatch) -> PublicApi:
     return PublicApi(monkeypatch)
 
 
-@pytest.fixture
-def without_gh(monkeypatch: pytest.MonkeyPatch) -> None:
-    """A host without `gh`: the lookup through it never answers."""
+@pytest.fixture(autouse=True)
+def host_without_gh(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Every host starts without `gh`: the lookup through it never answers, until a test installs one."""
 
     def no_answer(*_: str) -> None:
         return None
@@ -94,9 +95,10 @@ def origin(project: Path) -> SetOrigin:
 
 
 @pytest.fixture
-def gh(executable: StubWriter, tmp_path: Path) -> AnswerGh:
+def gh(executable: StubWriter, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> AnswerGh:
     """Fake `gh api repos/<owner>/<repo> --jq .fork`; a None answer is a failed lookup."""
     calls = tmp_path / "gh_calls.txt"
+    monkeypatch.setattr(trusted_owners, "github_answer", REAL_GITHUB_ANSWER)
 
     def answer(fork: str | None) -> Path:
         executable(
@@ -153,7 +155,7 @@ def test_a_failed_fork_lookup_is_asked_again_next_time(project: Path, origin: Se
 
 
 def test_without_gh_a_public_repository_is_asked_unauthenticated(
-    project: Path, origin: SetOrigin, without_gh: None, api: PublicApi
+    project: Path, origin: SetOrigin, api: PublicApi
 ) -> None:
     origin("https://github.com/furedea/agent-config.git")
     api.answer('{"fork": false, "private": false}')
@@ -165,17 +167,13 @@ def test_without_gh_a_public_repository_is_asked_unauthenticated(
     assert timeout is not None and 0 < timeout <= 10
 
 
-def test_without_gh_a_public_fork_loses_the_project_rules(
-    project: Path, origin: SetOrigin, without_gh: None, api: PublicApi
-) -> None:
+def test_without_gh_a_public_fork_loses_the_project_rules(project: Path, origin: SetOrigin, api: PublicApi) -> None:
     origin("https://github.com/furedea/agent-config.git")
     api.answer('{"fork": true}')
     assert is_ignored()
 
 
-def test_the_public_answer_is_remembered_like_gh_answers(
-    project: Path, origin: SetOrigin, without_gh: None, api: PublicApi
-) -> None:
+def test_the_public_answer_is_remembered_like_gh_answers(project: Path, origin: SetOrigin, api: PublicApi) -> None:
     origin("https://github.com/furedea/agent-config.git")
     api.answer('{"fork": false}')
     assert not is_ignored()
@@ -219,7 +217,7 @@ def test_a_declared_repository_is_answered_without_asking_gh_or_the_network(
     ],
 )
 def test_a_failed_public_lookup_of_any_kind_is_no_answer_and_never_raises(
-    project: Path, origin: SetOrigin, without_gh: None, api: PublicApi, failure: Exception
+    project: Path, origin: SetOrigin, api: PublicApi, failure: Exception
 ) -> None:
     origin("git@github.com:furedea/private-tool.git")
     api.fail(failure)
@@ -227,7 +225,7 @@ def test_a_failed_public_lookup_of_any_kind_is_no_answer_and_never_raises(
 
 
 def test_a_slow_public_answer_is_cut_off_by_one_deadline_for_the_whole_exchange(
-    project: Path, origin: SetOrigin, without_gh: None, api: PublicApi, monkeypatch: pytest.MonkeyPatch
+    project: Path, origin: SetOrigin, api: PublicApi, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     ticks = iter(range(0, 1000, 2))
     monkeypatch.setattr(trusted_owners.time, "monotonic", lambda: next(ticks))
@@ -236,9 +234,7 @@ def test_a_slow_public_answer_is_cut_off_by_one_deadline_for_the_whole_exchange(
     assert is_ignored()
 
 
-def test_a_public_answer_over_the_size_limit_is_no_answer(
-    project: Path, origin: SetOrigin, without_gh: None, api: PublicApi
-) -> None:
+def test_a_public_answer_over_the_size_limit_is_no_answer(project: Path, origin: SetOrigin, api: PublicApi) -> None:
     origin("git@github.com:furedea/private-tool.git")
     api.answer('{"fork": false, "padding": "' + "x" * 2_000_000 + '"}')
     assert is_ignored()
@@ -251,7 +247,7 @@ def test_the_public_lookup_never_follows_a_redirect() -> None:
 
 
 def test_a_fork_notice_does_not_ask_to_add_an_owner_that_is_already_trusted(
-    project: Path, origin: SetOrigin, without_gh: None, api: PublicApi
+    project: Path, origin: SetOrigin, api: PublicApi
 ) -> None:
     origin("https://github.com/furedea/agent-config.git")
     api.answer('{"fork": true}')
@@ -265,7 +261,6 @@ def test_a_fork_notice_does_not_ask_to_add_an_owner_that_is_already_trusted(
 def test_an_unusable_public_answer_is_not_trusted_unless_declared(
     project: Path,
     origin: SetOrigin,
-    without_gh: None,
     api: PublicApi,
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -279,7 +274,7 @@ def test_an_unusable_public_answer_is_not_trusted_unless_declared(
 
 
 def test_the_shipped_declaration_covers_swe_conform_on_a_host_without_gh_or_a_public_answer(
-    project: Path, origin: SetOrigin, without_gh: None, api: PublicApi
+    project: Path, origin: SetOrigin, api: PublicApi
 ) -> None:
     origin("git@github.com:furedea/swe-conform.git")
     api.fail(http_error(404))
@@ -287,7 +282,7 @@ def test_the_shipped_declaration_covers_swe_conform_on_a_host_without_gh_or_a_pu
 
 
 def test_a_repository_that_is_not_declared_stays_ignored_and_the_notice_names_each_failed_source(
-    project: Path, origin: SetOrigin, without_gh: None, api: PublicApi
+    project: Path, origin: SetOrigin, api: PublicApi
 ) -> None:
     origin("git@github.com:furedea/private-tool.git")
     api.fail(http_error(404))
@@ -301,7 +296,7 @@ def test_a_repository_that_is_not_declared_stays_ignored_and_the_notice_names_ea
 
 
 def test_the_declaration_matches_case_insensitively_and_by_exact_name(
-    project: Path, origin: SetOrigin, without_gh: None, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    project: Path, origin: SetOrigin, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     trusted_config(tmp_path, monkeypatch, repositories=["Furedea/SWE-Conform"])
     origin("git@github.com:furedea/swe-conform.git")
@@ -309,7 +304,7 @@ def test_the_declaration_matches_case_insensitively_and_by_exact_name(
 
 
 def test_a_declared_name_does_not_cover_a_different_repository(
-    project: Path, origin: SetOrigin, without_gh: None, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    project: Path, origin: SetOrigin, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     trusted_config(tmp_path, monkeypatch, repositories=["furedea/swe-conform"])
     origin("git@github.com:furedea/swe-conform-fork.git")
@@ -319,7 +314,6 @@ def test_a_declared_name_does_not_cover_a_different_repository(
 def test_a_declared_repository_of_an_untrusted_owner_stays_untrusted(
     project: Path,
     origin: SetOrigin,
-    without_gh: None,
     api: PublicApi,
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -331,7 +325,7 @@ def test_a_declared_repository_of_an_untrusted_owner_stays_untrusted(
 
 
 def test_a_declaration_is_not_needed_when_forks_are_not_excluded(
-    project: Path, origin: SetOrigin, without_gh: None, api: PublicApi, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    project: Path, origin: SetOrigin, api: PublicApi, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     trusted_config(tmp_path, monkeypatch, exclude_forks=False)
     origin("git@github.com:furedea/private-tool.git")
@@ -340,7 +334,7 @@ def test_a_declaration_is_not_needed_when_forks_are_not_excluded(
 
 
 def test_a_declaration_is_not_written_to_the_cache(
-    project: Path, origin: SetOrigin, without_gh: None, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    project: Path, origin: SetOrigin, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     trusted_config(tmp_path, monkeypatch, repositories=["furedea/swe-conform"])
     origin("git@github.com:furedea/swe-conform.git")
@@ -349,9 +343,7 @@ def test_a_declaration_is_not_written_to_the_cache(
     assert is_ignored()
 
 
-def test_a_project_cannot_widen_the_declaration(
-    project: Path, origin: SetOrigin, without_gh: None, api: PublicApi
-) -> None:
+def test_a_project_cannot_widen_the_declaration(project: Path, origin: SetOrigin, api: PublicApi) -> None:
     origin("git@github.com:furedea/private-tool.git")
     (project / ".agents/hooks/rules/trusted_owners.json").write_text(
         json.dumps({"owners": ["furedea"], "exclude_forks": True, "repositories": ["furedea/private-tool"]})

@@ -1927,6 +1927,20 @@
     {
       "decision": "allow",
       "prefix": [
+        "agent-browser"
+      ],
+      "justification": "Allow browser automation; the hooks deny file: and chrome: URLs and ask for forms that reach logged-in sessions."
+    },
+    {
+      "decision": "allow",
+      "prefix": [
+        "agent-desktop"
+      ],
+      "justification": "Allow desktop automation; the hooks deny terminals and credential apps and ask for targets the arguments cannot name."
+    },
+    {
+      "decision": "allow",
+      "prefix": [
         "kubectl",
         "get"
       ],

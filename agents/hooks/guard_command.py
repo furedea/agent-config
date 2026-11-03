@@ -37,7 +37,9 @@ REMOTE_REASON = (
 # Settings that can send a request to a local server somewhere else: a proxy, or another configuration file.
 # The only programs the literal_words rules govern; through any wrapper they get main's rules, or no
 # rule at all for curl and wget.
-LITERAL_PROGRAMS = frozenset({"curl", "gh", "herdr", "wget"})
+LITERAL_PROGRAMS = frozenset({"agent-browser", "agent-desktop", "curl", "gh", "herdr", "wget"})
+# Browser and desktop automation outside the sandbox, whose listed forms must match with quotes removed too.
+AUTOMATION_PROGRAMS = frozenset({"agent-browser", "agent-desktop"})
 # Characters through which any shell may expand or run something, and a word starting with `=` (zsh
 # looks it up on PATH); a command holding one anywhere outside quotes, in the program name, an
 # assignment, or a redirect included, gets no literal_words rule.
@@ -128,8 +130,16 @@ def objection(kind: str, item: shell_syntax.Command, policy: Policy) -> Verdict:
 
 
 def is_listed(candidate: shell_syntax.Command, rules: list[dict]) -> bool:
-    """Whether a rule lists the form; Herdr's watching commands must also keep to their documented options."""
+    """Whether a rule lists the form; Herdr's watching commands must also keep to their documented options.
+
+    An automation program's form must also be listed with its quotes removed, so a quoted word can
+    hide neither a subcommand nor an option from the rule's exceptions.
+    """
     if not command_policy.regex_reason(candidate.static_words_text, rules):
+        return False
+    if candidate.arguments[0] in AUTOMATION_PROGRAMS and not command_policy.regex_reason(
+        " ".join(candidate.arguments), rules
+    ):
         return False
     if candidate.arguments[0] == "curl" and any(
         (option in {"-w", "--write-out"} and not SAFE_WRITE_OUT.fullmatch(value))
@@ -142,9 +152,11 @@ def is_listed(candidate: shell_syntax.Command, rules: list[dict]) -> bool:
 
 def forbidden_objection(item: shell_syntax.Command, candidate: shell_syntax.Command, policy: Policy) -> Verdict:
     """Deny only: a literal deny prefix or pattern wins even beside a run-time argument."""
-    rules = policy.rules
-    matched = command_policy.regex_reason(item.command_words_text, rules) or command_policy.regex_reason(
-        candidate.command_words_text, rules
+    rules = command_policy.unscoped_rules(policy.rules)
+    matched = (
+        command_policy.regex_reason(item.command_words_text, rules)
+        or command_policy.regex_reason(candidate.command_words_text, rules)
+        or command_policy.argument_reason(candidate.arguments, policy.rules)
     )
     reason = command_policy.prefix_reason(candidate.arguments, policy.prefixes, "deny") or matched
     if not reason:

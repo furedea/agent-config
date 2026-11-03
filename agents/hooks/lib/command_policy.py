@@ -116,6 +116,30 @@ def asking_programs(rules: list[dict]) -> frozenset[str]:
     return frozenset(program for rule in rules if rule.get("ask_unlisted", False) for program in rule["programs"])
 
 
+def unscoped_rules(rules: list[dict]) -> list[dict]:
+    """Forbidden rules that read every command's words."""
+    return [rule for rule in rules if "programs" not in rule]
+
+
+def argument_reason(arguments: tuple[str, ...], rules: list[dict]) -> str:
+    """The rationale of the first forbidden rule scoped to this program that its decoded arguments match.
+
+    Such a rule reads the arguments as the program receives them, quotes removed and prose included,
+    and ignores case, because the app names and URL schemes it names are case-insensitive.
+    """
+    text = " ".join(arguments)
+    return next(
+        (
+            rule["justification"]
+            for rule in rules
+            if arguments[0] in rule.get("programs", ())
+            and any_regex_matches(rule["patterns"], text, insensitive=True)
+            and not any_regex_matches(rule.get("exceptions", ()), text, insensitive=True)
+        ),
+        "",
+    )
+
+
 def project_root() -> Path | None:
     """The Git root that owns the project's policy."""
     start = os.environ.get("AGENT_PROJECT_DIR", os.environ.get("CLAUDE_PROJECT_DIR", os.getcwd()))

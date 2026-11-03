@@ -207,3 +207,8 @@ def test_sandboxed_commands_cannot_read_1password_data_or_agent_sockets() -> Non
 def test_claude_code_tools_cannot_read_the_codex_login() -> None:
     permissions = json.loads((REPO_ROOT / "agents/claude/settings.json").read_text())["permissions"]
     assert "Read(~/.codex/auth.json)" in permissions["deny"]
+
+
+def test_browser_and_desktop_automation_run_outside_the_sandbox() -> None:
+    sandbox = json.loads((REPO_ROOT / "agents/claude/settings.json").read_text())["sandbox"]
+    assert {"agent-browser *", "agent-desktop *"} <= set(sandbox["excludedCommands"])

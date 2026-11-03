@@ -108,6 +108,8 @@
     "excludedCommands": [
       "~/.claude/hooks/cleanup_worktrees.py",
       "~/.claude/hooks/cleanup_worktrees.py --dry-run",
+      "agent-browser *",
+      "agent-desktop *",
       "docker *",
       "gh *",
       "herdr *",

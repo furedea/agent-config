@@ -332,6 +332,8 @@ def test_an_allowlisted_option_runs(git_project: Path, command: str) -> None:
         "agent-desktop clipboard-set --file-url notes.txt",
         "agent-desktop list-apps --agent-id helper",
         "agent-desktop close-app Finder --force",
+        "agent-desktop snapshot --app Finder --surface dock",
+        "agent-desktop find --app Finder --surface menubar --role button",
     ],
 )
 def test_an_unknown_option_asks(git_project: Path, command: str) -> None:

@@ -68,6 +68,7 @@ def test_ordinary_automation_runs_from_the_first_call(git_project: Path, command
         "agent-browser state load ./auth.json",
         "agent-browser install",
         "agent-browser inspect",
+        "agent-browser profiles",
         "agent-browser --provider browserbase open https://example.com",
         "agent-browser open https://example.com --restore=bank-login",
         "agent-browser --session-name bank open https://example.com",

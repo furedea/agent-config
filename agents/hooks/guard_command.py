@@ -19,6 +19,8 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "lib"))
 
 import audit_log
+import automation_options
+import automation_paths
 import command_policy
 import herdr_grammar
 import hook_decision
@@ -38,8 +40,6 @@ REMOTE_REASON = (
 # The only programs the literal_words rules govern; through any wrapper they get main's rules, or no
 # rule at all for curl and wget.
 LITERAL_PROGRAMS = frozenset({"agent-browser", "agent-desktop", "curl", "gh", "herdr", "wget"})
-# Browser and desktop automation outside the sandbox, whose listed forms must match with quotes removed too.
-AUTOMATION_PROGRAMS = frozenset({"agent-browser", "agent-desktop"})
 # Characters through which any shell may expand or run something, and a word starting with `=` (zsh
 # looks it up on PATH); a command holding one anywhere outside quotes, in the program name, an
 # assignment, or a redirect included, gets no literal_words rule.
@@ -137,7 +137,7 @@ def is_listed(candidate: shell_syntax.Command, rules: list[dict]) -> bool:
     """
     if not command_policy.regex_reason(candidate.static_words_text, rules):
         return False
-    if candidate.arguments[0] in AUTOMATION_PROGRAMS and not command_policy.regex_reason(
+    if candidate.arguments[0] in automation_paths.PROGRAMS and not command_policy.regex_reason(
         " ".join(candidate.arguments), rules
     ):
         return False
@@ -263,6 +263,10 @@ def command_verdict(kind: str, payload: dict, policy: Policy) -> Verdict:
         policy = replace(policy, literal_words=False)
     verdicts = (objection(kind, item, policy) for item in commands)
     verdict = next((item for item in verdicts if item.decision != "allow"), hook_decision.ALLOW)
+    if kind == "allowed" and verdict.decision == "allow":
+        verdict = automation_options.objection(commands)
+    if kind == "allowed" and verdict.decision == "allow":
+        verdict = automation_paths.objection(payload, commands)
     if kind == "allowed" and verdict.decision == "allow":
         return settings_objection(command, commands)
     return verdict

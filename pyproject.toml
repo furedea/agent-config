@@ -16,6 +16,8 @@ ignore_notebooks = true
 # Standalone hooks import these adjacent repository modules after trusted path setup.
 known_first_party = [
   "audit_log",
+  "automation_options",
+  "automation_paths",
   "check_evidence",
   "check_execution",
   "check_selection",

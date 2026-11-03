@@ -26,6 +26,24 @@
         "^herdr agent start [a-z][a-z0-9_-]*( --kind claude| --pane [^ ]+| --timeout [0-9]+)+ -- --model (sonnet|opus) --effort medium$"
       ],
       "justification": "Do not pass arguments to an agent Herdr starts, except the Sonnet or Opus model at medium effort for Claude lanes; others could switch off its sandbox, hooks, or approvals."
+    },
+    {
+      "programs": [
+        "agent-browser"
+      ],
+      "patterns": [
+        "(^|[^a-z0-9+.-])(file|chrome):"
+      ],
+      "justification": "Do not open file: or chrome: URLs in the browser; it runs outside the sandbox and would read files the sandbox denies, such as ~/.ssh or .env, or change browser settings."
+    },
+    {
+      "programs": [
+        "agent-desktop"
+      ],
+      "patterns": [
+        "(^|[ =/.])(ghostty|terminal|iterm2?|warp(-stable)?|alacritty|kitty|wezterm(-gui)?|hyper|tabby|system[[:space:]]+(settings|preferences)|systempreferences|keychain[[:space:]]+access|keychainaccess|passwords|1password|onepassword[0-9]*|script[[:space:]]+editor|scripteditor2?|automator|shortcuts|ターミナル|システム設定|システム環境設定|キーチェーンアクセス|パスワード|スクリプトエディタ|ショートカット)(\\.app)?([ /:]|$)"
+      ],
+      "justification": "Do not operate terminals, System Settings, Keychain Access, Passwords, 1Password, Script Editor, Automator, or Shortcuts by English or Japanese name, bundle ID, or path; typing into them runs commands or changes security settings outside the sandbox and the hooks."
     }
   ]
 }

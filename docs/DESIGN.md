@@ -97,6 +97,10 @@ see [ADR-0003](adr/0003_register_verification_in_native_hooks.md).
 - Docker runs outside the sandbox, so only its read-only inspection forms run without a prompt and
   every other form asks; see
   [ADR-0017](adr/0017_ask_for_every_docker_form_the_allowlist_does_not_list.md).
+- `agent-browser` and `agent-desktop` run outside the sandbox, and their listed forms run without
+  a prompt. `file:` and `chrome:` URLs, and terminals, System Settings, and credential apps, are
+  denied, and forms that reach logged-in sessions or unnamed targets ask; see
+  [ADR-0018](adr/0018_allow_browser_and_desktop_automation_except_named_risky_forms.md).
 - The supplementary guards judge only statically determinable shell text and ask for the rest; see
   [ADR-0015](adr/0015_judge_only_statically_determinable_shell_text_in_the_guards.md) and
   [ADR-0016](adr/0016_inspect_shell_syntax_in_the_supplementary_command_guards.md).

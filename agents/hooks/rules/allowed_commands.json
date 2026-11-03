@@ -150,7 +150,7 @@
       ],
       "literal_words": true,
       "patterns": [
-        "^agent-browser( --json| --headed| --session ('[^']*'|\"[^\"]*\"|[^ '\"\\\\]+))* (open|back|forward|reload|read|snapshot|get|is|click|dblclick|fill|type|press|keyboard|hover|focus|select|check|uncheck|scroll|scrollintoview|drag|mouse|find|wait|cookies|storage|network|set|clipboard|eval|pushstate|tab|frame|dialog|console|errors|highlight|inspect|trace|profiler|vitals|react|a11y|session|profiles|confirm|deny|skills|close)( ('[^']*'|\"[^\"]*\"|[^ '\"\\\\]+))*$",
+        "^agent-browser( --json| --headed| --session ('[^']*'|\"[^\"]*\"|[^ '\"\\\\]+))* (open|back|forward|reload|read|snapshot|get|is|click|dblclick|fill|type|press|keyboard|hover|focus|select|check|uncheck|scroll|scrollintoview|drag|mouse|find|wait|cookies|storage|network|set|clipboard|eval|pushstate|tab|frame|dialog|console|errors|highlight|trace|profiler|vitals|react|a11y|session|profiles|confirm|deny|skills|close)( ('[^']*'|\"[^\"]*\"|[^ '\"\\\\]+))*$",
         "^agent-browser screenshot( --full)?$"
       ],
       "exceptions": [
@@ -159,7 +159,7 @@
         " ([^ ]*=)?[~/]",
         "(^|[ =/])\\.\\.(/| |$)"
       ],
-      "justification": "Let agents drive a browser outside the sandbox to navigate, read, and act on pages; only the listed subcommands, after at most --json, --headed, or --session, qualify, and the guard lets each subcommand use only the options it lists. Every file the browser's daemon writes (screenshot and pdf other than a bare screenshot or screenshot --full, trace stop, profiler stop, network har stop) asks, because the daemon opens a relative path from the directory it started in, which the arguments cannot show; so does any argument naming an absolute, home, or parent-directory path, and every unlisted subcommand or alias (connect, upload, download, state, diff, doctor, plugins, MCP calls, chat, batches, auth, install, upgrade), because they reach the user's logged-in sessions, files the sandbox denies, or run other code. Each word must be a whole quoted or bare token, and the form must also match with quotes removed, so quoting cannot hide a subcommand or option."
+      "justification": "Let agents drive a browser outside the sandbox to navigate, read, and act on pages; only the listed subcommands, after at most --json, --headed, or --session, qualify, and the guard lets each subcommand use only the options it lists. Every file the browser's daemon writes (screenshot and pdf other than a bare screenshot or screenshot --full, trace stop, profiler stop, network har stop) asks, because the daemon opens a relative path from the directory it started in, which the arguments cannot show; so does any argument naming an absolute, home, or parent-directory path, and every unlisted subcommand or alias (connect, upload, download, state, diff, inspect, which opens the default browser through macOS open, doctor, plugins, MCP calls, chat, batches, auth, install, upgrade), because they reach the user's logged-in sessions, files the sandbox denies, or run other code. Each word must be a whole quoted or bare token, and the form must also match with quotes removed, so quoting cannot hide a subcommand or option."
     },
     {
       "programs": [

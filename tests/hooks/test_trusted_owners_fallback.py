@@ -2,6 +2,8 @@
 
 from collections.abc import Callable
 from email.message import Message
+import http.client
+import io
 import json
 from pathlib import Path
 import subprocess
@@ -33,18 +35,9 @@ def http_error(status: int) -> urllib.error.HTTPError:
     return urllib.error.HTTPError("https://api.github.com", status, "error", Message(), None)
 
 
-class Reply:
-    def __init__(self, body: str) -> None:
-        self.body = body
-
+class Reply(io.BytesIO):
     def __enter__(self) -> Self:
         return self
-
-    def __exit__(self, *exception: object) -> None:
-        return None
-
-    def read(self, size: int = -1) -> bytes:
-        return self.body.encode()[: size if size >= 0 else None]
 
 
 class PublicApi:
@@ -53,13 +46,13 @@ class PublicApi:
     def __init__(self, monkeypatch: pytest.MonkeyPatch) -> None:
         self.requests: list[tuple[urllib.request.Request, float | None]] = []
         self.outcome: str | Exception = urllib.error.URLError("offline")
-        monkeypatch.setattr(urllib.request, "urlopen", self.urlopen)
+        monkeypatch.setattr(urllib.request.OpenerDirector, "open", self.open)
 
-    def urlopen(self, request: urllib.request.Request, timeout: float | None = None) -> Reply:
+    def open(self, request: urllib.request.Request, *, timeout: float | None = None) -> Reply:
         self.requests.append((request, timeout))
         if isinstance(self.outcome, Exception):
             raise self.outcome
-        return Reply(self.outcome)
+        return Reply(self.outcome.encode())
 
     def answer(self, body: str) -> None:
         self.outcome = body
@@ -216,24 +209,56 @@ def test_a_declared_repository_is_answered_without_asking_gh_or_the_network(
     [
         http_error(404),
         http_error(403),
+        http_error(301),
         urllib.error.URLError("offline"),
         TimeoutError(),
         OSError("reset"),
+        http.client.IncompleteRead(b""),
+        http.client.BadStatusLine("x"),
+        http.client.LineTooLong("status line"),
     ],
 )
-def test_without_gh_and_without_a_public_answer_a_declared_repository_is_not_a_fork(
-    project: Path,
-    origin: SetOrigin,
-    without_gh: None,
-    api: PublicApi,
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-    failure: Exception,
+def test_a_failed_public_lookup_of_any_kind_is_no_answer_and_never_raises(
+    project: Path, origin: SetOrigin, without_gh: None, api: PublicApi, failure: Exception
 ) -> None:
-    trusted_config(tmp_path, monkeypatch, repositories=["furedea/swe-conform"])
-    origin("git@github.com:furedea/swe-conform.git")
+    origin("git@github.com:furedea/private-tool.git")
     api.fail(failure)
-    assert not is_ignored()
+    assert is_ignored()
+
+
+def test_a_slow_public_answer_is_cut_off_by_one_deadline_for_the_whole_exchange(
+    project: Path, origin: SetOrigin, without_gh: None, api: PublicApi, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    ticks = iter(range(0, 1000, 2))
+    monkeypatch.setattr(trusted_owners.time, "monotonic", lambda: next(ticks))
+    origin("git@github.com:furedea/private-tool.git")
+    api.answer('{"fork": false, "padding": "' + "x" * 100_000 + '"}')
+    assert is_ignored()
+
+
+def test_a_public_answer_over_the_size_limit_is_no_answer(
+    project: Path, origin: SetOrigin, without_gh: None, api: PublicApi
+) -> None:
+    origin("git@github.com:furedea/private-tool.git")
+    api.answer('{"fork": false, "padding": "' + "x" * 2_000_000 + '"}')
+    assert is_ignored()
+
+
+def test_the_public_lookup_never_follows_a_redirect() -> None:
+    handlers = trusted_owners.public_opener().handlers
+    assert not any(isinstance(handler, urllib.request.HTTPRedirectHandler) for handler in handlers)
+    assert any(isinstance(handler, urllib.request.HTTPErrorProcessor) for handler in handlers)
+
+
+def test_a_fork_notice_does_not_ask_to_add_an_owner_that_is_already_trusted(
+    project: Path, origin: SetOrigin, without_gh: None, api: PublicApi
+) -> None:
+    origin("https://github.com/furedea/agent-config.git")
+    api.answer('{"fork": true}')
+    text = notice()
+    assert "furedea/agent-config is a fork" in text
+    assert "add the owner" not in text
+    assert "trusted_owners.json" in text
 
 
 @pytest.mark.parametrize("body", ["", "not json", "[]", "{}", '{"fork": "false"}', '{"fork": null}', '{"fork": 0}'])

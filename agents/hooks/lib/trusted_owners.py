@@ -10,18 +10,21 @@ Any other repository is asked of, in order: the remembered answer, `gh`, and the
 
 from dataclasses import dataclass
 import hashlib
+import http.client
 import json
 import os
 from pathlib import Path
 import re
 import subprocess
-import urllib.error
+import time
+from typing import IO
 import urllib.request
 
 
 LOOKUP_TIMEOUT_SECONDS = 5
 PUBLIC_API = "https://api.github.com/repos/{owner}/{name}"
 PUBLIC_API_MAX_BYTES = 1_000_000
+PUBLIC_API_CHUNK_BYTES = 8192
 ORIGIN_URL = re.compile(
     r"(?:https://(?:[^@/]+@)?github\.com/|ssh://git@github\.com/|git@github\.com:)"
     r"(?P<owner>[A-Za-z0-9-]+)/(?P<repo>[A-Za-z0-9_][A-Za-z0-9._-]*?)(?:\.git)?/?"
@@ -29,6 +32,10 @@ ORIGIN_URL = re.compile(
 REPOSITORY_NAME = re.compile(r"[A-Za-z0-9-]+/[A-Za-z0-9_][A-Za-z0-9._-]*")
 REQUIRED_KEYS = {"owners", "exclude_forks"}
 CONFIG_KEYS = REQUIRED_KEYS | {"repositories"}
+FIX_FORK = (
+    "Forks are excluded by exclude_forks in trusted_owners.json in agent-config; "
+    "use the original repository, or ask for the policy to change there."
+)
 FIX_OWNER = (
     "Only repositories of owners listed in trusted_owners.json in agent-config count, forks excluded; "
     "add the owner there to apply them."
@@ -135,7 +142,7 @@ def distrust_reason(root: Path, trusted: TrustedOwners) -> Distrust | None:
             f'Once you have verified it is not a fork, add "{owner}/{name}" to "repositories" in '
             "trusted_owners.json in agent-config, or install and sign in to gh on this host.",
         )
-    return Distrust(f"{owner}/{name} is a fork", FIX_OWNER) if fork else None
+    return Distrust(f"{owner}/{name} is a fork", FIX_FORK) if fork else None
 
 
 def origin_repository(root: Path) -> tuple[str, str] | None:
@@ -204,11 +211,38 @@ def public_answer(owner: str, name: str) -> str | None:
         headers={"Accept": "application/vnd.github+json", "User-Agent": "agent-harness-trusted-owners"},
     )
     try:
-        with urllib.request.urlopen(request, timeout=LOOKUP_TIMEOUT_SECONDS) as response:
-            fork = json.loads(response.read(PUBLIC_API_MAX_BYTES))["fork"]
-    except OSError, ValueError, TypeError, KeyError, urllib.error.URLError:
+        with public_opener().open(request, timeout=LOOKUP_TIMEOUT_SECONDS) as response:
+            fork = json.loads(read_within_limits(response))["fork"]
+    except OSError, ValueError, TypeError, KeyError, http.client.HTTPException:
         return None
     return {True: "true", False: "false"}.get(fork) if isinstance(fork, bool) else None
+
+
+def public_opener() -> urllib.request.OpenerDirector:
+    """An opener without redirect handling: a moved or transferred repository answers nobody.
+
+    The answer must come from the name that was asked, never from wherever GitHub points it.
+    """
+    opener = urllib.request.OpenerDirector()
+    for handler in (
+        urllib.request.ProxyHandler(),
+        urllib.request.HTTPSHandler(),
+        urllib.request.HTTPDefaultErrorHandler(),
+        urllib.request.HTTPErrorProcessor(),
+    ):
+        opener.add_handler(handler)
+    return opener
+
+
+def read_within_limits(response: IO[bytes]) -> bytes:
+    """The whole body, refusing one that is too large or arrives later than the lookup deadline."""
+    deadline = time.monotonic() + LOOKUP_TIMEOUT_SECONDS
+    body = bytearray()
+    while chunk := response.read(PUBLIC_API_CHUNK_BYTES):
+        body += chunk
+        if len(body) > PUBLIC_API_MAX_BYTES or time.monotonic() > deadline:
+            raise ValueError("public answer too large or too slow")
+    return bytes(body)
 
 
 def remember(cache: Path, answer: str) -> None:

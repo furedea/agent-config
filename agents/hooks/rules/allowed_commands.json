@@ -150,16 +150,16 @@
       ],
       "literal_words": true,
       "patterns": [
-        "^agent-browser( --json| --headed| --session ('[^']*'|\"[^\"]*\"|[^ '\"\\\\]+))* (open|back|forward|reload|read|snapshot|get|is|click|dblclick|fill|type|press|keyboard|hover|focus|select|check|uncheck|scroll|scrollintoview|drag|mouse|find|wait|screenshot|pdf|cookies|storage|network|set|clipboard|eval|pushstate|tab|frame|dialog|console|errors|highlight|inspect|trace|profiler|vitals|react|a11y|session|profiles|confirm|deny|skills|close)( ('[^']*'|\"[^\"]*\"|[^ '\"\\\\]+))*$"
+        "^agent-browser( --json| --headed| --session ('[^']*'|\"[^\"]*\"|[^ '\"\\\\]+))* (open|back|forward|reload|read|snapshot|get|is|click|dblclick|fill|type|press|keyboard|hover|focus|select|check|uncheck|scroll|scrollintoview|drag|mouse|find|wait|cookies|storage|network|set|clipboard|eval|pushstate|tab|frame|dialog|console|errors|highlight|trace|profiler|vitals|react|a11y|session|confirm|deny|skills|close)( ('[^']*'|\"[^\"]*\"|[^ '\"\\\\]+))*$",
+        "^agent-browser screenshot( --full)?$"
       ],
       "exceptions": [
-        " --(cdp|cdp-headers|auto-connect|profile|state|restore|restore-save|session-name|args|config|executable-path|extension|init-script|allow-file-access|download|download-path|provider)([ =]|$)",
-        " -p([ =]|$)",
-        "^agent-browser( .*)? wait( .*)? -d( |$)",
+        "^agent-browser( .*)? (trace|profiler)( .*)? stop( |$)",
+        "^agent-browser( .*)? network( .*)? har( .*)? stop( |$)",
         " ([^ ]*=)?[~/]",
         "(^|[ =/])\\.\\.(/| |$)"
       ],
-      "justification": "Let agents drive a browser outside the sandbox to navigate, read, and act on pages; only the listed subcommands, after at most --json, --headed, or --session, qualify. Attaching to a running Chrome (connect, --cdp, --auto-connect), selecting a profile, state, saved session (--restore, --session-name), user data directory, config file, executable, extension, or init script, allowing file access, uploading or downloading files (download, wait --download), a provider, any argument naming an absolute, home, or parent-directory path (screenshot, pdf, and trace outputs write outside the sandbox), snapshot diffs against a file, doctor, plugins, MCP calls, chat, batches, auth, install, upgrade, and every unlisted subcommand or alias ask, because they reach the user's logged-in sessions, files the sandbox denies, or run other code. Each word must be a whole quoted or bare token, and the form must also match with quotes removed, so quoting cannot hide a subcommand or option."
+      "justification": "Let agents drive a browser outside the sandbox to navigate, read, and act on pages; only the listed subcommands, after at most --json, --headed, or --session, qualify, and the guard lets each subcommand use only the options it lists. Every file the browser's daemon writes (screenshot and pdf other than a bare screenshot or screenshot --full, trace stop, profiler stop, network har stop) asks, because the daemon opens a relative path from the directory it started in, which the arguments cannot show; so does any argument naming an absolute, home, or parent-directory path, and every unlisted subcommand or alias (connect, upload, download, state, diff, inspect, which opens the default browser through macOS open, profiles, which reads the user's Chrome Local State, doctor, plugins, MCP calls, chat, batches, auth, install, upgrade), because they reach the user's logged-in sessions, files the sandbox denies, or run other code. Each word must be a whole quoted or bare token, and the form must also match with quotes removed, so quoting cannot hide a subcommand or option."
     },
     {
       "programs": [
@@ -172,11 +172,7 @@
         "^agent-desktop (list-apps|list-windows|list-displays|list-notifications|dismiss-notification|dismiss-all-notifications|notification-action|clipboard-get|clipboard-set|clipboard-clear|status|permissions|version|skills|session|trace|cursor-overlay|close-app|wait)( ('[^']*'|\"[^\"]*\"|[^ '\"\\\\]+))*$",
         "^agent-desktop (--help|--version|-h|-V|help)$"
       ],
-      "exceptions": [
-        " --(window-id|headed)([ =]|$)",
-        "^agent-desktop permissions( .*)? --(request|guide)( |$)"
-      ],
-      "justification": "Let agents operate desktop apps outside the sandbox that a command names; a window-targeting command must name its app with --app, because without it the target is whichever window has focus. Window IDs, physical input (--headed), keyboard and pointer input to the focused window or a screen position, batches, launching an app (a name or path may reach a bundle the session wrote), and permission requests ask, because the arguments cannot tell which app they reach. Each word must be a whole quoted or bare token, and the form must also match with quotes removed."
+      "justification": "Let agents operate desktop apps outside the sandbox that a command names; a window-targeting command must name its app with --app, because without it the target is whichever window has focus, and the guard lets each subcommand use only the options it lists, so window IDs, physical input (--headed), trace and screenshot files, and permission requests ask. Keyboard and pointer input to the focused window or a screen position, batches, and launching an app (a name or path may reach a bundle the session wrote) ask, because the arguments cannot tell which app they reach. Each word must be a whole quoted or bare token, and the form must also match with quotes removed."
     }
   ]
 }

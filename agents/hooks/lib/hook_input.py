@@ -4,6 +4,7 @@ from collections.abc import Generator
 from contextlib import contextmanager
 import os
 from pathlib import Path
+import tempfile
 
 import patch_input
 
@@ -37,6 +38,7 @@ EXTENSIONS = {
 }
 EDIT_TOOLS = frozenset({"Write", "Edit", "MultiEdit", "NotebookEdit", "apply_patch"})
 FILE_FIELDS = ("file_path", "path", "notebook_path")
+TEMPORARY_DIRECTORY_VARIABLES = ("TMPDIR", "CLAUDE_TMPDIR", "CLAUDE_CODE_TMPDIR")
 
 
 def file_path(values: dict) -> str:
@@ -112,6 +114,13 @@ def _input_names(payload: dict) -> tuple[str, ...]:
             if isinstance(item, dict) and isinstance(item.get("file_path"), str)
         )
     return tuple(names)
+
+
+def temporary_roots() -> tuple[Path, ...]:
+    """The session's temporary directories, which a session may write beside its worktree."""
+    values = [os.environ.get(name) for name in TEMPORARY_DIRECTORY_VARIABLES]
+    values.append(tempfile.gettempdir())
+    return tuple(Path(value).expanduser().resolve() for value in values if value)
 
 
 def target_paths(payload: dict) -> tuple[Path, ...]:

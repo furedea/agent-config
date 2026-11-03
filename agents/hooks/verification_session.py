@@ -2,10 +2,8 @@
 """Mechanical lifecycle entry points for registered verification sessions."""
 
 import json
-import os
 from pathlib import Path
 import sys
-import tempfile
 
 
 ROOT = Path(__file__).resolve().parent
@@ -32,7 +30,6 @@ from session_store import (
 
 
 EVENTS = ("session-start", "pre-tool-use", "post-tool-use", "stop", "session-end")
-TEMPORARY_DIRECTORY_VARIABLES = ("TMPDIR", "CLAUDE_TMPDIR", "CLAUDE_CODE_TMPDIR")
 
 
 def registered_record(provider: str, payload: dict, *, starting: bool = False) -> SessionRecord:
@@ -89,15 +86,11 @@ def confirm_tool(record: SessionRecord, payload: dict) -> None:
 
 def require_inside(record: SessionRecord, path: Path) -> None:
     resolved = path.expanduser().resolve()
-    if resolved.is_relative_to(record.root) or any(resolved.is_relative_to(root) for root in temporary_roots()):
+    if resolved.is_relative_to(record.root) or any(
+        resolved.is_relative_to(root) for root in hook_input.temporary_roots()
+    ):
         return
     raise ScopeError(f"Tool target {resolved} is outside the registered worktree {record.root}")
-
-
-def temporary_roots() -> tuple[Path, ...]:
-    values = [os.environ.get(name) for name in TEMPORARY_DIRECTORY_VARIABLES]
-    values.append(tempfile.gettempdir())
-    return tuple(Path(value).expanduser().resolve() for value in values if value)
 
 
 def dispatch(provider: str, event: str, payload: dict) -> dict[str, object]:

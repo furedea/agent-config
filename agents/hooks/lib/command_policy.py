@@ -11,6 +11,10 @@ import git_safety
 import shell_syntax
 
 
+# Characters a URL parser drops anywhere in a URL, so a scheme split by them still loads.
+URL_IGNORED_CHARACTERS = str.maketrans("", "", "\t\n\r")
+
+
 def regex_matches(pattern: str, value: str, insensitive: bool = False) -> bool:
     """Use the existing system regex engine instead of silently changing regex dialects."""
     return any_regex_matches((pattern,), value, insensitive)
@@ -125,9 +129,10 @@ def argument_reason(arguments: tuple[str, ...], rules: list[dict]) -> str:
     """The rationale of the first forbidden rule scoped to this program that its decoded arguments match.
 
     Such a rule reads the arguments as the program receives them, quotes removed and prose included,
-    and ignores case, because the app names and URL schemes it names are case-insensitive.
+    and ignores case, because the app names and URL schemes it names are case-insensitive. Tabs and
+    line breaks are dropped first, as a URL parser drops them, so `fi<TAB>le:` still reads as `file:`.
     """
-    text = " ".join(arguments)
+    text = " ".join(arguments).translate(URL_IGNORED_CHARACTERS)
     return next(
         (
             rule["justification"]

@@ -243,6 +243,9 @@ def test_verification_and_session_end_wait_past_the_short_limit(
 ) -> None:
     record = verification_record
     (record.root / "source.py").write_text("task edit")
+    # Markers live in the worktree here; untracked files are signed by metadata, so keep them out of the snapshot.
+    with (record.root / ".git/info/exclude").open("a") as exclude:
+        exclude.write("waiting-*\n")
     payload = {"cwd": str(record.root), "session_id": "verification-test"}
     markers = [tmp_path / f"waiting-{index}" for index in range(2 if event == "stop" else 1)]
     with ExitStack() as children:

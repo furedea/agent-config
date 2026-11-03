@@ -2,6 +2,7 @@
 
 import json
 from pathlib import Path
+import subprocess
 import sys
 
 import pytest
@@ -82,6 +83,9 @@ def test_unselected_saved_checks_are_not_applicable(
     verification_record: session_store.SessionRecord, verification_calls: Path, run_cli: CliRunner
 ) -> None:
     record = verification_record
+    # Tracked content is hashed, so reverting it restores the snapshot; untracked files are signed by metadata.
+    subprocess.run(["git", "-C", str(record.root), "add", "-A"], check=True)
+    record = session_store.register(record.root, "codex", "tracked-baseline")
     (record.root / "source.py").write_text("changed")
     assert run_cli(SCRIPT, "verify", str(record.directory)).returncode == 0
     (record.root / "source.py").write_text("before")

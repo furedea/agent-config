@@ -1,12 +1,17 @@
 """Capture verification inputs without storing source content or a Git index."""
 
 from dataclasses import dataclass
+import errno
 import hashlib
 import json
 import os
 from pathlib import Path
 import stat
 import subprocess
+
+
+# Larger tracked files are signed by metadata so SessionStart stays inside its hook timeout.
+HASH_LIMIT_BYTES = 1 << 20
 
 
 class SnapshotError(ValueError):
@@ -57,8 +62,8 @@ def repository_root(directory: Path) -> Path:
         raise SnapshotError(f"No Git worktree at {directory}") from error
 
 
-def capture(root: Path) -> Snapshot:
-    """Hash actual files, including task edits committed after launch."""
+def capture(root: Path, *, hash_content: bool = True) -> Snapshot:
+    """Sign tracked and nonignored untracked files; a bad individual input never fails the snapshot."""
     root = root.resolve()
     try:
         output = subprocess.check_output(
@@ -72,39 +77,72 @@ def capture(root: Path) -> Snapshot:
                 "--cached",
                 "--others",
                 "--exclude-standard",
+                "-t",
                 "-z",
             ],
             stderr=subprocess.DEVNULL,
         )
-        paths = sorted({os.fsdecode(path) for path in output.split(b"\0") if path})
-        entries = tuple(
-            (path, file_signature(root, root / path))
-            for path in paths
-            if (root / path).exists() or (root / path).is_symlink()
-        )
-        return Snapshot(entries)
     except (OSError, subprocess.CalledProcessError) as error:
         raise SnapshotError(f"Cannot snapshot {root}: {error}") from error
+    tracked: dict[str, bool] = {}
+    for record in filter(None, output.split(b"\0")):
+        tag, _, name = os.fsdecode(record).partition(" ")
+        # Untracked content is neither hashed nor trusted: it is the unbounded, agent-generated part.
+        tracked[name] = tracked.get(name, True) and tag != "?"
+    entries = []
+    for name in sorted(tracked):
+        signature = file_signature(root, root / name, hash_content=hash_content and tracked[name])
+        if signature is not None:
+            entries.append((name, signature))
+    return Snapshot(tuple(entries))
 
 
-def file_signature(root: Path, path: Path) -> str:
-    """Reject external inputs that a worktree snapshot cannot track reliably."""
-    resolved = path.resolve()
-    if not resolved.is_relative_to(root):
-        raise SnapshotError(f"Snapshot input points outside the worktree: {path.relative_to(root)}")
-    metadata = path.lstat()
+def file_signature(root: Path, path: Path, *, hash_content: bool = True) -> str | None:
+    """Sign one input without following links out of the worktree; None means it no longer exists."""
+    try:
+        metadata = path.lstat()
+    except FileNotFoundError:
+        return None
+    except OSError as error:
+        return f"unavailable:{errno.errorcode.get(error.errno or 0, 'EIO')}"
     if stat.S_ISLNK(metadata.st_mode):
-        if not resolved.is_file():
-            raise SnapshotError(f"Unsupported directory or broken symlink: {path.relative_to(root)}")
-        target = os.readlink(path)
-        return f"link:{target}:{file_signature(root, resolved)}"
-    if stat.S_ISDIR(metadata.st_mode) and (path / ".git").exists():
-        return f"submodule:{capture(path).digest}"
-    if not stat.S_ISREG(metadata.st_mode):
-        raise SnapshotError(f"Unsupported snapshot input: {path.relative_to(root)}")
-    with path.open("rb") as stream:
-        digest = hashlib.file_digest(stream, "sha256").hexdigest()
-    after = path.stat()
+        return link_signature(root, path, hash_content=hash_content)
+    if stat.S_ISDIR(metadata.st_mode):
+        # Only a nested repository reaches here: Git lists files, not directories.
+        return f"submodule:{capture(path, hash_content=hash_content).digest}"
+    if stat.S_ISREG(metadata.st_mode) and hash_content and metadata.st_size <= HASH_LIMIT_BYTES:
+        return content_signature(path, metadata)
+    return stat_signature(metadata)
+
+
+def link_signature(root: Path, path: Path, *, hash_content: bool) -> str:
+    """Record link text, and the target's signature only for a regular file inside the worktree."""
+    text = f"link:{os.readlink(path)}"
+    try:
+        resolved = path.resolve(strict=True)
+        inside = resolved.is_relative_to(root) and resolved.is_file()
+    except OSError, RuntimeError:
+        return text
+    if not inside:
+        return text
+    target = file_signature(root, resolved, hash_content=hash_content)
+    return text if target is None else f"{text}:{target}"
+
+
+def content_signature(path: Path, metadata: os.stat_result) -> str:
+    """Hash content, falling back to metadata when the file cannot be read; reject a file that moves mid-read."""
+    try:
+        with path.open("rb") as stream:
+            digest = hashlib.file_digest(stream, "sha256").hexdigest()
+        after = path.stat()
+    except OSError:
+        return stat_signature(metadata)
     if (metadata.st_ino, metadata.st_size, metadata.st_mtime_ns) != (after.st_ino, after.st_size, after.st_mtime_ns):
-        raise SnapshotError(f"Input changed while being read: {path.relative_to(root)}")
+        raise SnapshotError(f"Input changed while being read: {path}")
     return f"file:{bool(metadata.st_mode & 0o111)}:{digest}"
+
+
+def stat_signature(metadata: os.stat_result) -> str:
+    """ctime cannot be set by a user, so restoring size and mtime after an edit is still detected."""
+    mode = stat.S_IMODE(metadata.st_mode)
+    return f"stat:{stat.S_IFMT(metadata.st_mode):o}:{mode:o}:{metadata.st_size}:{metadata.st_mtime_ns}:{metadata.st_ctime_ns}"

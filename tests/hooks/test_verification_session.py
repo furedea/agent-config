@@ -126,10 +126,10 @@ def test_stop_without_registration_reports_unresolved_and_does_not_loop(reposito
     assert "unresolved" in json.loads(repeated.stdout)["systemMessage"]
 
 
-def test_failed_baseline_leaves_tools_denied(repository: Path, tmp_path: Path) -> None:
-    (repository / "external").symlink_to(tmp_path)
+def test_failed_baseline_leaves_tools_denied(repository: Path) -> None:
+    (repository / ".git/index").write_text("corrupt")
     payload = {"cwd": str(repository), "session_id": "session", "source": "startup"}
-    assert "outside" in json.loads(invoke("session-start", payload).stdout)["systemMessage"]
+    assert "Cannot snapshot" in json.loads(invoke("session-start", payload).stdout)["systemMessage"]
     assert json.loads(invoke("pre-tool-use", payload).stdout)["hookSpecificOutput"]["permissionDecision"] == "deny"
 
 

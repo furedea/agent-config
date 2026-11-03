@@ -27,7 +27,13 @@ PROJECT_ALLOW = {
 
 
 def test_trusted_owners_file_lists_furedea_and_excludes_forks() -> None:
-    assert json.loads(CONFIG.read_text()) == {"owners": ["furedea"], "exclude_forks": True}
+    config = json.loads(CONFIG.read_text())
+    assert config["owners"] == ["furedea"]
+    assert config["exclude_forks"] is True
+
+
+def test_the_shipped_declaration_lists_the_verified_repositories() -> None:
+    assert json.loads(CONFIG.read_text())["repositories"] == ["furedea/swe-conform"]
 
 
 @pytest.mark.parametrize(
@@ -41,6 +47,15 @@ def test_trusted_owners_file_lists_furedea_and_excludes_forks() -> None:
         '{"owners": ["", "furedea"], "exclude_forks": true}',
         '{"owners": "furedea", "exclude_forks": true}',
         '{"owners": ["furedea"], "exclude_forks": true, "extra": 1}',
+        '{"owners": ["furedea"], "exclude_forks": true, "repositories": "furedea/swe-conform"}',
+        '{"owners": ["furedea"], "exclude_forks": true, "repositories": [1]}',
+        '{"owners": ["furedea"], "exclude_forks": true, "repositories": [""]}',
+        '{"owners": ["furedea"], "exclude_forks": true, "repositories": ["swe-conform"]}',
+        '{"owners": ["furedea"], "exclude_forks": true, "repositories": ["furedea/"]}',
+        '{"owners": ["furedea"], "exclude_forks": true, "repositories": ["furedea/swe-conform/x"]}',
+        '{"owners": ["furedea"], "exclude_forks": true, "repositories": ["furedea/../x"]}',
+        '{"owners": ["furedea"], "exclude_forks": true, "repositories": ["https://github.com/furedea/x"]}',
+        '{"owners": ["furedea"], "exclude_forks": true, "repositories": [null]}',
     ],
 )
 def test_malformed_trusted_owners_are_rejected(tmp_path: Path, content: str) -> None:
@@ -139,12 +154,6 @@ def test_a_fork_of_a_listed_owner_loses_its_project_rules(run_cli: CliRunner, or
     assert '"permissionDecision":"ask"' in decide(run_cli).stdout
 
 
-def test_a_failed_fork_lookup_loses_the_project_rules(run_cli: CliRunner, origin: SetOrigin, gh: AnswerGh) -> None:
-    origin("https://github.com/furedea/agent-config.git")
-    gh(None)
-    assert '"permissionDecision":"ask"' in decide(run_cli).stdout
-
-
 def test_a_missing_origin_loses_the_project_rules(run_cli: CliRunner, project: Path, gh: AnswerGh) -> None:
     calls = gh("false")
     assert '"permissionDecision":"ask"' in decide(run_cli).stdout
@@ -176,15 +185,6 @@ def test_a_successful_fork_lookup_is_remembered_per_repository(
     assert is_listed(decide(run_cli))
     assert is_listed(decide(run_cli))
     assert len(calls.read_text().splitlines()) == 1
-
-
-def test_a_failed_fork_lookup_is_asked_again_next_time(run_cli: CliRunner, origin: SetOrigin, gh: AnswerGh) -> None:
-    origin("https://github.com/furedea/agent-config.git")
-    calls = gh(None)
-    decide(run_cli)
-    gh("false")
-    assert is_listed(decide(run_cli))
-    assert len(calls.read_text().splitlines()) == 2
 
 
 def test_the_ignored_rules_are_announced_once_with_the_way_to_fix_it(

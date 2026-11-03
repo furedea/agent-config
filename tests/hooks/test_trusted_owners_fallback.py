@@ -1,0 +1,334 @@
+"""The fork check falls back from gh to the public GitHub API and the declared repositories."""
+
+from collections.abc import Callable
+from email.message import Message
+import json
+from pathlib import Path
+import subprocess
+import sys
+from typing import Self
+import urllib.error
+import urllib.request
+
+import pytest
+
+from tests.runtime import REPO_ROOT, StubWriter, load_script_module
+
+SetOrigin = Callable[[str], None]
+AnswerGh = Callable[[str | None], Path]
+
+trusted_owners = load_script_module("agents/hooks/lib/trusted_owners.py", "trusted_owners")
+sys.path.insert(0, str(REPO_ROOT / "agents/hooks/lib"))
+guard_command = load_script_module("agents/hooks/guard_command.py", "guard_command")
+
+# An approved gh prefix in a form the global rules do not list: only a project rule lets it through.
+COMMAND = "gh label delete bug"
+PROJECT_ALLOW = {
+    "version": 1,
+    "rules": [{"patterns": ["^gh label delete bug$"], "justification": "Project labels"}],
+}
+
+
+def http_error(status: int) -> urllib.error.HTTPError:
+    return urllib.error.HTTPError("https://api.github.com", status, "error", Message(), None)
+
+
+class Reply:
+    def __init__(self, body: str) -> None:
+        self.body = body
+
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(self, *exception: object) -> None:
+        return None
+
+    def read(self, size: int = -1) -> bytes:
+        return self.body.encode()[: size if size >= 0 else None]
+
+
+class PublicApi:
+    """Fake of the unauthenticated GitHub API; `outcome` is a JSON body or the exception to raise."""
+
+    def __init__(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        self.requests: list[tuple[urllib.request.Request, float | None]] = []
+        self.outcome: str | Exception = urllib.error.URLError("offline")
+        monkeypatch.setattr(urllib.request, "urlopen", self.urlopen)
+
+    def urlopen(self, request: urllib.request.Request, timeout: float | None = None) -> Reply:
+        self.requests.append((request, timeout))
+        if isinstance(self.outcome, Exception):
+            raise self.outcome
+        return Reply(self.outcome)
+
+    def answer(self, body: str) -> None:
+        self.outcome = body
+
+    def fail(self, error: Exception) -> None:
+        self.outcome = error
+
+
+@pytest.fixture
+def api(monkeypatch: pytest.MonkeyPatch) -> PublicApi:
+    """Every test starts offline, so no test reaches the real GitHub."""
+    return PublicApi(monkeypatch)
+
+
+@pytest.fixture
+def without_gh(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A host without `gh`: the lookup through it never answers."""
+
+    def no_answer(*_: str) -> None:
+        return None
+
+    monkeypatch.setattr(trusted_owners, "github_answer", no_answer)
+
+
+@pytest.fixture
+def project(git_project: Path) -> Path:
+    policy = git_project / ".agents/hooks/rules/allowed_commands.json"
+    policy.parent.mkdir(parents=True)
+    policy.write_text(json.dumps(PROJECT_ALLOW))
+    return git_project
+
+
+@pytest.fixture
+def origin(project: Path) -> SetOrigin:
+    def set_url(url: str) -> None:
+        subprocess.run(["git", "remote", "add", "origin", url], cwd=project, check=True, capture_output=True)
+
+    return set_url
+
+
+@pytest.fixture
+def gh(executable: StubWriter, tmp_path: Path) -> AnswerGh:
+    """Fake `gh api repos/<owner>/<repo> --jq .fork`; a None answer is a failed lookup."""
+    calls = tmp_path / "gh_calls.txt"
+
+    def answer(fork: str | None) -> Path:
+        executable(
+            "gh",
+            f"""
+            from pathlib import Path
+            import sys
+            Path({str(calls)!r}).open("a").write(" ".join(sys.argv[1:]) + "\\n")
+            fork = {fork!r}
+            if fork is None or sys.argv[1:2] != ["api"] or sys.argv[3:] != ["--jq", ".fork"]:
+                sys.exit(1)
+            print(fork)
+            """,
+        )
+        return calls
+
+    return answer
+
+
+def notice(command: str = COMMAND) -> str:
+    verdict = guard_command.decide("allowed", {"tool_input": {"command": command}}).hardened()
+    return verdict.reason
+
+
+def is_ignored(command: str = COMMAND) -> bool:
+    return "trusted_owners.json" in notice(command)
+
+
+def trusted_config(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, **overrides: object) -> None:
+    config = {"owners": ["furedea"], "exclude_forks": True, "repositories": [], **overrides}
+    path = tmp_path / "owners.json"
+    path.write_text(json.dumps(config))
+    monkeypatch.setenv("AGENT_TRUSTED_OWNERS", str(path))
+
+
+@pytest.fixture(autouse=True)
+def offline(api: PublicApi) -> None:
+    return None
+
+
+def test_a_failed_fork_lookup_loses_the_project_rules(project: Path, origin: SetOrigin, gh: AnswerGh) -> None:
+    origin("https://github.com/furedea/agent-config.git")
+    gh(None)
+    assert is_ignored()
+
+
+def test_a_failed_fork_lookup_is_asked_again_next_time(project: Path, origin: SetOrigin, gh: AnswerGh) -> None:
+    origin("https://github.com/furedea/agent-config.git")
+    calls = gh(None)
+    assert is_ignored()
+    gh("false")
+    assert not is_ignored()
+    assert len(calls.read_text().splitlines()) == 2
+
+
+def test_without_gh_a_public_repository_is_asked_unauthenticated(
+    project: Path, origin: SetOrigin, without_gh: None, api: PublicApi
+) -> None:
+    origin("https://github.com/furedea/agent-config.git")
+    api.answer('{"fork": false, "private": false}')
+    assert not is_ignored()
+    (request, timeout), *rest = api.requests
+    assert rest == []
+    assert request.full_url == "https://api.github.com/repos/furedea/agent-config"
+    assert not {"authorization", "cookie"} & {name.lower() for name in request.headers}
+    assert timeout is not None and 0 < timeout <= 10
+
+
+def test_without_gh_a_public_fork_loses_the_project_rules(
+    project: Path, origin: SetOrigin, without_gh: None, api: PublicApi
+) -> None:
+    origin("https://github.com/furedea/agent-config.git")
+    api.answer('{"fork": true}')
+    assert is_ignored()
+
+
+def test_the_public_answer_is_remembered_like_gh_answers(
+    project: Path, origin: SetOrigin, without_gh: None, api: PublicApi
+) -> None:
+    origin("https://github.com/furedea/agent-config.git")
+    api.answer('{"fork": false}')
+    assert not is_ignored()
+    api.fail(urllib.error.URLError("offline"))
+    assert not is_ignored()
+    assert len(api.requests) == 1
+
+
+def test_gh_is_asked_first_and_the_api_is_left_alone(
+    project: Path, origin: SetOrigin, gh: AnswerGh, api: PublicApi
+) -> None:
+    origin("https://github.com/furedea/agent-config.git")
+    gh("false")
+    assert not is_ignored()
+    assert api.requests == []
+
+
+def test_a_declared_repository_is_answered_without_asking_gh_or_the_network(
+    project: Path, origin: SetOrigin, gh: AnswerGh, api: PublicApi, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    trusted_config(tmp_path, monkeypatch, repositories=["furedea/agent-config"])
+    origin("https://github.com/furedea/agent-config.git")
+    calls = gh("true")
+    assert not is_ignored()
+    assert not calls.exists()
+    assert api.requests == []
+
+
+@pytest.mark.parametrize(
+    "failure",
+    [
+        http_error(404),
+        http_error(403),
+        urllib.error.URLError("offline"),
+        TimeoutError(),
+        OSError("reset"),
+    ],
+)
+def test_without_gh_and_without_a_public_answer_a_declared_repository_is_not_a_fork(
+    project: Path,
+    origin: SetOrigin,
+    without_gh: None,
+    api: PublicApi,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    failure: Exception,
+) -> None:
+    trusted_config(tmp_path, monkeypatch, repositories=["furedea/swe-conform"])
+    origin("git@github.com:furedea/swe-conform.git")
+    api.fail(failure)
+    assert not is_ignored()
+
+
+@pytest.mark.parametrize("body", ["", "not json", "[]", "{}", '{"fork": "false"}', '{"fork": null}', '{"fork": 0}'])
+def test_an_unusable_public_answer_is_not_trusted_unless_declared(
+    project: Path,
+    origin: SetOrigin,
+    without_gh: None,
+    api: PublicApi,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    body: str,
+) -> None:
+    origin("git@github.com:furedea/private-tool.git")
+    api.answer(body)
+    assert is_ignored()
+    trusted_config(tmp_path, monkeypatch, repositories=["furedea/private-tool"])
+    assert not is_ignored()
+
+
+def test_the_shipped_declaration_covers_swe_conform_on_a_host_without_gh_or_a_public_answer(
+    project: Path, origin: SetOrigin, without_gh: None, api: PublicApi
+) -> None:
+    origin("git@github.com:furedea/swe-conform.git")
+    api.fail(http_error(404))
+    assert not is_ignored()
+
+
+def test_a_repository_that_is_not_declared_stays_ignored_and_the_notice_names_each_failed_source(
+    project: Path, origin: SetOrigin, without_gh: None, api: PublicApi
+) -> None:
+    origin("git@github.com:furedea/private-tool.git")
+    api.fail(http_error(404))
+    text = notice()
+    assert "furedea/private-tool" in text
+    assert "gh" in text
+    assert "public GitHub API" in text
+    assert "repositories" in text
+    assert "trusted_owners.json" in text
+    assert "agent-config" in text
+
+
+def test_the_declaration_matches_case_insensitively_and_by_exact_name(
+    project: Path, origin: SetOrigin, without_gh: None, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    trusted_config(tmp_path, monkeypatch, repositories=["Furedea/SWE-Conform"])
+    origin("git@github.com:furedea/swe-conform.git")
+    assert not is_ignored()
+
+
+def test_a_declared_name_does_not_cover_a_different_repository(
+    project: Path, origin: SetOrigin, without_gh: None, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    trusted_config(tmp_path, monkeypatch, repositories=["furedea/swe-conform"])
+    origin("git@github.com:furedea/swe-conform-fork.git")
+    assert is_ignored()
+
+
+def test_a_declared_repository_of_an_untrusted_owner_stays_untrusted(
+    project: Path,
+    origin: SetOrigin,
+    without_gh: None,
+    api: PublicApi,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    trusted_config(tmp_path, monkeypatch, repositories=["someone/swe-conform"])
+    origin("git@github.com:someone/swe-conform.git")
+    assert is_ignored()
+    assert api.requests == []
+
+
+def test_a_declaration_is_not_needed_when_forks_are_not_excluded(
+    project: Path, origin: SetOrigin, without_gh: None, api: PublicApi, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    trusted_config(tmp_path, monkeypatch, exclude_forks=False)
+    origin("git@github.com:furedea/private-tool.git")
+    assert not is_ignored()
+    assert api.requests == []
+
+
+def test_a_declaration_is_not_written_to_the_cache(
+    project: Path, origin: SetOrigin, without_gh: None, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    trusted_config(tmp_path, monkeypatch, repositories=["furedea/swe-conform"])
+    origin("git@github.com:furedea/swe-conform.git")
+    assert not is_ignored()
+    trusted_config(tmp_path, monkeypatch, repositories=[])
+    assert is_ignored()
+
+
+def test_a_project_cannot_widen_the_declaration(
+    project: Path, origin: SetOrigin, without_gh: None, api: PublicApi
+) -> None:
+    origin("git@github.com:furedea/private-tool.git")
+    (project / ".agents/hooks/rules/trusted_owners.json").write_text(
+        json.dumps({"owners": ["furedea"], "exclude_forks": True, "repositories": ["furedea/private-tool"]})
+    )
+    assert is_ignored()

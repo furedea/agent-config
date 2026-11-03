@@ -1,4 +1,5 @@
 {
   "owners": ["furedea"],
-  "exclude_forks": true
+  "exclude_forks": true,
+  "repositories": ["furedea/swe-conform"]
 }

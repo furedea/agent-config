@@ -51,10 +51,10 @@ DESKTOP = {
     "snapshot": DESKTOP_APP
     | DESKTOP_WAIT_FOR
     | {"--compact", "--force-electron-a11y", "--include-bounds", "--interactive-only", "-i", "--max-depth"}
-    | {"--root", "--skeleton", "--timeout-ms"},
+    | {"--skeleton", "--timeout-ms"},
     "find": DESKTOP_APP
     | {"--count", "--description", "--exact", "--first", "--last", "--limit", "--name", "--native-id", "--nth"}
-    | {"--role", "--root", "--state", "--text", "--timeout-ms", "--value"},
+    | {"--role", "--state", "--text", "--timeout-ms", "--value"},
     "screenshot": DESKTOP_APP,
     "list-surfaces": DESKTOP_APP,
     "resize-window": DESKTOP_APP | {"--width", "--height"},

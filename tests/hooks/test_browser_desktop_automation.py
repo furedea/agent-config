@@ -97,6 +97,8 @@ def test_browser_forms_that_reach_existing_sessions_files_or_hide_words_ask(git_
         "agent-browser tab new chrome://settings",
         "agent-browser eval \"location.href = 'file:///etc/passwd'\"",
         "env agent-browser open file:///etc/passwd",
+        "agent-browser tab new 'fi\tle:///etc/passwd'",
+        "agent-browser open 'chr\nome://settings'",
     ],
 )
 def test_local_file_and_browser_internal_urls_are_denied(git_project: Path, command: str) -> None:
@@ -334,6 +336,8 @@ def test_an_allowlisted_option_runs(git_project: Path, command: str) -> None:
         "agent-desktop close-app Finder --force",
         "agent-desktop snapshot --app Finder --surface dock",
         "agent-desktop find --app Finder --surface menubar --role button",
+        "agent-desktop snapshot --app Finder --root @s8f3k2p9:e8",
+        "agent-desktop find --app Finder --root @s8f3k2p9:e8 --role button",
     ],
 )
 def test_an_unknown_option_asks(git_project: Path, command: str) -> None:

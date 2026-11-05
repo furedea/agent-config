@@ -156,6 +156,8 @@ def forbidden_objection(item: shell_syntax.Command, candidate: shell_syntax.Comm
     matched = (
         command_policy.regex_reason(item.command_words_text, rules)
         or command_policy.regex_reason(candidate.command_words_text, rules)
+        or command_policy.regex_reason(item.command_arguments_text, rules)
+        or command_policy.regex_reason(candidate.command_arguments_text, rules)
         or command_policy.argument_reason(candidate.arguments, policy.rules)
     )
     reason = command_policy.prefix_reason(candidate.arguments, policy.prefixes, "deny") or matched

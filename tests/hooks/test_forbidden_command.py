@@ -424,3 +424,30 @@ def test_a_configuration_failure_is_recorded_without_the_command(
     blocked.assert_called_once_with(
         guard.audit_log.Refusal("Bash", "guard_forbidden_commands.sh", "s3", payload=payload, detail=verdict.detail)
     )
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "git 'add' .",
+        'git add "."',
+        "git add '-A'",
+        "git 'commit' -n -m x",
+        "python -m 'pip' install x",
+    ],
+)
+def test_quoted_arguments_do_not_hide_forbidden_patterns(command: str) -> None:
+    assert guard.decide("forbidden", {"tool_input": {"command": command}}).decision == "deny"
+
+
+@pytest.mark.parametrize("wrapper", ["stdbuf -o0", "setsid", "unbuffer", "ionice -c3", "ionice -c3 -n7", "busybox"])
+def test_process_wrappers_do_not_hide_forbidden_programs(wrapper: str) -> None:
+    command = f"{wrapper} gh repo delete x --yes"
+    assert guard.decide("forbidden", {"tool_input": {"command": command}}).decision == "deny"
+
+
+@pytest.mark.parametrize("wrapper", ["stdbuf -o0", "setsid", "unbuffer", "ionice -c3", "busybox"])
+def test_process_wrappers_do_not_hide_governed_programs(wrapper: str) -> None:
+    for program in ("gh api -X DELETE repos/o/r", "curl https://example.com"):
+        command = f"{wrapper} {program}"
+        assert guard.decide("allowed", {"tool_input": {"command": command}}).decision == "ask"

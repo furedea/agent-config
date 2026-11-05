@@ -13,9 +13,8 @@ A bug is a gap between required and actual behavior, so Red applies.
    hypothesis, not a fix; ship the smallest change the evidence justifies.
 3. Write a failing automated reproduction test and watch it fail for the expected reason. Skip it
    only when an automated reproduction cannot be built at all; then record the manual reproduction
-   steps and observed results in the PR. By default the test and the fix share one commit and one
-   PR; commit the failing test first only when the user asks for a red-green stack
-   ([Stacked pull requests](../../git-workflow/references/stacked_prs.md)).
+   steps and observed results in the PR. Commit structure follows
+   [Stacked pull requests](../../git-workflow/references/stacked_prs.md).
 4. Fix, then run the same reproduction: the original reproduction and the test now pass.
 5. Put the failing output (before the fix) and the passing output (after) in the PR body, verbatim.
 

@@ -147,8 +147,9 @@ the current tests.
 Choose evidence by the kind of change. Details are in
 [Change-type evidence](references/change_types.md).
 
-- **Bug fix:** reproduce in the real environment, commit a failing reproduction test before the
-  fix, then show the same reproduction passing. Put both outputs in the PR.
+- **Bug fix:** reproduce in the real environment, write a failing reproduction test, then show the
+  same reproduction passing. Put the failing and passing outputs in the PR. The test and the fix
+  share one commit unless the user asks for a red-green stack (see `git-workflow`).
 - **Refactoring:** pin current behavior with a characterization or golden test before moving
   structure, migrate callers before deleting the old API, and show behavior is unchanged.
 - **Performance:** record a baseline, vet each number with the `measurement-evidence` skill, fix,

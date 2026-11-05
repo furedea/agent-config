@@ -27,7 +27,7 @@ ALLOWED_NODES = frozenset(
     }
 )
 DIRECTORY_CHANGES = frozenset({"cd", "pushd", "popd"})
-SHELLS = frozenset({"bash", "dash", "ksh", "sh", "zsh"})
+SHELLS = frozenset({"ash", "bash", "dash", "hush", "ksh", "sh", "zsh"})
 COMMAND_LOOKUP = frozenset({"-v", "-V"})
 ASSIGNMENT = re.compile(r"[A-Za-z_][A-Za-z0-9_]*=")
 ASSIGNING_WRAPPERS = frozenset({"env", "sudo"})

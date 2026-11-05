@@ -142,6 +142,18 @@ the current tests.
   implementation. This section defines the evaluation questions; the repository or runtime review
   mechanism owns how the review is executed.
 
+## Change-Type Evidence
+
+Choose evidence by the kind of change. Details are in
+[Change-type evidence](references/change_types.md).
+
+- **Bug fix:** reproduce in the real environment, commit a failing reproduction test before the
+  fix, then show the same reproduction passing. Put both outputs in the PR.
+- **Refactoring:** pin current behavior with a characterization or golden test before moving
+  structure, migrate callers before deleting the old API, and show behavior is unchanged.
+- **Performance:** record a baseline, vet each number with the `measurement-evidence` skill, fix,
+  then re-measure under the same conditions. Put before and after numbers in the PR.
+
 ## Mutation Testing
 
 Mutation testing checks whether the tests catch plausible faults: a tool changes the code

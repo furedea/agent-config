@@ -15,7 +15,7 @@ latest npm release (0.7.0) lags the repository (0.7.1), and that a model call se
 TypeSafe.
 
 Evidence: the measurement and the maintenance comparison are in
-[issue #75](https://github.com/furedea/agent-config/issues/75) and `docs/spikes/jev/`. On seven rules
+[the comparison comment on issue #75](https://github.com/furedea/agent-config/issues/75#issuecomment-6687916874). On seven rules
 and 47 Python functions (42 labelled, 5 value-object methods counted as conforming) with the same model
 (`jev-latest`), both tools reached recall 0.90 within 0.13 s per judgement as whole-process wall time;
 `jev-lint` had precision 1.00 and `jevlint` 0.90, exactly at the draft limit after two false positives

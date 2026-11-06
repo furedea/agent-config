@@ -1,0 +1,114 @@
+{
+  "findings": [
+    {
+      "rule": "anonymous-argument-bundle",
+      "severity": "warning",
+      "messageId": "unsure",
+      "file": "/Users/kaito/.herdr/worktrees/agent-config/spike-compare-jev-backends/docs/spikes/jev/examples/anonymous_argument_bundle.py",
+      "line": 32,
+      "endLine": 34,
+      "value": 2.38,
+      "confidence": 0.37,
+      "explanation": null,
+      "cutoff": 2,
+      "margin": 1.19,
+      "kind": "score",
+      "level": "arguable",
+      "arm": "located",
+      "passes": null,
+      "message": "Arguments are grouped into an anonymous dict, tuple or list that is not a named domain type.",
+      "commit": null,
+      "change": null,
+      "cut": null,
+      "violates": null
+    },
+    {
+      "rule": "anonymous-argument-bundle",
+      "severity": "warning",
+      "messageId": "unsure",
+      "file": "/Users/kaito/.herdr/worktrees/agent-config/spike-compare-jev-backends/docs/spikes/jev/examples/anonymous_argument_bundle.py",
+      "line": 28,
+      "endLine": 29,
+      "value": 2.2,
+      "confidence": 0.21,
+      "explanation": null,
+      "cutoff": 2,
+      "margin": 1.1,
+      "kind": "score",
+      "level": "arguable",
+      "arm": "located",
+      "passes": null,
+      "message": "Arguments are grouped into an anonymous dict, tuple or list that is not a named domain type.",
+      "commit": null,
+      "change": null,
+      "cut": null,
+      "violates": null
+    },
+    {
+      "rule": "anonymous-argument-bundle",
+      "severity": "warning",
+      "messageId": "unsure",
+      "file": "/Users/kaito/.herdr/worktrees/agent-config/spike-compare-jev-backends/docs/spikes/jev/examples/anonymous_argument_bundle.py",
+      "line": 37,
+      "endLine": 38,
+      "value": 2.13,
+      "confidence": 0.15,
+      "explanation": null,
+      "cutoff": 2,
+      "margin": 1.065,
+      "kind": "score",
+      "level": "arguable",
+      "arm": "located",
+      "passes": null,
+      "message": "Arguments are grouped into an anonymous dict, tuple or list that is not a named domain type.",
+      "commit": null,
+      "change": null,
+      "cut": null,
+      "violates": null
+    }
+  ],
+  "review": [],
+  "stats": {
+    "subjects": 6,
+    "reported": 3,
+    "missing": 0,
+    "unsure": 3,
+    "review": 0,
+    "byRule": {
+      "anonymous-argument-bundle": 3
+    },
+    "byFile": {
+      "/Users/kaito/.herdr/worktrees/agent-config/spike-compare-jev-backends/docs/spikes/jev/examples/anonymous_argument_bundle.py": {
+        "findings": 3,
+        "subjects": 6
+      }
+    }
+  },
+  "degraded": [],
+  "silentRules": [],
+  "idleLanguages": [],
+  "ignored": {
+    "subjects": 0,
+    "files": [],
+    "unknownRules": []
+  },
+  "unpaired": {
+    "subjects": 0,
+    "files": []
+  },
+  "retry": 1,
+  "spent": {
+    "calls": 1,
+    "inputTokens": 2412,
+    "outputTokens": 106,
+    "ms": 254,
+    "retried": 0,
+    "rateLimited": 0,
+    "tokensPerSecond": 200000,
+    "splits": 0,
+    "usd": 0.000101304,
+    "wallMs": 254
+  },
+  "errors": [],
+  "elapsedMs": 269
+}

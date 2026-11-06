@@ -1,0 +1,87 @@
+{
+  "scannedFiles": 1,
+  "codeUnits": 11,
+  "evaluations": 9,
+  "cache": {
+    "hits": 0,
+    "misses": 9,
+    "writes": 9
+  },
+  "findings": [
+    {
+      "ruleId": "primitive-for-invariant",
+      "description": "A raw primitive carries a value with validation rules or behavior that belongs to a value object.",
+      "severity": "error",
+      "status": "fail",
+      "path": "primitive_for_invariant.py",
+      "language": "python",
+      "kind": "function",
+      "name": "__post_init__",
+      "startLine": 8,
+      "endLine": 10,
+      "startColumn": 4,
+      "endColumn": 41,
+      "snippet": "def __post_init__(self):\n        if \"@\" not in self.value:\n            raise ValueError(\"bad email\")"
+    },
+    {
+      "ruleId": "primitive-for-invariant",
+      "description": "A raw primitive carries a value with validation rules or behavior that belongs to a value object.",
+      "severity": "error",
+      "status": "fail",
+      "path": "primitive_for_invariant.py",
+      "language": "python",
+      "kind": "function",
+      "name": "domain",
+      "startLine": 12,
+      "endLine": 13,
+      "startColumn": 4,
+      "endColumn": 39,
+      "snippet": "def domain(self):\n        return self.value.split(\"@\")[1]"
+    },
+    {
+      "ruleId": "primitive-for-invariant",
+      "description": "A raw primitive carries a value with validation rules or behavior that belongs to a value object.",
+      "severity": "error",
+      "status": "fail",
+      "path": "primitive_for_invariant.py",
+      "language": "python",
+      "kind": "function",
+      "name": "email_domain",
+      "startLine": 37,
+      "endLine": 40,
+      "startColumn": 0,
+      "endColumn": 30,
+      "snippet": "def email_domain(email: str):\n    if \"@\" not in email:\n        raise ValueError(\"bad email\")\n    return email.split(\"@\")[1]"
+    },
+    {
+      "ruleId": "primitive-for-invariant",
+      "description": "A raw primitive carries a value with validation rules or behavior that belongs to a value object.",
+      "severity": "error",
+      "status": "fail",
+      "path": "primitive_for_invariant.py",
+      "language": "python",
+      "kind": "function",
+      "name": "apply_percentage_off",
+      "startLine": 43,
+      "endLine": 46,
+      "startColumn": 0,
+      "endColumn": 38,
+      "snippet": "def apply_percentage_off(price: float, percent: float):\n    if not 0 \u003c= percent \u003c= 100:\n        raise ValueError(\"out of range\")\n    return price * (1 - percent / 100)"
+    },
+    {
+      "ruleId": "primitive-for-invariant",
+      "description": "A raw primitive carries a value with validation rules or behavior that belongs to a value object.",
+      "severity": "error",
+      "status": "fail",
+      "path": "primitive_for_invariant.py",
+      "language": "python",
+      "kind": "function",
+      "name": "normalize_phone",
+      "startLine": 49,
+      "endLine": 53,
+      "startColumn": 0,
+      "endColumn": 55,
+      "snippet": "def normalize_phone(phone: str):\n    digits = \"\".join(c for c in phone if c.isdigit())\n    if len(digits) != 10:\n        raise ValueError(\"bad phone\")\n    return f\"({digits[:3]}) {digits[3:6]}-{digits[6:]}\""
+    }
+  ]
+}

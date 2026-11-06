@@ -89,6 +89,7 @@ audit = [
 target-version = "py315"
 src = ["agents", "tests"]
 line-length = 119
+extend-exclude = ["docs/spikes/jev"]
 
 [tool.ruff.format]
 quote-style = "double"

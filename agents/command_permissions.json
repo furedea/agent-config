@@ -67,6 +67,14 @@
       "decision": "allow",
       "prefix": [
         "cargo",
+        "mutants"
+      ],
+      "justification": "Allow mutation testing that tsdd asks for; it runs on a copy of the tree."
+    },
+    {
+      "decision": "allow",
+      "prefix": [
+        "cargo",
         "test"
       ],
       "justification": "Allow local verification needed for the requested work; reuse successful hook results."
@@ -1116,6 +1124,16 @@
       "prefix": [
         "pnpm",
         "exec",
+        "stryker",
+        "run"
+      ],
+      "justification": "Allow mutation testing that tsdd asks for, like the test runner it wraps."
+    },
+    {
+      "decision": "allow",
+      "prefix": [
+        "pnpm",
+        "exec",
         "tsc"
       ],
       "justification": "Allow local verification needed for the requested work; reuse successful hook results."
@@ -1304,6 +1322,16 @@
         "bats"
       ],
       "justification": "Allow local verification needed for the requested work; reuse successful hook results."
+    },
+    {
+      "decision": "allow",
+      "prefix": [
+        "uv",
+        "run",
+        "--frozen",
+        "mutmut"
+      ],
+      "justification": "Allow mutation testing that tsdd asks for; --frozen leaves the lock file alone."
     },
     {
       "decision": "allow",

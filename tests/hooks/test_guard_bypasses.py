@@ -268,3 +268,56 @@ def test_ask_prefixes_apply_behind_the_time_keyword_and_negation(command: str) -
 )
 def test_unquoted_option_values_are_not_read_as_flags(command: str) -> None:
     assert verdict("forbidden", command) == "allow"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        f"script -q /dev/null sh -c '{DELETE}' -c 'echo ok'",
+        f"script -c 'echo ok' --command '{DELETE}' /dev/null",
+        f"script --command '{DELETE}' -c 'echo ok' /dev/null",
+    ],
+)
+def test_every_command_script_sees_inspection_not_only_the_last(command: str) -> None:
+    assert verdict("forbidden", command) == "deny"
+
+
+@pytest.mark.parametrize("shell", ["ksh93", "bash-5.2", "bash5", "dash0", "/usr/bin/zsh-5.9"])
+def test_versioned_shells_are_inspected_like_their_base_shell(shell: str) -> None:
+    assert verdict("forbidden", f"{shell} -c 'git add .'") == "deny"
+
+
+@pytest.mark.parametrize("command", ["lolsh2 -c 'echo hi'", "fish3 -c 'git add .'"])
+def test_versioned_unknown_shells_ask(command: str) -> None:
+    assert verdict("forbidden", command) == "ask"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "time echo ok | docker run alpine",
+        "time { echo ok; docker run alpine; }",
+        "! echo ok | docker run alpine",
+        "time -p echo ok | gh pr merge 76",
+    ],
+)
+def test_ask_prefixes_apply_inside_a_timed_or_negated_pipeline(command: str) -> None:
+    assert verdict("allowed", command) == "ask"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "git commit -nmfix-77",
+        "git commit -nm'fix: 77'",
+        'git commit -nm"fix: 77 now"',
+        "git commit -anm77",
+    ],
+)
+def test_no_verify_bundled_with_an_attached_message_is_denied(command: str) -> None:
+    assert verdict("forbidden", command) == "deny"
+
+
+@pytest.mark.parametrize("command", ["git commit -m'fix -n: x'", 'git commit -m"fix --no-verify: x"'])
+def test_an_attached_message_is_not_read_as_flags(command: str) -> None:
+    assert verdict("forbidden", command) == "allow"

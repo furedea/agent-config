@@ -49,6 +49,7 @@ SHELLS = frozenset(
 # script as bash would misread it, so a -c (or --command) option asks instead.
 FOREIGN_SHELLS = frozenset({"csh", "elvish", "es", "fish", "nu", "rc", "tcsh"})
 SHELL_LOOKALIKE = re.compile(r"[a-z0-9_.-]*sh")
+VERSION_SUFFIX = re.compile(r"[0-9._-]+$")
 
 
 @dataclass(frozen=True, slots=True)
@@ -94,7 +95,7 @@ class Command:
         only through eval or a shell -c wrapper, whose script parse judges as separate commands.
         """
         return " ".join(
-            RUN_TIME_PLACEHOLDER if re.search(r"\s", argument) else word
+            prose_placeholder(word) if re.search(r"\s", argument) else word
             for word, argument in zip(self.words, self.arguments, strict=True)
         )
 
@@ -102,7 +103,7 @@ class Command:
     def command_arguments_text(self) -> str:
         """The command's decoded arguments, quotes removed, with each argument containing whitespace as a placeholder."""
         return " ".join(
-            RUN_TIME_PLACEHOLDER if re.search(r"\s", argument) else argument for argument in self.arguments
+            prose_placeholder(argument) if re.search(r"\s", argument) else argument for argument in self.arguments
         )
 
     @property
@@ -145,6 +146,12 @@ class Command:
         )
 
 
+def prose_placeholder(argument: str) -> str:
+    """Stand for an argument holding whitespace; an option keeps its first word, as in `-nm"fix: x"`."""
+    first = argument.split(maxsplit=1)[0] if argument.startswith("-") and argument.split() else ""
+    return f"{first} {RUN_TIME_PLACEHOLDER}" if first else RUN_TIME_PLACEHOLDER
+
+
 def command_preview(source: str) -> str:
     """Bound guard diagnostics without repeating inline script bodies."""
     lines = source.splitlines()
@@ -170,7 +177,7 @@ def parse(source: str, depth: int = 0, directories: tuple[Path | None, ...] = ()
     owners = {id(node["Cmd"]): node for node in records if isinstance(node.get("Cmd"), dict)}
     if any(node.get("Type") not in ALLOWED_NODES for node in records):
         raise UnsupportedSyntax("dynamic or unsupported shell syntax requires explicit review", "expansion")
-    timed = {id(node["Stmt"].get("Cmd")) for node in records if node.get("Type") == "TimeClause" and node.get("Stmt")}
+    hidden_calls = hidden_from_provider(records)
     data = source.encode()
     sources = shell_input.InputSources.of(records, data)
     commands: list[Command] = []
@@ -178,23 +185,24 @@ def parse(source: str, depth: int = 0, directories: tuple[Path | None, ...] = ()
         if node.get("Type") != "CallExpr" or not node.get("Args"):
             continue
         owner = owners.get(id(node), node)
-        hidden = id(node) in timed or bool(owner.get("Negated"))
-        command = replace(literal_command(node, owner, data), wrapper_depth=depth + hidden)
+        command = replace(literal_command(node, owner, data), wrapper_depth=depth + (id(node) in hidden_calls))
         layers = [command, *unwrapped(command)]
         commands += layers
         for layer in layers:
             directories = reached_directories(directories, layer)
         innermost = layers[-1]
-        if script := shell_script(innermost):
-            scripts = [script]
-        elif Path(innermost.arguments[0]).name in SHELLS:
-            scripts = sources.scripts(owner, directories)
-        else:
-            scripts = []
-        commands += [
-            nested for script in scripts for nested in parse(script, innermost.wrapper_depth + 1, directories)
-        ]
+        scripts = [(script, layer.wrapper_depth + 1) for layer in layers if (script := shell_script(layer))]
+        if not scripts and shell_name(Path(innermost.arguments[0]).name) in SHELLS:
+            scripts = [(script, innermost.wrapper_depth + 1) for script in sources.scripts(owner, directories)]
+        commands += [nested for script, nested_depth in scripts for nested in parse(script, nested_depth, directories)]
     return tuple(commands)
+
+
+def hidden_from_provider(records: tuple[dict, ...]) -> set[int]:
+    """The calls under a time keyword or a negation, which the provider's permission rules do not look through."""
+    covered = [node["Stmt"] for node in records if node.get("Type") == "TimeClause" and node.get("Stmt")]
+    covered += [node for node in records if node.get("Negated")]
+    return {id(call) for node in covered for call in nodes(node) if call.get("Type") == "CallExpr"}
 
 
 def reached_directories(directories: tuple[Path | None, ...], command: Command) -> tuple[Path | None, ...]:
@@ -331,8 +339,9 @@ def shell_script(command: Command) -> str:
         return " ".join(arguments[1:])
     if executable in WRAPPERS:
         return wrapper_script(command, executable)
-    foreign = executable in FOREIGN_SHELLS or (executable not in SHELLS and SHELL_LOOKALIKE.fullmatch(executable))
-    if executable not in SHELLS and not foreign:
+    shell = shell_name(executable)
+    foreign = shell in FOREIGN_SHELLS or (shell not in SHELLS and SHELL_LOOKALIKE.fullmatch(shell) is not None)
+    if shell not in SHELLS and not foreign:
         return ""
     option = next(
         (
@@ -356,6 +365,11 @@ def shell_script(command: Command) -> str:
     return arguments[option + 1]
 
 
+def shell_name(executable: str) -> str:
+    """The shell a program name stands for, without a version suffix such as ksh93 or bash-5.2."""
+    return VERSION_SUFFIX.sub("", executable) or executable
+
+
 def wrapper_script(command: Command, name: str) -> str:
     """The script a wrapper such as script -c, flock -c, or watch hands to a shell, or an empty string."""
     arguments = command.arguments
@@ -366,6 +380,6 @@ def wrapper_script(command: Command, name: str) -> str:
         raise UnsupportedSyntax(f"a {name} command string built at run time requires explicit review", "wrapper")
     if name == "watch":
         return " ".join(arguments[scan.index :])
-    if scan.script is None:
+    if None in scan.scripts:
         raise UnsupportedSyntax(f"{name} has no literal command", "wrapper")
-    return scan.script
+    return "\n".join(script for script in scan.scripts if script is not None)

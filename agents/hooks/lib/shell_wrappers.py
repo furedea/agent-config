@@ -85,10 +85,12 @@ def wrapped_index(arguments: tuple[str, ...]) -> int | None:
     if name not in WRAPPERS:
         return None
     scan = OptionScan(name, arguments).run()
-    if scan.runs_script:
+    if scan.runs_script and name != "script":
         return None
     index = scan.index + LEADING_OPERANDS.get(name, 0)
-    return index if index < len(arguments) else None
+    if index >= len(arguments) or (name == "script" and arguments[index].startswith("-")):
+        return None
+    return index
 
 
 @dataclass(slots=True)
@@ -102,8 +104,7 @@ class OptionScan:
     arguments: tuple[str, ...]
     index: int = 1
     seen: dict[str, str | None] = field(default_factory=dict)
-    script: str | None = None
-    has_script: bool = False
+    scripts: list[str | None] = field(default_factory=list)
 
     @property
     def flags(self) -> frozenset[str]:
@@ -118,7 +119,7 @@ class OptionScan:
         """Whether the wrapper hands its command to a shell as a script, which shell_script reads."""
         if self.name == "watch":
             return not any(option in self.seen for option in EXEC_OPTIONS)
-        return self.has_script
+        return bool(self.scripts)
 
     def run(self) -> Self:
         while self.index < len(self.arguments) and self.take_option():
@@ -177,10 +178,10 @@ class OptionScan:
         return 2
 
     def record(self, option: str, value: str | None) -> None:
-        """Note an option and its value; of several script options the last one is what the program runs."""
+        """Note an option and its value; every script option counts, since which one runs is the program's choice."""
         self.seen[option] = value
         if option in SCRIPT_OPTIONS.get(self.name, ()):
-            self.script, self.has_script = value, True
+            self.scripts.append(value)
 
     def take_trailing_script(self) -> None:
         """Record script options written after the leading operand: flock reads one right after its lock

@@ -134,18 +134,13 @@ def jev_lint_outcome(case: Case, work: Path, raw_dir: Path, log: Log, plan: bool
         data = json.loads(done.stdout)
     except json.JSONDecodeError:
         return Outcome({}, wall, None, None, f"unparsable output, exit {done.returncode}")
+    errors = data.get("errors") or []
+    error = json.dumps(errors)[:300] if errors else None
     if plan:
-        return Outcome({}, wall, data.get("tokens"), data.get("usd"), None)
+        return Outcome({}, wall, data.get("tokens"), data.get("usd"), error)
     spent = data.get("spent") or {}
     found = [(row["line"], row.get("confidence")) for row in data.get("findings", [])]
-    errors = data.get("errors") or []
-    return Outcome(
-        match_findings(case, found),
-        wall,
-        spent.get("inputTokens"),
-        spent.get("usd"),
-        json.dumps(errors)[:300] if errors else None,
-    )
+    return Outcome(match_findings(case, found), wall, spent.get("inputTokens"), spent.get("usd"), error)
 
 
 def jevlint_outcome(case: Case, work: Path, raw_dir: Path, log: Log, plan: bool) -> Outcome:

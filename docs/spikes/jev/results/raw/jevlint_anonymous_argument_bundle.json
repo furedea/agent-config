@@ -1,0 +1,42 @@
+{
+  "scannedFiles": 1,
+  "codeUnits": 8,
+  "evaluations": 6,
+  "cache": {
+    "hits": 0,
+    "misses": 6,
+    "writes": 6
+  },
+  "findings": [
+    {
+      "ruleId": "anonymous-argument-bundle",
+      "description": "Arguments are grouped into an anonymous dict, tuple or list that is not a named domain type.",
+      "severity": "error",
+      "status": "fail",
+      "path": "anonymous_argument_bundle.py",
+      "language": "python",
+      "kind": "function",
+      "name": "ship_order",
+      "startLine": 32,
+      "endLine": 34,
+      "startColumn": 0,
+      "endColumn": 41,
+      "snippet": "def ship_order(params):\n    street, city, zip_code = params\n    return f\"{street}, {city} {zip_code}\""
+    },
+    {
+      "ruleId": "anonymous-argument-bundle",
+      "description": "Arguments are grouped into an anonymous dict, tuple or list that is not a named domain type.",
+      "severity": "error",
+      "status": "fail",
+      "path": "anonymous_argument_bundle.py",
+      "language": "python",
+      "kind": "function",
+      "name": "send_report",
+      "startLine": 37,
+      "endLine": 38,
+      "startColumn": 0,
+      "endColumn": 50,
+      "snippet": "def send_report(options):\n    return options[0].send(options[1], options[2])"
+    }
+  ]
+}

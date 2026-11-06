@@ -1,0 +1,42 @@
+{
+  "scannedFiles": 1,
+  "codeUnits": 10,
+  "evaluations": 8,
+  "cache": {
+    "hits": 0,
+    "misses": 8,
+    "writes": 8
+  },
+  "findings": [
+    {
+      "ruleId": "revalidates-parsed-input",
+      "description": "This function re-validates a value that its type or caller already guarantees.",
+      "severity": "error",
+      "status": "fail",
+      "path": "revalidates_parsed_input.py",
+      "language": "python",
+      "kind": "function",
+      "name": "notify",
+      "startLine": 42,
+      "endLine": 45,
+      "startColumn": 0,
+      "endColumn": 44,
+      "snippet": "def notify(email: Email, mailer):\n    if email is None or \"@\" not in email.value:\n        raise ValueError(\"bad email\")\n    return mailer.send(email.value, \"hello\")"
+    },
+    {
+      "ruleId": "revalidates-parsed-input",
+      "description": "This function re-validates a value that its type or caller already guarantees.",
+      "severity": "error",
+      "status": "fail",
+      "path": "revalidates_parsed_input.py",
+      "language": "python",
+      "kind": "function",
+      "name": "listen",
+      "startLine": 48,
+      "endLine": 51,
+      "startColumn": 0,
+      "endColumn": 21,
+      "snippet": "def listen(port: Port):\n    if port.value \u003c= 0 or port.value \u003e 65535:\n        return None\n    return port.value"
+    }
+  ]
+}

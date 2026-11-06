@@ -1,0 +1,57 @@
+{
+  "scannedFiles": 1,
+  "codeUnits": 6,
+  "evaluations": 6,
+  "cache": {
+    "hits": 0,
+    "misses": 6,
+    "writes": 6
+  },
+  "findings": [
+    {
+      "ruleId": "single-purpose-function",
+      "description": "This function does more than one job, or mixes levels of abstraction.",
+      "severity": "error",
+      "status": "fail",
+      "path": "single_purpose_function.py",
+      "language": "python",
+      "kind": "function",
+      "name": "process_order",
+      "startLine": 17,
+      "endLine": 24,
+      "startColumn": 0,
+      "endColumn": 16,
+      "snippet": "def process_order(order, db, mailer, logger):\n    total = 0\n    for item in order.items:\n        total += item.price * item.quantity\n    db.execute(\"INSERT INTO orders VALUES (?, ?)\", (order.id, total))\n    mailer.send(order.email, \"Thanks for your order \" + str(total))\n    logger.write(json.dumps({\"order\": order.id, \"total\": total}))\n    return total"
+    },
+    {
+      "ruleId": "single-purpose-function",
+      "description": "This function does more than one job, or mixes levels of abstraction.",
+      "severity": "error",
+      "status": "fail",
+      "path": "single_purpose_function.py",
+      "language": "python",
+      "kind": "function",
+      "name": "load_and_summarize",
+      "startLine": 27,
+      "endLine": 36,
+      "startColumn": 0,
+      "endColumn": 17,
+      "snippet": "def load_and_summarize(path):\n    with open(path) as handle:\n        raw = handle.read()\n    rows = [line.split(\",\") for line in raw.splitlines()]\n    totals = {}\n    for name, amount in rows:\n        totals[name] = totals.get(name, 0) + int(amount)\n    for name, amount in sorted(totals.items()):\n        print(f\"{name:\u003c20}{amount:\u003e10}\")\n    return totals"
+    },
+    {
+      "ruleId": "single-purpose-function",
+      "description": "This function does more than one job, or mixes levels of abstraction.",
+      "severity": "error",
+      "status": "fail",
+      "path": "single_purpose_function.py",
+      "language": "python",
+      "kind": "function",
+      "name": "register_user",
+      "startLine": 39,
+      "endLine": 45,
+      "startColumn": 0,
+      "endColumn": 51,
+      "snippet": "def register_user(form, db):\n    if not re.match(r\"[^@]+@[^@]+\", form[\"email\"]):\n        raise ValueError(\"bad email\")\n    hashed = form[\"password\"][::-1] + \"salt\"\n    db.execute(\"INSERT INTO users VALUES (?, ?)\", (form[\"email\"], hashed))\n    print(\"registered\", form[\"email\"])\n    return {\"status\": \"ok\", \"email\": form[\"email\"]}"
+    }
+  ]
+}

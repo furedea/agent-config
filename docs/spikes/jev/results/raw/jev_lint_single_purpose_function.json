@@ -1,0 +1,114 @@
+{
+  "findings": [
+    {
+      "rule": "single-purpose-function",
+      "severity": "warning",
+      "messageId": "violation",
+      "file": "/Users/kaito/.herdr/worktrees/agent-config/spike-compare-jev-backends/docs/spikes/jev/examples/single_purpose_function.py",
+      "line": 17,
+      "endLine": 24,
+      "value": 2.88,
+      "confidence": 0.88,
+      "explanation": null,
+      "cutoff": 2,
+      "margin": 1.44,
+      "kind": "score",
+      "level": "violation",
+      "arm": "located",
+      "passes": null,
+      "message": "This function does more than one job, or mixes levels of abstraction.",
+      "commit": null,
+      "change": null,
+      "cut": null,
+      "violates": null
+    },
+    {
+      "rule": "single-purpose-function",
+      "severity": "warning",
+      "messageId": "violation",
+      "file": "/Users/kaito/.herdr/worktrees/agent-config/spike-compare-jev-backends/docs/spikes/jev/examples/single_purpose_function.py",
+      "line": 39,
+      "endLine": 45,
+      "value": 2.74,
+      "confidence": 0.74,
+      "explanation": null,
+      "cutoff": 2,
+      "margin": 1.37,
+      "kind": "score",
+      "level": "violation",
+      "arm": "located",
+      "passes": null,
+      "message": "This function does more than one job, or mixes levels of abstraction.",
+      "commit": null,
+      "change": null,
+      "cut": null,
+      "violates": null
+    },
+    {
+      "rule": "single-purpose-function",
+      "severity": "warning",
+      "messageId": "violation",
+      "file": "/Users/kaito/.herdr/worktrees/agent-config/spike-compare-jev-backends/docs/spikes/jev/examples/single_purpose_function.py",
+      "line": 27,
+      "endLine": 36,
+      "value": 2.72,
+      "confidence": 0.72,
+      "explanation": null,
+      "cutoff": 2,
+      "margin": 1.36,
+      "kind": "score",
+      "level": "violation",
+      "arm": "located",
+      "passes": null,
+      "message": "This function does more than one job, or mixes levels of abstraction.",
+      "commit": null,
+      "change": null,
+      "cut": null,
+      "violates": null
+    }
+  ],
+  "review": [],
+  "stats": {
+    "subjects": 6,
+    "reported": 3,
+    "missing": 0,
+    "unsure": 0,
+    "review": 0,
+    "byRule": {
+      "single-purpose-function": 3
+    },
+    "byFile": {
+      "/Users/kaito/.herdr/worktrees/agent-config/spike-compare-jev-backends/docs/spikes/jev/examples/single_purpose_function.py": {
+        "findings": 3,
+        "subjects": 6
+      }
+    }
+  },
+  "degraded": [],
+  "silentRules": [],
+  "idleLanguages": [],
+  "ignored": {
+    "subjects": 0,
+    "files": [],
+    "unknownRules": []
+  },
+  "unpaired": {
+    "subjects": 0,
+    "files": []
+  },
+  "retry": 1,
+  "spent": {
+    "calls": 1,
+    "inputTokens": 2716,
+    "outputTokens": 106,
+    "ms": 392,
+    "retried": 0,
+    "rateLimited": 0,
+    "tokensPerSecond": 200000,
+    "splits": 0,
+    "usd": 0.00011407200000000002,
+    "wallMs": 393
+  },
+  "errors": [],
+  "elapsedMs": 794
+}

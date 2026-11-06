@@ -1,0 +1,114 @@
+{
+  "findings": [
+    {
+      "rule": "comment-restates-code",
+      "severity": "warning",
+      "messageId": "violation",
+      "file": "/Users/kaito/.herdr/worktrees/agent-config/spike-compare-jev-backends/docs/spikes/jev/examples/comment_restates_code.py",
+      "line": 16,
+      "endLine": 22,
+      "value": 2.56,
+      "confidence": 0.56,
+      "explanation": null,
+      "cutoff": 2,
+      "margin": 1.28,
+      "kind": "score",
+      "level": "violation",
+      "arm": "located",
+      "passes": null,
+      "message": "A comment in this function restates what the next line does instead of a non-obvious constraint or why.",
+      "commit": null,
+      "change": null,
+      "cut": null,
+      "violates": null
+    },
+    {
+      "rule": "comment-restates-code",
+      "severity": "warning",
+      "messageId": "unsure",
+      "file": "/Users/kaito/.herdr/worktrees/agent-config/spike-compare-jev-backends/docs/spikes/jev/examples/comment_restates_code.py",
+      "line": 25,
+      "endLine": 32,
+      "value": 2.42,
+      "confidence": 0.43,
+      "explanation": null,
+      "cutoff": 2,
+      "margin": 1.21,
+      "kind": "score",
+      "level": "arguable",
+      "arm": "located",
+      "passes": null,
+      "message": "A comment in this function restates what the next line does instead of a non-obvious constraint or why.",
+      "commit": null,
+      "change": null,
+      "cut": null,
+      "violates": null
+    },
+    {
+      "rule": "comment-restates-code",
+      "severity": "warning",
+      "messageId": "unsure",
+      "file": "/Users/kaito/.herdr/worktrees/agent-config/spike-compare-jev-backends/docs/spikes/jev/examples/comment_restates_code.py",
+      "line": 35,
+      "endLine": 37,
+      "value": 2.24,
+      "confidence": 0.24,
+      "explanation": null,
+      "cutoff": 2,
+      "margin": 1.12,
+      "kind": "score",
+      "level": "arguable",
+      "arm": "located",
+      "passes": null,
+      "message": "A comment in this function restates what the next line does instead of a non-obvious constraint or why.",
+      "commit": null,
+      "change": null,
+      "cut": null,
+      "violates": null
+    }
+  ],
+  "review": [],
+  "stats": {
+    "subjects": 6,
+    "reported": 3,
+    "missing": 0,
+    "unsure": 2,
+    "review": 0,
+    "byRule": {
+      "comment-restates-code": 3
+    },
+    "byFile": {
+      "/Users/kaito/.herdr/worktrees/agent-config/spike-compare-jev-backends/docs/spikes/jev/examples/comment_restates_code.py": {
+        "findings": 3,
+        "subjects": 6
+      }
+    }
+  },
+  "degraded": [],
+  "silentRules": [],
+  "idleLanguages": [],
+  "ignored": {
+    "subjects": 0,
+    "files": [],
+    "unknownRules": []
+  },
+  "unpaired": {
+    "subjects": 0,
+    "files": []
+  },
+  "retry": 1,
+  "spent": {
+    "calls": 1,
+    "inputTokens": 2575,
+    "outputTokens": 106,
+    "ms": 318,
+    "retried": 0,
+    "rateLimited": 0,
+    "tokensPerSecond": 200000,
+    "splits": 0,
+    "usd": 0.00010815000000000001,
+    "wallMs": 320
+  },
+  "errors": [],
+  "elapsedMs": 334
+}

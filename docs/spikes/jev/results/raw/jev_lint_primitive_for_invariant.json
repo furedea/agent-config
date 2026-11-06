@@ -4,7 +4,7 @@
       "rule": "primitive-for-invariant",
       "severity": "warning",
       "messageId": "unsure",
-      "file": "/Users/kaito/.herdr/worktrees/agent-config/spike-compare-jev-backends/docs/spikes/jev/examples/primitive_for_invariant.py",
+      "file": "<repo>/docs/spikes/jev/examples/primitive_for_invariant.py",
       "line": 37,
       "endLine": 40,
       "value": 2.49,
@@ -26,7 +26,7 @@
       "rule": "primitive-for-invariant",
       "severity": "warning",
       "messageId": "unsure",
-      "file": "/Users/kaito/.herdr/worktrees/agent-config/spike-compare-jev-backends/docs/spikes/jev/examples/primitive_for_invariant.py",
+      "file": "<repo>/docs/spikes/jev/examples/primitive_for_invariant.py",
       "line": 43,
       "endLine": 46,
       "value": 2.45,
@@ -48,7 +48,7 @@
       "rule": "primitive-for-invariant",
       "severity": "warning",
       "messageId": "unsure",
-      "file": "/Users/kaito/.herdr/worktrees/agent-config/spike-compare-jev-backends/docs/spikes/jev/examples/primitive_for_invariant.py",
+      "file": "<repo>/docs/spikes/jev/examples/primitive_for_invariant.py",
       "line": 49,
       "endLine": 53,
       "value": 2.06,
@@ -78,7 +78,7 @@
       "primitive-for-invariant": 3
     },
     "byFile": {
-      "/Users/kaito/.herdr/worktrees/agent-config/spike-compare-jev-backends/docs/spikes/jev/examples/primitive_for_invariant.py": {
+      "<repo>/docs/spikes/jev/examples/primitive_for_invariant.py": {
         "findings": 3,
         "subjects": 9
       }

@@ -4,7 +4,7 @@
       "rule": "revalidates-parsed-input",
       "severity": "warning",
       "messageId": "unsure",
-      "file": "/Users/kaito/.herdr/worktrees/agent-config/spike-compare-jev-backends/docs/spikes/jev/examples/revalidates_parsed_input.py",
+      "file": "<repo>/docs/spikes/jev/examples/revalidates_parsed_input.py",
       "line": 34,
       "endLine": 39,
       "value": 2.47,
@@ -26,7 +26,7 @@
       "rule": "revalidates-parsed-input",
       "severity": "warning",
       "messageId": "unsure",
-      "file": "/Users/kaito/.herdr/worktrees/agent-config/spike-compare-jev-backends/docs/spikes/jev/examples/revalidates_parsed_input.py",
+      "file": "<repo>/docs/spikes/jev/examples/revalidates_parsed_input.py",
       "line": 42,
       "endLine": 45,
       "value": 2.2,
@@ -48,7 +48,7 @@
       "rule": "revalidates-parsed-input",
       "severity": "warning",
       "messageId": "unsure",
-      "file": "/Users/kaito/.herdr/worktrees/agent-config/spike-compare-jev-backends/docs/spikes/jev/examples/revalidates_parsed_input.py",
+      "file": "<repo>/docs/spikes/jev/examples/revalidates_parsed_input.py",
       "line": 48,
       "endLine": 51,
       "value": 2.07,
@@ -78,7 +78,7 @@
       "revalidates-parsed-input": 3
     },
     "byFile": {
-      "/Users/kaito/.herdr/worktrees/agent-config/spike-compare-jev-backends/docs/spikes/jev/examples/revalidates_parsed_input.py": {
+      "<repo>/docs/spikes/jev/examples/revalidates_parsed_input.py": {
         "findings": 3,
         "subjects": 8
       }

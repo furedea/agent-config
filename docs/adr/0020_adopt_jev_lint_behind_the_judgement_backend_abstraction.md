@@ -21,7 +21,7 @@ and 47 Python functions (42 labelled, 5 value-object methods counted as conformi
 `jev-lint` had precision 1.00 and `jevlint` 0.90, exactly at the draft limit after two false positives
 on value-object methods. Accuracy therefore favours `jev-lint` only slightly: the sample is small,
 author-labelled, and run once, and the tools missed different functions. The criterion "installable
-with Nix" was read as "runs pinned and reproducibly through Nix", because neither tool is in nixpkgs;
+with Nix" was read as "runs through Nix with a pinned tool version and no global install", because neither tool is in nixpkgs (the nixpkgs revision and the transitive npm dependencies of `npx` were not pinned in the spike);
 `jevlint` builds only with the system clang, since the Nix clang cannot link `-lresolv`.
 
 Revisit when the abstraction of #74 needs a second provider (`jevlint` supports OpenRouter and OpenAI

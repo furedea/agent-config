@@ -4,7 +4,7 @@
       "rule": "comment-restates-code",
       "severity": "warning",
       "messageId": "violation",
-      "file": "/Users/kaito/.herdr/worktrees/agent-config/spike-compare-jev-backends/docs/spikes/jev/examples/comment_restates_code.py",
+      "file": "<repo>/docs/spikes/jev/examples/comment_restates_code.py",
       "line": 16,
       "endLine": 22,
       "value": 2.56,
@@ -26,7 +26,7 @@
       "rule": "comment-restates-code",
       "severity": "warning",
       "messageId": "unsure",
-      "file": "/Users/kaito/.herdr/worktrees/agent-config/spike-compare-jev-backends/docs/spikes/jev/examples/comment_restates_code.py",
+      "file": "<repo>/docs/spikes/jev/examples/comment_restates_code.py",
       "line": 25,
       "endLine": 32,
       "value": 2.42,
@@ -48,7 +48,7 @@
       "rule": "comment-restates-code",
       "severity": "warning",
       "messageId": "unsure",
-      "file": "/Users/kaito/.herdr/worktrees/agent-config/spike-compare-jev-backends/docs/spikes/jev/examples/comment_restates_code.py",
+      "file": "<repo>/docs/spikes/jev/examples/comment_restates_code.py",
       "line": 35,
       "endLine": 37,
       "value": 2.24,
@@ -78,7 +78,7 @@
       "comment-restates-code": 3
     },
     "byFile": {
-      "/Users/kaito/.herdr/worktrees/agent-config/spike-compare-jev-backends/docs/spikes/jev/examples/comment_restates_code.py": {
+      "<repo>/docs/spikes/jev/examples/comment_restates_code.py": {
         "findings": 3,
         "subjects": 6
       }

@@ -6,7 +6,8 @@
 #
 # The key is only checked for presence and never printed. Nothing is installed globally: jev-lint
 # runs through `nix shell` + `npx` with a pinned version, jevlint is built into a temporary directory.
-# Results: docs/spikes/jev/results/{jev_lint,jevlint}.jsonl, results/run.log and results/raw/.
+# Results: results/run.log and results/raw/ (committed; score them with analyze_results.py), plus
+# results/{jev_lint,jevlint}.jsonl, a per-judgement view that is regenerated on each run.
 set -euo pipefail
 
 readonly JEVLINT_VERSION="v0.4.0"

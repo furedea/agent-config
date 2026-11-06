@@ -55,11 +55,16 @@ def load_cases() -> list[Case]:
 def build_case(rule_id: str, spec: dict) -> Case:
     source = SPIKE_DIR / "examples" / spec["file"]
     functions = [node for node in ast.walk(ast.parse(source.read_text())) if isinstance(node, ast.FunctionDef)]
-    ranges = {node.name: (node.lineno, node.end_lineno or node.lineno) for node in functions}
-    listed = {name for label in ("conforming", "violating") for name in spec[label]}
-    labelled = [(name, label) for label in ("conforming", "violating") for name in spec[label]]
-    unlisted = [(name, "conforming") for name in ranges if name not in listed]
-    units = tuple(Unit(name, *ranges[name], label) for name, label in labelled + unlisted)
+    violating = set(spec["violating"])
+    units = tuple(
+        Unit(
+            node.name,
+            node.lineno,
+            node.end_lineno or node.lineno,
+            "violating" if node.name in violating else "conforming",
+        )
+        for node in functions
+    )
     return Case(rule_id, spec["ask"], source, units, len(functions))
 
 
@@ -127,7 +132,7 @@ def jev_lint_outcome(case: Case, work: Path, raw_dir: Path, log: Log, plan: bool
     errors = data.get("errors") or []
     return Outcome(
         match_findings(case, found),
-        (data.get("elapsedMs") or spent.get("wallMs") or wall * 1000) / 1000,
+        wall,
         spent.get("inputTokens"),
         spent.get("usd"),
         json.dumps(errors)[:300] if errors else None,
@@ -230,7 +235,7 @@ def main() -> int:
     failures = 0
     for tool in TOOLS:
         rows = run_tool(tool, args, log)
-        print(summarize(tool, rows))
+        print(f"{tool:9} planned judgements={len(rows)} (no model calls)" if args.plan else summarize(tool, rows))
         failures += sum(row["verdict"] == "error" for row in rows)
     return 1 if failures else 0
 

@@ -1,1 +1,56 @@
-[]
+[
+  {
+    "path": "agents/skills/bash-style/SKILL.md",
+    "text": "set -x",
+    "expect": "not-command",
+    "reason": "A shell builtin shown as a debugging idiom for scripts, not run through the Bash tool."
+  },
+  {
+    "path": "agents/skills/bash-style/SKILL.md",
+    "text": "set +x",
+    "expect": "not-command",
+    "reason": "A shell builtin shown as a debugging idiom for scripts, not run through the Bash tool."
+  },
+  {
+    "path": "agents/skills/git-workflow/references/delivery.md",
+    "text": "\"$HOME/.claude/hooks/verification_session.py\" verify \"<session-record>\"",
+    "expect": "needs-approval",
+    "reason": "Verification runs project checks outside the sandbox, and no allow prefix names the hook script."
+  },
+  {
+    "path": "agents/skills/git-workflow/references/delivery.md",
+    "text": "\"$HOME/.claude/hooks/verification_session.py\" status \"<session-record>\"",
+    "expect": "needs-approval",
+    "reason": "No allow prefix names the hook script, whose path starts with a variable."
+  },
+  {
+    "path": "agents/skills/project-setup/references/dev_environment.md",
+    "text": "direnv exec . uv run python -c 'import os, sys; print(sys.executable); print(os.path.realpath(sys.executable)); print(sys.base_prefix)'",
+    "expect": "needs-approval",
+    "reason": "direnv exec runs any program inside the project environment, so it is never allowed as a prefix."
+  },
+  {
+    "path": "agents/skills/go-style/references/tooling.md",
+    "text": "Do not use `go install <module>@latest`",
+    "expect": "not-command",
+    "reason": "Names the prohibited shortcut in order to forbid it."
+  },
+  {
+    "path": "agents/skills/python-style/references/tooling.md",
+    "text": "Prohibited: `uv pip install`, `uv add --dev`, `@latest`",
+    "expect": "not-command",
+    "reason": "Names the prohibited commands in order to forbid them."
+  },
+  {
+    "path": "agents/skills/rust-style/references/tooling.md",
+    "text": "Do not use `@latest`-style version shortcuts",
+    "expect": "not-command",
+    "reason": "Names the prohibited shortcut in order to forbid it."
+  },
+  {
+    "path": "agents/skills/typescript-style/references/tooling.md",
+    "text": "Do not use `@latest`-style version shortcuts",
+    "expect": "not-command",
+    "reason": "Names the prohibited shortcut in order to forbid it."
+  }
+]

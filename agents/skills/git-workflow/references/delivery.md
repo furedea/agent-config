@@ -72,10 +72,14 @@ mechanism is in the
 1. After pushing, wait for `all-green`.
 2. Read the findings: Claude's inline comments and summary comment, and Codex's inline comments and
    Codex Review Summary (`codex-review-state`), with
-   `gh api --paginate repos/<owner>/<repo>/pulls/<n>/comments` and `gh pr view <n> --comments`.
-3. Fix every finding of any severity, then push; the push re-runs both reviews.
-4. Answer a finding refuted with evidence in its thread, and record it in the PR body.
-5. Stop and report after the third re-review that still raises new findings.
+   `gh api repos/<owner>/<repo>/pulls/<n>/comments --paginate` (the path comes right after
+   `gh api`, or the command asks for confirmation) and `gh pr view <n> --comments`.
+3. Fix every finding of any severity, then push; the push re-runs both reviews. Do not defer a
+   finding to the user.
+4. Do not change the work for a finding that repeats on the same grounds, is a matter of taste, or
+   is refuted with evidence. Answer it in its thread and record it in the PR body with the reason.
+5. Stop and report the open findings instead of looping when a P0 or P1 finding repeats, when an
+   area keeps failing, or after the third re-review that still raises new findings.
 
 ## Local Verification Before Delivery
 

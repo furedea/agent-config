@@ -359,11 +359,27 @@ def shell_scripts(command: Command) -> list[str]:
             f"{executable} may run its -c argument as a script this inspection cannot parse; requires explicit review",
             "wrapper",
         )
-    if option + 1 >= len(arguments):
-        raise UnsupportedSyntax("shell wrapper has no literal command", "wrapper")
-    if command.dynamic[option + 1]:
+    script = script_index(arguments, option)
+    if command.dynamic[script]:
         raise UnsupportedSyntax("a shell wrapper running a computed script requires explicit review", "wrapper")
-    return [arguments[option + 1]]
+    return [arguments[script]]
+
+
+# Shell options that take the next word as a value, which would hide where the -c script starts.
+SHELL_VALUED_OPTIONS = frozenset({"-o", "+o", "-O", "+O", "--rcfile", "--init-file"})
+
+
+def script_index(arguments: tuple[str, ...], option: int) -> int:
+    """Where the script of a shell's -c sits: the first word after it that is not an option, past a `--`."""
+    index = option + 1
+    while index < len(arguments) and arguments[index] != "--" and arguments[index][:1] in "-+":
+        if arguments[index] in SHELL_VALUED_OPTIONS:
+            raise UnsupportedSyntax("a shell option before the -c script requires explicit review", "wrapper")
+        index += 1
+    index += index < len(arguments) and arguments[index] == "--"
+    if index >= len(arguments):
+        raise UnsupportedSyntax("shell wrapper has no literal command", "wrapper")
+    return index
 
 
 def shell_name(executable: str) -> str:

@@ -456,3 +456,31 @@ def test_a_foreign_shell_command_option_still_asks(command: str) -> None:
 
 def test_ssh_is_denied_by_its_prefix_not_asked_as_a_foreign_shell() -> None:
     assert verdict("forbidden", "ssh -oConnectTimeout=5 host") == "deny"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        f"bash -c -- '{DELETE}'",
+        f"sh -c -e '{DELETE}'",
+        f"bash -c -e -x -- '{DELETE}'",
+        f"zsh -c +e '{DELETE}'",
+        f"nohup bash -c -- '{DELETE}'",
+    ],
+)
+def test_a_shell_script_after_options_that_follow_c_is_read(command: str) -> None:
+    assert verdict("forbidden", command) == "deny"
+
+
+@pytest.mark.parametrize("command", ["bash -c -- 'gh pr merge 76 --merge'", "sh -c -e 'gh pr merge 76 --merge'"])
+def test_an_ask_prefix_after_options_that_follow_c_asks(command: str) -> None:
+    assert verdict("allowed", command) == "ask"
+
+
+@pytest.mark.parametrize("command", [f"bash -c -o errexit '{DELETE}'", "bash -c -e", "bash -c --"])
+def test_a_shell_option_with_a_value_or_no_script_after_c_asks(command: str) -> None:
+    assert verdict("forbidden", command) == "ask"
+
+
+def test_a_harmless_script_after_c_options_is_judged_as_without_them() -> None:
+    assert verdict("forbidden", "bash -c -e 'echo hi'") == verdict("forbidden", "bash -c 'echo hi'")

@@ -228,8 +228,8 @@ def main() -> int:
     for tool in TOOLS:
         rows = run_tool(tool, args, log)
         print(summarize(tool, rows))
-        failures += all(row["verdict"] == "error" for row in rows)
-    return 1 if failures == len(TOOLS) else 0
+        failures += sum(row["verdict"] == "error" for row in rows)
+    return 1 if failures else 0
 
 
 if __name__ == "__main__":

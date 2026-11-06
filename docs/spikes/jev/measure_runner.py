@@ -1,7 +1,7 @@
 """Run jev-lint and jevlint on the spike rules and write one JSONL row per judgement.
 
-Called by measure.sh. The JSONL rows cover the labelled functions only; the reported precision and
-recall come from analyze_results.py, which scores every function in the examples from results/raw.
+Called by measure.sh. The JSONL rows cover every function in the examples (those not listed in
+labels.json count as conforming), matching analyze_results.py, which rescores from results/raw.
 The API key is read by the tools from the environment; this module never
 reads, prints or stores it, and redacts it from anything it logs.
 """
@@ -56,7 +56,10 @@ def build_case(rule_id: str, spec: dict) -> Case:
     source = SPIKE_DIR / "examples" / spec["file"]
     functions = [node for node in ast.walk(ast.parse(source.read_text())) if isinstance(node, ast.FunctionDef)]
     ranges = {node.name: (node.lineno, node.end_lineno or node.lineno) for node in functions}
-    units = tuple(Unit(name, *ranges[name], label) for label in ("conforming", "violating") for name in spec[label])
+    listed = {name for label in ("conforming", "violating") for name in spec[label]}
+    labelled = [(name, label) for label in ("conforming", "violating") for name in spec[label]]
+    unlisted = [(name, "conforming") for name in ranges if name not in listed]
+    units = tuple(Unit(name, *ranges[name], label) for name, label in labelled + unlisted)
     return Case(rule_id, spec["ask"], source, units, len(functions))
 
 
@@ -144,7 +147,7 @@ def jevlint_outcome(case: Case, work: Path, raw_dir: Path, log: Log, plan: bool)
         )
     )
     if plan:
-        return Outcome({}, 0.0, None, None, "jevlint has no dry-run; skipped in --plan")
+        return Outcome({}, 0.0, None, None, None)  # jevlint has no dry-run; nothing to validate in --plan
     command = [str(work / "bin" / "jevlint"), "check", "--format", "json", "--refresh-cache", case.source.name]
     done, wall = run_command(command, project, log)
     (raw_dir / f"jevlint_{case.rule_id.replace('-', '_')}.json").write_text(done.stdout)

@@ -17,8 +17,8 @@ flowchart LR
   A --> L[Parent: open lanes]
   L --> I[Lane: Codex implements]
   I --> V[Lane: verify, commit, PR]
-  V --> RV[Lane: start reviewer]
-  RV -->|findings| I
+  V --> RV[GitHub: claude-review and codex-review]
+  RV -->|findings, lane fixes and pushes| RV
   RV --> R[Lane: LANE-READY]
   R --> W[Parent: check and report]
   W --> M[User merges]
@@ -29,10 +29,10 @@ flowchart LR
 | --------------------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
 | 1. Issue and plan     | Parent        | —                                                                                                                                                                                                                                 | `issue-workflow`                                               |
 | 2. Approve            | User          | —                                                                                                                                                                                                                                 | —                                                              |
-| 3. Open lanes         | Parent        | レーンごとに，Herdr の worktree と medium effort の Sonnet レーンを，brief 付きで                                                                                                                                                 | `git-workflow` (branches), `herdr-delegation`                  |
+| 3. Open lanes         | Parent        | レーンごとに，Herdr の worktree と medium effort の Sonnet レーンを，brief 付きで                                                                                                                                                 | `git-workflow` (delivery), `herdr-delegation`                  |
 | 4. Implement          | Lane          | Codex（テストが先，コミットなし）                                                                                                                                                                                                 | `tsdd`, 各言語のスタイルスキル，`domain-modeling`              |
 | 5. Verify and deliver | Lane          | —                                                                                                                                                                                                                                 | `git-workflow` (commits, delivery)                             |
-| 6. Review and fix     | Lane          | Codex のコードには Opus のサブエージェント，Claude のコードには読み取り専用の Codex `task`．Codex が P0 と P1 の指摘を修正する                                                                                                    | `git-workflow` (branches), `herdr-delegation`                  |
+| 6. Review and fix     | Lane          | GitHub の `claude-review` と `codex-review`．レーンがすべての指摘を修正する                                                                                                    | `git-workflow` (delivery), `herdr-delegation`                  |
 | 7. Report             | Lane → Parent | レーンは `LANE-READY` で終わり，親は `herdr agent wait` で待ってそれを読む                                                                                                                                                        | `herdr-delegation`                                             |
 | 8. Check and report   | Parent        | —                                                                                                                                                                                                                                 | —                                                              |
 | 9. Merge              | User          | —                                                                                                                                                                                                                                 | —                                                              |
@@ -42,8 +42,8 @@ flowchart LR
 | --------------------- | ----------------------------------------------------------------------------- | ------------------------------------ |
 | User                  | 計画の承認，マージ，ワークフローファイルの push，リポジトリの削除やアーカイブ | —                                    |
 | Parent session (Opus) | Issue，計画，レーン，最終確認，クリーンアップ                                 | ファイルの編集，マージ               |
-| Lane (Sonnet)         | Codex とレビュアーの実行，検証，コミット，PR の作成                           | 実装を書く，親のペインに入力する     |
-| Codex                 | 実装と指摘の修正                                                              | コミットや push（`.git` に書けない） |
+| Lane (Sonnet)         | Codex の実行，検証，コミット，PR の作成，レビュー指摘の修正                   | 実装を書く，親のペインに入力する     |
+| Codex                 | 実装                                                                          | コミットや push（`.git` に書けない） |
 
 レーンは最後のメッセージを `LANE-READY` で終えて報告し，親がそれを読む．親はその文字列とユーザーの入力を区別できないので，レーンは親のペインに入力しない．
 

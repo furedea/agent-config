@@ -63,14 +63,16 @@ For what the PR body owns relative to the Issue and plan, follow
 
 ## Review on GitHub
 
-Every PR is reviewed on GitHub by `claude-review` and `codex-review`, both part of `all-green`; do
-not run a local code review. The mechanism is in the
+In a repository that has them, as furedea/agent-config does, every PR is reviewed on GitHub by
+`claude-review` and `codex-review`, both part of `all-green`; do not run a local code review there.
+Elsewhere, wait for that repository's required checks and follow its own review process. The
+mechanism is in the
 [reusable-workflows README](https://github.com/furedea/reusable-workflows#readme).
 
 1. After pushing, wait for `all-green`.
 2. Read the findings: Claude's inline comments and summary comment, and Codex's inline comments and
    Codex Review Summary (`codex-review-state`), with
-   `gh api repos/<owner>/<repo>/pulls/<n>/comments` and `gh pr view <n> --comments`.
+   `gh api --paginate repos/<owner>/<repo>/pulls/<n>/comments` and `gh pr view <n> --comments`.
 3. Fix every finding of any severity, then push; the push re-runs both reviews.
 4. Answer a finding refuted with evidence in its thread, and record it in the PR body.
 5. Stop and report after the third re-review that still raises new findings.

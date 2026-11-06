@@ -19,8 +19,8 @@ flowchart LR
   A --> L[Parent: open lanes]
   L --> I[Lane: Codex implements]
   I --> V[Lane: verify, commit, PR]
-  V --> RV[Lane: start reviewer]
-  RV -->|findings| I
+  V --> RV[GitHub: claude-review and codex-review]
+  RV -->|findings, lane fixes and pushes| RV
   RV --> R[Lane: LANE-READY]
   R --> W[Parent: check and report]
   W --> M[User merges]
@@ -44,8 +44,8 @@ flowchart LR
 | --------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------- |
 | User                  | approves plans, merges, pushes workflow files, deletes or archives repositories | —                                                       |
 | Parent session (Opus) | Issues, plans, lanes, final check, cleanup                                      | edits files, merges                                     |
-| Lane (Sonnet)         | runs Codex and the reviewer, verifies, commits, opens PRs                       | writes the implementation, types into the parent's pane |
-| Codex                 | implements and fixes findings                                                   | commits or pushes (it cannot write `.git`)              |
+| Lane (Sonnet)         | runs Codex, verifies, commits, opens PRs, fixes review findings                | writes the implementation, types into the parent's pane |
+| Codex                 | implements                                                                     | commits or pushes (it cannot write `.git`)              |
 
 The lane reports by ending its last message with `LANE-READY`, and the parent reads it. The lane
 never types into the parent's pane, because the parent cannot tell that text from the user's.

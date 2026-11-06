@@ -4,7 +4,7 @@
       "rule": "query-has-side-effects",
       "severity": "warning",
       "messageId": "unsure",
-      "file": "/Users/kaito/.herdr/worktrees/agent-config/spike-compare-jev-backends/docs/spikes/jev/examples/query_has_side_effects.py",
+      "file": "<repo>/docs/spikes/jev/examples/query_has_side_effects.py",
       "line": 26,
       "endLine": 31,
       "value": 2.4,
@@ -26,7 +26,7 @@
       "rule": "query-has-side-effects",
       "severity": "warning",
       "messageId": "unsure",
-      "file": "/Users/kaito/.herdr/worktrees/agent-config/spike-compare-jev-backends/docs/spikes/jev/examples/query_has_side_effects.py",
+      "file": "<repo>/docs/spikes/jev/examples/query_has_side_effects.py",
       "line": 21,
       "endLine": 23,
       "value": 2.37,
@@ -48,7 +48,7 @@
       "rule": "query-has-side-effects",
       "severity": "warning",
       "messageId": "unsure",
-      "file": "/Users/kaito/.herdr/worktrees/agent-config/spike-compare-jev-backends/docs/spikes/jev/examples/query_has_side_effects.py",
+      "file": "<repo>/docs/spikes/jev/examples/query_has_side_effects.py",
       "line": 16,
       "endLine": 18,
       "value": 2.26,
@@ -78,7 +78,7 @@
       "query-has-side-effects": 3
     },
     "byFile": {
-      "/Users/kaito/.herdr/worktrees/agent-config/spike-compare-jev-backends/docs/spikes/jev/examples/query_has_side_effects.py": {
+      "<repo>/docs/spikes/jev/examples/query_has_side_effects.py": {
         "findings": 3,
         "subjects": 6
       }

@@ -4,7 +4,7 @@
       "rule": "name-omits-unit",
       "severity": "warning",
       "messageId": "unsure",
-      "file": "/Users/kaito/.herdr/worktrees/agent-config/spike-compare-jev-backends/docs/spikes/jev/examples/name_omits_unit.py",
+      "file": "<repo>/docs/spikes/jev/examples/name_omits_unit.py",
       "line": 16,
       "endLine": 17,
       "value": 2.41,
@@ -34,7 +34,7 @@
       "name-omits-unit": 1
     },
     "byFile": {
-      "/Users/kaito/.herdr/worktrees/agent-config/spike-compare-jev-backends/docs/spikes/jev/examples/name_omits_unit.py": {
+      "<repo>/docs/spikes/jev/examples/name_omits_unit.py": {
         "findings": 1,
         "subjects": 6
       }

@@ -4,7 +4,7 @@
       "rule": "anonymous-argument-bundle",
       "severity": "warning",
       "messageId": "unsure",
-      "file": "/Users/kaito/.herdr/worktrees/agent-config/spike-compare-jev-backends/docs/spikes/jev/examples/anonymous_argument_bundle.py",
+      "file": "<repo>/docs/spikes/jev/examples/anonymous_argument_bundle.py",
       "line": 32,
       "endLine": 34,
       "value": 2.38,
@@ -26,7 +26,7 @@
       "rule": "anonymous-argument-bundle",
       "severity": "warning",
       "messageId": "unsure",
-      "file": "/Users/kaito/.herdr/worktrees/agent-config/spike-compare-jev-backends/docs/spikes/jev/examples/anonymous_argument_bundle.py",
+      "file": "<repo>/docs/spikes/jev/examples/anonymous_argument_bundle.py",
       "line": 28,
       "endLine": 29,
       "value": 2.2,
@@ -48,7 +48,7 @@
       "rule": "anonymous-argument-bundle",
       "severity": "warning",
       "messageId": "unsure",
-      "file": "/Users/kaito/.herdr/worktrees/agent-config/spike-compare-jev-backends/docs/spikes/jev/examples/anonymous_argument_bundle.py",
+      "file": "<repo>/docs/spikes/jev/examples/anonymous_argument_bundle.py",
       "line": 37,
       "endLine": 38,
       "value": 2.13,
@@ -78,7 +78,7 @@
       "anonymous-argument-bundle": 3
     },
     "byFile": {
-      "/Users/kaito/.herdr/worktrees/agent-config/spike-compare-jev-backends/docs/spikes/jev/examples/anonymous_argument_bundle.py": {
+      "<repo>/docs/spikes/jev/examples/anonymous_argument_bundle.py": {
         "findings": 3,
         "subjects": 6
       }

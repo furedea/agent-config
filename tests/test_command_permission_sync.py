@@ -58,7 +58,7 @@ VERIFICATION_PREFIXES = [
     "uv run --frozen ruff",
     "uv run --frozen ty",
     "uv run --frozen bats",
-    "uv run --frozen mutmut",
+    "uv run --frozen mutmut run",
     "uv run --frozen --group audit deptry",
     "uv run --frozen --group audit vulture",
     "lefthook run",

@@ -69,7 +69,7 @@
         "cargo",
         "mutants"
       ],
-      "justification": "Allow mutation testing that tsdd asks for; it runs on a copy of the tree."
+      "justification": "Allow mutation testing that tsdd asks for; it runs on a copy of the tree, and --in-place stays denied."
     },
     {
       "decision": "allow",
@@ -1127,7 +1127,7 @@
         "stryker",
         "run"
       ],
-      "justification": "Allow mutation testing that tsdd asks for, like the test runner it wraps."
+      "justification": "Allow mutation testing that tsdd asks for, like the test runner it wraps; --inPlace stays denied."
     },
     {
       "decision": "allow",
@@ -1329,9 +1329,10 @@
         "uv",
         "run",
         "--frozen",
-        "mutmut"
+        "mutmut",
+        "run"
       ],
-      "justification": "Allow mutation testing that tsdd asks for; --frozen leaves the lock file alone."
+      "justification": "Allow mutation testing that tsdd asks for; --frozen leaves the lock file alone and apply, which writes a mutant, stays denied."
     },
     {
       "decision": "allow",

@@ -382,3 +382,18 @@ def test_a_chrt_priority_built_at_run_time_asks() -> None:
 @pytest.mark.parametrize("command", ["find . -name -exec\\ foo", "find . -name -delete\\ foo"])
 def test_an_escaped_search_text_is_not_read_as_a_find_action(command: str) -> None:
     assert verdict("forbidden", command) == "allow"
+
+
+@pytest.mark.parametrize(
+    "command",
+    ["git commit -Sm --no-verify --no-gpg-sign -m subject", "git commit -Sm -n -m subject", "git commit -um -n -m x"],
+)
+def test_an_optional_value_option_ends_its_bundle(command: str) -> None:
+    assert verdict("forbidden", command) == "deny"
+
+
+@pytest.mark.parametrize(
+    "command", ['find . -name -exec" foo"', 'find . -name "-exec foo"', "find . -name -exec\\ foo"]
+)
+def test_search_text_holding_whitespace_is_never_a_find_action(command: str) -> None:
+    assert verdict("forbidden", command) == "allow"

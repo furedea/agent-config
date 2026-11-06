@@ -49,7 +49,6 @@ SHELLS = frozenset(
 # script as bash would misread it, so a -c (or --command) option asks instead.
 FOREIGN_SHELLS = frozenset({"csh", "elvish", "es", "fish", "nu", "rc", "tcsh"})
 SHELL_LOOKALIKE = re.compile(r"[a-z0-9_.-]*sh")
-ATTACHED_QUOTED_VALUE = re.compile(r"-[A-Za-z0-9-]*[\"']")
 VERSION_SUFFIX = re.compile(r"[0-9._-]+$")
 
 
@@ -96,7 +95,7 @@ class Command:
         only through eval or a shell -c wrapper, whose script parse judges as separate commands.
         """
         return " ".join(
-            prose_placeholder(word, word) if re.search(r"\s", argument) else word
+            RUN_TIME_PLACEHOLDER if re.search(r"\s", argument) else word
             for word, argument in zip(self.words, self.arguments, strict=True)
         )
 
@@ -104,8 +103,7 @@ class Command:
     def command_arguments_text(self) -> str:
         """The command's decoded arguments, quotes removed, with each argument containing whitespace as a placeholder."""
         return " ".join(
-            prose_placeholder(argument, word) if re.search(r"\s", argument) else argument
-            for word, argument in zip(self.words, self.arguments, strict=True)
+            RUN_TIME_PLACEHOLDER if re.search(r"\s", argument) else argument for argument in self.arguments
         )
 
     @property
@@ -146,17 +144,6 @@ class Command:
             dynamic=((False,) * len(head)) + self.dynamic[index:],
             spreading=((False,) * len(head)) + self.spreading[index:],
         )
-
-
-def prose_placeholder(argument: str, word: str) -> str:
-    """Stand for an argument holding whitespace.
-
-    A word whose option letters run straight into a quote, as in `-nm"fix: x"`, is an option with an
-    attached value and keeps its first word; a quoted or escaped word such as `"-exec foo"` is prose.
-    """
-    if not ATTACHED_QUOTED_VALUE.match(word):
-        return RUN_TIME_PLACEHOLDER
-    return f"{argument.split(maxsplit=1)[0]} {RUN_TIME_PLACEHOLDER}"
 
 
 def command_preview(source: str) -> str:

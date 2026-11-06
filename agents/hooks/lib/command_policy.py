@@ -175,6 +175,8 @@ def canonical(command: shell_syntax.Command) -> shell_syntax.Command:
 
 # git commit options that take a value: the next word, or the rest of the same short-option bundle.
 COMMIT_VALUED_SHORT = frozenset("mFCct")
+# Options whose value, if any, is attached: the letters after them are that value, not more options.
+COMMIT_OPTIONAL_SHORT = frozenset("Su")
 COMMIT_VALUED_LONG = frozenset(
     {"--message", "--file", "--reuse-message", "--reedit-message", "--template", "--author", "--date", "--cleanup"}
     | {"--fixup", "--squash", "--trailer", "--pathspec-from-file"}
@@ -182,42 +184,45 @@ COMMIT_VALUED_LONG = frozenset(
 
 
 def without_option_values(command: shell_syntax.Command) -> shell_syntax.Command:
-    """The command with each git commit option value as a placeholder, in its words and its decoded arguments.
+    """The command with each git commit option value masked, in its words and its decoded arguments.
 
-    Flag rules read the rest: a value such as the message in `-m "--no-verify"` is data, not a flag.
+    Flag rules read the rest: a value such as the message in `-m "--no-verify"` or `-nm"fix: x"` is
+    data, not a flag. A value in the next word becomes a placeholder; one attached to its option
+    is cut off, leaving the option letters.
     """
-    valued = commit_option_values(command.arguments)
-    masked = tuple("_" if index in valued else word for index, word in enumerate(command.words))
-    masked_arguments = tuple("_" if index in valued else word for index, word in enumerate(command.arguments))
-    return replace(command, words=masked, arguments=masked_arguments)
+    masks = commit_option_masks(command.arguments)
+    words = tuple(masks.get(index, word) for index, word in enumerate(command.words))
+    arguments = tuple(masks.get(index, word) for index, word in enumerate(command.arguments))
+    return replace(command, words=words, arguments=arguments)
 
 
-def commit_option_values(arguments: tuple[str, ...]) -> frozenset[int]:
-    """Indexes of the words a git commit consumes as option values, so `-m "--no-verify"` stays a message."""
+def commit_option_masks(arguments: tuple[str, ...]) -> dict[int, str]:
+    """What replaces each word of a git commit that is, or carries, an option value."""
     names = [Path(argument).name for argument in arguments]
     if "commit" not in arguments or "git" not in names[: arguments.index("commit")]:
-        return frozenset()
-    consumed: set[int] = set()
+        return {}
+    masks: dict[int, str] = {}
     index = arguments.index("commit") + 1
-    while index < len(arguments):
+    while index < len(arguments) and arguments[index] != "--":
         token = arguments[index]
-        if index in consumed or token == "--":
-            break
-        if token in COMMIT_VALUED_LONG or (not token.startswith("--") and valued_short(token)):
-            consumed.add(index + 1)
+        value = None if token.startswith("--") or not token.startswith("-") else short_value(token)
+        if token in COMMIT_VALUED_LONG or (value is not None and not value[1]):
+            masks[index + 1] = "_"
             index += 1
+        elif value is not None:
+            masks[index] = token[: value[0] + 1]
         index += 1
-    return frozenset(consumed)
+    return masks
 
 
-def valued_short(token: str) -> bool:
-    """Whether a short-option bundle ends in an option whose value is the next word."""
-    if not token.startswith("-") or len(token) < 2:
-        return False
+def short_value(token: str) -> tuple[int, bool] | None:
+    """Where a short-option bundle's value option sits, and whether its value is attached to the bundle."""
     for position, letter in enumerate(token[1:], 1):
+        if letter in COMMIT_OPTIONAL_SHORT:
+            return None
         if letter in COMMIT_VALUED_SHORT:
-            return position == len(token) - 1
-    return False
+            return position, position < len(token) - 1
+    return None
 
 
 def prefix_rule(arguments: tuple[str, ...], rules: list[dict], decision: str) -> dict | None:

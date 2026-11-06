@@ -1,6 +1,8 @@
 """Run jev-lint and jevlint on the spike rules and write one JSONL row per judgement.
 
-Called by measure.sh. The API key is read by the tools from the environment; this module never
+Called by measure.sh. The JSONL rows cover the labelled functions only; the reported precision and
+recall come from analyze_results.py, which scores every function in the examples from results/raw.
+The API key is read by the tools from the environment; this module never
 reads, prints or stores it, and redacts it from anything it logs.
 """
 

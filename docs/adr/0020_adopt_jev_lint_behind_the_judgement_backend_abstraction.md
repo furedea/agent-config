@@ -16,9 +16,11 @@ TypeSafe.
 
 Evidence: the measurement and the maintenance comparison are in
 [issue #75](https://github.com/furedea/agent-config/issues/75) and `docs/spikes/jev/`. On seven rules
-and 42 labelled Python functions with the same model (`jev-latest`), both tools reached precision 1.00
-and recall 0.90 within 0.1 s per judgement, so accuracy does not separate them; the sample is small,
-author-labelled, and run once, and the two tools missed different functions. The criterion "installable
+and 47 Python functions (42 labelled, 5 value-object methods counted as conforming) with the same model
+(`jev-latest`), both tools reached recall 0.90 within 0.13 s per judgement as whole-process wall time;
+`jev-lint` had precision 1.00 and `jevlint` 0.90, exactly at the draft limit after two false positives
+on value-object methods. Accuracy therefore favours `jev-lint` only slightly: the sample is small,
+author-labelled, and run once, and the tools missed different functions. The criterion "installable
 with Nix" was read as "runs pinned and reproducibly through Nix", because neither tool is in nixpkgs;
 `jevlint` builds only with the system clang, since the Nix clang cannot link `-lresolv`.
 

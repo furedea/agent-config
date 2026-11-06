@@ -1,7 +1,7 @@
 ---
 name: herdr-delegation
 description: >
-    Use when the user requests a plan review, code review, or implementation task in a separate
+    Use when the user requests a plan review or implementation task in a separate
     Codex or Claude session through Herdr, including another repository or worktree. Applies
     when Herdr is requested or already selected for the delegation, not to ordinary local work.
 ---
@@ -31,52 +31,28 @@ the request, evaluates the returned work, and reports the outcome to the user.
 | Request                                    | Default recipient                                                                   | Authority                                              |
 | ------------------------------------------ | ----------------------------------------------------------------------------------- | ------------------------------------------------------ |
 | Review a plan                              | Claude for a Codex-authored plan; Codex for a Claude-authored plan                  | Findings only; do not rewrite the plan or implement it |
-| Review code                                | Claude for Codex-authored code; Codex for Claude-authored code                      | Findings only; do not edit the reviewed source         |
 | Implement in another directory or worktree | A separate Claude session, since a Codex session cannot commit in a linked worktree | Changes limited to the delegated scope                 |
 
-When the user asks for Codex to implement, Codex implements and Claude reviews. The parent writes
-each Codex command into the brief complete, and the lane runs it verbatim as its own Bash call
-with nothing appended. Both have the form
-`node "<codex plugin>/scripts/codex-companion.mjs" task --model gpt-6.1-sol --effort <effort> --cwd <worktree> "<fixed text>"`:
-implementation adds `--write` and uses `--effort medium`; review omits `--write` (read only) and
-uses `--effort xhigh`. The fixed text has no nested quotes, dollar sign, pipe, or redirect, so the
-call stays one command (furedea/agent-config#76). For implementation the lane reads the diff, runs
-the checks Codex cannot (Nix hashes and nix builds), commits, pushes, and opens the PR.
-The lane then starts the reviewer itself: an Opus subagent with only the requirements and the
-diff when Codex implemented, or the Codex review command from the brief when Claude implemented.
-The review text names where the requirements are (a local file or the text itself, since Codex
-has no network), the diff range `origin/main...HEAD`, and that the review is read only; it says
-any file may be read to verify a claim, asks for each finding tagged P0 to P3, prefers no finding
-over a weak one, and forbids style and naming findings. If Codex cannot run, an Opus subagent
-with only the requirements and the diff reviews instead, and the lane reports which reviewer ran.
-The lane itself fixes review findings, also when Codex implemented; Codex is used only for the
-initial implementation and for read-only reviews.
+When the user asks for Codex to implement, the parent writes the Codex command into the brief
+complete, and the lane runs it verbatim as its own Bash call with nothing appended:
+`node "<codex plugin>/scripts/codex-companion.mjs" task --write --model gpt-6.1-sol --effort medium --cwd <worktree> "<fixed text>"`.
+The fixed text has no nested quotes, dollar sign, pipe, or redirect, so the call stays one command
+(furedea/agent-config#76). The lane reads the diff, runs the checks Codex cannot (Nix hashes and
+nix builds), commits, pushes, and opens the PR. The lane itself fixes review findings, also when
+Codex implemented; Codex is used only for the initial implementation.
 
-The lane fixes every finding of any severity, including P2 and P3 and the inline comments of the
-`claude-review` check, and does not defer one to the user. It records in the PR body, with the
-reason, only a finding that repeats on the same grounds, is a matter of taste, or is refuted with
-evidence (see Run and Reconcile). A repeated P0 or P1 still stops the lane with `LANE-BLOCKED` and
-the open findings instead of looping, as does an area that keeps failing. Whenever findings were
-fixed, run a confirming review of the fixed diff; finish when a review reports no unhandled finding.
-If the third confirming review still reports new findings, stop with `LANE-BLOCKED` and the open
-findings rather than continuing. `review` is not used for now because the verification hook rejects
-its thread (furedea/agent-config#19). Use `adversarial-review` only to have Codex challenge the
-design of a high-risk or design-heavy change.
-
-In a repository that has them, as furedea/agent-config does, `claude-review`
-(furedea/reusable-workflows) is part of `all-green`: the lane waits for `all-green` and handles
-the Claude review's inline comments as findings, and the `furedea-agent` App cannot push
-`.github/workflows/` changes, so the lane commits them, stops with `LANE-BLOCKED` naming the
-commit, and the user pushes. The parent then prompts the lane with `herdr agent prompt` to
-continue, and the lane resumes. Elsewhere the lane waits for that repository's required checks
-and uses its own push method. A lane ends its final message with `LANE-READY` only when those
+Code review is not done locally: every PR is reviewed on GitHub, and the lane follows
+[Review on GitHub](../git-workflow/references/delivery.md#review-on-github) in `git-workflow` for
+waiting, reading findings, fixing, and the re-review limit. In addition, in a repository that has
+those reviews, as furedea/agent-config does, the `furedea-agent` App cannot push `.github/workflows/`
+changes, so the lane commits them, stops with `LANE-BLOCKED` naming the commit, and the user
+pushes. The parent then prompts the lane with `herdr agent prompt` to continue, and the lane
+resumes. A lane ends its final message with `LANE-READY` only when the repository's required
 checks are green and no finding is unhandled; otherwise it ends with `LANE-BLOCKED` and the
-reason. On `LANE-READY` the parent also checks which reviewer ran and, when findings were fixed,
-that a confirming review ran, before reporting. The lane never types into the parent's
-pane with `herdr agent prompt` or `send-text`: text typed there is indistinguishable from the
-user's own input.
+reason. The lane never types into the parent's pane with `herdr agent prompt` or `send-text`: text
+typed there is indistinguishable from the user's own input.
 
-Honor an explicit provider choice. Keep plan review, code review, and implementation as distinct
+Honor an explicit provider choice. Keep plan review and implementation as distinct
 assignments; asking for findings does not authorize the reviewer to fix them.
 
 Reuse an existing session only when its identity, location, and current assignment make it the
@@ -89,7 +65,7 @@ Allow only one implementation writer per checkout at a time.
 The recipient does not inherit the originating conversation. Keep the brief concise but
 complete. Supply:
 
-- **Task:** plan review, code review, or implementation, with the requested outcome.
+- **Task:** plan review or implementation, with the requested outcome.
 - **Requirements:** the user's relevant requirements, acceptance criteria, accepted decisions,
   constraints, and links to authoritative repository material. Record the version of the
   requirements being delegated, or their full text when no version exists. Distinguish
@@ -97,7 +73,7 @@ complete. Supply:
 - **Location:** the absolute repository or worktree path, branch, and relevant base and head
   commits. Tell the recipient to read the applicable instructions in that location.
 - **Issue:** the Issue body itself, not only its number, so the recipient need not read it again.
-- **Input:** the exact plan text or plan file, code review range, or implementation scope. For
+- **Input:** the exact plan text or plan file, or implementation scope. For
   uncommitted code, identify whether staged, unstaged, and untracked files are included, and
   provide a stable snapshot when the checkout may still change.
 - **Scope and focus:** the boundaries of the assignment and the review aspects that matter
@@ -122,18 +98,6 @@ For a **plan review**, ask the reviewer to compare the proposal independently wi
 requirements and relevant repository facts. Look for missing requirements, unsupported
 assumptions, incorrect boundaries, migration gaps, and verification that would not distinguish
 success from failure. Request findings and necessary corrections, not a replacement plan.
-
-For a **code review**, ask the reviewer to inspect the specified changes in their surrounding
-context. Prioritize actionable bugs, regressions, contract violations, and missing evidence for
-required behavior. Relevant checks may be run within the session's permissions; source changes
-remain outside a review assignment.
-
-For changes spanning multiple components, review the boundaries between them, not only
-individual files. Have the reviewer trace an actual path such as provider input → adapter →
-shared guard or lint → provider output, and check the real input forms, configuration,
-execution order, and where results arrive, within the assigned scope. Small self-contained
-changes do not require an extra integration review, and high-risk design questions should
-still be reviewed when they surface rather than deferred to the end.
 
 Request findings ordered by severity. Each finding should identify the affected plan section or
 file and line, the violated requirement or concrete failure scenario, its impact, and supporting

@@ -19,7 +19,11 @@ Evidence: the measurement and the maintenance comparison are in
 and 47 Python functions (42 labelled, 5 value-object methods counted as conforming) with the same model
 (`jev-latest`), both tools reached recall 0.90 within 0.13 s per judgement as whole-process wall time;
 `jev-lint` had precision 1.00 and `jevlint` 0.90, exactly at the draft limit after two false positives
-on value-object methods. Accuracy therefore favours `jev-lint` only slightly: the sample is small,
+on value-object methods. At the unfitted default cutoff of 2, 15 of the 19 `jev-lint` hits were graded
+only "arguable" (scores 2.06 to 2.49) and 4 "violation" (2.56 to 2.88); counting only the violation
+level, recall would be 0.19. Every conforming function scored below the cutoff, so the classes
+separate, but narrowly, and cutoffs must be fitted per rule on a larger corpus before any finding gates
+a hook or CI. Accuracy therefore favours `jev-lint` only slightly: the sample is small,
 author-labelled, and run once, and the tools missed different functions. The criterion "installable
 with Nix" was read as "runs through Nix with a pinned tool version and no global install", because neither tool is in nixpkgs (the nixpkgs revision and the transitive npm dependencies of `npx` were not pinned in the spike);
 `jevlint` builds only with the system clang, since the Nix clang cannot link `-lresolv`.

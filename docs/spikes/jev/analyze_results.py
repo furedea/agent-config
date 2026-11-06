@@ -87,6 +87,18 @@ def report(tool: str, labels: dict) -> None:
         tokens_out = sum(d["spent"]["outputTokens"] for d in spent)
         usd = sum(d["spent"]["usd"] for d in spent)
         print(f"   tokens in={tokens_in} out={tokens_out} usd={usd:.6f} per judgement usd={usd / judged:.7f}")
+        print_levels(spent)
+
+
+def print_levels(spent: list[dict]) -> None:
+    """jev-lint grades each finding; at the unfitted cutoff 2 most hits are only 'arguable'."""
+    findings = [row for data in spent for row in data["findings"]]
+    levels = sorted({row["level"] for row in findings})
+    for level in levels:
+        values = [row["value"] for row in findings if row["level"] == level]
+        print(f"   level={level}: findings={len(values)} score range={min(values)}..{max(values)}")
+    strict = sum(1 for row in findings if row["level"] == "violation")
+    print(f"   recall counting only 'violation' level: {strict}/21 = {strict / 21:.2f}")
 
 
 def main() -> None:

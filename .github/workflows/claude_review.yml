@@ -1,0 +1,20 @@
+name: Claude review
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+permissions: {}
+
+jobs:
+  review:
+    permissions:
+      contents: read
+      pull-requests: write
+    # actionlint does not accept the `$/` self-repository syntax yet.
+    uses: ./.github/workflows/claude_review_reusable.yml # zizmor: ignore[self-repository]
+    secrets:
+      claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}

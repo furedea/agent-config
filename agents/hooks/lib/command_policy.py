@@ -10,6 +10,7 @@ from dataclasses import replace
 
 import git_safety
 import shell_syntax
+import shell_wrappers
 
 
 # Characters a URL parser drops anywhere in a URL, so a scheme split by them still loads.
@@ -198,11 +199,11 @@ def without_option_values(command: shell_syntax.Command) -> shell_syntax.Command
 
 def commit_option_masks(arguments: tuple[str, ...]) -> dict[int, str]:
     """What replaces each word of a git commit that is, or carries, an option value."""
-    names = [Path(argument).name for argument in arguments]
-    if "commit" not in arguments or "git" not in names[: arguments.index("commit")]:
+    start = commit_subcommand_index(arguments)
+    if start is None:
         return {}
     masks: dict[int, str] = {}
-    index = arguments.index("commit") + 1
+    index = start + 1
     while index < len(arguments) and arguments[index] != "--":
         token = arguments[index]
         value = None if token.startswith("--") or not token.startswith("-") else short_value(token)
@@ -213,6 +214,21 @@ def commit_option_masks(arguments: tuple[str, ...]) -> dict[int, str]:
             masks[index] = token[: value[0] + 1]
         index += 1
     return masks
+
+
+def commit_subcommand_index(arguments: tuple[str, ...]) -> int | None:
+    """Where the commit subcommand of a git call sits, looking through process wrappers; None for any other command."""
+    program = 0
+    try:
+        while (step := shell_wrappers.wrapped_index(arguments[program:])) is not None:
+            program += step
+    except shell_syntax.UnsupportedSyntax:
+        return None
+    if Path(arguments[program]).name != "git":
+        return None
+    globals_, _ = git_safety.git_arguments(arguments[program:])
+    index = program + 1 + len(globals_)
+    return index if index < len(arguments) and arguments[index] == "commit" else None
 
 
 def short_value(token: str) -> tuple[int, bool] | None:

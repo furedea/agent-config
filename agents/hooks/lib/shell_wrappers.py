@@ -77,6 +77,8 @@ LEADING_OPERANDS = {"chrt": 1, "flock": 1, "script": 1, "taskset": 1, "timeout":
 # Options whose operand is a script a shell runs; watch joins its words into one unless it has -x.
 SCRIPT_OPTIONS = {"flock": ("-c", "--command"), "script": ("-c", "--command")}
 EXEC_OPTIONS = ("-x", "--exec")
+# Short options whose value, if any, is the rest of the bundle: watch -dx is -d with the value x.
+OPTIONAL_ATTACHED = {"watch": frozenset({"-d"})}
 
 
 def wrapped_index(arguments: tuple[str, ...], dynamic: tuple[bool, ...] = ()) -> int | None:
@@ -174,6 +176,9 @@ class OptionScan:
             self.refuse(token)
         for position, letter in enumerate(token[1:], 1):
             option = f"-{letter}"
+            if option in OPTIONAL_ATTACHED.get(self.name, ()):
+                self.record(option, token[position + 1 :] or None)
+                return 1
             if option in self.valued:
                 return self.take_value(option, token[position + 1 :])
             if option not in self.flags:

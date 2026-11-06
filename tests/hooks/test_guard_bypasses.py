@@ -397,3 +397,19 @@ def test_an_optional_value_option_ends_its_bundle(command: str) -> None:
 )
 def test_search_text_holding_whitespace_is_never_a_find_action(command: str) -> None:
     assert verdict("forbidden", command) == "allow"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "find . -name git -o -name commit -delete",
+        "echo git commit -m x; find . -delete",
+    ],
+)
+def test_option_values_are_masked_only_in_a_real_git_commit(command: str) -> None:
+    assert verdict("forbidden", command) == "deny"
+
+
+@pytest.mark.parametrize("command", ["watch -dx '{}'", "watch -dx {}", "watch -d -n 5 '{}'"])
+def test_watch_differences_takes_an_attached_value_not_options(command: str) -> None:
+    assert verdict("forbidden", command.format(DELETE)) == "deny"

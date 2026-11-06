@@ -63,14 +63,16 @@ not used for now because the verification hook rejects its thread (furedea/agent
 `adversarial-review` only to have Codex challenge the design of a high-risk or design-heavy
 change.
 
-In a pull request `claude-review` (furedea/reusable-workflows) is part of `all-green`. The lane
-waits for `all-green` and handles the Claude review's inline comments as findings. The
-`furedea-agent` App cannot push `.github/workflows/` changes: the lane commits them, stops with
-`LANE-BLOCKED` naming the commit, and the user pushes. The parent then prompts the lane with
-`herdr agent prompt` to continue, and the lane resumes. A lane ends its final message with
-`LANE-READY` only when `all-green` is green and no finding is unhandled; otherwise it ends with
-`LANE-BLOCKED` and the reason. On `LANE-READY` the parent also checks which reviewer
-ran and that confirming reviews ran, before reporting. The lane never types into the parent's
+In a repository that has them, as furedea/agent-config does, `claude-review`
+(furedea/reusable-workflows) is part of `all-green`: the lane waits for `all-green` and handles
+the Claude review's inline comments as findings, and the `furedea-agent` App cannot push
+`.github/workflows/` changes, so the lane commits them, stops with `LANE-BLOCKED` naming the
+commit, and the user pushes. The parent then prompts the lane with `herdr agent prompt` to
+continue, and the lane resumes. Elsewhere the lane waits for that repository's required checks
+and uses its own push method. A lane ends its final message with `LANE-READY` only when those
+checks are green and no finding is unhandled; otherwise it ends with `LANE-BLOCKED` and the
+reason. On `LANE-READY` the parent also checks which reviewer ran and, when findings were fixed,
+that a confirming review ran, before reporting. The lane never types into the parent's
 pane with `herdr agent prompt` or `send-text`: text typed there is indistinguishable from the
 user's own input.
 

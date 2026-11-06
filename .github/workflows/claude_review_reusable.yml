@@ -59,6 +59,8 @@ jobs:
             Then post one top-level summary with `gh pr comment`.
             Finally return structured output where blocking_findings is the number of P0 and P1 findings.
           claude_args: |
+            --model claude-opus-5-5
+            --effort medium
             --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"
             --json-schema '{"type":"object","properties":{"blocking_findings":{"type":"integer","minimum":0}},"required":["blocking_findings"]}'
 

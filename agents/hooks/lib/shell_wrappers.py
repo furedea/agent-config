@@ -87,10 +87,17 @@ def wrapped_index(arguments: tuple[str, ...]) -> int | None:
     scan = OptionScan(name, arguments).run()
     if scan.runs_script and name != "script":
         return None
-    index = scan.index + LEADING_OPERANDS.get(name, 0)
+    index = scan.index + leading_operands(name, arguments, scan.index)
     if index >= len(arguments) or (name == "script" and arguments[index].startswith("-")):
         return None
     return index
+
+
+def leading_operands(name: str, arguments: tuple[str, ...], index: int) -> int:
+    """How many operands precede the command; chrt's priority may be left out of some policies."""
+    if name == "chrt":
+        return int(index < len(arguments) and arguments[index].isdigit())
+    return LEADING_OPERANDS.get(name, 0)
 
 
 @dataclass(slots=True)
@@ -184,28 +191,35 @@ class OptionScan:
             self.scripts.append(value)
 
     def take_trailing_script(self) -> None:
-        """Record script options written after the leading operand: flock reads one right after its lock
-        file, script reads them anywhere, as in `script <file> -c <script>`.
+        """Record script options written right after the leading operand: `flock <file> -c <script>` and
+        `script <file> -c <script>`. Reading stops at the first word that is no option, where a BSD script's
+        own command begins, whose arguments are not script options.
         """
         position = self.index + LEADING_OPERANDS.get(self.name, 0)
         if self.name not in {"flock", "script"}:
             return
-        end = len(self.arguments) if self.name == "script" else position + 1
-        for index in range(position, min(end, len(self.arguments))):
-            self.take_script_token(index)
+        while position < len(self.arguments) and self.arguments[position].startswith("-"):
+            position += self.take_script_token(position)
+            if self.name == "flock":
+                return
 
-    def take_script_token(self, index: int) -> None:
+    def take_script_token(self, index: int) -> int:
+        """Record a script option at an index and return the tokens it spans."""
         token = self.arguments[index]
         key, _, value = token.partition("=")
         if key in SCRIPT_OPTIONS[self.name] and value:
             self.record(key, value)
         elif token in SCRIPT_OPTIONS[self.name]:
             self.record(token, self.value_at(index + 1))
+            return 2
         elif token.startswith("--") and len(key) > 2 and "--command".startswith(key):
             self.record("--command", value or self.value_at(index + 1))
-        elif token.startswith("-") and not token.startswith("--") and "c" in token:
+            return 1 if value else 2
+        elif not token.startswith("--") and "c" in token:
             attached = token[token.index("c") + 1 :]
             self.record("-c", attached or self.value_at(index + 1))
+            return 1 if attached else 2
+        return 2 if token in self.valued else 1
 
     def value_at(self, position: int) -> str | None:
         return self.arguments[position] if position < len(self.arguments) else None

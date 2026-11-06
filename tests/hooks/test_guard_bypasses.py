@@ -344,3 +344,22 @@ def test_abbreviated_command_options_after_the_operand_are_not_skipped(command: 
 )
 def test_a_quoted_search_text_is_not_read_as_a_find_action(command: str) -> None:
     assert verdict("forbidden", command) == "allow"
+
+
+@pytest.mark.parametrize("wrapper", ["chrt -o", "chrt -i", "chrt -b", "chrt -o -v"])
+def test_chrt_policies_without_a_priority_expose_the_program(wrapper: str) -> None:
+    assert verdict("forbidden", f"{wrapper} {DELETE}") == "deny"
+    assert verdict("allowed", f"{wrapper} gh pr merge 76 --merge") == "ask"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "script -q /dev/null grep -c 'git add .' README.md",
+        "script -q /dev/null python3 -c 'print(1)'",
+        "script /dev/null ls -c",
+    ],
+)
+def test_the_arguments_of_a_script_child_are_not_script_options(command: str) -> None:
+    assert verdict("forbidden", command) == "allow"
+    assert verdict("allowed", command) == "allow"

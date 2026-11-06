@@ -49,6 +49,7 @@ SHELLS = frozenset(
 # script as bash would misread it, so a -c (or --command) option asks instead.
 FOREIGN_SHELLS = frozenset({"csh", "elvish", "es", "fish", "nu", "rc", "tcsh"})
 SHELL_LOOKALIKE = re.compile(r"[a-z0-9_.-]*sh")
+ATTACHED_QUOTED_VALUE = re.compile(r"-[A-Za-z0-9-]*[\"']")
 VERSION_SUFFIX = re.compile(r"[0-9._-]+$")
 
 
@@ -150,10 +151,10 @@ class Command:
 def prose_placeholder(argument: str, word: str) -> str:
     """Stand for an argument holding whitespace.
 
-    A word that itself starts with a dash, as in `-nm"fix: x"`, is an option with an attached value and
-    keeps its first word; a quoted word such as `"-exec foo"` is prose.
+    A word whose option letters run straight into a quote, as in `-nm"fix: x"`, is an option with an
+    attached value and keeps its first word; a quoted or escaped word such as `"-exec foo"` is prose.
     """
-    if not word.startswith("-"):
+    if not ATTACHED_QUOTED_VALUE.match(word):
         return RUN_TIME_PLACEHOLDER
     return f"{argument.split(maxsplit=1)[0]} {RUN_TIME_PLACEHOLDER}"
 
@@ -328,7 +329,7 @@ def redirect_operator(redirect: dict, data: bytes) -> str:
 def unwrapped(command: Command) -> list[Command]:
     """Peel process wrappers so policy sees the program they eventually run."""
     exposed: list[Command] = []
-    while (index := wrapped_index(command.arguments)) is not None:
+    while (index := wrapped_index(command.arguments, command.dynamic)) is not None:
         appends_input = command.appends_input or Path(command.arguments[0]).name == "xargs"
         command = replace(command.rebased(index, depth=command.wrapper_depth + 1), appends_input=appends_input)
         exposed.append(command)

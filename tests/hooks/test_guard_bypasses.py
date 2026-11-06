@@ -363,3 +363,22 @@ def test_chrt_policies_without_a_priority_expose_the_program(wrapper: str) -> No
 def test_the_arguments_of_a_script_child_are_not_script_options(command: str) -> None:
     assert verdict("forbidden", command) == "allow"
     assert verdict("allowed", command) == "allow"
+
+
+def test_a_bundled_option_value_is_not_read_as_a_script_option() -> None:
+    assert verdict("forbidden", f"script /dev/null -Tabc -c '{DELETE}'") == "deny"
+
+
+@pytest.mark.parametrize("command", ["chrt -i 0 -- {}", "taskset 1 -- {}", "timeout 5 -- {}", "flock /tmp/l -- {}"])
+def test_a_double_dash_after_the_operands_ends_the_options(command: str) -> None:
+    assert verdict("forbidden", command.format(DELETE)) == "deny"
+    assert verdict("allowed", command.format("gh pr merge 76")) == "ask"
+
+
+def test_a_chrt_priority_built_at_run_time_asks() -> None:
+    assert verdict("forbidden", f'PRIORITY=0; chrt -i "$PRIORITY" {DELETE}') == "ask"
+
+
+@pytest.mark.parametrize("command", ["find . -name -exec\\ foo", "find . -name -delete\\ foo"])
+def test_an_escaped_search_text_is_not_read_as_a_find_action(command: str) -> None:
+    assert verdict("forbidden", command) == "allow"

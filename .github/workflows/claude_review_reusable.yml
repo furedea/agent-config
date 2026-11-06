@@ -63,11 +63,13 @@ jobs:
             --json-schema '{"type":"object","properties":{"blocking_findings":{"type":"integer","minimum":0}},"required":["blocking_findings"]}'
 
       - name: Fail on blocking findings
+        id: gate
         env:
           STRUCTURED_OUTPUT: ${{ steps.review.outputs.structured_output }}
         run: |
-          blocking="$(jq -r '.blocking_findings' <<<"$STRUCTURED_OUTPUT")"
+          blocking="$(jq -r '.blocking_findings' <<<"$STRUCTURED_OUTPUT" 2>/dev/null || true)"
           if [[ ! "$blocking" =~ ^[0-9]+$ ]]; then
+            echo "reason=invalid-output" >>"$GITHUB_OUTPUT"
             echo "::error::Review returned no valid blocking_findings: ${STRUCTURED_OUTPUT:-<empty>}"
             exit 1
           fi
@@ -83,11 +85,14 @@ jobs:
         if: failure()
         env:
           REVIEW_OUTCOME: ${{ steps.review.outcome }}
+          GATE_REASON: ${{ steps.gate.outputs.reason }}
           TOKEN_PRESENT: ${{ secrets.claude_code_oauth_token != '' }}
         run: |
           {
             echo "### Claude review failed"
-            if [[ "$REVIEW_OUTCOME" == "success" ]]; then
+            if [[ "$GATE_REASON" == "invalid-output" ]]; then
+              echo "- The review returned no valid blocking_findings (malformed structured output). Re-run the check; if it repeats, read the job log."
+            elif [[ "$REVIEW_OUTCOME" == "success" ]]; then
               echo "- Blocking findings (P0/P1): read the inline review comments on the pull request."
             elif [[ "$TOKEN_PRESENT" != "true" ]]; then
               echo "- The OAuth token was not passed to this run (for example a Dependabot-triggered run). Check the secret is available to it."

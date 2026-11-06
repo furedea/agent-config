@@ -54,14 +54,14 @@ initial implementation and for read-only reviews.
 
 The lane fixes every finding of any severity, including P2 and P3 and the inline comments of the
 `claude-review` check, and does not defer one to the user. It records in the PR body, with the
-reason, only a finding that repeats on the same grounds or is a matter of taste. A repeated P0 or
-P1 still stops the lane with `LANE-BLOCKED` and the open findings instead of looping, as does an
-area that keeps failing. Whenever findings were fixed, run a confirming review of the fixed diff;
-finish when a review reports no unhandled finding. If the third confirming review still reports
-new findings, stop with `LANE-BLOCKED` and the open findings rather than continuing. `review` is
-not used for now because the verification hook rejects its thread (furedea/agent-config#19). Use
-`adversarial-review` only to have Codex challenge the design of a high-risk or design-heavy
-change.
+reason, only a finding that repeats on the same grounds, is a matter of taste, or is refuted with
+evidence (see Run and Reconcile). A repeated P0 or P1 still stops the lane with `LANE-BLOCKED` and
+the open findings instead of looping, as does an area that keeps failing. Whenever findings were
+fixed, run a confirming review of the fixed diff; finish when a review reports no unhandled finding.
+If the third confirming review still reports new findings, stop with `LANE-BLOCKED` and the open
+findings rather than continuing. `review` is not used for now because the verification hook rejects
+its thread (furedea/agent-config#19). Use `adversarial-review` only to have Codex challenge the
+design of a high-risk or design-heavy change.
 
 In a repository that has them, as furedea/agent-config does, `claude-review`
 (furedea/reusable-workflows) is part of `all-green`: the lane waits for `all-green` and handles

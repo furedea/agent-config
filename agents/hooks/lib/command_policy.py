@@ -6,6 +6,7 @@ import os
 from pathlib import Path, PurePosixPath
 import re
 import subprocess
+from dataclasses import replace
 
 import git_safety
 import shell_syntax
@@ -170,6 +171,50 @@ def canonical(command: shell_syntax.Command) -> shell_syntax.Command:
         return command.rebased(1, (name,))
     globals_, _ = git_safety.git_arguments(command.arguments)
     return command.rebased(1 + len(globals_), ("git",))
+
+
+# git commit options that take a value: the next word, or the rest of the same short-option bundle.
+COMMIT_VALUED_SHORT = frozenset("mFCct")
+COMMIT_VALUED_LONG = frozenset(
+    {"--message", "--file", "--reuse-message", "--reedit-message", "--template", "--author", "--date", "--cleanup"}
+    | {"--fixup", "--squash"}
+)
+
+
+def flag_arguments_text(command: shell_syntax.Command) -> str:
+    """The command's decoded arguments for flag rules: a git commit option's value is data, not a flag."""
+    valued = commit_option_values(command.arguments)
+    return replace(
+        command, arguments=tuple("_" if index in valued else word for index, word in enumerate(command.arguments))
+    ).command_arguments_text
+
+
+def commit_option_values(arguments: tuple[str, ...]) -> frozenset[int]:
+    """Indexes of the words a git commit consumes as option values, so `-m "--no-verify"` stays a message."""
+    names = [Path(argument).name for argument in arguments]
+    if "commit" not in arguments or "git" not in names[: arguments.index("commit")]:
+        return frozenset()
+    consumed: set[int] = set()
+    index = arguments.index("commit") + 1
+    while index < len(arguments):
+        token = arguments[index]
+        if index in consumed or token == "--":
+            break
+        if token in COMMIT_VALUED_LONG or (not token.startswith("--") and valued_short(token)):
+            consumed.add(index + 1)
+            index += 1
+        index += 1
+    return frozenset(consumed)
+
+
+def valued_short(token: str) -> bool:
+    """Whether a short-option bundle ends in an option whose value is the next word."""
+    if not token.startswith("-") or len(token) < 2:
+        return False
+    for position, letter in enumerate(token[1:], 1):
+        if letter in COMMIT_VALUED_SHORT:
+            return position == len(token) - 1
+    return False
 
 
 def prefix_rule(arguments: tuple[str, ...], rules: list[dict], decision: str) -> dict | None:

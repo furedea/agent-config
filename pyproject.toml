@@ -47,6 +47,7 @@ known_first_party = [
   "shell_paths",
   "shell_syntax",
   "shell_words",
+  "shell_wrappers",
   "session_gate",
   "session_snapshot",
   "session_store",

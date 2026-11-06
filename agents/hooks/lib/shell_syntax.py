@@ -27,7 +27,7 @@ ALLOWED_NODES = frozenset(
     }
 )
 DIRECTORY_CHANGES = frozenset({"cd", "pushd", "popd"})
-SHELLS = frozenset({"bash", "dash", "ksh", "sh", "zsh"})
+SHELLS = frozenset({"ash", "bash", "dash", "hush", "ksh", "sh", "zsh"})
 COMMAND_LOOKUP = frozenset({"-v", "-V"})
 ASSIGNMENT = re.compile(r"[A-Za-z_][A-Za-z0-9_]*=")
 ASSIGNING_WRAPPERS = frozenset({"env", "sudo"})
@@ -40,6 +40,10 @@ WRAPPERS: dict[str, tuple[frozenset[str], frozenset[str]]] = {
     "exec": (frozenset({"-c", "-l"}), frozenset({"-a"})),
     "nice": (frozenset(), frozenset({"-n", "--adjustment"})),
     "nohup": (frozenset(), frozenset()),
+    "busybox": (frozenset(), frozenset()),
+    "ionice": (frozenset({"-t", "--ignore"}), frozenset({"-c", "-n", "--class", "--classdata"})),
+    "setsid": (frozenset({"-c", "-f", "-w", "--ctty", "--fork", "--wait"}), frozenset()),
+    "stdbuf": (frozenset(), frozenset({"-i", "-o", "-e", "--input", "--output", "--error"})),
     "sudo": (
         frozenset(
             {"-n", "-S", "-E", "-H", "-k", "-b", "-B", "-P", "-A", "--non-interactive", "--stdin", "--set-home"}
@@ -47,6 +51,7 @@ WRAPPERS: dict[str, tuple[frozenset[str], frozenset[str]]] = {
         frozenset({"-u", "-g", "-p", "-C", "-T", "-U", "-r", "-t", "--user", "--group", "--prompt"}),
     ),
     "time": (frozenset({"-p", "-l", "-h", "-a", "--portability"}), frozenset({"-o", "-f", "--output", "--format"})),
+    "unbuffer": (frozenset({"-p"}), frozenset()),
     "timeout": (
         frozenset({"--preserve-status", "--foreground", "-v"}),
         frozenset({"-k", "--kill-after", "-s", "--signal"}),
@@ -105,6 +110,13 @@ class Command:
         return " ".join(
             RUN_TIME_PLACEHOLDER if re.search(r"\s", argument) else word
             for word, argument in zip(self.words, self.arguments, strict=True)
+        )
+
+    @property
+    def command_arguments_text(self) -> str:
+        """The command's decoded arguments, quotes removed, with each argument containing whitespace as a placeholder."""
+        return " ".join(
+            RUN_TIME_PLACEHOLDER if re.search(r"\s", argument) else argument for argument in self.arguments
         )
 
     @property

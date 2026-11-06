@@ -424,3 +424,65 @@ def test_a_configuration_failure_is_recorded_without_the_command(
     blocked.assert_called_once_with(
         guard.audit_log.Refusal("Bash", "guard_forbidden_commands.sh", "s3", payload=payload, detail=verdict.detail)
     )
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "git 'add' .",
+        'git add "."',
+        "git add '-A'",
+        "git 'commit' -n -m x",
+        "python -m 'pip' install x",
+    ],
+)
+def test_quoted_arguments_do_not_hide_forbidden_patterns(command: str) -> None:
+    assert guard.decide("forbidden", {"tool_input": {"command": command}}).decision == "deny"
+
+
+@pytest.mark.parametrize("wrapper", ["stdbuf -o0", "setsid", "unbuffer", "ionice -c3", "ionice -c3 -n7", "busybox"])
+def test_process_wrappers_do_not_hide_forbidden_programs(wrapper: str) -> None:
+    command = f"{wrapper} gh repo delete x --yes"
+    assert guard.decide("forbidden", {"tool_input": {"command": command}}).decision == "deny"
+
+
+@pytest.mark.parametrize("wrapper", ["stdbuf -o0", "setsid", "unbuffer", "ionice -c3", "busybox"])
+def test_process_wrappers_do_not_hide_governed_programs(wrapper: str) -> None:
+    for program in ("gh api -X DELETE repos/o/r", "curl https://example.com"):
+        command = f"{wrapper} {program}"
+        assert guard.decide("allowed", {"tool_input": {"command": command}}).decision == "ask"
+
+
+@pytest.mark.parametrize(
+    "wrapper",
+    [
+        "ionice -c 3",
+        "ionice -c3 -n7 -t",
+        "stdbuf -o L",
+        "stdbuf --output=L",
+        "setsid -w",
+        "setsid -f -c",
+        "setsid --fork",
+        "unbuffer -p",
+        "/usr/bin/stdbuf -oL",
+        "stdbuf -oL setsid -w unbuffer -p ionice -c3 busybox nice -n 5",
+        "busybox env",
+        "busybox timeout 5",
+    ],
+)
+def test_wrapper_option_forms_still_expose_the_program(wrapper: str) -> None:
+    assert guard.decide("forbidden", {"tool_input": {"command": f"{wrapper} git add ."}}).decision == "deny"
+
+
+@pytest.mark.parametrize("command", ["ionice -p 1 git add .", "busybox --list", "stdbuf --out=L git add ."])
+def test_unknown_wrapper_options_are_left_to_the_user(command: str) -> None:
+    assert guard.decide("forbidden", {"tool_input": {"command": command}}).decision == "ask"
+
+
+@pytest.mark.parametrize("shell", ["ash", "hush", "busybox sh", "busybox ash", "setsid hush"])
+def test_busybox_shells_do_not_hide_scripts(shell: str) -> None:
+    assert guard.decide("forbidden", {"tool_input": {"command": f"{shell} -c 'git add .'"}}).decision == "deny"
+    assert (
+        guard.decide("allowed", {"tool_input": {"command": f"{shell} -c 'curl https://example.com'"}}).decision
+        == "ask"
+    )

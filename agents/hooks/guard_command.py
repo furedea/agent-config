@@ -126,7 +126,26 @@ def objection(kind: str, item: shell_syntax.Command, policy: Policy) -> Verdict:
     preview = shell_syntax.command_preview(item.raw)
     if kind == "forbidden":
         return forbidden_objection(item, candidate, policy)
+    if (verdict := wrapped_ask_objection(candidate, policy.prefixes, preview)).decision != "allow":
+        return verdict
     return governed_objection(candidate, policy, preview)
+
+
+def wrapped_ask_objection(candidate: shell_syntax.Command, prefixes: list[dict], preview: str) -> Verdict:
+    """Ask for an ask-prefix command that runs behind a wrapper or inside a shell script.
+
+    The provider matches an ask prefix only against the command it sees, so a wrapper or a shell -c
+    hides the prefix from it; the hook decides itself.
+    """
+    asked = command_policy.prefix_rule(candidate.arguments, prefixes, "ask") if candidate.wrapper_depth else None
+    if asked is None:
+        return hook_decision.ALLOW
+    prefix = " ".join(asked["prefix"])
+    return hook_decision.ask(
+        f"Needs review: '{prefix}' runs behind a wrapper or inside a shell script, where the permission rules "
+        f"do not see it.\n\nCommand: {preview}",
+        prefix,
+    )
 
 
 def is_listed(candidate: shell_syntax.Command, rules: list[dict]) -> bool:
@@ -153,11 +172,12 @@ def is_listed(candidate: shell_syntax.Command, rules: list[dict]) -> bool:
 def forbidden_objection(item: shell_syntax.Command, candidate: shell_syntax.Command, policy: Policy) -> Verdict:
     """Deny only: a literal deny prefix or pattern wins even beside a run-time argument."""
     rules = command_policy.unscoped_rules(policy.rules)
+    flagged = (command_policy.without_option_values(item), command_policy.without_option_values(candidate))
     matched = (
-        command_policy.regex_reason(item.command_words_text, rules)
-        or command_policy.regex_reason(candidate.command_words_text, rules)
-        or command_policy.regex_reason(item.command_arguments_text, rules)
-        or command_policy.regex_reason(candidate.command_arguments_text, rules)
+        command_policy.regex_reason(flagged[0].command_words_text, rules)
+        or command_policy.regex_reason(flagged[1].command_words_text, rules)
+        or command_policy.regex_reason(flagged[0].command_arguments_text, rules)
+        or command_policy.regex_reason(flagged[1].command_arguments_text, rules)
         or command_policy.argument_reason(candidate.arguments, policy.rules)
     )
     reason = command_policy.prefix_reason(candidate.arguments, policy.prefixes, "deny") or matched

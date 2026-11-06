@@ -6,9 +6,11 @@ import os
 from pathlib import Path, PurePosixPath
 import re
 import subprocess
+from dataclasses import replace
 
 import git_safety
 import shell_syntax
+import shell_wrappers
 
 
 # Characters a URL parser drops anywhere in a URL, so a scheme split by them still loads.
@@ -170,6 +172,74 @@ def canonical(command: shell_syntax.Command) -> shell_syntax.Command:
         return command.rebased(1, (name,))
     globals_, _ = git_safety.git_arguments(command.arguments)
     return command.rebased(1 + len(globals_), ("git",))
+
+
+# git commit options that take a value: the next word, or the rest of the same short-option bundle.
+COMMIT_VALUED_SHORT = frozenset("mFCct")
+# Options whose value, if any, is attached: the letters after them are that value, not more options.
+COMMIT_OPTIONAL_SHORT = frozenset("Su")
+COMMIT_VALUED_LONG = frozenset(
+    {"--message", "--file", "--reuse-message", "--reedit-message", "--template", "--author", "--date", "--cleanup"}
+    | {"--fixup", "--squash", "--trailer", "--pathspec-from-file"}
+)
+
+
+def without_option_values(command: shell_syntax.Command) -> shell_syntax.Command:
+    """The command with each git commit option value masked, in its words and its decoded arguments.
+
+    Flag rules read the rest: a value such as the message in `-m "--no-verify"` or `-nm"fix: x"` is
+    data, not a flag; so is every path after `--`. A value in the next word becomes a placeholder; one attached to its option
+    is cut off, leaving the option letters.
+    """
+    masks = commit_option_masks(command.arguments)
+    words = tuple(masks.get(index, word) for index, word in enumerate(command.words))
+    arguments = tuple(masks.get(index, word) for index, word in enumerate(command.arguments))
+    return replace(command, words=words, arguments=arguments)
+
+
+def commit_option_masks(arguments: tuple[str, ...]) -> dict[int, str]:
+    """What replaces each word of a git commit that is, or carries, an option value."""
+    start = commit_subcommand_index(arguments)
+    if start is None:
+        return {}
+    masks: dict[int, str] = {}
+    index = start + 1
+    while index < len(arguments) and arguments[index] != "--":
+        token = arguments[index]
+        value = None if token.startswith("--") or not token.startswith("-") else short_value(token)
+        if token in COMMIT_VALUED_LONG or (value is not None and not value[1]):
+            masks[index + 1] = "_"
+            index += 1
+        elif value is not None:
+            masks[index] = token[: value[0] + 1]
+        index += 1
+    masks.update(dict.fromkeys(range(index + 1, len(arguments)), "_"))
+    return masks
+
+
+def commit_subcommand_index(arguments: tuple[str, ...]) -> int | None:
+    """Where the commit subcommand of a git call sits, looking through process wrappers; None for any other command."""
+    program = 0
+    try:
+        while (step := shell_wrappers.wrapped_index(arguments[program:])) is not None:
+            program += step
+    except shell_syntax.UnsupportedSyntax:
+        return None
+    if Path(arguments[program]).name != "git":
+        return None
+    globals_, _ = git_safety.git_arguments(arguments[program:])
+    index = program + 1 + len(globals_)
+    return index if index < len(arguments) and arguments[index] == "commit" else None
+
+
+def short_value(token: str) -> tuple[int, bool] | None:
+    """Where a short-option bundle's value option sits, and whether its value is attached to the bundle."""
+    for position, letter in enumerate(token[1:], 1):
+        if letter in COMMIT_OPTIONAL_SHORT:
+            return None
+        if letter in COMMIT_VALUED_SHORT:
+            return position, position < len(token) - 1
+    return None
 
 
 def prefix_rule(arguments: tuple[str, ...], rules: list[dict], decision: str) -> dict | None:

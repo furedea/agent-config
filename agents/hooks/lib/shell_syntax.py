@@ -9,6 +9,7 @@ from typing import Self
 
 import shell_input
 from shell_words import UnsupportedSyntax, literal_word, nodes, source_text, spreads
+from shell_wrappers import ASSIGNMENT, WRAPPERS, OptionScan, wrapped_index
 
 
 COMMAND_PREVIEW_LIMIT = 200
@@ -27,42 +28,30 @@ ALLOWED_NODES = frozenset(
     }
 )
 DIRECTORY_CHANGES = frozenset({"cd", "pushd", "popd"})
-SHELLS = frozenset({"ash", "bash", "dash", "hush", "ksh", "sh", "zsh"})
-COMMAND_LOOKUP = frozenset({"-v", "-V"})
-ASSIGNMENT = re.compile(r"[A-Za-z_][A-Za-z0-9_]*=")
-ASSIGNING_WRAPPERS = frozenset({"env", "sudo"})
-# Process wrappers run their trailing arguments as a command. Each entry lists the flags without an
-# operand and the options whose operand is the next token; unknown options are refused, not skipped.
-WRAPPERS: dict[str, tuple[frozenset[str], frozenset[str]]] = {
-    "caffeinate": (frozenset({"-d", "-i", "-m", "-s", "-u"}), frozenset({"-t", "-w"})),
-    "command": (frozenset({"-p"}), frozenset()),
-    "env": (frozenset({"-i", "--ignore-environment", "-0", "--null"}), frozenset({"-u", "--unset", "-C", "--chdir"})),
-    "exec": (frozenset({"-c", "-l"}), frozenset({"-a"})),
-    "nice": (frozenset(), frozenset({"-n", "--adjustment"})),
-    "nohup": (frozenset(), frozenset()),
-    "busybox": (frozenset(), frozenset()),
-    "ionice": (frozenset({"-t", "--ignore"}), frozenset({"-c", "-n", "--class", "--classdata"})),
-    "setsid": (frozenset({"-c", "-f", "-w", "--ctty", "--fork", "--wait"}), frozenset()),
-    "stdbuf": (frozenset(), frozenset({"-i", "-o", "-e", "--input", "--output", "--error"})),
-    "sudo": (
-        frozenset(
-            {"-n", "-S", "-E", "-H", "-k", "-b", "-B", "-P", "-A", "--non-interactive", "--stdin", "--set-home"}
-        ),
-        frozenset({"-u", "-g", "-p", "-C", "-T", "-U", "-r", "-t", "--user", "--group", "--prompt"}),
-    ),
-    "time": (frozenset({"-p", "-l", "-h", "-a", "--portability"}), frozenset({"-o", "-f", "--output", "--format"})),
-    "unbuffer": (frozenset({"-p"}), frozenset()),
-    "timeout": (
-        frozenset({"--preserve-status", "--foreground", "-v"}),
-        frozenset({"-k", "--kill-after", "-s", "--signal"}),
-    ),
-    "xargs": (
-        frozenset({"-0", "-r", "-t", "-p", "-x", "-o", "--null", "--no-run-if-empty", "--verbose", "--interactive"}),
-        frozenset(
-            {"-n", "-I", "-L", "-P", "-s", "-d", "-E", "-a", "--max-args", "--replace", "--max-lines", "--max-procs"}
-        ),
-    ),
-}
+SHELLS = frozenset(
+    {
+        "ash",
+        "bash",
+        "dash",
+        "hush",
+        "ksh",
+        "mksh",
+        "oksh",
+        "pdksh",
+        "posh",
+        "rbash",
+        "sh",
+        "yash",
+        "zsh",
+    }
+)
+# Shells whose syntax is not bash's, and names ending in sh that are no known shell: parsing their -c
+# script as bash would misread it, so a -c (or --command) option asks instead.
+FOREIGN_SHELLS = frozenset({"csh", "elvish", "es", "fish", "nu", "rc", "tcsh"})
+# Names ending in sh that may be a shell; a file extension (run.sh) or ssh is not one.
+SHELL_LOOKALIKE = re.compile(r"(?!ssh$)[a-z0-9_-]*sh")
+FOREIGN_COMMAND_OPTION = re.compile(r"-(-command|[A-Za-z]*c[A-Za-z]*)(=.*)?")
+VERSION_SUFFIX = re.compile(r"[0-9._-]+$")
 
 
 @dataclass(frozen=True, slots=True)
@@ -184,6 +173,7 @@ def parse(source: str, depth: int = 0, directories: tuple[Path | None, ...] = ()
     owners = {id(node["Cmd"]): node for node in records if isinstance(node.get("Cmd"), dict)}
     if any(node.get("Type") not in ALLOWED_NODES for node in records):
         raise UnsupportedSyntax("dynamic or unsupported shell syntax requires explicit review", "expansion")
+    hidden_calls = hidden_from_provider(records)
     data = source.encode()
     sources = shell_input.InputSources.of(records, data)
     commands: list[Command] = []
@@ -191,22 +181,24 @@ def parse(source: str, depth: int = 0, directories: tuple[Path | None, ...] = ()
         if node.get("Type") != "CallExpr" or not node.get("Args"):
             continue
         owner = owners.get(id(node), node)
-        command = replace(literal_command(node, owner, data), wrapper_depth=depth)
+        command = replace(literal_command(node, owner, data), wrapper_depth=depth + (id(node) in hidden_calls))
         layers = [command, *unwrapped(command)]
         commands += layers
         for layer in layers:
             directories = reached_directories(directories, layer)
         innermost = layers[-1]
-        if script := shell_script(innermost):
-            scripts = [script]
-        elif Path(innermost.arguments[0]).name in SHELLS:
-            scripts = sources.scripts(owner, directories)
-        else:
-            scripts = []
-        commands += [
-            nested for script in scripts for nested in parse(script, innermost.wrapper_depth + 1, directories)
-        ]
+        scripts = [(script, layer.wrapper_depth + 1) for layer in layers for script in shell_scripts(layer)]
+        if not scripts and shell_name(Path(innermost.arguments[0]).name) in SHELLS:
+            scripts = [(script, innermost.wrapper_depth + 1) for script in sources.scripts(owner, directories)]
+        commands += [nested for script, nested_depth in scripts for nested in parse(script, nested_depth, directories)]
     return tuple(commands)
+
+
+def hidden_from_provider(records: tuple[dict, ...]) -> set[int]:
+    """The calls under a time keyword or a negation, which the provider's permission rules do not look through."""
+    covered = [node["Stmt"] for node in records if node.get("Type") == "TimeClause" and node.get("Stmt")]
+    covered += [node for node in records if node.get("Negated")]
+    return {id(call) for node in covered for call in nodes(node) if call.get("Type") == "CallExpr"}
 
 
 def reached_directories(directories: tuple[Path | None, ...], command: Command) -> tuple[Path | None, ...]:
@@ -326,77 +318,85 @@ def redirect_operator(redirect: dict, data: bytes) -> str:
 def unwrapped(command: Command) -> list[Command]:
     """Peel process wrappers so policy sees the program they eventually run."""
     exposed: list[Command] = []
-    while (index := wrapped_index(command.arguments)) is not None:
+    while (index := wrapped_index(command.arguments, command.dynamic)) is not None:
         appends_input = command.appends_input or Path(command.arguments[0]).name == "xargs"
         command = replace(command.rebased(index, depth=command.wrapper_depth + 1), appends_input=appends_input)
         exposed.append(command)
     return exposed
 
 
-def wrapped_index(arguments: tuple[str, ...]) -> int | None:
-    """Locate the command a process wrapper runs, or None when the call is not a wrapper invocation."""
-    name = Path(arguments[0]).name
-    if name not in WRAPPERS:
-        return None
-    _, valued = WRAPPERS[name]
-    index = 1
-    while index < len(arguments):
-        token = arguments[index]
-        if token == "--":
-            index += 1
-            break
-        if name == "command" and token in COMMAND_LOOKUP:
-            return None
-        if token in valued:
-            index += 2
-        elif (name in ASSIGNING_WRAPPERS and ASSIGNMENT.match(token)) or is_flag(name, token):
-            index += 1
-        elif token.startswith("-"):
-            raise UnsupportedSyntax(f"{name} option requires explicit review: {token}", "wrapper")
-        else:
-            break
-    if name == "timeout":
-        index += 1
-    return index if index < len(arguments) else None
-
-
-def is_flag(name: str, token: str) -> bool:
-    """Recognize a wrapper's options that carry no separate operand, including attached-value short forms."""
-    flags, valued = WRAPPERS[name]
-    if token in flags:
-        return True
-    if token.startswith("--"):
-        key, _, value = token.partition("=")
-        return bool(value) and key in valued
-    if len(token) > 2 and token[:2] in valued:
-        return True
-    if name == "nice":
-        return token[1:].isdigit()
-    return name == "caffeinate" and re.fullmatch(r"-[dimsu]+", token) is not None
-
-
-def shell_script(command: Command) -> str:
-    """Return the literal script that eval or a shell -c invocation runs, or an empty string."""
+def shell_scripts(command: Command) -> list[str]:
+    """Return each literal script that eval, a shell -c invocation, or a script-running wrapper may run."""
     arguments = command.arguments
     executable = Path(arguments[0]).name
     if executable == "eval":
         if any(command.dynamic[1:]):
             raise UnsupportedSyntax("eval of a computed script requires explicit review", "wrapper")
-        return " ".join(arguments[1:])
-    if executable not in SHELLS:
-        return ""
+        return [" ".join(arguments[1:])]
+    if executable in WRAPPERS:
+        return wrapper_scripts(command, executable)
+    shell = shell_name(executable)
+    foreign = shell in FOREIGN_SHELLS or (shell not in SHELLS and SHELL_LOOKALIKE.fullmatch(shell) is not None)
+    if shell not in SHELLS and not foreign:
+        return []
     option = next(
         (
             index
             for index, argument in enumerate(arguments[1:], 1)
-            if argument.startswith("-") and not argument.startswith("--") and "c" in argument
+            if argument.startswith("-")
+            and (
+                FOREIGN_COMMAND_OPTION.fullmatch(argument)
+                if foreign
+                else not argument.startswith("--") and "c" in argument
+            )
         ),
         None,
     )
     if option is None:
-        return ""
-    if option + 1 >= len(arguments):
-        raise UnsupportedSyntax("shell wrapper has no literal command", "wrapper")
-    if command.dynamic[option + 1]:
+        return []
+    if foreign:
+        raise UnsupportedSyntax(
+            f"{executable} may run its -c argument as a script this inspection cannot parse; requires explicit review",
+            "wrapper",
+        )
+    script = script_index(arguments, option)
+    if command.dynamic[script]:
         raise UnsupportedSyntax("a shell wrapper running a computed script requires explicit review", "wrapper")
-    return arguments[option + 1]
+    return [arguments[script]]
+
+
+# Shell options that take the next word as a value, which would hide where the -c script starts.
+SHELL_VALUED_OPTIONS = frozenset({"-o", "+o", "-O", "+O", "--rcfile", "--init-file"})
+
+
+def script_index(arguments: tuple[str, ...], option: int) -> int:
+    """Where the script of a shell's -c sits: the first word after it that is not an option, past a `--`."""
+    index = option + 1
+    while index < len(arguments) and arguments[index] != "--" and arguments[index][:1] in "-+":
+        if arguments[index] in SHELL_VALUED_OPTIONS:
+            raise UnsupportedSyntax("a shell option before the -c script requires explicit review", "wrapper")
+        index += 1
+    index += index < len(arguments) and arguments[index] == "--"
+    if index >= len(arguments):
+        raise UnsupportedSyntax("shell wrapper has no literal command", "wrapper")
+    return index
+
+
+def shell_name(executable: str) -> str:
+    """The shell a program name stands for, without a version suffix such as ksh93 or bash-5.2."""
+    return VERSION_SUFFIX.sub("", executable) or executable
+
+
+def wrapper_scripts(command: Command, name: str) -> list[str]:
+    """The scripts a wrapper such as script -c, flock -c, or watch hands to a shell; every one counts, as the program picks."""
+    arguments = command.arguments
+    scan = OptionScan(name, arguments).run()
+    if not scan.runs_script:
+        return []
+    if any(command.dynamic):
+        raise UnsupportedSyntax(f"a {name} command string built at run time requires explicit review", "wrapper")
+    if name == "watch":
+        return [" ".join(arguments[scan.index :])]
+    if None in scan.scripts:
+        raise UnsupportedSyntax(f"{name} has no literal command", "wrapper")
+    return [script for script in scan.scripts if script is not None]

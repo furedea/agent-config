@@ -40,7 +40,7 @@ class Case:
 
 @dataclass(frozen=True)
 class Outcome:
-    findings: dict[str, float | None]
+    findings: dict[int, float | None]
     seconds: float
     input_tokens: int | None
     usd: float | None
@@ -68,16 +68,24 @@ def build_case(rule_id: str, spec: dict) -> Case:
     return Case(rule_id, spec["ask"], source, units, len(functions))
 
 
+def scrub(text: str, work: Path) -> str:
+    """Replace local paths so committed results carry no username or home directory."""
+    for real, placeholder in ((str(work), "<work>"), (str(SPIKE_DIR.parents[2]), "<repo>"), (str(Path.home()), "~")):
+        text = text.replace(real, placeholder)
+    return text
+
+
 class Log:
-    def __init__(self, path: Path) -> None:
+    def __init__(self, path: Path, work: Path) -> None:
         self._path = path
+        self._work = work
         self._secret = os.environ.get("TYPESAFE_API_KEY", "")
 
     def write(self, message: str) -> None:
         if len(self._secret) >= 8:
             message = message.replace(self._secret, "[redacted]")
         with self._path.open("a") as handle:
-            handle.write(message + "\n")
+            handle.write(scrub(message, self._work) + "\n")
 
 
 def run_command(command: list[str], cwd: Path | None, log: Log) -> tuple[subprocess.CompletedProcess, float]:
@@ -89,12 +97,13 @@ def run_command(command: list[str], cwd: Path | None, log: Log) -> tuple[subproc
     return done, seconds
 
 
-def match_findings(case: Case, found: list[tuple[int, float | None]]) -> dict[str, float | None]:
-    verdicts: dict[str, float | None] = {}
+def match_findings(case: Case, found: list[tuple[int, float | None]]) -> dict[int, float | None]:
+    """Map each flagged unit's first line to the finding's confidence (names repeat, lines do not)."""
+    verdicts: dict[int, float | None] = {}
     for unit in case.units:
         for line, confidence in found:
             if unit.first_line <= line <= unit.last_line:
-                verdicts[unit.name] = confidence
+                verdicts[unit.first_line] = confidence
     return verdicts
 
 
@@ -120,7 +129,7 @@ def jev_lint_outcome(case: Case, work: Path, raw_dir: Path, log: Log, plan: bool
     if plan:
         command += ["--dry-run"]
     done, wall = run_command(command, None, log)
-    (raw_dir / f"jev_lint_{case.rule_id.replace('-', '_')}.json").write_text(done.stdout)
+    (raw_dir / f"jev_lint_{case.rule_id.replace('-', '_')}.json").write_text(scrub(done.stdout, work))
     try:
         data = json.loads(done.stdout)
     except json.JSONDecodeError:
@@ -155,7 +164,7 @@ def jevlint_outcome(case: Case, work: Path, raw_dir: Path, log: Log, plan: bool)
         return Outcome({}, 0.0, None, None, None)  # jevlint has no dry-run; nothing to validate in --plan
     command = [str(work / "bin" / "jevlint"), "check", "--format", "json", "--refresh-cache", case.source.name]
     done, wall = run_command(command, project, log)
-    (raw_dir / f"jevlint_{case.rule_id.replace('-', '_')}.json").write_text(done.stdout)
+    (raw_dir / f"jevlint_{case.rule_id.replace('-', '_')}.json").write_text(scrub(done.stdout, work))
     try:
         data = json.loads(done.stdout)
     except json.JSONDecodeError:
@@ -175,8 +184,8 @@ def rows_for(tool: str, case: Case, outcome: Outcome, model: str) -> list[dict]:
             "rule": case.rule_id,
             "function": unit.name,
             "label": unit.label,
-            "verdict": "error" if outcome.error else ("violation" if unit.name in outcome.findings else "pass"),
-            "confidence": outcome.findings.get(unit.name),
+            "verdict": "error" if outcome.error else ("violation" if unit.first_line in outcome.findings else "pass"),
+            "confidence": outcome.findings.get(unit.first_line),
             "seconds": outcome.seconds / count,
             "invocation_seconds": outcome.seconds,
             "judgements_in_invocation": count,
@@ -230,7 +239,7 @@ def main() -> int:
     )
     args = parser.parse_args()
     RESULTS_DIR.mkdir(exist_ok=True)
-    log = Log(RESULTS_DIR / ("plan.log" if args.plan else "run.log"))
+    log = Log(RESULTS_DIR / ("plan.log" if args.plan else "run.log"), args.work)
     log.write(f"== start model={args.model} jev-lint={JEV_LINT_VERSION} plan={args.plan}")
     failures = 0
     for tool in TOOLS:

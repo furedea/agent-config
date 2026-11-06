@@ -1124,16 +1124,6 @@
       "prefix": [
         "pnpm",
         "exec",
-        "stryker",
-        "run"
-      ],
-      "justification": "Allow mutation testing that tsdd asks for, like the test runner it wraps; --inPlace stays denied."
-    },
-    {
-      "decision": "allow",
-      "prefix": [
-        "pnpm",
-        "exec",
         "tsc"
       ],
       "justification": "Allow local verification needed for the requested work; reuse successful hook results."

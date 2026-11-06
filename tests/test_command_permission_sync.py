@@ -46,7 +46,6 @@ VERIFICATION_PREFIXES = [
     "pnpm run format-check",
     "pnpm run format:check",
     "pnpm run typecheck",
-    "pnpm exec stryker run",
     "selene",
     "shellcheck",
     "shfmt -d",
@@ -162,6 +161,11 @@ def test_driving_other_terminal_panes_requires_approval(prefix: tuple[str, ...])
 def test_justifications_are_provider_neutral() -> None:
     provider_specific = [rule for rule in POLICY["rules"] if re.search(r"\b(Codex|Claude)\b", rule["justification"])]
     assert provider_specific == []
+
+
+def test_stryker_waits_for_approval_because_its_config_file_can_turn_on_in_place_runs() -> None:
+    assert ("pnpm", "exec", "stryker") not in ALLOW
+    assert ("pnpm", "exec", "stryker", "run") not in ALLOW
 
 
 def test_ask_prefix_has_no_allow_ancestor() -> None:

@@ -49,10 +49,8 @@ has no network), the diff range `origin/main...HEAD`, and that the review is rea
 any file may be read to verify a claim, asks for each finding tagged P0 to P3, prefers no finding
 over a weak one, and forbids style and naming findings. If Codex cannot run, an Opus subagent
 with only the requirements and the diff reviews instead, and the lane reports which reviewer ran.
-Fixes by Codex use a third brief command, with `--write` and `--effort medium` like
-implementation and a fixed text that points at a findings file: the lane writes the findings to
-the path the brief names, inside the worktree and uncommitted so Codex can read it, then runs
-that command unchanged, so no finding text is typed into a command.
+The lane itself fixes review findings, also when Codex implemented; Codex is used only for the
+initial implementation and for read-only reviews.
 
 The lane fixes every finding of any severity, including P2 and P3 and the inline comments of the
 `claude-review` check, and does not defer one to the user. It records in the PR body, with the
@@ -60,17 +58,18 @@ reason, only a finding that repeats on the same grounds or is a matter of taste.
 P1 still stops the lane with `LANE-BLOCKED` and the open findings instead of looping, as does an
 area that keeps failing. Whenever findings were fixed, run a confirming review of the fixed diff;
 finish when a review reports no unhandled finding. If the third confirming review still reports
-new findings, stop with `LANE-BLOCKED` and the open findings rather than continuing. `review` is not used for now because the
-verification hook rejects its thread (furedea/agent-config#19). Use `adversarial-review` only to
-have Codex challenge the design of a high-risk or design-heavy change.
+new findings, stop with `LANE-BLOCKED` and the open findings rather than continuing. `review` is
+not used for now because the verification hook rejects its thread (furedea/agent-config#19). Use
+`adversarial-review` only to have Codex challenge the design of a high-risk or design-heavy
+change.
 
 In a pull request `claude-review` (furedea/reusable-workflows) is part of `all-green`. The lane
 waits for `all-green` and handles the Claude review's inline comments as findings. The
 `furedea-agent` App cannot push `.github/workflows/` changes: the lane commits them, stops with
 `LANE-BLOCKED` naming the commit, and the user pushes. The parent then prompts the lane with
-`herdr agent prompt` to continue, and the lane resumes. A lane ends its final
-message with `LANE-READY` only when `all-green` is green and no finding is unhandled; otherwise it
-ends with `LANE-BLOCKED` and the reason. On `LANE-READY` the parent also checks which reviewer
+`herdr agent prompt` to continue, and the lane resumes. A lane ends its final message with
+`LANE-READY` only when `all-green` is green and no finding is unhandled; otherwise it ends with
+`LANE-BLOCKED` and the reason. On `LANE-READY` the parent also checks which reviewer
 ran and that confirming reviews ran, before reporting. The lane never types into the parent's
 pane with `herdr agent prompt` or `send-text`: text typed there is indistinguishable from the
 user's own input.

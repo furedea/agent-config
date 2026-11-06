@@ -48,7 +48,9 @@ SHELLS = frozenset(
 # Shells whose syntax is not bash's, and names ending in sh that are no known shell: parsing their -c
 # script as bash would misread it, so a -c (or --command) option asks instead.
 FOREIGN_SHELLS = frozenset({"csh", "elvish", "es", "fish", "nu", "rc", "tcsh"})
-SHELL_LOOKALIKE = re.compile(r"[a-z0-9_.-]*sh")
+# Names ending in sh that may be a shell; a file extension (run.sh) or ssh is not one.
+SHELL_LOOKALIKE = re.compile(r"(?!ssh$)[a-z0-9_-]*sh")
+FOREIGN_COMMAND_OPTION = re.compile(r"-(-command|[A-Za-z]*c[A-Za-z]*)(=.*)?")
 VERSION_SUFFIX = re.compile(r"[0-9._-]+$")
 
 
@@ -341,7 +343,12 @@ def shell_scripts(command: Command) -> list[str]:
         (
             index
             for index, argument in enumerate(arguments[1:], 1)
-            if argument.startswith("-") and (foreign or not argument.startswith("--")) and "c" in argument
+            if argument.startswith("-")
+            and (
+                FOREIGN_COMMAND_OPTION.fullmatch(argument)
+                if foreign
+                else not argument.startswith("--") and "c" in argument
+            )
         ),
         None,
     )

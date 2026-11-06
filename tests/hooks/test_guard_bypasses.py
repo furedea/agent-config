@@ -435,3 +435,24 @@ def test_a_path_after_a_double_dash_is_no_commit_flag(command: str) -> None:
 
 def test_a_flag_before_the_double_dash_is_still_denied() -> None:
     assert verdict("forbidden", "git commit -n -m x -- notes.txt") == "deny"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "./build.sh --clean",
+        "./scripts/install.sh --force",
+        "lint_format.sh --check",
+    ],
+)
+def test_a_script_or_ssh_ending_in_sh_is_no_foreign_shell(command: str) -> None:
+    assert verdict("forbidden", command) == "allow"
+
+
+@pytest.mark.parametrize("command", ["fish -c 'ls'", "fish --command=ls", "zzsh -c ls", "tcsh -fc ls"])
+def test_a_foreign_shell_command_option_still_asks(command: str) -> None:
+    assert verdict("forbidden", command) == "ask"
+
+
+def test_ssh_is_denied_by_its_prefix_not_asked_as_a_foreign_shell() -> None:
+    assert verdict("forbidden", "ssh -oConnectTimeout=5 host") == "deny"

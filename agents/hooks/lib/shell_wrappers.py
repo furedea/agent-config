@@ -77,6 +77,7 @@ LEADING_OPERANDS = {"chrt": 1, "flock": 1, "script": 1, "taskset": 1, "timeout":
 # Options whose operand is a script a shell runs; watch joins its words into one unless it has -x.
 SCRIPT_OPTIONS = {"flock": ("-c", "--command"), "script": ("-c", "--command")}
 EXEC_OPTIONS = ("-x", "--exec")
+PRIORITY = re.compile(r"\+?[0-9]+")
 # Short options whose value, if any, is the rest of the bundle: watch -dx is -d with the value x.
 OPTIONAL_ATTACHED = {"watch": frozenset({"-d"})}
 
@@ -90,7 +91,7 @@ def wrapped_index(arguments: tuple[str, ...], dynamic: tuple[bool, ...] = ()) ->
     if scan.runs_script and name != "script":
         return None
     index = scan.index + scan.leading_operands()
-    if index < len(arguments) and index > scan.index and arguments[index] == "--":
+    if index < len(arguments) and (index > scan.index or name == "chrt") and arguments[index] == "--":
         index += 1
     if index >= len(arguments) or (name == "script" and arguments[index].startswith("-")):
         return None
@@ -132,7 +133,7 @@ class OptionScan:
             return LEADING_OPERANDS.get(self.name, 0)
         if any(self.dynamic[self.index : self.index + 1]):
             raise UnsupportedSyntax("a chrt priority known only at run time requires explicit review", "wrapper")
-        return int(self.index < len(self.arguments) and self.arguments[self.index].isdigit())
+        return int(self.index < len(self.arguments) and PRIORITY.fullmatch(self.arguments[self.index]) is not None)
 
     def run(self) -> Self:
         while self.index < len(self.arguments) and self.take_option():

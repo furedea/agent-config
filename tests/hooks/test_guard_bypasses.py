@@ -413,3 +413,25 @@ def test_option_values_are_masked_only_in_a_real_git_commit(command: str) -> Non
 @pytest.mark.parametrize("command", ["watch -dx '{}'", "watch -dx {}", "watch -d -n 5 '{}'"])
 def test_watch_differences_takes_an_attached_value_not_options(command: str) -> None:
     assert verdict("forbidden", command.format(DELETE)) == "deny"
+
+
+@pytest.mark.parametrize("priority", ["+0", "+10"])
+def test_a_signed_chrt_priority_is_skipped_to_reach_the_program(priority: str) -> None:
+    assert verdict("forbidden", f"chrt -o {priority} {DELETE}") == "deny"
+    assert verdict("allowed", f"chrt -o {priority} gh pr merge 76 --merge") == "ask"
+
+
+def test_a_double_dash_after_chrt_options_with_no_priority_is_skipped() -> None:
+    assert verdict("forbidden", f"chrt -o -- -- {DELETE}") == "deny"
+    assert verdict("allowed", "chrt -o -- -- gh pr merge 76 --merge") == "ask"
+
+
+@pytest.mark.parametrize(
+    "command", ["git commit -m x -- -notes.txt", "git commit -m x -- -n", "git commit -m x -- --no-verify"]
+)
+def test_a_path_after_a_double_dash_is_no_commit_flag(command: str) -> None:
+    assert verdict("forbidden", command) == "allow"
+
+
+def test_a_flag_before_the_double_dash_is_still_denied() -> None:
+    assert verdict("forbidden", "git commit -n -m x -- notes.txt") == "deny"

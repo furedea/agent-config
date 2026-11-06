@@ -188,7 +188,7 @@ def without_option_values(command: shell_syntax.Command) -> shell_syntax.Command
     """The command with each git commit option value masked, in its words and its decoded arguments.
 
     Flag rules read the rest: a value such as the message in `-m "--no-verify"` or `-nm"fix: x"` is
-    data, not a flag. A value in the next word becomes a placeholder; one attached to its option
+    data, not a flag; so is every path after `--`. A value in the next word becomes a placeholder; one attached to its option
     is cut off, leaving the option letters.
     """
     masks = commit_option_masks(command.arguments)
@@ -213,6 +213,7 @@ def commit_option_masks(arguments: tuple[str, ...]) -> dict[int, str]:
         elif value is not None:
             masks[index] = token[: value[0] + 1]
         index += 1
+    masks.update(dict.fromkeys(range(index + 1, len(arguments)), "_"))
     return masks
 
 

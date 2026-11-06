@@ -198,7 +198,7 @@ def summarize(tool: str, rows: list[dict]) -> str:
 
 
 def run_tool(tool: str, args: argparse.Namespace, log: Log) -> list[dict]:
-    raw_dir = RESULTS_DIR / "raw"
+    raw_dir = RESULTS_DIR / ("plan_raw" if args.plan else "raw")
     raw_dir.mkdir(parents=True, exist_ok=True)
     rows: list[dict] = []
     for case in load_cases():

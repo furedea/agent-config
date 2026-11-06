@@ -81,9 +81,17 @@ jobs:
 
       - name: Explain review failure
         if: failure()
+        env:
+          REVIEW_OUTCOME: ${{ steps.review.outcome }}
+          TOKEN_PRESENT: ${{ secrets.claude_code_oauth_token != '' }}
         run: |
           {
             echo "### Claude review failed"
-            echo "- Blocking findings: read the inline review comments on the pull request."
-            echo "- Authentication error: the token expired. Run \`repo review-token rotate\`."
+            if [[ "$REVIEW_OUTCOME" == "success" ]]; then
+              echo "- Blocking findings (P0/P1): read the inline review comments on the pull request."
+            elif [[ "$TOKEN_PRESENT" != "true" ]]; then
+              echo "- The OAuth token was not passed to this run (for example a Dependabot-triggered run). Check the secret is available to it."
+            else
+              echo "- The review step failed. If the log shows an authentication error, the token expired: run \`repo review-token rotate\`."
+            fi
           } >>"$GITHUB_STEP_SUMMARY"

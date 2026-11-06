@@ -321,3 +321,26 @@ def test_no_verify_bundled_with_an_attached_message_is_denied(command: str) -> N
 @pytest.mark.parametrize("command", ["git commit -m'fix -n: x'", 'git commit -m"fix --no-verify: x"'])
 def test_an_attached_message_is_not_read_as_flags(command: str) -> None:
     assert verdict("forbidden", command) == "allow"
+
+
+def test_each_command_string_is_parsed_on_its_own() -> None:
+    command = f"script -c 'cat <<EOF' -c '{DELETE}\nEOF' /dev/null"
+    assert verdict("forbidden", command) == "ask"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        f"script /dev/null --comm '{DELETE}'",
+        f"flock /tmp/l --comm '{DELETE}'",
+    ],
+)
+def test_abbreviated_command_options_after_the_operand_are_not_skipped(command: str) -> None:
+    assert verdict("forbidden", command) != "allow"
+
+
+@pytest.mark.parametrize(
+    "command", ['find . -name "-exec foo"', 'find . -name "-delete foo"', "find . -iname '-ok x'"]
+)
+def test_a_quoted_search_text_is_not_read_as_a_find_action(command: str) -> None:
+    assert verdict("forbidden", command) == "allow"

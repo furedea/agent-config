@@ -95,7 +95,7 @@ class Command:
         only through eval or a shell -c wrapper, whose script parse judges as separate commands.
         """
         return " ".join(
-            prose_placeholder(word) if re.search(r"\s", argument) else word
+            prose_placeholder(word, word) if re.search(r"\s", argument) else word
             for word, argument in zip(self.words, self.arguments, strict=True)
         )
 
@@ -103,7 +103,8 @@ class Command:
     def command_arguments_text(self) -> str:
         """The command's decoded arguments, quotes removed, with each argument containing whitespace as a placeholder."""
         return " ".join(
-            prose_placeholder(argument) if re.search(r"\s", argument) else argument for argument in self.arguments
+            prose_placeholder(argument, word) if re.search(r"\s", argument) else argument
+            for word, argument in zip(self.words, self.arguments, strict=True)
         )
 
     @property
@@ -146,10 +147,15 @@ class Command:
         )
 
 
-def prose_placeholder(argument: str) -> str:
-    """Stand for an argument holding whitespace; an option keeps its first word, as in `-nm"fix: x"`."""
-    first = argument.split(maxsplit=1)[0] if argument.startswith("-") and argument.split() else ""
-    return f"{first} {RUN_TIME_PLACEHOLDER}" if first else RUN_TIME_PLACEHOLDER
+def prose_placeholder(argument: str, word: str) -> str:
+    """Stand for an argument holding whitespace.
+
+    A word that itself starts with a dash, as in `-nm"fix: x"`, is an option with an attached value and
+    keeps its first word; a quoted word such as `"-exec foo"` is prose.
+    """
+    if not word.startswith("-"):
+        return RUN_TIME_PLACEHOLDER
+    return f"{argument.split(maxsplit=1)[0]} {RUN_TIME_PLACEHOLDER}"
 
 
 def command_preview(source: str) -> str:
@@ -191,7 +197,7 @@ def parse(source: str, depth: int = 0, directories: tuple[Path | None, ...] = ()
         for layer in layers:
             directories = reached_directories(directories, layer)
         innermost = layers[-1]
-        scripts = [(script, layer.wrapper_depth + 1) for layer in layers if (script := shell_script(layer))]
+        scripts = [(script, layer.wrapper_depth + 1) for layer in layers for script in shell_scripts(layer)]
         if not scripts and shell_name(Path(innermost.arguments[0]).name) in SHELLS:
             scripts = [(script, innermost.wrapper_depth + 1) for script in sources.scripts(owner, directories)]
         commands += [nested for script, nested_depth in scripts for nested in parse(script, nested_depth, directories)]
@@ -329,20 +335,20 @@ def unwrapped(command: Command) -> list[Command]:
     return exposed
 
 
-def shell_script(command: Command) -> str:
-    """Return the literal script that eval, a shell -c invocation, or a script-running wrapper runs, or an empty string."""
+def shell_scripts(command: Command) -> list[str]:
+    """Return each literal script that eval, a shell -c invocation, or a script-running wrapper may run."""
     arguments = command.arguments
     executable = Path(arguments[0]).name
     if executable == "eval":
         if any(command.dynamic[1:]):
             raise UnsupportedSyntax("eval of a computed script requires explicit review", "wrapper")
-        return " ".join(arguments[1:])
+        return [" ".join(arguments[1:])]
     if executable in WRAPPERS:
-        return wrapper_script(command, executable)
+        return wrapper_scripts(command, executable)
     shell = shell_name(executable)
     foreign = shell in FOREIGN_SHELLS or (shell not in SHELLS and SHELL_LOOKALIKE.fullmatch(shell) is not None)
     if shell not in SHELLS and not foreign:
-        return ""
+        return []
     option = next(
         (
             index
@@ -352,7 +358,7 @@ def shell_script(command: Command) -> str:
         None,
     )
     if option is None:
-        return ""
+        return []
     if foreign:
         raise UnsupportedSyntax(
             f"{executable} may run its -c argument as a script this inspection cannot parse; requires explicit review",
@@ -362,7 +368,7 @@ def shell_script(command: Command) -> str:
         raise UnsupportedSyntax("shell wrapper has no literal command", "wrapper")
     if command.dynamic[option + 1]:
         raise UnsupportedSyntax("a shell wrapper running a computed script requires explicit review", "wrapper")
-    return arguments[option + 1]
+    return [arguments[option + 1]]
 
 
 def shell_name(executable: str) -> str:
@@ -370,16 +376,16 @@ def shell_name(executable: str) -> str:
     return VERSION_SUFFIX.sub("", executable) or executable
 
 
-def wrapper_script(command: Command, name: str) -> str:
-    """The script a wrapper such as script -c, flock -c, or watch hands to a shell, or an empty string."""
+def wrapper_scripts(command: Command, name: str) -> list[str]:
+    """The scripts a wrapper such as script -c, flock -c, or watch hands to a shell; every one counts, as the program picks."""
     arguments = command.arguments
     scan = OptionScan(name, arguments).run()
     if not scan.runs_script:
-        return ""
+        return []
     if any(command.dynamic):
         raise UnsupportedSyntax(f"a {name} command string built at run time requires explicit review", "wrapper")
     if name == "watch":
-        return " ".join(arguments[scan.index :])
+        return [" ".join(arguments[scan.index :])]
     if None in scan.scripts:
         raise UnsupportedSyntax(f"{name} has no literal command", "wrapper")
-    return "\n".join(script for script in scan.scripts if script is not None)
+    return [script for script in scan.scripts if script is not None]

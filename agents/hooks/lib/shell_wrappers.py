@@ -201,6 +201,8 @@ class OptionScan:
             self.record(key, value)
         elif token in SCRIPT_OPTIONS[self.name]:
             self.record(token, self.value_at(index + 1))
+        elif token.startswith("--") and len(key) > 2 and "--command".startswith(key):
+            self.record("--command", value or self.value_at(index + 1))
         elif token.startswith("-") and not token.startswith("--") and "c" in token:
             attached = token[token.index("c") + 1 :]
             self.record("-c", attached or self.value_at(index + 1))

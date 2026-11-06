@@ -19,8 +19,8 @@ flowchart LR
   A --> L[Parent: open lanes]
   L --> I[Lane: Codex implements]
   I --> V[Lane: verify, commit, PR]
-  V --> RV[Lane: start reviewer]
-  RV -->|findings| I
+  V --> RV[GitHub: claude-review and codex-review]
+  RV -->|findings, lane fixes and pushes| RV
   RV --> R[Lane: LANE-READY]
   R --> W[Parent: check and report]
   W --> M[User merges]
@@ -34,7 +34,7 @@ flowchart LR
 | 3. Open lanes         | Parent        | a Herdr worktree and a Sonnet lane at medium effort per lane, with a brief                                                                                                                                                   | `git-workflow` (branches), `herdr-delegation`                  |
 | 4. Implement          | Lane          | Codex (tests first, no commits)                                                                                                                                                                                              | `tsdd`, the language style skills, `domain-modeling`           |
 | 5. Verify and deliver | Lane          | —                                                                                                                                                                                                                            | `git-workflow` (commits, delivery)                             |
-| 6. Review and fix     | Lane          | an Opus subagent for Codex's code, or a read-only Codex `task` for Claude's; Codex fixes P0 and P1 findings                                                                                                                  | `git-workflow` (branches), `herdr-delegation`                  |
+| 6. Review and fix     | Lane          | the GitHub `claude-review` and `codex-review` checks; the lane fixes every finding                                                                                                                                           | `git-workflow` (delivery), `herdr-delegation`                  |
 | 7. Report             | Lane → Parent | the lane ends with `LANE-READY`; the parent waits with `herdr agent wait` and reads it                                                                                                                                       | `herdr-delegation`                                             |
 | 8. Check and report   | Parent        | —                                                                                                                                                                                                                            | —                                                              |
 | 9. Merge              | User          | —                                                                                                                                                                                                                            | —                                                              |
@@ -44,8 +44,8 @@ flowchart LR
 | --------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------- |
 | User                  | approves plans, merges, pushes workflow files, deletes or archives repositories | —                                                       |
 | Parent session (Opus) | Issues, plans, lanes, final check, cleanup                                      | edits files, merges                                     |
-| Lane (Sonnet)         | runs Codex and the reviewer, verifies, commits, opens PRs                       | writes the implementation, types into the parent's pane |
-| Codex                 | implements and fixes findings                                                   | commits or pushes (it cannot write `.git`)              |
+| Lane (Sonnet)         | runs Codex, verifies, commits, opens PRs, fixes review findings                | writes the implementation, types into the parent's pane |
+| Codex                 | implements                                                                     | commits or pushes (it cannot write `.git`)              |
 
 The lane reports by ending its last message with `LANE-READY`, and the parent reads it. The lane
 never types into the parent's pane, because the parent cannot tell that text from the user's.

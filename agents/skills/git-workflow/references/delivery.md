@@ -61,6 +61,26 @@ becomes the default branch commit body.
 For what the PR body owns relative to the Issue and plan, follow
 [Information Placement](../../source-of-truth/SKILL.md#information-placement).
 
+## Review on GitHub
+
+In a repository that has them, as furedea/agent-config does, every PR is reviewed on GitHub by
+`claude-review` and `codex-review`, both part of `all-green`; do not run a local code review there.
+Elsewhere, wait for that repository's required checks and follow its own review process. The
+mechanism is in the
+[reusable-workflows README](https://github.com/furedea/reusable-workflows#readme).
+
+1. After pushing, wait for `all-green`.
+2. Read the findings: Claude's inline comments and summary comment, and Codex's inline comments and
+   Codex Review Summary (`codex-review-state`), with
+   `gh api repos/<owner>/<repo>/pulls/<n>/comments --paginate` (the path comes right after
+   `gh api`, or the command asks for confirmation) and `gh pr view <n> --comments`.
+3. Fix every finding of any severity, then push; the push re-runs both reviews. Do not defer a
+   finding to the user.
+4. Do not change the work for a finding that repeats on the same grounds, is a matter of taste, or
+   is refuted with evidence. Answer it in its thread and record it in the PR body with the reason.
+5. Stop and report the open findings instead of looping when a P0 or P1 finding repeats, when an
+   area keeps failing, or after the third re-review that still raises new findings.
+
 ## Local Verification Before Delivery
 
 1. Complete required local verification before delivery without waiting for Stop.
@@ -69,7 +89,7 @@ For what the PR body owns relative to the Issue and plan, follow
 4. Let the existing pre-commit hooks run normally at commit time.
 5. Refresh necessary evidence if formatting, fixes, rebase, or other changes alter inputs after
    verification.
-6. After PR creation, check CI and review requirements and proceed only to the authorized stage.
+6. After PR creation, check CI and [review on GitHub](#review-on-github) and proceed only to the authorized stage.
 
 Stop does not necessarily run before commit, push, or merge, so it cannot be the only delivery
 gate. For conditions requiring manual checks, follow

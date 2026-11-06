@@ -47,9 +47,9 @@ Rules:
   turn. Then read the lane's reply with `herdr agent read`, check for `LANE-READY`, check the PR
   state, and report to the user. Treat `LANE-BLOCKED` and its reason as incomplete work. This
   works for Claude and Codex lanes alike.
-- The lane runs the whole loop: asks Codex to implement, verifies, commits, pushes, opens the PR,
-  then starts the reviewer itself. The brief carries the complete Codex commands, and review,
-  findings, `all-green`, workflow-file pushes, and `LANE-READY` follow
+- The lane runs the whole loop: asks Codex to implement when requested, verifies, commits, pushes,
+  and opens the PR. The brief carries the complete Codex command. Code review follows
+  [Review on GitHub](delivery.md#review-on-github); workflow-file pushes and `LANE-READY` follow
   [herdr-delegation](../../herdr-delegation/SKILL.md), which holds those rules.
 - The lane never types into the parent's pane with `herdr agent prompt` or `send-text`: text
   typed there is indistinguishable from the user's own input.
@@ -65,10 +65,8 @@ Rules:
 - Start Claude for an implementation lane, even from a Codex session. Codex keeps a linked
   worktree's Git directory read-only inside its sandbox (openai/codex#14338), so a Codex lane
   cannot commit there without approval. Lanes run on Sonnet at medium effort to save usage; pass
-  exactly `-- --model sonnet --effort medium` and nothing else after `--` (the lane starts an
-  Opus subagent to review Codex-written code, see
-  [herdr-delegation](../../herdr-delegation/SKILL.md)): other agent arguments ask, since they
-  could switch off the child's sandbox or approvals.
+  exactly `-- --model sonnet --effort medium` and nothing else after `--`: other agent arguments
+  ask, since they could switch off the child's sandbox or approvals.
 - The brief follows [herdr-delegation](../../herdr-delegation/SKILL.md) and is self-contained: the
   Issue body and the approved plan text, not only their numbers or links, the lane scope, delivery
   authority (commit, push, and open a PR; never merge), and the reply format.

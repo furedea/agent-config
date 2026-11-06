@@ -172,11 +172,12 @@ def is_listed(candidate: shell_syntax.Command, rules: list[dict]) -> bool:
 def forbidden_objection(item: shell_syntax.Command, candidate: shell_syntax.Command, policy: Policy) -> Verdict:
     """Deny only: a literal deny prefix or pattern wins even beside a run-time argument."""
     rules = command_policy.unscoped_rules(policy.rules)
+    flagged = (command_policy.without_option_values(item), command_policy.without_option_values(candidate))
     matched = (
-        command_policy.regex_reason(item.command_words_text, rules)
-        or command_policy.regex_reason(candidate.command_words_text, rules)
-        or command_policy.regex_reason(command_policy.flag_arguments_text(item), rules)
-        or command_policy.regex_reason(command_policy.flag_arguments_text(candidate), rules)
+        command_policy.regex_reason(flagged[0].command_words_text, rules)
+        or command_policy.regex_reason(flagged[1].command_words_text, rules)
+        or command_policy.regex_reason(flagged[0].command_arguments_text, rules)
+        or command_policy.regex_reason(flagged[1].command_arguments_text, rules)
         or command_policy.argument_reason(candidate.arguments, policy.rules)
     )
     reason = command_policy.prefix_reason(candidate.arguments, policy.prefixes, "deny") or matched

@@ -177,16 +177,19 @@ def canonical(command: shell_syntax.Command) -> shell_syntax.Command:
 COMMIT_VALUED_SHORT = frozenset("mFCct")
 COMMIT_VALUED_LONG = frozenset(
     {"--message", "--file", "--reuse-message", "--reedit-message", "--template", "--author", "--date", "--cleanup"}
-    | {"--fixup", "--squash"}
+    | {"--fixup", "--squash", "--trailer", "--pathspec-from-file"}
 )
 
 
-def flag_arguments_text(command: shell_syntax.Command) -> str:
-    """The command's decoded arguments for flag rules: a git commit option's value is data, not a flag."""
+def without_option_values(command: shell_syntax.Command) -> shell_syntax.Command:
+    """The command with each git commit option value as a placeholder, in its words and its decoded arguments.
+
+    Flag rules read the rest: a value such as the message in `-m "--no-verify"` is data, not a flag.
+    """
     valued = commit_option_values(command.arguments)
-    return replace(
-        command, arguments=tuple("_" if index in valued else word for index, word in enumerate(command.arguments))
-    ).command_arguments_text
+    masked = tuple("_" if index in valued else word for index, word in enumerate(command.words))
+    masked_arguments = tuple("_" if index in valued else word for index, word in enumerate(command.arguments))
+    return replace(command, words=masked, arguments=masked_arguments)
 
 
 def commit_option_values(arguments: tuple[str, ...]) -> frozenset[int]:

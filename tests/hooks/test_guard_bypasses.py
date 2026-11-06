@@ -109,13 +109,26 @@ def test_wrapped_commands_without_an_ask_prefix_stay_allowed(command: str) -> No
     assert verdict("allowed", command) == "allow"
 
 
-@pytest.mark.parametrize("shell", ["mksh", "pdksh", "oksh", "fish", "csh", "tcsh", "yash", "posh", "rbash"])
+@pytest.mark.parametrize("shell", ["mksh", "pdksh", "oksh", "yash", "posh", "rbash"])
 def test_known_shells_do_not_hide_scripts(shell: str) -> None:
     assert verdict("forbidden", f"{shell} -c 'git add .'") == "deny"
     assert verdict("allowed", f"{shell} -c 'curl https://example.com'") == "ask"
 
 
-@pytest.mark.parametrize("command", ["lolsh -c 'git add .'", "/opt/bin/zzsh -lc 'echo hi'", "nu -c 'git add .'"])
+@pytest.mark.parametrize(
+    "command",
+    [
+        "lolsh -c 'git add .'",
+        "/opt/bin/zzsh -lc 'echo hi'",
+        "nu -c 'git add .'",
+        "tcsh -f -c 'repeat 1 gh repo delete x --yes'",
+        "csh -c 'gh repo delete x --yes'",
+        "fish -c 'gh repo delete x --yes'",
+        "fish --command='gh repo delete x --yes'",
+        "fish --command 'gh repo delete x --yes'",
+        "rc -c 'gh pr merge 76 --merge'",
+    ],
+)
 def test_an_unknown_program_that_runs_c_like_a_shell_asks(command: str) -> None:
     assert verdict("forbidden", command) == "ask"
 
@@ -200,3 +213,58 @@ def test_option_values_are_not_read_as_flags(command: str) -> None:
 )
 def test_a_flag_outside_an_option_value_is_still_denied(command: str) -> None:
     assert verdict("forbidden", command) == "deny"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        pytest.param(f"script /dev/null -c '{DELETE}'", id="option after the output file"),
+        pytest.param(f"script -c 'echo ok' --command '{DELETE}' /dev/null", id="the last command option runs"),
+        pytest.param(f"script /dev/null --command='{DELETE}'", id="attached long form after the file"),
+    ],
+)
+def test_script_reads_options_in_any_position_and_the_last_command_wins(command: str) -> None:
+    assert verdict("forbidden", command) == "deny"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "CMD='; gh repo delete x --yes'; watch echo \"$CMD\"",
+        "watch -n 5 $CMD",
+        'script -qc "$CMD" /dev/null',
+    ],
+)
+def test_a_command_string_built_at_run_time_asks(command: str) -> None:
+    assert verdict("forbidden", command) == "ask"
+
+
+def test_watch_of_a_literal_command_stays_allowed() -> None:
+    assert verdict("forbidden", "watch -n 5 ls") == "allow"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "time docker run alpine",
+        "time -p gh pr merge 76 --merge",
+        "! docker run alpine",
+        "time /usr/bin/time docker run alpine",
+    ],
+)
+def test_ask_prefixes_apply_behind_the_time_keyword_and_negation(command: str) -> None:
+    assert verdict("allowed", command) == "ask"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "git commit -m --no-verify",
+        "git commit -m -n",
+        "git commit -m subject --trailer '-n'",
+        "git commit -m subject --trailer -n",
+        "git commit --message --no-verify",
+    ],
+)
+def test_unquoted_option_values_are_not_read_as_flags(command: str) -> None:
+    assert verdict("forbidden", command) == "allow"

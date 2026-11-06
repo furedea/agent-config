@@ -9,7 +9,7 @@ from typing import Self
 
 import shell_input
 from shell_words import UnsupportedSyntax, literal_word, nodes, source_text, spreads
-from shell_wrappers import ASSIGNMENT, SCRIPT_OPTIONS, WRAPPERS, OptionScan, wrapped_index
+from shell_wrappers import ASSIGNMENT, WRAPPERS, OptionScan, wrapped_index
 
 
 COMMAND_PREVIEW_LIMIT = 200
@@ -32,9 +32,7 @@ SHELLS = frozenset(
     {
         "ash",
         "bash",
-        "csh",
         "dash",
-        "fish",
         "hush",
         "ksh",
         "mksh",
@@ -43,13 +41,14 @@ SHELLS = frozenset(
         "posh",
         "rbash",
         "sh",
-        "tcsh",
         "yash",
         "zsh",
     }
 )
-# A name ending in sh that is no known shell but takes -c is judged as an unknown shell, not skipped.
-SHELL_LOOKALIKE = re.compile(r"[a-z0-9_.-]*sh|nu")
+# Shells whose syntax is not bash's, and names ending in sh that are no known shell: parsing their -c
+# script as bash would misread it, so a -c (or --command) option asks instead.
+FOREIGN_SHELLS = frozenset({"csh", "elvish", "es", "fish", "nu", "rc", "tcsh"})
+SHELL_LOOKALIKE = re.compile(r"[a-z0-9_.-]*sh")
 
 
 @dataclass(frozen=True, slots=True)
@@ -171,6 +170,7 @@ def parse(source: str, depth: int = 0, directories: tuple[Path | None, ...] = ()
     owners = {id(node["Cmd"]): node for node in records if isinstance(node.get("Cmd"), dict)}
     if any(node.get("Type") not in ALLOWED_NODES for node in records):
         raise UnsupportedSyntax("dynamic or unsupported shell syntax requires explicit review", "expansion")
+    timed = {id(node["Stmt"].get("Cmd")) for node in records if node.get("Type") == "TimeClause" and node.get("Stmt")}
     data = source.encode()
     sources = shell_input.InputSources.of(records, data)
     commands: list[Command] = []
@@ -178,7 +178,8 @@ def parse(source: str, depth: int = 0, directories: tuple[Path | None, ...] = ()
         if node.get("Type") != "CallExpr" or not node.get("Args"):
             continue
         owner = owners.get(id(node), node)
-        command = replace(literal_command(node, owner, data), wrapper_depth=depth)
+        hidden = id(node) in timed or bool(owner.get("Negated"))
+        command = replace(literal_command(node, owner, data), wrapper_depth=depth + hidden)
         layers = [command, *unwrapped(command)]
         commands += layers
         for layer in layers:
@@ -330,21 +331,23 @@ def shell_script(command: Command) -> str:
         return " ".join(arguments[1:])
     if executable in WRAPPERS:
         return wrapper_script(command, executable)
-    if executable not in SHELLS and not SHELL_LOOKALIKE.fullmatch(executable):
+    foreign = executable in FOREIGN_SHELLS or (executable not in SHELLS and SHELL_LOOKALIKE.fullmatch(executable))
+    if executable not in SHELLS and not foreign:
         return ""
     option = next(
         (
             index
             for index, argument in enumerate(arguments[1:], 1)
-            if argument.startswith("-") and not argument.startswith("--") and "c" in argument
+            if argument.startswith("-") and (foreign or not argument.startswith("--")) and "c" in argument
         ),
         None,
     )
     if option is None:
         return ""
-    if executable not in SHELLS:
+    if foreign:
         raise UnsupportedSyntax(
-            f"{executable} may run its -c argument as a shell script; requires explicit review", "wrapper"
+            f"{executable} may run its -c argument as a script this inspection cannot parse; requires explicit review",
+            "wrapper",
         )
     if option + 1 >= len(arguments):
         raise UnsupportedSyntax("shell wrapper has no literal command", "wrapper")
@@ -359,11 +362,10 @@ def wrapper_script(command: Command, name: str) -> str:
     scan = OptionScan(name, arguments).run()
     if not scan.runs_script:
         return ""
-    if name == "watch":
-        return " ".join(arguments[scan.index :])
-    script = next((scan.seen[option] for option in SCRIPT_OPTIONS[name] if option in scan.seen), None)
-    if script is None:
-        raise UnsupportedSyntax(f"{name} has no literal command", "wrapper")
     if any(command.dynamic):
         raise UnsupportedSyntax(f"a {name} command string built at run time requires explicit review", "wrapper")
-    return script
+    if name == "watch":
+        return " ".join(arguments[scan.index :])
+    if scan.script is None:
+        raise UnsupportedSyntax(f"{name} has no literal command", "wrapper")
+    return scan.script

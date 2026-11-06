@@ -102,6 +102,8 @@ class OptionScan:
     arguments: tuple[str, ...]
     index: int = 1
     seen: dict[str, str | None] = field(default_factory=dict)
+    script: str | None = None
+    has_script: bool = False
 
     @property
     def flags(self) -> frozenset[str]:
@@ -116,7 +118,7 @@ class OptionScan:
         """Whether the wrapper hands its command to a shell as a script, which shell_script reads."""
         if self.name == "watch":
             return not any(option in self.seen for option in EXEC_OPTIONS)
-        return any(option in self.seen for option in SCRIPT_OPTIONS.get(self.name, ()))
+        return self.has_script
 
     def run(self) -> Self:
         while self.index < len(self.arguments) and self.take_option():
@@ -134,10 +136,10 @@ class OptionScan:
             self.index = len(self.arguments)
             return False
         if token in self.valued:
-            self.seen[token] = self.value_at(self.index + 1)
+            self.record(token, self.value_at(self.index + 1))
             self.index += 2
         elif token in self.flags or (self.name in ASSIGNING_WRAPPERS and ASSIGNMENT.match(token)):
-            self.seen[token] = None
+            self.record(token, None)
             self.index += 1
         elif token.startswith("-"):
             self.index += self.take_attached()
@@ -152,7 +154,7 @@ class OptionScan:
             key, _, value = token.partition("=")
             if not value or key not in self.valued:
                 self.refuse(token)
-            self.seen[key] = value
+            self.record(key, value)
             return 1
         if self.name == "nice" and token[1:].isdigit():
             return 1
@@ -164,29 +166,43 @@ class OptionScan:
                 return self.take_value(option, token[position + 1 :])
             if option not in self.flags:
                 self.refuse(token)
-            self.seen[option] = None
+            self.record(option, None)
         return 1
 
     def take_value(self, option: str, attached: str) -> int:
         if attached or self.index + 1 >= len(self.arguments):
-            self.seen[option] = attached or None
+            self.record(option, attached or None)
             return 1
-        self.seen[option] = self.arguments[self.index + 1]
+        self.record(option, self.arguments[self.index + 1])
         return 2
 
+    def record(self, option: str, value: str | None) -> None:
+        """Note an option and its value; of several script options the last one is what the program runs."""
+        self.seen[option] = value
+        if option in SCRIPT_OPTIONS.get(self.name, ()):
+            self.script, self.has_script = value, True
+
     def take_trailing_script(self) -> None:
-        """Record a script option written after the leading operand, as in `flock <file> -c <script>`."""
+        """Record script options written after the leading operand: flock reads one right after its lock
+        file, script reads them anywhere, as in `script <file> -c <script>`.
+        """
         position = self.index + LEADING_OPERANDS.get(self.name, 0)
-        if self.name != "flock" or position >= len(self.arguments):
+        if self.name not in {"flock", "script"}:
             return
-        token = self.arguments[position]
+        end = len(self.arguments) if self.name == "script" else position + 1
+        for index in range(position, min(end, len(self.arguments))):
+            self.take_script_token(index)
+
+    def take_script_token(self, index: int) -> None:
+        token = self.arguments[index]
         key, _, value = token.partition("=")
-        if key in SCRIPT_OPTIONS["flock"] and value:
-            self.seen[key] = value
-        elif token in SCRIPT_OPTIONS["flock"]:
-            self.seen[token] = self.value_at(position + 1)
-        elif token.startswith("-c") and len(token) > 2:
-            self.seen["-c"] = token[2:]
+        if key in SCRIPT_OPTIONS[self.name] and value:
+            self.record(key, value)
+        elif token in SCRIPT_OPTIONS[self.name]:
+            self.record(token, self.value_at(index + 1))
+        elif token.startswith("-") and not token.startswith("--") and "c" in token:
+            attached = token[token.index("c") + 1 :]
+            self.record("-c", attached or self.value_at(index + 1))
 
     def value_at(self, position: int) -> str | None:
         return self.arguments[position] if position < len(self.arguments) else None

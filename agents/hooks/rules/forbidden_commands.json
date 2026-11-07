@@ -29,6 +29,19 @@
     },
     {
       "programs": [
+        "cargo",
+        "pnpm",
+        "uv"
+      ],
+      "patterns": [
+        "^cargo mutants .*--in-place",
+        "^pnpm exec stryker .*--inPlace",
+        "^uv run .*mutmut apply"
+      ],
+      "justification": "Do not write mutants into the working tree; an interrupted run would leave mutated source behind, and the file guard cannot see a write made by a command. Mutation testing runs on a copy."
+    },
+    {
+      "programs": [
         "agent-browser"
       ],
       "patterns": [

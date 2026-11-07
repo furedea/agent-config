@@ -71,12 +71,8 @@ Use the narrowest scope that fits:
 ```bash
 setup_file() {
   load test-helper/setup
-  create_temp_git_repo   # expensive — do once per file
+  create_temp_git_repo   # expensive — do once per file, under $BATS_FILE_TMPDIR
   export TEMP_REPO       # export so tests see it
-}
-
-teardown_file() {
-  rm -rf "$TEMP_REPO"
 }
 
 setup() {
@@ -152,7 +148,7 @@ make_input() {
 }
 
 create_temp_git_repo() {
-  TEMP_REPO="$(mktemp -d "${BATS_TEST_TMPDIR:-/tmp}/repo.XXXXXX")"
+  TEMP_REPO="$(mktemp -d "$BATS_FILE_TMPDIR/repo.XXXXXX")"
   git -C "$TEMP_REPO" init --quiet
   git -C "$TEMP_REPO" config user.email "test@test.com"
   git -C "$TEMP_REPO" config user.name "Test"

@@ -105,7 +105,7 @@ function build_output() {
 
 ## Formatting
 
-Indent with **2 spaces** (Google Shell Style Guide convention). Configure via `.editorconfig` at the project root; `shfmt` reads it automatically. Run `shfmt -i 2 -d <file>` to check. Common quoting errors are caught by `shellcheck`. The conventions above describe what those tools do not enforce.
+Indent with **2 spaces** (Google Shell Style Guide convention). Configure via `.editorconfig` at the project root; `shfmt` reads it automatically. Run `shfmt -d <file>` to check. Common quoting errors are caught by `shellcheck`. The conventions above describe what those tools do not enforce.
 
 ## Task-Specific References
 

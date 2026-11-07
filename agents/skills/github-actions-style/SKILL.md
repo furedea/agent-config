@@ -82,7 +82,7 @@ For debugging, add `set -x` at the top of a `run:` block to print each command a
 ```yaml
 - run: |
       set -x
-      uv run pytest
+      uv run --frozen pytest
 ```
 
 ## 6. Concurrency

@@ -67,6 +67,14 @@
       "decision": "allow",
       "prefix": [
         "cargo",
+        "mutants"
+      ],
+      "justification": "Allow mutation testing that tsdd asks for; it runs on a copy of the tree, and --in-place stays denied."
+    },
+    {
+      "decision": "allow",
+      "prefix": [
+        "cargo",
         "test"
       ],
       "justification": "Allow local verification needed for the requested work; reuse successful hook results."
@@ -1304,6 +1312,17 @@
         "bats"
       ],
       "justification": "Allow local verification needed for the requested work; reuse successful hook results."
+    },
+    {
+      "decision": "allow",
+      "prefix": [
+        "uv",
+        "run",
+        "--frozen",
+        "mutmut",
+        "run"
+      ],
+      "justification": "Allow mutation testing that tsdd asks for; --frozen leaves the lock file alone and apply, which writes a mutant, stays denied."
     },
     {
       "decision": "allow",

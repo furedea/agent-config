@@ -11,7 +11,7 @@ import pytest
 from tests.runtime import REPO_ROOT, CliRunner
 
 
-SCRIPT = "agents/hooks/replay_commands.py"
+SCRIPT = "scripts/replay_commands.py"
 SINCE = "2026-10-17"
 RECENT = "2026-10-17T03:00:00.000Z"
 OLD = "2026-10-16T03:00:00.000Z"
@@ -117,6 +117,25 @@ def test_replay_leaves_the_audit_log_untouched(home: Path, isolated_project: Pat
     assert result.returncode == 0, result.stderr
     state = isolated_project / "state"
     assert not state.exists() or not any(path.is_file() for path in state.rglob("*"))
+
+
+def test_the_script_is_a_development_tool_that_no_hooks_directory_ships() -> None:
+    assert (REPO_ROOT / SCRIPT).is_file()
+    assert not list((REPO_ROOT / "agents").rglob("replay_commands.py"))
+
+
+def test_the_repository_hooks_judge_the_commands_without_the_hooks_option(
+    home: Path, isolated_project: Path, run_cli: CliRunner, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    for name in ("AGENT_COMMAND_PERMISSIONS", "AGENT_ALLOWED_COMMAND_RULES", "AGENT_FORBIDDEN_COMMAND_RULES"):
+        monkeypatch.delenv(name)
+    write_lines(home / ".claude/projects/repo/session.jsonl", [claude_bash("git add -A"), claude_bash("ls")])
+
+    result = run_cli(SCRIPT, "--since", SINCE)
+
+    assert result.returncode == 0, result.stderr
+    assert totals(result.stdout) == {"allow": 1, "ask": 0, "deny": 1}
+    assert "forbidden: " in result.stdout
 
 
 def test_hooks_from_another_directory_judge_the_commands(

@@ -29,6 +29,7 @@ SINCE_FORMATS = ("%Y-%m-%d", "%Y-%m-%dT%H:%M")
 SHELL_FLAGS = frozenset({"-c", "-lc"})
 SHELLS = frozenset({"bash", "sh", "zsh"})
 EXCERPT_LIMIT = 200
+REPOSITORY_HOOKS = Path(__file__).resolve().parents[1] / "agents/hooks"
 
 
 @dataclass(frozen=True, slots=True)
@@ -56,7 +57,7 @@ def main(arguments: list[str]) -> int:
 def parser() -> argparse.ArgumentParser:
     result = argparse.ArgumentParser(description="Replay recent Bash commands through the command hooks.")
     result.add_argument("--since", required=True, type=since_time, help="YYYY-MM-DD[THH:MM], local time")
-    result.add_argument("--hooks", type=Path, default=Path(__file__).resolve().parent, help="hooks directory")
+    result.add_argument("--hooks", type=Path, default=REPOSITORY_HOOKS, help="hooks directory (default: agents/hooks)")
     return result
 
 

@@ -3,6 +3,10 @@
     "tests/hooks/test_check_selection.py",
     "tests/test_related_test_extensions.py"
   ],
+  "scripts/replay_commands.py": [
+    "tests/hooks/test_replay_commands.py",
+    "tests/skills/test_skill_commands.py"
+  ],
   "agents/hooks/rules/secret_path_policy.json": [
     "tests/hooks/test_secret_path_policy.py",
     "tests/codex/test_hook_adapter_cli.py",

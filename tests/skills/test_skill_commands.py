@@ -42,17 +42,18 @@ def relative(path: Path) -> str:
 
 
 def skill_commands(source: Path) -> list[SkillCommand]:
-    """One command per line of each fenced shell block; a block with a heredoc is one command."""
+    """One command per line of each fenced shell block; a block with a heredoc is one command.
+
+    A script is also one command as a whole, because a line alone cannot show what its block denies.
+    """
     commands = []
     for _, block in FENCE.findall(source.read_text()):
         block = textwrap.dedent(block)
+        is_script = bool(SCRIPT.search(block))
         lines = [block.strip()] if "<<" in block else block.replace("\\\n", " ").splitlines()
-        texts = (re.sub(r"^\$ ", "", line.strip()) for line in lines)
-        commands += [
-            SkillCommand(relative(source), text, bool(SCRIPT.search(block)))
-            for text in texts
-            if text[:1] not in {"", "#"}
-        ]
+        texts = [re.sub(r"^\$ ", "", line.strip()) for line in lines]
+        texts += [block.strip()] if is_script else []
+        commands += [SkillCommand(relative(source), text, is_script) for text in texts if text[:1] not in {"", "#"}]
     return commands
 
 
@@ -92,7 +93,8 @@ class Hooks:
         arguments = [self.command_policy.canonical(item).arguments for item in self.shell_syntax.parse(text)]
         if any(self.has_prefix(words, "ask") for words in arguments):
             return "ask"
-        return "allow" if all(self.has_prefix(words, "allow") for words in arguments) else "unregistered"
+        listed = bool(arguments) and all(self.has_prefix(words, "allow") for words in arguments)
+        return "allow" if listed else "unregistered"
 
     def has_prefix(self, arguments: tuple[str, ...], decision: str) -> bool:
         return self.command_policy.prefix_rule(arguments, self.prefixes, decision) is not None

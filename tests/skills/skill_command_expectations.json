@@ -1,6 +1,30 @@
 [
   {
     "path": "agents/skills/bash-style/SKILL.md",
+    "text": "readonly INPUT_DIR=\"$SCRIPT_DIR/../data/input\"",
+    "expect": "not-command",
+    "reason": "A variable declaration in a script example, which the parser reads as no command at all."
+  },
+  {
+    "path": "agents/skills/bash-style/SKILL.md",
+    "text": "readonly MAX_RETRY=3",
+    "expect": "not-command",
+    "reason": "A variable declaration in a script example, which the parser reads as no command at all."
+  },
+  {
+    "path": "agents/skills/bash-style/SKILL.md",
+    "text": "readonly OUTPUT=\"${1:-output.txt}\"   # default value",
+    "expect": "not-command",
+    "reason": "A variable declaration in a script example, which the parser reads as no command at all."
+  },
+  {
+    "path": "agents/skills/bash-style/SKILL.md",
+    "text": "readonly NAME=\"${NAME:?NAME is required}\"  # error if unset/empty",
+    "expect": "not-command",
+    "reason": "A variable declaration in a script example, which the parser reads as no command at all."
+  },
+  {
+    "path": "agents/skills/bash-style/SKILL.md",
     "text": "set -x",
     "expect": "not-command",
     "reason": "A shell builtin shown as a debugging idiom for scripts, not run through the Bash tool."

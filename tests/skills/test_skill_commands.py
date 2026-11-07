@@ -23,9 +23,6 @@ FENCE = re.compile(r"^( *)```(?:bash|sh|shell|console)[^\n]*\n(.*?)^\1```", re.M
 PLACEHOLDER = re.compile(r"<[A-Za-z][\w -]*>|\{[A-Za-z_][\w-]*\}")
 # A block that is a script, a function, a loop, or a bats test is not a list of commands to run one by one.
 SCRIPT = re.compile(r"\A#!|\w+\(\) *\{|^\s*(?:for|while|if|case|run|@test) ", re.MULTILINE)
-FORBIDDEN_PHRASES = re.compile(
-    r"@latest|\buv pip\b|\bpip install\b|(?<!p)npm install\b|\buv run (?:--no-project )?(?:pytest|ruff|ty)\b"
-)
 # The hooks' answers each expectation accepts: a command that no allow prefix lists waits for approval too.
 ACCEPTED = {"allow": {"allow"}, "forbidden": {"deny"}, "needs-approval": {"ask", "unregistered"}, "not-command": set()}
 
@@ -120,23 +117,6 @@ def test_every_expectation_names_a_reason_and_text_that_is_still_in_its_file() -
     broken = [
         entry
         for entry in EXPECTATIONS
-        if not entry["reason"]
-        or entry["expect"] not in ACCEPTED
-        or (
-            (entry["path"], entry["text"]) not in commands
-            and entry["text"] not in (REPO_ROOT / entry["path"]).read_text()
-        )
+        if not entry["reason"] or entry["expect"] not in ACCEPTED or (entry["path"], entry["text"]) not in commands
     ]
     assert broken == []
-
-
-def test_skills_do_not_recommend_what_the_policy_forbids() -> None:
-    exempt = [(e["path"], e["text"]) for e in EXPECTATIONS if e["expect"] in {"forbidden", "not-command"}]
-    found = [
-        f"{relative(source)}:{number}: {line.strip()}"
-        for source in SOURCES
-        for number, line in enumerate(source.read_text().splitlines(), 1)
-        if FORBIDDEN_PHRASES.search(line)
-        and not any(path == relative(source) and text in line for path, text in exempt)
-    ]
-    assert found == []

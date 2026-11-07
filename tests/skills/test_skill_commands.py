@@ -31,7 +31,7 @@ ACCEPTED = {"allow": {"allow"}, "forbidden": {"deny"}, "needs-approval": {"ask",
 class SkillCommand:
     path: str
     text: str
-    is_script: bool
+    scope: str  # command, fragment (one line of a script), or script (the whole block)
 
 
 def relative(path: Path) -> str:
@@ -48,9 +48,10 @@ def skill_commands(source: Path) -> list[SkillCommand]:
         block = textwrap.dedent(block)
         is_script = bool(SCRIPT.search(block))
         lines = [block.strip()] if "<<" in block else block.replace("\\\n", " ").splitlines()
-        texts = [re.sub(r"^\$ ", "", line.strip()) for line in lines]
-        texts += [block.strip()] if is_script else []
-        commands += [SkillCommand(relative(source), text, is_script) for text in texts if text[:1] not in {"", "#"}]
+        scope = "fragment" if is_script else "command"
+        texts = (re.sub(r"^\$ ", "", line.strip()) for line in lines)
+        commands += [SkillCommand(relative(source), text, scope) for text in texts if text[:1] not in {"", "#"}]
+        commands += [SkillCommand(relative(source), block.strip(), "script")] if is_script else []
     return commands
 
 
@@ -78,12 +79,17 @@ class Hooks:
         self.prefixes = self.command_policy.load_rules(REPO_ROOT / "agents/command_permissions.json", prefixes=True)
 
     def verdict(self, command: SkillCommand) -> str:
-        """A script's lines are judged for denial only, since a line alone is not a complete command."""
+        """A fragment of a script is judged for denial only, since a line alone is not a complete command.
+
+        A whole script is judged for denial and approval, but need not list every command it runs. One
+        that the hooks cannot inspect, such as a function definition or a bats test, is only an example
+        of a file to write, so its approval is not judged.
+        """
         text = PLACEHOLDER.sub("placeholder", command.text)
         decision = self.replayer.judge(self.recorded(text, str(REPO_ROOT))).decision
         if decision == "deny":
             return decision
-        if command.is_script:
+        if command.scope == "fragment" or (command.scope == "script" and self.cannot_inspect(text)):
             return "allow"
         if decision == "ask":
             return decision
@@ -91,7 +97,14 @@ class Hooks:
         if any(self.has_prefix(words, "ask") for words in arguments):
             return "ask"
         listed = bool(arguments) and all(self.has_prefix(words, "allow") for words in arguments)
-        return "allow" if listed else "unregistered"
+        return "allow" if listed or command.scope == "script" else "unregistered"
+
+    def cannot_inspect(self, text: str) -> bool:
+        try:
+            self.shell_syntax.parse(text)
+        except sys.modules["shell_words"].UnsupportedSyntax:
+            return True
+        return False
 
     def has_prefix(self, arguments: tuple[str, ...], decision: str) -> bool:
         return self.command_policy.prefix_rule(arguments, self.prefixes, decision) is not None

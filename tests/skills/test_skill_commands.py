@@ -71,7 +71,7 @@ class Hooks:
     """The command hooks' verdicts: deny, ask, allow, or unregistered when no allow prefix lists the command."""
 
     def __init__(self) -> None:
-        replay = load_script_module("agents/hooks/replay_commands.py", "replay_commands")
+        replay = load_script_module("scripts/replay_commands.py", "replay_commands")
         self.replayer = replay.Replayer(REPO_ROOT / "agents/hooks")
         self.recorded = replay.RecordedCommand
         self.command_policy = sys.modules["command_policy"]

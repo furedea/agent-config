@@ -13,10 +13,6 @@ let
       triple = "aarch64-apple-darwin";
       hash = "sha256-dD+FA1oZluyzUGWeAc2frqlwmCm+CbG0sDxz6vPJzXM=";
     };
-    x86_64-darwin = {
-      triple = "x86_64-apple-darwin";
-      hash = "sha256-sPUrDjlFtBB9iQJOo45iVoMBH7/AWg2Y+fotbc7ijGY=";
-    };
     aarch64-linux = {
       triple = "aarch64-unknown-linux-musl";
       hash = "sha256-eQbHmtshyBq9VZhBuna7HZr515GsrHoEGyly4DrhZTg=";

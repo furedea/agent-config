@@ -71,7 +71,7 @@ def test_every_extension_target_exists(extension: dict[str, list[str]]) -> None:
         ("agents/hooks/lib/provider_adapter.py", "tests/test_provider_adapters.py"),
         ("agents/claude/settings.json", "tests/codex/test_config.py"),
         ("agents/hooks.json", "tests/hooks/test_herdr_ownership_workspaces.py"),
-        ("agents/hooks/guard_git.py", "tests/hooks/test_replay_commands.py"),
+        ("agents/hooks/guard_git.py", "tests/test_replay_commands.py"),
         ("agents/hooks/guard_suppression.py", "tests/codex/test_hook_adapter_cli.py"),
         ("agents/hooks/lib/check_execution.py", "tests/hooks/test_verification_status.py"),
         ("agents/hooks/rules/related_test_defaults.json", "tests/hooks/test_hook_lock_wait.py"),

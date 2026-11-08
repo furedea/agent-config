@@ -101,7 +101,7 @@ jobs:
           echo "$PWD/node_modules/.bin" >> "$GITHUB_PATH"
 
       - name: Install locked agent-harness
-        uses: ./.github/actions/install-agent-harness
+        uses: ./.github/actions/install-agent-harness # zizmor: ignore[self-repository]
 
       # The provider integration tests render with the locked agent-harness CLI.
       - name: Run pytest
@@ -157,7 +157,7 @@ jobs:
           save: false
 
       - name: Install locked agent-harness
-        uses: ./.github/actions/install-agent-harness
+        uses: ./.github/actions/install-agent-harness # zizmor: ignore[self-repository]
 
       # verify checks the source-declared runtime commands, which the devShell provides.
       - name: Render and verify the agent source
@@ -198,7 +198,7 @@ jobs:
           echo "$PWD/node_modules/.bin" >> "$GITHUB_PATH"
 
       - name: Install locked agent-harness
-        uses: ./.github/actions/install-agent-harness
+        uses: ./.github/actions/install-agent-harness # zizmor: ignore[self-repository]
 
       - name: Run Codex execpolicy conformance
         env:

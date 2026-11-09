@@ -63,6 +63,8 @@ def test_every_extension_target_exists(extension: dict[str, list[str]]) -> None:
         ("agents/command_permissions.json", "tests/test_command_permission_sync.py"),
         ("agents/command_permissions.json", "tests/test_prefix_rules.py"),
         ("tests/prefix_audit.py", "tests/test_prefix_audit.py"),
+        ("agents/command_permissions.json", "tests/hooks/test_guard_transformations.py"),
+        ("agents/hooks/guard_command.py", "tests/hooks/test_guard_transformations.py"),
         ("agents/hooks/rules/allowed_commands.json", "tests/hooks/test_allowed_command.py"),
         ("agents/hooks/rules/trusted_owners.json", "tests/hooks/test_trusted_owners.py"),
         ("agents/hooks/lib/trusted_owners.py", "tests/hooks/test_trusted_owners.py"),

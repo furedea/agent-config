@@ -6,9 +6,9 @@
         "(^|[[:space:]])([^[:space:]]*/)?\\.venv/bin/python([0-9.]*)?([[:space:]]|$)",
         "^git[[:space:]]+add([[:space:]]+-[^[:space:]]*)*[[:space:]]+(\\./?|-[A-Za-z]*A[A-Za-z]*|--all)([[:space:]]|$)",
         "(^|[[:space:]])git[[:space:]]+add([[:space:]]+-[^[:space:]]*)*[[:space:]]+(\\./?|-[A-Za-z]*A[A-Za-z]*|--all)([[:space:]]|$)",
-        "^git[[:space:]]+commit([[:space:]].*)?[[:space:]]+(--no-verify|-[aeiopqsvz]*n[^[:space:]]*)([[:space:]]|$)",
-        "(^|[[:space:]])git[[:space:]]+commit([[:space:]].*)?[[:space:]]+(--no-verify|-[aeiopqsvz]*n[^[:space:]]*)([[:space:]]|$)",
-        "(^|[[:space:]])python[0-9.]*([[:space:]]+-[A-Za-z]+)*[[:space:]]+-[A-Za-z]*m[[:space:]]*(pip|ensurepip)([[:space:]]|$)"
+        "^git[[:space:]]+commit([[:space:]].*)?[[:space:]]+(--no-v[a-z]*|-[aeiopqsvz]*n[^[:space:]]*)([[:space:]]|$)",
+        "(^|[[:space:]])git[[:space:]]+commit([[:space:]].*)?[[:space:]]+(--no-v[a-z]*|-[aeiopqsvz]*n[^[:space:]]*)([[:space:]]|$)",
+        "(^|[[:space:]])python[0-9.]*([[:space:]]+(-[A-Za-z]*[WX][[:space:]]+[^[:space:]]+|--check-hash-based-pycs[[:space:]]+[^[:space:]]+|-[A-Za-z]+))*[[:space:]]+-[A-Za-z]*m[[:space:]]*(pip|ensurepip)([[:space:]]|$)"
       ],
       "justification": "Do not allow dependency, staging, or verification bypasses hidden inside otherwise approved command families."
     },

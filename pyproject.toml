@@ -23,6 +23,7 @@ known_first_party = [
   "check_selection",
   "cleanup_worktrees",
   "command_policy",
+  "foreign_shell_policy",
   "git_safety",
   "go_selection",
   "guard_command",

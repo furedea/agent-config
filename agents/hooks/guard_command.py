@@ -22,6 +22,7 @@ import audit_log
 import automation_options
 import automation_paths
 import command_policy
+import foreign_shell_policy
 import herdr_grammar
 import hook_decision
 import hook_input
@@ -285,6 +286,8 @@ def command_verdict(kind: str, payload: dict, policy: Policy) -> Verdict:
         policy = replace(policy, literal_words=False)
     verdicts = (objection(kind, item, policy) for item in commands)
     verdict = next((item for item in verdicts if item.decision != "allow"), hook_decision.ALLOW)
+    if verdict.decision == "allow":
+        verdict = foreign_shell_policy.objection(commands)
     if kind == "allowed" and verdict.decision == "allow":
         verdict = automation_options.objection(commands)
     if kind == "allowed" and verdict.decision == "allow":

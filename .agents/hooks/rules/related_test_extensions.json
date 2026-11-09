@@ -29,7 +29,8 @@
     "tests/hooks/test_command_cli.py",
     "tests/hooks/test_guard_file.py",
     "tests/test_replay_commands.py",
-    "tests/test_forbidden_overlap.py"
+    "tests/test_forbidden_overlap.py",
+    "tests/test_denial_difference.py"
   ],
   "agents/hooks/rules/trusted_owners.json": [
     "tests/hooks/test_trusted_owners.py",
@@ -117,6 +118,7 @@
     "tests/test_command_permission_sync.py",
     "tests/test_prefix_rules.py",
     "tests/test_forbidden_overlap.py",
+    "tests/test_generated_rules.py",
     "tests/hooks/test_guard_transformations.py",
     "tests/hooks/test_allowed_command.py",
     "tests/hooks/test_command_cli.py",
@@ -129,7 +131,14 @@
   "tests/ere_to_z3.py": [
     "tests/test_ere_to_z3.py",
     "tests/test_rule_overlap.py",
-    "tests/test_forbidden_overlap.py"
+    "tests/test_forbidden_overlap.py",
+    "tests/test_denial_difference.py"
+  ],
+  "tests/generated_rules.py": [
+    "tests/test_generated_rules.py"
+  ],
+  "tests/denial_difference.py": [
+    "tests/test_denial_difference.py"
   ],
   "tests/rule_overlap.py": [
     "tests/test_rule_overlap.py",
@@ -353,6 +362,10 @@
   ],
   "agents/manifest.json": [
     "tests/test_python_runtime.py"
+  ],
+  "flake.lock": [
+    "tests/test_generated_rules.py",
+    "tests/test_denial_difference.py"
   ],
   "agents/hooks/lib/hook_dispatch.py": [
     "tests/hermes/test_hermes_hook_adapter.py",

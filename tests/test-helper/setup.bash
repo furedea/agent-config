@@ -12,6 +12,7 @@ readonly RENDERED_ENTRY_POINTS=(
   .codex/hooks/hook_adapter.py
   .codex/skills/explain-visually/scripts/render.py
   .devin/hooks/hook_adapter.py
+  .dsh/hooks/hook_adapter.py
   .hermes/hooks/hook_adapter.py
   .pi/hooks/hook_adapter.py
 )

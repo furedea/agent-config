@@ -13,7 +13,7 @@ ignore:
   - package-lock.json
   - "**/docs/logs"
 
-  - "{.venv,.coverage,.uv-cache,.ruff_cache,.pytest_cache,.ipynb_checkpoints,__pycache__,node_modules,target}"
-  - "**/{.venv,.coverage,.uv-cache,.ruff_cache,.pytest_cache,.ipynb_checkpoints,__pycache__,node_modules,target}"
+  - "{.venv,.coverage,.uv-cache,.ruff_cache,.pytest_cache,.hypothesis,.ipynb_checkpoints,__pycache__,node_modules,target}"
+  - "**/{.venv,.coverage,.uv-cache,.ruff_cache,.pytest_cache,.hypothesis,.ipynb_checkpoints,__pycache__,node_modules,target}"
   - "{dist,build}"
   - "**/{dist,build}"

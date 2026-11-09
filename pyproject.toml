@@ -76,10 +76,12 @@ typecheck = [
   "ty==0.0.87",
 ]
 test = [
+  "hypothesis>=6.170.14",
   "pytest==9.0.3",
   "pytest-cov==7.1.0",
   "pytest-mock==3.15.1",
   "pytest-xdist==3.8.0",
+  "z3-solver>=5.3.3.0",
 ]
 audit = [
   "deptry==0.25.1",

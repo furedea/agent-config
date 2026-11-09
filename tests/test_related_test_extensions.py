@@ -67,6 +67,7 @@ def test_every_extension_target_exists(extension: dict[str, list[str]]) -> None:
         ("agents/command_permissions.json", "tests/test_forbidden_overlap.py"),
         ("agents/command_permissions.json", "tests/test_generated_rules.py"),
         ("agents/hooks/rules/forbidden_commands.json", "tests/test_denial_difference.py"),
+        ("agents/claude/settings.json", "tests/test_generated_rules.py"),
         ("flake.lock", "tests/test_generated_rules.py"),
         ("flake.lock", "tests/test_denial_difference.py"),
         ("tests/generated_rules.py", "tests/test_generated_rules.py"),

@@ -43,25 +43,8 @@ DESKTOP_APP = (
     r"(\.app)?([ /:]|$)"
 )
 
-# The inner command of `xargs` is judged by the hooks, so every rule can meet it (#107). Added by the
-# wrapper-aware check and awaiting the user's confirmation, unlike the entries above.
-XARGS_UNCONFIRMED = {
-    ("xargs", VENV_PYTHON),
-    ("xargs", "^" + GIT_ADD),
-    ("xargs", "(^|[[:space:]])" + GIT_ADD),
-    ("xargs", "^" + GIT_COMMIT),
-    ("xargs", "(^|[[:space:]])" + GIT_COMMIT),
-    ("xargs", PIP),
-    ("xargs", FIND),
-    ("xargs", HERDR),
-    ("xargs", CARGO),
-    ("xargs", STRYKER),
-    ("xargs", MUTMUT),
-    ("xargs", BROWSER_URL),
-    ("xargs", DESKTOP_APP),
-}
-
 # (allow prefix, the whole forbidden pattern it overlaps)
+# `xargs` meets every rule: the hooks unwrap it and deny the inner command, as for `git add` and `git add .`.
 REVIEWED = {
     ("cargo mutants", CARGO),
     ("git add", "^" + GIT_ADD),
@@ -83,7 +66,19 @@ REVIEWED = {
     ("python", PIP),
     ("find", FIND),
     ("herdr agent start", HERDR),
-    *XARGS_UNCONFIRMED,
+    ("xargs", VENV_PYTHON),
+    ("xargs", "^" + GIT_ADD),
+    ("xargs", "(^|[[:space:]])" + GIT_ADD),
+    ("xargs", "^" + GIT_COMMIT),
+    ("xargs", "(^|[[:space:]])" + GIT_COMMIT),
+    ("xargs", PIP),
+    ("xargs", FIND),
+    ("xargs", HERDR),
+    ("xargs", CARGO),
+    ("xargs", STRYKER),
+    ("xargs", MUTMUT),
+    ("xargs", BROWSER_URL),
+    ("xargs", DESKTOP_APP),
 }
 
 

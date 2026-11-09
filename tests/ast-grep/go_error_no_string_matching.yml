@@ -1,0 +1,23 @@
+id: go_error_no_string_matching
+valid:
+  - |
+    func missing(err error) bool {
+        return errors.Is(err, fs.ErrNotExist)
+    }
+  - |
+    func log(err error) string {
+        return fmt.Sprintf("load: %s", err.Error())
+    }
+invalid:
+  - |
+    func missing(err error) bool {
+        return strings.Contains(err.Error(), "no such file")
+    }
+  - |
+    func missing(err error) bool {
+        return err.Error() == "not found"
+    }
+  - |
+    func missing(err error) bool {
+        return strings.HasPrefix(err.Error(), "open ")
+    }

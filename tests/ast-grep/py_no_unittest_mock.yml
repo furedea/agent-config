@@ -1,0 +1,15 @@
+id: py_no_unittest_mock
+valid:
+  - |
+    import pytest
+  - |
+    from unittest import TestCase
+invalid:
+  - |
+    from unittest.mock import patch
+  - |
+    from unittest import mock
+  - |
+    import unittest.mock
+  - |
+    import unittest.mock as um

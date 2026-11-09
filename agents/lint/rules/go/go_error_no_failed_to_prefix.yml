@@ -1,0 +1,29 @@
+id: go_error_no_failed_to_prefix
+source:
+  link: agents/skills/go-style/references/errors.md#L4
+  quote: "Do not\n  start messages with \"failed to\" or capitalize them."
+language: go
+method: ast-grep
+version: 1
+examples:
+  conforming:
+    - |
+      func load(path string) error {
+          return fmt.Errorf("read config %s: %w", path, err)
+      }
+  violating:
+    - |
+      func load(path string) error {
+          return fmt.Errorf("failed to read config %s: %w", path, err)
+      }
+severity: warning
+message: "Start the error message with the operation, not with \"failed to\"."
+rule:
+  any:
+    - pattern: fmt.Errorf($MSG, $$$ARGS)
+    - pattern:
+        context: "func f() { errors.New($MSG) }"
+        selector: call_expression
+constraints:
+  MSG:
+    regex: ^["`][Ff]ailed to\b

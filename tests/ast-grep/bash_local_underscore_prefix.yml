@@ -1,0 +1,24 @@
+id: bash_local_underscore_prefix
+valid:
+  - |
+    build_output() {
+      local _src="$1"
+      local _dst
+      cp "$_src" "$_dst"
+    }
+  - |
+    build_output() {
+      readonly MAX_RETRY=3
+      local -r _src="$1"
+    }
+invalid:
+  - |
+    build_output() {
+      local src="$1"
+      cp "$src" out
+    }
+  - |
+    build_output() {
+      local dst
+      cp in "$dst"
+    }

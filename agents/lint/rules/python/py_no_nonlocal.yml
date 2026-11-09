@@ -1,0 +1,28 @@
+id: py_no_nonlocal
+source:
+  link: agents/skills/python-style/references/code_style.md#L7
+  quote: "Don't use `global`, `nonlocal` (not explicit enough)"
+language: python
+method: ast-grep
+version: 1
+examples:
+  conforming:
+    - |
+      def counter() -> int:
+          total = 0
+          return total
+  violating:
+    - |
+      def counter() -> None:
+          total = 0
+
+          def add() -> None:
+              nonlocal total
+              total += 1
+
+          add()
+severity: warning
+message: "Avoid `nonlocal`; return the value or hold the state in an object."
+note: "`global` is covered by ruff PLW0603, so this rule judges `nonlocal` only."
+rule:
+  kind: nonlocal_statement

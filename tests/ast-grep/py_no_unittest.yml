@@ -1,0 +1,11 @@
+id: py_no_unittest
+valid:
+  - |
+    import pytest
+  - |
+    from unittest.mock import patch
+invalid:
+  - |
+    import unittest
+  - |
+    from unittest import TestCase

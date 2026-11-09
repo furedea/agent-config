@@ -1,0 +1,17 @@
+id: py_no_staticmethod
+valid:
+  - |
+    class Counter:
+        def total(self) -> int:
+            return 0
+  - |
+    class Counter:
+        @classmethod
+        def build(cls) -> "Counter":
+            return cls()
+invalid:
+  - |
+    class Counter:
+        @staticmethod
+        def total() -> int:
+            return 0

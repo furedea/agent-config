@@ -1,0 +1,16 @@
+id: py_no_nonlocal
+valid:
+  - |
+    def counter() -> int:
+        total = 0
+        return total
+invalid:
+  - |
+    def counter() -> None:
+        total = 0
+
+        def add() -> None:
+            nonlocal total
+            total += 1
+
+        add()

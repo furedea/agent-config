@@ -1,0 +1,21 @@
+id: py_mocker_patch_autospec
+valid:
+  - |
+    def test_run(mocker) -> None:
+        mocker.patch("tool.run", autospec=True)
+  - |
+    def test_run(mocker) -> None:
+        mocker.patch.object(Tool, "run", autospec=True)
+  - |
+    def test_run(mocker) -> None:
+        mocker.patch("tool.RETRIES", new=3)
+  - |
+    def test_env(mocker) -> None:
+        mocker.patch.dict("os.environ", {"A": "1"})
+invalid:
+  - |
+    def test_run(mocker) -> None:
+        mocker.patch("tool.run")
+  - |
+    def test_run(mocker) -> None:
+        mocker.patch.object(Tool, "run", return_value=1)

@@ -1,0 +1,28 @@
+id: py_xfail_requires_strict
+source:
+  link: agents/skills/python-style/references/testing.md#L11
+  quote: "Record a reproduced defect with `@pytest.mark.xfail(strict=True, reason=\"...\")`"
+language: python
+method: ast-grep
+version: 1
+examples:
+  conforming:
+    - |
+      @pytest.mark.xfail(strict=True, reason="defect 1")
+      def test_known_defect() -> None:
+          assert False
+  violating:
+    - |
+      @pytest.mark.xfail(reason="defect 1")
+      def test_known_defect() -> None:
+          assert False
+severity: warning
+message: "Add `strict=True` so the run fails when the test unexpectedly passes."
+rule:
+  pattern: pytest.mark.xfail($$$ARGS)
+  not:
+    has:
+      kind: argument_list
+      has:
+        kind: keyword_argument
+        regex: ^strict\s*=\s*True$

@@ -47,9 +47,10 @@ This command applies all of the following:
 - CodeQL default setup for public repositories. Private and internal repositories and ones already
   configured are skipped, and a failure only warns.
 
-Policy: every repository uses CodeQL default setup and has no `codeql.yml`, templates included. On
-a repository with an advanced CodeQL workflow, default setup takes over: that workflow's uploads
-are rejected, and turning default setup off reverts.
+Policy: every public repository uses CodeQL default setup, and no repository has a `codeql.yml`,
+templates included. On a repository with an advanced CodeQL workflow, default setup takes over:
+that workflow's uploads are rejected. Reverting means turning default setup off and re-enabling
+that workflow.
 
 Inspect the current policy payloads and relevant remote state before applying them, including
 whether the ruleset's branch target and required checks fit the repository. The command is not a

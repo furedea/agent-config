@@ -114,6 +114,7 @@
   "agents/command_permissions.json": [
     "tests/codex/test_execpolicy.py",
     "tests/test_command_permission_sync.py",
+    "tests/test_prefix_rules.py",
     "tests/hooks/test_allowed_command.py",
     "tests/hooks/test_command_cli.py",
     "tests/hooks/test_forbidden_command.py",
@@ -121,6 +122,10 @@
     "tests/devin/test_hook_adapter.py",
     "tests/hermes/test_hermes_hook_adapter.py",
     "tests/pi/test_pi_hook_adapter.py"
+  ],
+  "tests/prefix_audit.py": [
+    "tests/test_prefix_audit.py",
+    "tests/test_prefix_rules.py"
   ],
   "agents/hooks/lint_format.py": [
     "tests/hooks/test_lint_format_cli.py",

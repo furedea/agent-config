@@ -1,5 +1,7 @@
 """A shell the guard cannot parse is never trusted with a script, however the script reaches it (#87)."""
 
+from pathlib import Path
+
 import pytest
 
 from tests.runtime import load_script_module
@@ -128,6 +130,180 @@ def test_a_known_foreign_shell_asks_however_it_is_invoked(kind: str, shell: str,
 )
 def test_a_known_foreign_shell_asks_by_path_wrapper_version_and_letter_case(command: str) -> None:
     assert verdict("allowed", command) == "ask"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        pytest.param(f"pwsh -Command '-not $false; {DELETE}'", id="-Command"),
+        pytest.param(f"pwsh -c '-not $false; {DELETE}'", id="-c"),
+        pytest.param(f"pwsh -com '-not $false; {DELETE}'", id="abbreviated -com"),
+        pytest.param(f"pwsh --command '-not $false; {DELETE}'", id="--command"),
+        pytest.param(f"pwsh /c '-not $false; {DELETE}'", id="/c"),
+        pytest.param(f"pwsh -NonInteractive -Command '-not $false; {DELETE}'", id="after an option holding c"),
+        pytest.param(f"pwsh -Command -not true\\; {DELETE}", id="unquoted words"),
+    ],
+)
+def test_powershell_code_starting_with_a_dash_is_still_read_for_deny_rules(command: str) -> None:
+    assert verdict("forbidden", command) == "deny"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        pytest.param(f"pwsh -CommandWithArgs '-not $false; {DELETE}' arg1", id="-CommandWithArgs"),
+        pytest.param(f"pwsh -cwa '-not $false; {DELETE}' arg1", id="-cwa"),
+        pytest.param(f"pwsh --commandwithargs '-not $false; {DELETE}'", id="--commandwithargs"),
+    ],
+)
+def test_powershell_command_with_args_keeps_its_first_word_as_code(command: str) -> None:
+    assert verdict("forbidden", command) == "deny"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        pytest.param(f"pwsh -cwa '{DELETE}' \"$ARG\"", id="-cwa with a computed argument"),
+        pytest.param(f"pwsh -CommandWithArgs '{DELETE}' a \"$ARG\" b", id="-CommandWithArgs with a computed argument"),
+    ],
+)
+def test_a_computed_argument_after_the_code_of_command_with_args_does_not_hide_a_deny(command: str) -> None:
+    assert verdict("forbidden", command) == "deny"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        pytest.param('pwsh -cwa "$CODE" arg', id="computed code of -cwa"),
+        pytest.param(f"pwsh -Command '{DELETE}' \"$ARG\"", id="-Command joins a computed word into the code"),
+    ],
+)
+@pytest.mark.parametrize("kind", ["allowed", "forbidden"])
+def test_computed_code_still_asks(kind: str, command: str) -> None:
+    assert verdict(kind, command) == "ask"
+
+
+def test_powershell_command_with_args_hands_the_rest_to_the_code_as_arguments() -> None:
+    assert verdict("forbidden", f"pwsh -cwa 'Write-Output' '{DELETE}'") == "ask"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "pwsh -Command '-not $false'",
+        "pwsh -NonInteractive -Command 'Get-ChildItem'",
+        "pwsh -NonInteractive 'Get-ChildItem'",
+        "pwsh -ExecutionPolicy Bypass -Command 'Get-ChildItem'",
+        "pwsh -Command -not",
+    ],
+)
+@pytest.mark.parametrize("kind", ["allowed", "forbidden"])
+def test_powershell_code_starting_with_a_dash_still_asks(kind: str, command: str) -> None:
+    assert verdict(kind, command) == "ask"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        pytest.param("fish script.fish", id="a script file"),
+        pytest.param("fish -C 'echo init' script.fish", id="after -C with a value"),
+        pytest.param("fish --init-command='echo init' script.fish", id="after an attached --init-command"),
+        pytest.param("fish --init-command 'echo init' script.fish", id="after a separate --init-command"),
+        pytest.param("fish -N -C 'echo init' script.fish", id="after a flag and a valued option"),
+        pytest.param("fish -d 3 script.fish", id="after -d with a value"),
+        pytest.param("fish --init-com 'echo init' script.fish", id="after an abbreviated --init-command"),
+        pytest.param("fish --profile-s out.txt script.fish", id="after an abbreviated --profile-startup"),
+        pytest.param("fish --deb 3 script.fish", id="after an abbreviated --debug"),
+        pytest.param("fish --debug 3 script.fish", id="after --debug with a value"),
+        pytest.param("fish script.fish arg", id="followed by a positional argument"),
+        pytest.param("fish -- script.fish", id="after the end of options"),
+        pytest.param("/opt/bin/fish script.fish", id="by path"),
+        pytest.param("fish -i -n script.fish", id="interactive cancels -n"),
+        pytest.param("fish -in script.fish", id="interactive and -n in one bundle"),
+        pytest.param("fish --interactive --no-execute script.fish", id="long interactive cancels --no-execute"),
+        pytest.param("fish --no-execute -i script.fish", id="interactive after --no-execute"),
+    ],
+)
+def test_a_fish_script_file_that_matches_a_deny_rule_is_denied(isolated_project: Path, command: str) -> None:
+    (isolated_project / "script.fish").write_text(f"{DELETE}\n")
+    assert verdict("forbidden", command) == "deny"
+
+
+def test_a_fish_script_file_is_read_in_the_directory_it_runs_in(isolated_project: Path) -> None:
+    (isolated_project / "sub").mkdir()
+    (isolated_project / "sub" / "script.fish").write_text(f"{DELETE}\n")
+    assert verdict("forbidden", "cd sub && fish script.fish") == "deny"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        pytest.param("fish script.fish", id="a harmless file"),
+        pytest.param("fish missing.fish", id="a file that does not exist"),
+        pytest.param("fish -C 'echo init' script.fish", id="a harmless file after -C"),
+        pytest.param('fish "$SCRIPT"', id="a computed file name"),
+        pytest.param("fish -c 'echo hi' script.fish", id="a -c script before the file"),
+    ],
+)
+@pytest.mark.parametrize("kind", ["allowed", "forbidden"])
+def test_a_fish_script_file_the_guard_cannot_judge_asks(isolated_project: Path, kind: str, command: str) -> None:
+    (isolated_project / "script.fish").write_text("echo hi\n")
+    assert verdict(kind, command) == "ask"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        pytest.param(f"fish script.fish; {DELETE}", id="a denied command after the fish call"),
+        pytest.param(f"{DELETE}; fish script.fish", id="a denied command before the fish call"),
+        pytest.param(f"fish -C 'echo init' script.fish && {DELETE}", id="after -C"),
+    ],
+)
+@pytest.mark.parametrize(
+    "text",
+    [
+        pytest.param("if true\n    echo hi\nend\n", id="if and end"),
+        pytest.param("set -l x (date)\n", id="a command substitution in fish syntax"),
+    ],
+)
+def test_a_fish_script_file_in_fish_syntax_does_not_hide_a_denied_sibling(
+    isolated_project: Path, command: str, text: str
+) -> None:
+    (isolated_project / "script.fish").write_text(text)
+    assert verdict("forbidden", command) == "deny"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        pytest.param("fish -n script.fish", id="-n"),
+        pytest.param("fish --no-execute script.fish", id="--no-execute"),
+        pytest.param("fish --no-exec script.fish", id="abbreviated --no-exec"),
+        pytest.param("fish -Nn script.fish", id="-n in a bundle"),
+        pytest.param("fish -n -C 'echo init' script.fish", id="-n before a valued option"),
+        pytest.param("fish --version script.fish", id="--version prints and exits"),
+        pytest.param("fish -v script.fish", id="-v prints and exits"),
+        pytest.param("fish --help script.fish", id="--help prints and exits"),
+        pytest.param("fish -h script.fish", id="-h prints and exits"),
+        pytest.param("fish --print-debug-categories script.fish", id="--print-debug-categories prints and exits"),
+    ],
+)
+@pytest.mark.parametrize("kind", ["allowed", "forbidden"])
+def test_a_fish_syntax_check_only_asks_and_never_denies_the_file(
+    isolated_project: Path, kind: str, command: str
+) -> None:
+    (isolated_project / "script.fish").write_text(f"{DELETE}\n")
+    assert verdict(kind, command) == "ask"
+
+
+def test_a_fish_script_file_in_fish_syntax_asks(isolated_project: Path) -> None:
+    (isolated_project / "script.fish").write_text(f"if true\n    {DELETE}\nend\n")
+    assert verdict("forbidden", "fish script.fish") == "ask"
+
+
+def test_a_fish_script_file_matching_an_ask_prefix_asks(isolated_project: Path) -> None:
+    (isolated_project / "script.fish").write_text(f"{MERGE}\n")
+    assert verdict("allowed", "fish script.fish") == "ask"
 
 
 def test_a_fish_positional_argument_is_not_read_as_the_script() -> None:

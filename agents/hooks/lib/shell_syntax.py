@@ -1,6 +1,7 @@
 """Inspect a conservative shell subset using shfmt's parser, never by executing input."""
 
 from collections.abc import Callable
+from contextlib import suppress
 from dataclasses import dataclass, replace
 from functools import partial
 import json
@@ -9,9 +10,11 @@ import re
 import subprocess
 from typing import Self
 
+import fish_script
+import powershell_options
 import shell_input
 from shell_words import UnsupportedSyntax, literal_word, nodes, source_text, spreads
-from shell_wrappers import ASSIGNMENT, WRAPPERS, OptionScan, wrapped_index
+from shell_wrappers import ASSIGNMENT, WRAPPERS, OptionScan, script_index, wrapped_index
 
 
 COMMAND_PREVIEW_LIMIT = 200
@@ -73,9 +76,6 @@ SHELL_LOOKALIKE = re.compile(r"(?!ssh$)[a-z0-9_-]*sh")
 # Options that hand a script over, in any letter case and abbreviation PowerShell accepts: -c, -Command,
 # --commands, nu's -e and --execute, fish's --init-command, or a short bundle holding c such as tcsh's -fc.
 FOREIGN_COMMAND_OPTION = re.compile(r"-(-commands?|-execute|-init-command|e|[a-z]*c[a-z]*)(=.*)?", re.IGNORECASE)
-POWERSHELLS = frozenset({"powershell", "pwsh", "pwsh-preview"})
-# PowerShell's -e, -ec, -EncodedCommand: a base64 script, which the inspection does not decode.
-POWERSHELL_ENCODED_OPTION = re.compile(r"-(e|ec|en[a-z]*)", re.IGNORECASE)
 VERSION_SUFFIX = re.compile(r"[0-9._-]+$")
 
 
@@ -220,11 +220,22 @@ def parse(source: str, depth: int = 0, directories: tuple[Path | None, ...] = ()
             inputs = input_scripts(partial(sources.scripts, owner, directories), tolerant=bool(scripts))
             scripts += [(script, innermost.wrapper_depth + 1) for script in inputs]
             unreviewed = unreviewed or (name not in SHELLS and bool(inputs))
+        if name == "fish":
+            commands += fish_file_commands(innermost, directories)
         if unreviewed:
             layers[-1] = replace(innermost, unreviewed=True)
         commands += layers
         commands += [nested for script, nested_depth in scripts for nested in parse(script, nested_depth, directories)]
     return tuple(commands)
+
+
+def fish_file_commands(command: Command, directories: tuple[Path | None, ...]) -> list[Command]:
+    """The commands in the script file a fish call runs; a file in fish's own syntax is left to the name-based ask."""
+    nested: list[Command] = []
+    for script in fish_script.file_scripts(command.arguments, command.dynamic, directories):
+        with suppress(UnsupportedSyntax):
+            nested += parse(script, command.wrapper_depth + 1, directories)
+    return nested
 
 
 def input_scripts(read: Callable[[], list[str]], tolerant: bool) -> list[str]:
@@ -403,26 +414,13 @@ def is_foreign_shell(executable: str) -> bool:
     return shell in FOREIGN_SHELLS or (shell not in SHELLS and SHELL_LOOKALIKE.fullmatch(shell) is not None)
 
 
-def option_form(arguments: tuple[str, ...], argument: str) -> str:
-    """The option as written with one dash; PowerShell reads --name and /name as -name."""
-    if shell_name(Path(arguments[0]).name) in POWERSHELLS and argument.startswith(("/", "--")):
-        return "-" + argument.lstrip("/-")
-    return argument
-
-
-def is_encoded_option(arguments: tuple[str, ...], argument: str) -> bool:
-    """Whether the option carries a base64 script; only PowerShell has one, nu's -e is a plain script."""
-    return (
-        shell_name(Path(arguments[0]).name) in POWERSHELLS
-        and POWERSHELL_ENCODED_OPTION.fullmatch(option_form(arguments, argument)) is not None
-    )
-
-
 def foreign_option_indexes(arguments: tuple[str, ...]) -> list[int]:
+    shell = shell_name(Path(arguments[0]).name)
     return [
         index
         for index, argument in enumerate(arguments[1:], 1)
-        if FOREIGN_COMMAND_OPTION.fullmatch(option_form(arguments, argument)) or is_encoded_option(arguments, argument)
+        if FOREIGN_COMMAND_OPTION.fullmatch(powershell_options.form(shell, argument))
+        or powershell_options.is_encoded(shell, argument)
     ]
 
 
@@ -438,42 +436,28 @@ def foreign_scripts(command: Command) -> list[str]:
     script options are skipped. An encoded script has no text to read.
     """
     arguments = command.arguments
+    shell = shell_name(Path(arguments[0]).name)
     scripts = []
     for index in foreign_option_indexes(arguments):
         argument = arguments[index]
-        if is_encoded_option(arguments, argument):
+        if powershell_options.is_encoded(shell, argument):
             continue
         if "=" in argument:
             scripts.append(argument.partition("=")[2])
             continue
         operands = list(range(index + 1, len(arguments)))
-        while operands and arguments[operands[0]].startswith("-"):
+        while (
+            operands and arguments[operands[0]].startswith("-") and not powershell_options.takes_code(shell, argument)
+        ):
             operands.pop(0)
-        if any(command.dynamic[position] for position in operands):
+        # Only PowerShell's -Command joins its words; elsewhere the words after the script are its positional arguments.
+        words = operands if powershell_options.joins_following_words(shell, argument) else operands[:1]
+        if any(command.dynamic[position] for position in words):
             raise UnsupportedSyntax(f"{arguments[0]} running a computed script requires explicit review", "wrapper")
-        if not operands:
+        if not words:
             continue
-        # Only PowerShell joins its words; elsewhere the words after the script are its positional arguments.
-        words = operands if shell_name(Path(arguments[0]).name) in POWERSHELLS else operands[:1]
         scripts.append(" ".join(arguments[position] for position in words))
     return scripts
-
-
-# Shell options that take the next word as a value, which would hide where the -c script starts.
-SHELL_VALUED_OPTIONS = frozenset({"-o", "+o", "-O", "+O", "--rcfile", "--init-file"})
-
-
-def script_index(arguments: tuple[str, ...], option: int) -> int:
-    """Where the script of a shell's -c sits: the first word after it that is not an option, past a `--`."""
-    index = option + 1
-    while index < len(arguments) and arguments[index] != "--" and arguments[index][:1] in "-+":
-        if arguments[index] in SHELL_VALUED_OPTIONS:
-            raise UnsupportedSyntax("a shell option before the -c script requires explicit review", "wrapper")
-        index += 1
-    index += index < len(arguments) and arguments[index] == "--"
-    if index >= len(arguments):
-        raise UnsupportedSyntax("shell wrapper has no literal command", "wrapper")
-    return index
 
 
 def shell_name(executable: str) -> str:

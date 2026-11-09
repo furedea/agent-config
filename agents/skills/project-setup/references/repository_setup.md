@@ -44,25 +44,16 @@ This command applies all of the following:
 - Repository settings from `github/repo_settings.json`.
 - Vulnerability alerts and the dependency graph.
 - The common ruleset from `github/ruleset.json`, updating a same-named ruleset or creating it.
-- CodeQL default setup for public repositories. Private and internal repositories and ones already
-  configured are skipped, and a failure only warns.
-
-Policy: every public repository uses CodeQL default setup, and no new `codeql.yml` is added to any
-repository, templates included. On a repository with an advanced CodeQL workflow, default setup
-takes over: that workflow's uploads are rejected, and the file is kept. Reverting means turning
-default setup off and re-enabling that workflow.
+- CodeQL default setup for public repositories; private and already configured ones are skipped.
+  It takes over from any advanced CodeQL workflow, and a failure only warns, so verify its state.
 
 Inspect the current policy payloads and relevant remote state before applying them, including
-whether the ruleset's branch target and required checks fit the repository. On a public repository,
-also check for an existing advanced CodeQL workflow and tell the user that default setup will
-supersede it. The command is not a ruleset-only operation and does not create the CI workflows
-needed to satisfy required checks. If the request covers only rulesets or conflicts with existing
-policy, explain the mismatch and resolve the intended scope before applying the broader command. An
-explicit request for the full standard policy does not need repeated authorization for each
-included step.
+whether the ruleset's branch target and required checks fit the repository. The command is not a
+ruleset-only operation and does not create the CI workflows needed to satisfy required checks.
+If the request covers only rulesets or conflicts with existing policy, explain the mismatch and
+resolve the intended scope before applying the broader command. An explicit request for the full
+standard policy does not need repeated authorization for each included step.
 
-Verify the resulting settings through read-only GitHub queries where available. For a public
-repository, read the code-scanning default-setup state, because a CodeQL failure only warns. If
-application or verification fails, report partial results and remaining work; do not claim the
-whole policy was applied. No clone, Nix activation, or source edit is required for configuration
-alone.
+Verify the resulting settings through read-only GitHub queries where available. If application or
+verification fails, report partial results and remaining work; do not claim the whole policy was
+applied. No clone, Nix activation, or source edit is required for configuration alone.

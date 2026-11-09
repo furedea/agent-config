@@ -110,6 +110,7 @@
                 jq
                 ls-lint
                 nixfmt
+                nodejs_22
                 ripgrep
                 shellcheck
                 shfmt
@@ -142,6 +143,14 @@
                 export PATH="$PWD/.venv/bin:$PATH"
               fi
             '';
+          };
+
+          # CI builds agent-harness from the locked revision where its flake has no package (Linux).
+          agent-harness-build = pkgs.mkShell {
+            packages = with pkgs; [
+              cargo
+              rustc
+            ];
           };
         }
       );

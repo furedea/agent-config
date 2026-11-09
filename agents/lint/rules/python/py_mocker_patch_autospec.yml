@@ -13,7 +13,7 @@ rule:
           kind: argument_list
           has:
             kind: keyword_argument
-            regex: ^((new|new_callable|spec|spec_set|wraps)\s*=|autospec\s*=\s*[^F\s])
+            regex: ^((new|new_callable|spec|spec_set|wraps)\s*=|create\s*=\s*True|autospec\s*=\s*[^F\s])
     - not:
         all:
           - pattern: mocker.patch($$$ARGS)

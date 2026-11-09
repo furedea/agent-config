@@ -18,6 +18,9 @@ valid:
   - |
     def test_run(mocker) -> None:
         mocker.patch.object(Tool, "run", fake_run)
+  - |
+    def test_run(mocker) -> None:
+        mocker.patch("tool.missing_attr", create=True)
 invalid:
   - |
     def test_run(mocker) -> None:

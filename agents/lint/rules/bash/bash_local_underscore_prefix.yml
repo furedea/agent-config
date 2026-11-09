@@ -2,14 +2,15 @@ id: bash_local_underscore_prefix
 language: bash
 severity: warning
 message: "Prefix function-local variables with `_`."
+note: "Names starting with an uppercase letter are skipped: they localize special variables such as IFS, OPTIND, and LC_ALL, which cannot be renamed."
 rule:
   any:
     - all:
         - kind: variable_assignment
-        - regex: ^[^_]
+        - regex: ^[^_A-Z]
     - all:
         - kind: variable_name
-        - regex: ^[^_]
+        - regex: ^[^_A-Z]
   inside:
     kind: declaration_command
     regex: ^local\b

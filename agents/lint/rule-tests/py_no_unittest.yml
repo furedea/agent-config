@@ -6,6 +6,8 @@ valid:
     from unittest.mock import patch
   - |
     from unittest import mock
+  - |
+    from unittest import mock as m
 invalid:
   - |
     from unittest import IsolatedAsyncioTestCase

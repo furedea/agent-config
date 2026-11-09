@@ -11,6 +11,12 @@ valid:
       readonly MAX_RETRY=3
       local -r _src="$1"
     }
+  - |
+    read_fields() {
+      local IFS=,
+      local OPTIND OPTARG
+      local LC_ALL=C
+    }
 invalid:
   - |
     build_output() {

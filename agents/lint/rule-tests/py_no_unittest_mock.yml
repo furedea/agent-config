@@ -6,6 +6,10 @@ valid:
     from unittest import TestCase
 invalid:
   - |
+    from unittest import mock as m
+  - |
+    from unittest import TestCase, mock
+  - |
     from unittest.mock import patch
   - |
     from unittest import mock

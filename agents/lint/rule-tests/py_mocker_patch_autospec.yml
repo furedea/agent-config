@@ -21,6 +21,9 @@ valid:
 invalid:
   - |
     def test_run(mocker) -> None:
+        mocker.patch("tool.run", autospec=False)
+  - |
+    def test_run(mocker) -> None:
         mocker.patch("tool.run")
   - |
     def test_run(mocker) -> None:

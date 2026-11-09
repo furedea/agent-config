@@ -11,6 +11,14 @@ valid:
 invalid:
   - |
     func missing(err error) bool {
+        return "not found" == err.Error()
+    }
+  - |
+    func missing(err error) bool {
+        return strings.EqualFold(err.Error(), "not found")
+    }
+  - |
+    func missing(err error) bool {
         return strings.Contains(err.Error(), "no such file")
     }
   - |

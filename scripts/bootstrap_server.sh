@@ -79,7 +79,7 @@ MACHINE="${BOOTSTRAP_SERVER_MACHINE:-$(uname -m)}"
 readonly MACHINE
 # Renovate updates the versions below from the release named on each comment.
 # renovate: datasource=github-releases depName=furedea/agent-harness extractVersion=^agent-harness-v(?<version>.+)$
-readonly AGENT_HARNESS_VERSION="${AGENT_HARNESS_VERSION:-0.9.9}"
+readonly AGENT_HARNESS_VERSION="${AGENT_HARNESS_VERSION:-0.9.10}"
 # renovate: datasource=github-releases depName=mvdan/sh extractVersion=^v(?<version>.+)$
 readonly SHFMT_VERSION="${SHFMT_VERSION:-3.13.1}"
 # renovate: datasource=github-releases depName=BurntSushi/ripgrep
@@ -344,7 +344,7 @@ function stashed_config_path() {
 function pin_python_shebangs() {
   local _python="$1" _directory _file
   for _directory in .claude/hooks .claude/statusline .claude/skills .codex/hooks .codex/skills \
-    .devin/hooks .hermes/hooks .pi/hooks; do
+    .devin/hooks .dsh/hooks .hermes/hooks .pi/hooks; do
     [[ -d "$HARNESS_PREFIX/$_directory" ]] || continue
     while IFS= read -r -d '' _file; do
       pin_python_shebang "$_python" "$_file"

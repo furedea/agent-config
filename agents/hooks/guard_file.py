@@ -23,6 +23,7 @@ import shell_syntax
 # Environment variables through which a commit can use another repository or index than the directory's own.
 REPOSITORY_VARIABLE = re.compile(r"\bGIT_(DIR|WORK_TREE|INDEX_FILE|COMMON_DIR|OBJECT_DIRECTORY)\+?=")
 COMMIT_HOOK = "guard_secret_commit.sh"
+EDITOR_MUTATIONS = frozenset({"create", "str_replace", "insert"})
 UNKNOWN_REPOSITORY = (
     "cannot tell which repository this commit uses, because a shell expansion, a directory stack, "
     "or a GIT_DIR-like variable picks it.\n\n"
@@ -205,10 +206,13 @@ def content_text(mode: str, payload: dict) -> str:
     if mode == "prompt":
         return payload.get("prompt") or ""
     if mode == "write":
-        return "".join(values.get(key) or "" for key in ("content", "new_string", "new_source"))
+        return "".join(
+            values.get(key) or "" for key in ("content", "new_string", "new_source", "new_str", "file_text")
+        )
     # Grep may name a directory; only a single file target can be scanned before the tool runs.
     path = hook_input.file_path(values)
-    if not path or not Path(path).is_file():
+    # str_replace_editor reads only through `view`; its other commands are writes.
+    if values.get("command") in EDITOR_MUTATIONS or not path or not Path(path).is_file():
         return ""
     with Path(path).open("rb") as stream:
         return stream.read(100000).decode(errors="replace")
@@ -262,7 +266,7 @@ def scan_content(mode: str, payload: dict, directory: Path) -> None:
     )
     if mode == "prompt":
         decision = {"decision": "block", "reason": f"BLOCKED: {reason}. Prompt contains sensitive information."}
-    elif payload.get("provider") in {"devin", "hermes", "pi"}:
+    elif payload.get("provider") in {"devin", "dsh", "hermes", "pi"}:
         decision = {"decision": "block", "reason": f"BLOCKED: {reason}"}
     else:
         decision = {

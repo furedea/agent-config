@@ -1,6 +1,7 @@
 #!/usr/bin/env -S python3 -IB
 """Adapt normalized quality diagnostics to the provider hook contract."""
 
+from collections.abc import Callable
 import json
 from pathlib import Path
 import sys
@@ -51,7 +52,7 @@ def diagnostics(payload: dict, kind: str | None = None) -> tuple[str, ...]:
     return lint_engine.diagnostics(lint_engine.supported_targets(target_paths(payload), EXTENSIONS, kind), check_file)
 
 
-def emit(messages: tuple[str, ...]) -> None:
+def emit(messages: tuple[str, ...], encode: Callable[[str], dict[str, object]] = context) -> None:
     """Write one structured notification for all diagnostics, or remain silent."""
     if messages:
         selected = list(messages[:MAX_DIAGNOSTICS])
@@ -65,7 +66,7 @@ def emit(messages: tuple[str, ...]) -> None:
             head = budget // 2
             tail = budget - head
             message = encoded[:head].decode(errors="ignore") + marker + encoded[-tail:].decode(errors="ignore")
-        print(json.dumps(context(message), ensure_ascii=False))
+        print(json.dumps(encode(message), ensure_ascii=False))
 
 
 def main(arguments: list[str]) -> int:

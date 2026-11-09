@@ -58,6 +58,11 @@ def additional_context(event: str, result: dict) -> dict:
     return denial(result) or (context if message else result)
 
 
+def system_message_output(message: str) -> dict:
+    """Encode diagnostics for providers that read a top-level systemMessage."""
+    return {"systemMessage": message}
+
+
 def no_cwd() -> str:
     return ""
 
@@ -76,6 +81,7 @@ class Profile:
     events: Mapping[str, str] = field(default_factory=dict)
     compaction_events: Mapping[str, str] = field(default_factory=dict)
     formatter: Formatter = system_message
+    lint_output: Callable[[str], dict] = lint_format.context
     content_modes: tuple[str, ...] = CONTENT_MODES
     cwd_fallback: Callable[[], str] = os.getcwd
     manifest_env: str = ""
@@ -171,11 +177,14 @@ class Adapter:
 
     def lint(self, payload: dict) -> int:
         """Report shared quality diagnostics using the PostToolUse JSON contract."""
-        lint_format.emit(lint_format.diagnostics(self.normalized(payload)))
+        context = self.normalized(payload)
+        if not views_only(context) and not failed(context):
+            lint_format.emit(lint_format.diagnostics(context), self.profile.lint_output)
         return 0
 
     def harness(self, payload: dict) -> int:
-        for name in edit_targets(self.normalized(payload)):
+        context = self.normalized(payload)
+        for name in () if views_only(context) else edit_targets(context):
             absolute = name if name.startswith(("/", "~/")) else str(Path.cwd() / name)
             values = {"file_path": absolute}
             if status := guard_file.check(
@@ -227,7 +236,20 @@ class Adapter:
         cwd = payload.get("cwd") or self.profile.cwd_fallback()
         if isinstance(cwd, str) and cwd:
             os.chdir(cwd)
-        return payload
+        return self._in_workdir(payload)
+
+    def _in_workdir(self, payload: dict) -> dict:
+        """Move to the directory a shell tool runs its command in, so guards inspect that repository."""
+        values = payload.get("tool_input")
+        if not isinstance(values, dict):
+            return payload
+        workdir = values.get("workdir")
+        if not isinstance(workdir, str) or not workdir:
+            return payload
+        os.chdir(workdir)
+        # The forwarded cwd is already the workdir; keeping `workdir` would apply a relative one twice.
+        resolved = {key: value for key, value in values.items() if key != "workdir"}
+        return payload | {"cwd": os.getcwd(), "tool_input": resolved}
 
     def _accepts(self, kind: str, rest: list[str]) -> bool:
         commands = self._commands()
@@ -280,6 +302,18 @@ def tool_input(payload: dict) -> object:
     if name := hook_input.file_path(values):
         result["file_path"] = name
     return result
+
+
+def views_only(context: dict) -> bool:
+    """Tell whether an editor tool call only views a file, so edit-time guards have nothing to check."""
+    values = context["tool_input"]
+    return context.get("tool_name") == "Edit" and isinstance(values, dict) and values.get("command") == "view"
+
+
+def failed(context: dict) -> bool:
+    """Tell whether the provider reported the tool call as an error, so nothing was edited to check."""
+    response = context.get("tool_response")
+    return isinstance(response, dict) and response.get("isError") is True
 
 
 def command_text(values: dict) -> str:

@@ -11,27 +11,31 @@ import sys
 
 DEFAULT_TIMEOUT = 60
 DECISION_KEYS = {"decision", "action"}
+NOTICE_KEYS = {"systemMessage"}
 
 
 def run(manifest: Path, event: str, payload: dict) -> int:
     """Run every matching command like the native runtimes do.
 
     A blocking decision never skips later hooks: audit and guard commands still
-    observe the call. The first terminal decision wins on stdout; any exit code
-    2 makes the dispatch itself a hard block.
+    observe the call. The first terminal decision wins on stdout, ahead of any
+    systemMessage notice; any exit code 2 makes the dispatch itself a hard block.
     """
     blocked = False
     decision = None
+    notice = None
     for hook in _matching_hooks(manifest, event, payload):
         outcome = _run_hook(hook, payload)
         if outcome == 2:
             blocked = True
-        elif isinstance(outcome, str) and decision is None:
-            decision = outcome
+        elif isinstance(outcome, str) and _is_notice(outcome):
+            notice = notice or outcome
+        elif isinstance(outcome, str):
+            decision = decision or outcome
     if blocked:
         return 2
-    if decision is not None:
-        sys.stdout.write(decision + "\n")
+    if output := decision or notice:
+        sys.stdout.write(output + "\n")
     return 0
 
 
@@ -106,11 +110,21 @@ def _timeout(hook: object) -> float:
 
 
 def _is_decision(line: str) -> bool:
+    return bool(_keys(line) & (DECISION_KEYS | NOTICE_KEYS))
+
+
+def _is_notice(line: str) -> bool:
+    """A notice informs the provider without deciding, so any decision outranks it."""
+    keys = _keys(line)
+    return bool(keys & NOTICE_KEYS) and not keys & DECISION_KEYS
+
+
+def _keys(line: str) -> set[str]:
     line = line.strip()
     if not line.startswith("{"):
-        return False
+        return set()
     try:
         data = json.loads(line)
     except ValueError:
-        return False
-    return isinstance(data, dict) and bool(DECISION_KEYS & data.keys())
+        return set()
+    return set(data) if isinstance(data, dict) else set()

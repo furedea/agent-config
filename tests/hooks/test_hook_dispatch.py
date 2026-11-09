@@ -135,6 +135,56 @@ def test_decision_output_is_reemitted(
     assert json.loads(capsys.readouterr().out.strip()) == output
 
 
+def test_system_message_output_is_reemitted(
+    manifest: Path, executable: StubWriter, capsys: pytest.CaptureFixture
+) -> None:
+    stub = executable(
+        "emit-message",
+        """
+        import json
+        print(json.dumps({"systemMessage": "lint says"}))
+        """,
+    )
+    write_manifest(
+        manifest,
+        "tools/post-execute",
+        [{"hooks": [{"command": str(stub), "type": "command"}]}],
+    )
+
+    assert hook_dispatch.run(manifest, "tools/post-execute", {}) == 0
+    assert json.loads(capsys.readouterr().out.strip()) == {"systemMessage": "lint says"}
+
+
+def test_a_later_block_wins_over_an_earlier_system_message(
+    manifest: Path, executable: StubWriter, capsys: pytest.CaptureFixture
+) -> None:
+    notice = executable("emit-message", 'import json\nprint(json.dumps({"systemMessage": "note"}))\n')
+    blocker = executable("emit-block", 'import json\nprint(json.dumps({"decision": "block", "reason": "no"}))\n')
+    write_manifest(
+        manifest,
+        "tools/pre-execute",
+        [{"hooks": [{"command": str(notice)}, {"command": str(blocker)}]}],
+    )
+
+    assert hook_dispatch.run(manifest, "tools/pre-execute", {}) == 0
+    assert json.loads(capsys.readouterr().out.strip()) == {"decision": "block", "reason": "no"}
+
+
+def test_the_first_system_message_is_kept_when_nothing_blocks(
+    manifest: Path, executable: StubWriter, capsys: pytest.CaptureFixture
+) -> None:
+    first = executable("first", 'import json\nprint(json.dumps({"systemMessage": "one"}))\n')
+    second = executable("second", 'import json\nprint(json.dumps({"systemMessage": "two"}))\n')
+    write_manifest(
+        manifest,
+        "tools/post-execute",
+        [{"hooks": [{"command": str(first)}, {"command": str(second)}]}],
+    )
+
+    assert hook_dispatch.run(manifest, "tools/post-execute", {}) == 0
+    assert json.loads(capsys.readouterr().out.strip()) == {"systemMessage": "one"}
+
+
 def test_nonzero_exit_other_than_two_is_ignored(manifest: Path, executable: StubWriter) -> None:
     stub = executable(
         "fail-soft",

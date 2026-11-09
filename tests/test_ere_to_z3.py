@@ -74,6 +74,7 @@ def test_ignoring_case_also_folds_what_a_negated_bracket_excludes() -> None:
     [r"\1", r"(a)\1", r"\w", "(?=a)", "[[:bogus:]]", "(a", "a)", "[a", "a{2", "*a", r"[\.]", r"[a\]]"]
     + [r"\<a", r"a\>", r"\`a", r"a\'"]
     + ["^[[=a=]]$", "^[[.a.]]$", "^[[.hyphen.]]$"]
+    + ["a\nb", "^a$\n^b$"]
     + ["[[:alpha:]]", "[[:alnum:]]", "[[:upper:]]", "[[:lower:]]"],
 )
 def test_syntax_outside_the_rule_dialect_is_refused(pattern: str) -> None:

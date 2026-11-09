@@ -2,6 +2,7 @@
 
 from pathlib import Path
 import re
+import shutil
 import subprocess
 
 import pytest
@@ -37,7 +38,7 @@ def test_every_case_file_belongs_to_a_rule() -> None:
     assert sorted(path.name for path in CASE_DIRECTORY.glob("*.yml") if path.name not in rule_names) == []
 
 
-@pytest.mark.integration
+@pytest.mark.skipif(shutil.which("ast-grep") is None, reason="ast-grep is provided by the flake dev shell")
 def test_ast_grep_accepts_every_valid_case_and_reports_every_invalid_case() -> None:
     result = subprocess.run(
         ["ast-grep", "test", "--config", str(SG_CONFIG), "--skip-snapshot-tests"],

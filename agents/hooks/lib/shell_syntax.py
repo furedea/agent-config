@@ -71,7 +71,7 @@ SHELL_LOOKALIKE = re.compile(r"(?!ssh$)[a-z0-9_-]*sh")
 # Options that hand a script over, in any letter case and abbreviation PowerShell accepts: -c, -Command,
 # --commands, nu's -e and --execute, fish's --init-command, or a short bundle holding c such as tcsh's -fc.
 FOREIGN_COMMAND_OPTION = re.compile(r"-(-commands?|-execute|-init-command|e|[a-z]*c[a-z]*)(=.*)?", re.IGNORECASE)
-POWERSHELLS = frozenset({"powershell", "pwsh"})
+POWERSHELLS = frozenset({"powershell", "pwsh", "pwsh-preview"})
 # PowerShell's -e, -ec, -EncodedCommand: a base64 script, which the inspection does not decode.
 POWERSHELL_ENCODED_OPTION = re.compile(r"-(e|ec|en[a-z]*)", re.IGNORECASE)
 VERSION_SUFFIX = re.compile(r"[0-9._-]+$")

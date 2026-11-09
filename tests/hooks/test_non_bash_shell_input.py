@@ -37,6 +37,8 @@ def verdict(kind: str, command: str) -> str:
         pytest.param(f"fish --init-command '{DELETE}'", id="fish --init-command separate"),
         pytest.param(f"fish -C '{DELETE}'", id="fish -C"),
         pytest.param(f"echo '{DELETE}' | pwsh -Command -", id="pwsh -Command - reads the pipe"),
+        pytest.param(f"pwsh-preview /Command '{DELETE}'", id="pwsh-preview /Command"),
+        pytest.param(f"pwsh-preview7 --c '{DELETE}'", id="versioned pwsh-preview --c"),
         pytest.param(f"pwsh --c '{DELETE}'", id="pwsh --c"),
         pytest.param(f"pwsh --command '{DELETE}'", id="pwsh --command"),
         pytest.param(f"pwsh /c '{DELETE}'", id="pwsh /c"),

@@ -17,6 +17,9 @@ audit = [
     { name = "deptry" },
     { name = "vulture" },
 ]
+dev = [
+    { name = "pyyaml" },
+]
 lint = [
     { name = "ruff" },
 ]
@@ -39,6 +42,7 @@ audit = [
     { name = "deptry", specifier = "==0.25.1" },
     { name = "vulture", specifier = "==2.16" },
 ]
+dev = [{ name = "pyyaml", specifier = ">=6.0.3" }]
 lint = [{ name = "ruff", specifier = "==0.17.0" }]
 test = [
     { name = "hypothesis", specifier = ">=6.170.14" },
@@ -248,6 +252,12 @@ sdist = { url = "https://files.pythonhosted.org/packages/78/b4/439b179d1ff526791
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ca/31/d4e37e9e550c2b92a9cbc2e4d0b7420a27224968580b5a447f420847c975/pytest_xdist-3.8.0-py3-none-any.whl", hash = "sha256:202ca578cfeb7370784a8c33d6d05bc6e13b4f25b5053c30a152269fd10f0b88", size = 46396, upload-time = "2025-07-01T13:30:56.632Z" },
 ]
+
+[[package]]
+name = "pyyaml"
+version = "6.0.3"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/05/8e/961c0007c59b8dd7729d542c61a4d537767a59645b82a0b521206e1e25c2/pyyaml-6.0.3.tar.gz", hash = "sha256:d76623373421df22fb4cf8817020cbb7ef15c725b9d5e45f17e189bfc384190f", size = 130960, upload-time = "2025-09-25T21:33:16.546Z" }
 
 [[package]]
 name = "requirements-parser"

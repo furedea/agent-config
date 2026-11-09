@@ -67,7 +67,7 @@ exclude = [".venv", "build", "dist"]
 [tool.uv]
 managed = true
 package = false
-default-groups = ["lint", "typecheck", "test"]
+default-groups = ["lint", "typecheck", "test", "dev"]
 exclude-newer = "1 week"
 
 [dependency-groups]
@@ -88,6 +88,9 @@ test = [
 audit = [
   "deptry==0.25.1",
   "vulture==2.16",
+]
+dev = [
+    "pyyaml>=6.0.3",
 ]
 
 [tool.ruff]

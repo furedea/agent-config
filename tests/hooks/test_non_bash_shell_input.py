@@ -204,6 +204,46 @@ def test_a_fish_script_file_the_guard_cannot_judge_asks(isolated_project: Path, 
     assert verdict(kind, command) == "ask"
 
 
+@pytest.mark.parametrize(
+    "command",
+    [
+        pytest.param(f"fish script.fish; {DELETE}", id="a denied command after the fish call"),
+        pytest.param(f"{DELETE}; fish script.fish", id="a denied command before the fish call"),
+        pytest.param(f"fish -C 'echo init' script.fish && {DELETE}", id="after -C"),
+    ],
+)
+@pytest.mark.parametrize(
+    "text",
+    [
+        pytest.param("if true\n    echo hi\nend\n", id="if and end"),
+        pytest.param("set -l x (date)\n", id="a command substitution in fish syntax"),
+    ],
+)
+def test_a_fish_script_file_in_fish_syntax_does_not_hide_a_denied_sibling(
+    isolated_project: Path, command: str, text: str
+) -> None:
+    (isolated_project / "script.fish").write_text(text)
+    assert verdict("forbidden", command) == "deny"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        pytest.param("fish -n script.fish", id="-n"),
+        pytest.param("fish --no-execute script.fish", id="--no-execute"),
+        pytest.param("fish --no-exec script.fish", id="abbreviated --no-exec"),
+        pytest.param("fish -Nn script.fish", id="-n in a bundle"),
+        pytest.param("fish -n -C 'echo init' script.fish", id="-n before a valued option"),
+    ],
+)
+@pytest.mark.parametrize("kind", ["allowed", "forbidden"])
+def test_a_fish_syntax_check_only_asks_and_never_denies_the_file(
+    isolated_project: Path, kind: str, command: str
+) -> None:
+    (isolated_project / "script.fish").write_text(f"{DELETE}\n")
+    assert verdict(kind, command) == "ask"
+
+
 def test_a_fish_script_file_in_fish_syntax_asks(isolated_project: Path) -> None:
     (isolated_project / "script.fish").write_text(f"if true\n    {DELETE}\nend\n")
     assert verdict("forbidden", "fish script.fish") == "ask"

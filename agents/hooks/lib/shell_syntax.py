@@ -1,6 +1,7 @@
 """Inspect a conservative shell subset using shfmt's parser, never by executing input."""
 
 from collections.abc import Callable
+from contextlib import suppress
 from dataclasses import dataclass, replace
 from functools import partial
 import json
@@ -222,13 +223,21 @@ def parse(source: str, depth: int = 0, directories: tuple[Path | None, ...] = ()
             scripts += [(script, innermost.wrapper_depth + 1) for script in inputs]
             unreviewed = unreviewed or (name not in SHELLS and bool(inputs))
         if name == "fish":
-            files = fish_script.file_scripts(innermost.arguments, innermost.dynamic, directories)
-            scripts += [(script, innermost.wrapper_depth + 1) for script in files]
+            commands += fish_file_commands(innermost, directories)
         if unreviewed:
             layers[-1] = replace(innermost, unreviewed=True)
         commands += layers
         commands += [nested for script, nested_depth in scripts for nested in parse(script, nested_depth, directories)]
     return tuple(commands)
+
+
+def fish_file_commands(command: Command, directories: tuple[Path | None, ...]) -> list[Command]:
+    """The commands in the script file a fish call runs; a file in fish's own syntax is left to the name-based ask."""
+    nested: list[Command] = []
+    for script in fish_script.file_scripts(command.arguments, command.dynamic, directories):
+        with suppress(UnsupportedSyntax):
+            nested += parse(script, command.wrapper_depth + 1, directories)
+    return nested
 
 
 def input_scripts(read: Callable[[], list[str]], tolerant: bool) -> list[str]:

@@ -44,19 +44,25 @@ def script_index(arguments: tuple[str, ...]) -> int | None:
             return index + 1 if index + 1 < len(arguments) else None
         if not argument.startswith("-"):
             return index
-        if argument == "-" or runs_command(argument):
+        if argument == "-" or replaces_file(argument):
             return None
         index += 2 if takes_next_word(argument) else 1
     return None
 
 
-def runs_command(argument: str) -> bool:
-    """Whether the option is -c or --command, or an abbreviation of it, which replaces the script file."""
+def replaces_file(argument: str) -> bool:
+    """Whether the option leaves no file to run: -c or --command supplies the script, -n or --no-execute runs none.
+
+    A long option may be abbreviated; a short one counts only in front of the value-taking letter of its bundle.
+    """
     if argument.startswith("--"):
         name = argument.partition("=")[0]
-        return len(name) >= 3 and "--command".startswith(name)
-    position = valued_letter(argument[1:])
-    return position is not None and argument[1:][position] == "c"
+        return (len(name) >= 3 and "--command".startswith(name)) or (
+            len(name) >= 6 and "--no-execute".startswith(name)
+        )
+    letters = argument[1:]
+    position = valued_letter(letters)
+    return any(letter in "cn" for letter in (letters if position is None else letters[: position + 1]))
 
 
 def takes_next_word(argument: str) -> bool:

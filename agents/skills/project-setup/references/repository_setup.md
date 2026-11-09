@@ -44,6 +44,12 @@ This command applies all of the following:
 - Repository settings from `github/repo_settings.json`.
 - Vulnerability alerts and the dependency graph.
 - The common ruleset from `github/ruleset.json`, updating a same-named ruleset or creating it.
+- CodeQL default setup for public repositories. Private and internal repositories and ones already
+  configured are skipped, and a failure only warns.
+
+Policy: every repository uses CodeQL default setup and has no `codeql.yml`, templates included. On
+a repository with an advanced CodeQL workflow, default setup takes over: that workflow's uploads
+are rejected, and turning default setup off reverts.
 
 Inspect the current policy payloads and relevant remote state before applying them, including
 whether the ruleset's branch target and required checks fit the repository. The command is not a

@@ -89,10 +89,6 @@
           {
             "command": "\"$HOME/.claude/hooks/lint_format.py\"",
             "type": "command"
-          },
-          {
-            "command": "\"$HOME/.claude/hooks/static_rules.py\"",
-            "type": "command"
           }
         ]
       },

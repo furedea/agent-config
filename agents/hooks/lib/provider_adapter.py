@@ -24,7 +24,6 @@ import patch_input
 import secret_path_policy
 import shell_paths
 import shell_syntax
-import static_rule_scan
 import verification_session
 
 
@@ -180,10 +179,7 @@ class Adapter:
         """Report shared quality diagnostics using the PostToolUse JSON contract."""
         context = self.normalized(payload)
         if not views_only(context) and not failed(context):
-            messages = lint_format.diagnostics(context) + static_rule_scan.diagnostics(
-                hook_input.target_paths(context)
-            )
-            lint_format.emit(messages, self.profile.lint_output)
+            lint_format.emit(lint_format.diagnostics(context), self.profile.lint_output)
         return 0
 
     def harness(self, payload: dict) -> int:

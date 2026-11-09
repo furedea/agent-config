@@ -78,27 +78,38 @@ readonly PYTHON_VERSION="${PYTHON_VERSION:-3.15.1}"
 MACHINE="${BOOTSTRAP_SERVER_MACHINE:-$(uname -m)}"
 readonly MACHINE
 # Renovate updates the versions below from the release named on each comment.
+# Every download is verified against the sha256 pinned next to its version. A version bump
+# needs its hash refreshed in the same PR: scripts/update_bootstrap_checksums.sh.
 # renovate: datasource=github-releases depName=furedea/agent-harness extractVersion=^agent-harness-v(?<version>.+)$
 readonly AGENT_HARNESS_VERSION="${AGENT_HARNESS_VERSION:-0.9.10}"
+readonly AGENT_HARNESS_SHA256="${AGENT_HARNESS_SHA256:-41e31d9ab229426033a6743183b7d009b7ed2e209487bdf901396d0b26ca59fd}"
 # renovate: datasource=github-releases depName=mvdan/sh extractVersion=^v(?<version>.+)$
 readonly SHFMT_VERSION="${SHFMT_VERSION:-3.13.1}"
+readonly SHFMT_SHA256="${SHFMT_SHA256:-fb096c5d1ac6beabbdbaa2874d025badb03ee07929f0c9ff67563ce8c75398b1}"
 # renovate: datasource=github-releases depName=BurntSushi/ripgrep
 readonly RIPGREP_VERSION="${RIPGREP_VERSION:-14.1.1}"
+readonly RIPGREP_SHA256="${RIPGREP_SHA256:-4cf9f2741e6c465ffdb7c26f38056a59e2a2544b51f7cc128ef28337eeae4d8e}"
 # renovate: datasource=github-releases depName=jqlang/jq extractVersion=^jq-(?<version>.+)$
 readonly JQ_VERSION="${JQ_VERSION:-1.8.1}"
+readonly JQ_SHA256="${JQ_SHA256:-020468de7539ce70ef1bceaf7cde2e8c4f2ca6c3afb84642aabc5c97d9fc2a0d}"
 # renovate: datasource=github-releases depName=astral-sh/ruff
 readonly RUFF_VERSION="${RUFF_VERSION:-0.17.4}"
+readonly RUFF_SHA256="${RUFF_SHA256:-d1d6ec9ce1ce0c01e23532a157a677077ba1f82f7cd2cde6f0bd75e65f85df93}"
 # renovate: datasource=github-releases depName=dprint/dprint
 readonly DPRINT_VERSION="${DPRINT_VERSION:-0.64.1}"
+readonly DPRINT_SHA256="${DPRINT_SHA256:-aad2ee102014c563112dcdad65e131dbcfe123355ef948ae91d806e833cdbf40}"
 # renovate: datasource=github-releases depName=koalaman/shellcheck extractVersion=^v(?<version>.+)$
 readonly SHELLCHECK_VERSION="${SHELLCHECK_VERSION:-0.11.0}"
+readonly SHELLCHECK_SHA256="${SHELLCHECK_SHA256:-8c3be12b05d5c177a04c29e3c78ce89ac86f1595681cab149b65b97c4e227198}"
 # renovate: datasource=github-releases depName=bats-core/bats-core extractVersion=^v(?<version>.+)$
 readonly BATS_VERSION="${BATS_VERSION:-1.13.0}"
+readonly BATS_SHA256="${BATS_SHA256:-a85e12b8828271a152b338ca8109aa23493b57950987c8e6dff97ba492772ff3}"
 readonly BATS_PREFIX="${BATS_PREFIX:-${XDG_DATA_HOME:-$HOME/.local/share}/bats-core}"
 # Older uv cannot install the managed CPython this script requests.
 # renovate: datasource=github-releases depName=astral-sh/uv
 readonly UV_VERSION="${UV_VERSION:-0.13.5}"
-readonly UV_INSTALLER_URL="${UV_INSTALLER_URL:-https://astral.sh/uv/${UV_VERSION}/install.sh}"
+readonly UV_SHA256="${UV_SHA256:-57ef9d9ccb01fb1bd998df995b0dd221b52f7d7841fbea93f2d4463bf61fb7a9}"
+readonly UV_URL="${UV_URL:-https://github.com/astral-sh/uv/releases/download/${UV_VERSION}/uv-x86_64-unknown-linux-musl.tar.gz}"
 readonly AGENT_HARNESS_URL="${AGENT_HARNESS_URL:-https://github.com/furedea/agent-harness/releases/download/agent-harness-v${AGENT_HARNESS_VERSION}/agent-harness-x86_64-unknown-linux-musl.tar.xz}"
 readonly SHFMT_URL="${SHFMT_URL:-https://github.com/mvdan/sh/releases/download/v${SHFMT_VERSION}/shfmt_v${SHFMT_VERSION}_linux_amd64}"
 readonly RIPGREP_URL="${RIPGREP_URL:-https://github.com/BurntSushi/ripgrep/releases/download/${RIPGREP_VERSION}/ripgrep-${RIPGREP_VERSION}-x86_64-unknown-linux-musl.tar.gz}"
@@ -119,11 +130,11 @@ function main() {
   require_complete_github_app
   mkdir -p "$BIN_DIR" "$CONFIG_DIR"
   install_agent_harness
-  install_tool shfmt "$SHFMT_URL"
-  install_tool rg "$RIPGREP_URL" rg
-  install_tool jq "$JQ_URL"
-  install_tool ruff "$RUFF_URL" ruff
-  install_tool shellcheck "$SHELLCHECK_URL" shellcheck
+  install_tool shfmt "$SHFMT_URL" "$SHFMT_SHA256"
+  install_tool rg "$RIPGREP_URL" "$RIPGREP_SHA256" rg
+  install_tool jq "$JQ_URL" "$JQ_SHA256"
+  install_tool ruff "$RUFF_URL" "$RUFF_SHA256" ruff
+  install_tool shellcheck "$SHELLCHECK_URL" "$SHELLCHECK_SHA256" shellcheck
   install_bats
   install_uv
   local _python
@@ -175,37 +186,35 @@ function install_agent_harness() {
     return 0
   fi
   local _download="$WORK_DIR/agent-harness.download"
-  download "$AGENT_HARNESS_URL" "$_download"
-  require_release_checksum "$AGENT_HARNESS_URL" "$_download"
+  download_verified "$AGENT_HARNESS_URL" "$AGENT_HARNESS_SHA256" "$_download"
   install -m 0755 "$(extract_member "$_download" agent-harness)" "$_binary"
   printf 'install %s\n' "$_binary"
 }
 
-# The checksum shares the archive's origin: it catches a damaged download, not a forged release.
-function require_release_checksum() {
-  local _url="$1" _download="$2" _expected _asset _actual
-  download "$_url.sha256" "$WORK_DIR/release.sha256"
-  read -r _expected _asset <"$WORK_DIR/release.sha256"
-  _actual="$(sha256sum "$_download")"
-  [[ "${_actual%% *}" == "$_expected" ]] && return 0
-  printf 'checksum mismatch for %s\n' "$_url" >&2
-  exit 1
-}
-
 # Installs a release binary, or the named member of a release archive, into BIN_DIR.
 function install_tool() {
-  local _name="$1" _url="$2" _member="${3:-}"
+  local _name="$1" _url="$2" _sha256="$3" _member="${4:-}"
   if [[ -x "$BIN_DIR/$_name" ]]; then
     printf 'keep %s\n' "$BIN_DIR/$_name"
     return 0
   fi
   local _download="$WORK_DIR/$_name.download"
-  download "$_url" "$_download"
+  download_verified "$_url" "$_sha256" "$_download"
   if [[ -n "$_member" ]]; then
     _download="$(extract_member "$_download" "$_member")"
   fi
   install -m 0755 "$_download" "$BIN_DIR/$_name"
   printf 'install %s\n' "$BIN_DIR/$_name"
+}
+
+# Stops the whole run, before anything is installed from it, unless the download has the pinned sha256.
+function download_verified() {
+  local _url="$1" _expected="$2" _destination="$3" _actual
+  download "$_url" "$_destination"
+  _actual="$(sha256sum "$_destination")"
+  [[ -n "$_expected" && "${_actual%% *}" == "$_expected" ]] && return 0
+  printf 'checksum mismatch for %s: expected %s, got %s\n' "$_url" "${_expected:-<none>}" "${_actual%% *}" >&2
+  exit 1
 }
 
 function download() {
@@ -233,7 +242,7 @@ function install_dprint() {
     return 0
   fi
   local _download="$WORK_DIR/dprint.download" _directory
-  download "$DPRINT_URL" "$_download"
+  download_verified "$DPRINT_URL" "$DPRINT_SHA256" "$_download"
   _directory="$(mktemp -d "$WORK_DIR/extract.XXXXXX")"
   "$_python" -m zipfile -e "$_download" "$_directory"
   install -m 0755 "$_directory/dprint" "$BIN_DIR/dprint"
@@ -247,7 +256,7 @@ function install_bats() {
     return 0
   fi
   local _download="$WORK_DIR/bats.download" _source
-  download "$BATS_URL" "$_download"
+  download_verified "$BATS_URL" "$BATS_SHA256" "$_download"
   _source="$(extract_archive "$_download")"
   bash "$_source/install.sh" "$BATS_PREFIX" >/dev/null
   ln -sf "$BATS_PREFIX/bin/bats" "$BIN_DIR/bats"
@@ -258,8 +267,9 @@ function install_uv() {
   if [[ -x "$BIN_DIR/uv" ]]; then
     printf 'keep %s\n' "$BIN_DIR/uv"
   else
-    download "$UV_INSTALLER_URL" "$WORK_DIR/uv_install.sh"
-    UV_UNMANAGED_INSTALL="$BIN_DIR" sh "$WORK_DIR/uv_install.sh"
+    local _download="$WORK_DIR/uv.download"
+    download_verified "$UV_URL" "$UV_SHA256" "$_download"
+    install -m 0755 "$(extract_member "$_download" uv)" "$BIN_DIR/uv"
     printf 'install %s\n' "$BIN_DIR/uv"
   fi
   require_uv_version

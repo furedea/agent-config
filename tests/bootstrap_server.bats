@@ -39,7 +39,7 @@ setup() {
     DPRINT_URL="file://$RELEASES/missing.zip" \
     SHELLCHECK_URL="file://$RELEASES/missing.tar.xz" \
     BATS_URL="file://$RELEASES/missing.tar.gz" \
-    UV_INSTALLER_URL="file://$RELEASES/missing.sh"
+    UV_URL="file://$RELEASES/missing.tar.gz"
 
   [ "$status" -eq 0 ]
 }
@@ -68,14 +68,65 @@ setup() {
   grep -Fq "releases/download/agent-harness-v$FAKE_AGENT_HARNESS_VERSION/agent-harness-x86_64-unknown-linux-musl.tar.xz" "$_curl_log"
 }
 
-@test "refuses an agent-harness archive that does not match its release checksum" {
+# ============================================================
+# Download verification
+# ============================================================
+
+@test "installs a tool whose download matches its pinned checksum" {
+  run bootstrap_server
+
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"checksum mismatch"* ]]
+}
+
+@test "refuses every download that does not match its pinned checksum and installs nothing" {
+  local _entry _tool _variable
+  for _entry in agent-harness:AGENT_HARNESS_SHA256 shfmt:SHFMT_SHA256 rg:RIPGREP_SHA256 jq:JQ_SHA256 \
+    ruff:RUFF_SHA256 shellcheck:SHELLCHECK_SHA256 bats:BATS_SHA256 dprint:DPRINT_SHA256 uv:UV_SHA256; do
+    _tool="${_entry%%:*}"
+    _variable="${_entry#*:}"
+    rm -rf "$BIN_DIR"
+
+    run bootstrap_server "$_variable=$(printf '%064d' 0)"
+
+    [ "$status" -ne 0 ] || {
+      echo "accepted a wrong checksum for $_tool"
+      return 1
+    }
+    [[ "$output" == *"checksum mismatch"* ]] || {
+      echo "no checksum error for $_tool"
+      return 1
+    }
+    [ ! -e "$BIN_DIR/$_tool" ] || {
+      echo "installed $_tool despite the mismatch"
+      return 1
+    }
+  done
+}
+
+@test "ignores a checksum file published next to the download" {
   printf '%064d *agent-harness.tar.xz\n' 0 >|"$RELEASES/agent-harness.tar.xz.sha256"
 
   run bootstrap_server
 
+  [ "$status" -eq 0 ]
+}
+
+@test "refuses a download whose checksum is not pinned" {
+  run bootstrap_server SHFMT_SHA256=
+
   [ "$status" -ne 0 ]
-  [[ "$output" == *"checksum"* ]]
-  [ ! -e "$BIN_DIR/agent-harness" ]
+  [ ! -e "$BIN_DIR/shfmt" ]
+}
+
+@test "pins a sha256 for every download in the script itself" {
+  local _variable
+  for _variable in AGENT_HARNESS SHFMT RIPGREP JQ RUFF DPRINT SHELLCHECK BATS UV; do
+    grep -Eq "^readonly ${_variable}_SHA256=\"\\$\\{${_variable}_SHA256:-[0-9a-f]{64}\\}\"\$" "$SCRIPT" || {
+      echo "no pinned sha256 for $_variable"
+      return 1
+    }
+  done
 }
 
 @test "installs bats-core under its own prefix and links it into the binary directory" {
@@ -105,19 +156,23 @@ setup() {
   [[ "$output" == *"python find"*"3.16"* ]]
 }
 
-@test "downloads the uv installer of the pinned version" {
+@test "downloads uv from the release archive of the pinned version" {
   local _curl_log="$BATS_TEST_TMPDIR/curl-urls"
   mkdir -p "$BATS_TEST_TMPDIR/logging-curl"
   write_stub "$BATS_TEST_TMPDIR/logging-curl/curl" \
     '#!/bin/sh' \
     "printf '%s\\n' \"\$*\" >>'$_curl_log'" \
-    'case "$*" in *astral.sh*) exit 22 ;; esac' \
+    'case "$*" in *astral-sh/uv*) exit 22 ;; esac' \
     "exec '$(command -v curl)' \"\$@\""
 
-  run bootstrap_server PATH="$BATS_TEST_TMPDIR/logging-curl:$SANDBOX_TOOLS_DIR:$PATH" UV_INSTALLER_URL=
+  run bootstrap_server PATH="$BATS_TEST_TMPDIR/logging-curl:$SANDBOX_TOOLS_DIR:$PATH" UV_URL=
 
   [ "$status" -ne 0 ]
-  grep -Fq "https://astral.sh/uv/0.13.5/install.sh" "$_curl_log"
+  grep -Fq "https://github.com/astral-sh/uv/releases/download/0.13.5/uv-x86_64-unknown-linux-musl.tar.gz" "$_curl_log"
+}
+
+@test "never runs a downloaded uv installer script" {
+  ! grep -Eq 'astral\.sh|UV_INSTALLER|UV_UNMANAGED_INSTALL|uv_install' "$SCRIPT"
 }
 
 @test "stops when the installed uv is older than the pinned version" {
@@ -132,7 +187,7 @@ setup() {
   run bootstrap_server
   [ "$status" -eq 0 ]
 
-  run bootstrap_server FAKE_UV_VERSION=0.12.9 UV_INSTALLER_URL="file://$RELEASES/missing.sh"
+  run bootstrap_server FAKE_UV_VERSION=0.12.9 UV_URL="file://$RELEASES/missing.tar.gz"
 
   [ "$status" -ne 0 ]
   [[ "$output" == *"0.12.9"*"0.13.5"* ]]

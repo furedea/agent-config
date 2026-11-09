@@ -40,7 +40,7 @@ function create_bootstrap_server_fixtures() {
   create_tarball shellcheck.tar.xz shellcheck-v0.11.0 shellcheck
   create_dprint_archive
   create_bats_archive
-  create_uv_installer
+  create_uv_archive
 }
 
 # Runs the script with the sandbox tools present unless PATH is overridden.
@@ -58,12 +58,27 @@ function bootstrap_server() {
     DPRINT_URL="file://$RELEASES/dprint.zip" \
     SHELLCHECK_URL="file://$RELEASES/shellcheck.tar.xz" \
     BATS_URL="file://$RELEASES/bats-core.tar.gz" \
-    UV_INSTALLER_URL="file://$RELEASES/uv_install.sh" \
+    UV_URL="file://$RELEASES/uv.tar.gz" \
+    AGENT_HARNESS_SHA256="$(fixture_sha256 agent-harness.tar.xz)" \
+    SHFMT_SHA256="$(fixture_sha256 shfmt)" \
+    RIPGREP_SHA256="$(fixture_sha256 ripgrep.tar.gz)" \
+    JQ_SHA256="$(fixture_sha256 jq)" \
+    RUFF_SHA256="$(fixture_sha256 ruff.tar.gz)" \
+    DPRINT_SHA256="$(fixture_sha256 dprint.zip)" \
+    SHELLCHECK_SHA256="$(fixture_sha256 shellcheck.tar.xz)" \
+    BATS_SHA256="$(fixture_sha256 bats-core.tar.gz)" \
+    UV_SHA256="$(fixture_sha256 uv.tar.gz)" \
     FAKE_PYTHON="$FAKE_PYTHON" \
     UV_ARGS_FILE="$UV_ARGS_FILE" \
     AGENT_HARNESS_ARGS_FILE="$AGENT_HARNESS_ARGS_FILE" \
     "$@" \
     /bin/bash "$SCRIPT"
+}
+
+function fixture_sha256() {
+  local _sum
+  _sum="$(sha256sum "$RELEASES/$1")"
+  printf '%s\n' "${_sum%% *}"
 }
 
 # Prints a PATH holding only the host commands the script and its fixtures use,
@@ -101,14 +116,6 @@ function create_agent_harness_archive() {
   mkdir -p "$BATS_TEST_TMPDIR/$_name"
   write_fake_agent_harness "$BATS_TEST_TMPDIR/$_name/agent-harness"
   tar -cJf "$RELEASES/agent-harness.tar.xz" -C "$BATS_TEST_TMPDIR" "$_name"
-  write_checksum "$RELEASES/agent-harness.tar.xz"
-}
-
-# Mirrors the release checksum format: "<sha256> *<asset name>".
-function write_checksum() {
-  local _archive="$1" _sum
-  _sum="$(sha256sum "$_archive")"
-  printf '%s *%s\n' "${_sum%% *}" "${_archive##*/}" >|"$_archive.sha256"
 }
 
 # Packs one stub binary inside a top-level directory, as the release tarballs do.
@@ -140,13 +147,12 @@ function create_bats_archive() {
   tar -czf "$RELEASES/bats-core.tar.gz" -C "$BATS_TEST_TMPDIR" "$_name"
 }
 
-function create_uv_installer() {
-  write_fake_uv "$RELEASES/uv"
-  write_stub "$RELEASES/uv_install.sh" \
-    '#!/bin/sh' \
-    'set -eu' \
-    'mkdir -p "${UV_UNMANAGED_INSTALL:?}"' \
-    "cp '$RELEASES/uv' \"\$UV_UNMANAGED_INSTALL/uv\""
+# uv ships its binaries inside a top-level directory, like the other release tarballs.
+function create_uv_archive() {
+  local _name="uv-x86_64-unknown-linux-musl"
+  mkdir -p "$BATS_TEST_TMPDIR/$_name"
+  write_fake_uv "$BATS_TEST_TMPDIR/$_name/uv"
+  tar -czf "$RELEASES/uv.tar.gz" -C "$BATS_TEST_TMPDIR" "$_name"
 }
 
 function write_fake_uv() {

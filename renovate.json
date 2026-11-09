@@ -3,11 +3,22 @@
   "extends": ["github>furedea/renovate-config"],
   "customManagers": [
     {
-      "description": "Update the release versions the server bootstrap pins.",
+      "description": "Update the release versions the server bootstrap pins, together with the sha256 of the release asset pinned beside each version.",
       "customType": "regex",
       "managerFilePatterns": ["/^scripts/bootstrap_server\\.sh$/"],
+      "datasourceTemplate": "github-release-attachments",
       "matchStrings": [
-        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)( extractVersion=(?<extractVersion>\\S+))?\\nreadonly [A-Z_]+_VERSION=\"\\$\\{[A-Z_]+_VERSION:-(?<currentValue>[^}]+)\\}\""
+        "# renovate: datasource=github-release-attachments depName=(?<depName>\\S+)( extractVersion=(?<extractVersion>\\S+))?\\nreadonly [A-Z_]+_VERSION=\"\\$\\{[A-Z_]+_VERSION:-(?<currentValue>[^}]+)\\}\"\\nreadonly [A-Z_]+_SHA256=\"\\$\\{[A-Z_]+_SHA256:-(?<currentDigest>[a-f0-9]{64})\\}\""
+      ],
+      "extractVersionTemplate": "{{#if extractVersion}}{{{extractVersion}}}{{else}}^(?<version>.+)${{/if}}"
+    },
+    {
+      "description": "Update the bats-core version the server bootstrap pins. bats-core publishes no release assets, so its sha256 is refreshed by scripts/update_bats_checksum.sh in the same PR.",
+      "customType": "regex",
+      "managerFilePatterns": ["/^scripts/bootstrap_server\\.sh$/"],
+      "datasourceTemplate": "github-releases",
+      "matchStrings": [
+        "# renovate: datasource=github-releases depName=(?<depName>\\S+)( extractVersion=(?<extractVersion>\\S+))?\\nreadonly [A-Z_]+_VERSION=\"\\$\\{[A-Z_]+_VERSION:-(?<currentValue>[^}]+)\\}\""
       ],
       "extractVersionTemplate": "{{#if extractVersion}}{{{extractVersion}}}{{else}}^(?<version>.+)${{/if}}"
     }

@@ -77,28 +77,29 @@ readonly BIN_DIR="${BIN_DIR:-$HOME/.local/bin}"
 readonly PYTHON_VERSION="${PYTHON_VERSION:-3.15.1}"
 MACHINE="${BOOTSTRAP_SERVER_MACHINE:-$(uname -m)}"
 readonly MACHINE
-# Renovate updates the versions below from the release named on each comment.
-# Every download is verified against the sha256 pinned next to its version. A version bump
-# needs its hash refreshed in the same PR: scripts/update_bootstrap_checksums.sh.
-# renovate: datasource=github-releases depName=furedea/agent-harness extractVersion=^agent-harness-v(?<version>.+)$
+# Renovate updates each version below from the release named on its comment. Every download is
+# verified against the sha256 pinned next to its version. For release assets Renovate rewrites
+# the hash in the same PR; bats-core publishes only a source archive, so after a bats bump run
+# scripts/update_bats_checksum.sh.
+# renovate: datasource=github-release-attachments depName=furedea/agent-harness extractVersion=^agent-harness-v(?<version>.+)$
 readonly AGENT_HARNESS_VERSION="${AGENT_HARNESS_VERSION:-0.9.10}"
 readonly AGENT_HARNESS_SHA256="${AGENT_HARNESS_SHA256:-41e31d9ab229426033a6743183b7d009b7ed2e209487bdf901396d0b26ca59fd}"
-# renovate: datasource=github-releases depName=mvdan/sh extractVersion=^v(?<version>.+)$
+# renovate: datasource=github-release-attachments depName=mvdan/sh extractVersion=^v(?<version>.+)$
 readonly SHFMT_VERSION="${SHFMT_VERSION:-3.13.1}"
 readonly SHFMT_SHA256="${SHFMT_SHA256:-fb096c5d1ac6beabbdbaa2874d025badb03ee07929f0c9ff67563ce8c75398b1}"
-# renovate: datasource=github-releases depName=BurntSushi/ripgrep
+# renovate: datasource=github-release-attachments depName=BurntSushi/ripgrep
 readonly RIPGREP_VERSION="${RIPGREP_VERSION:-14.1.1}"
 readonly RIPGREP_SHA256="${RIPGREP_SHA256:-4cf9f2741e6c465ffdb7c26f38056a59e2a2544b51f7cc128ef28337eeae4d8e}"
-# renovate: datasource=github-releases depName=jqlang/jq extractVersion=^jq-(?<version>.+)$
+# renovate: datasource=github-release-attachments depName=jqlang/jq extractVersion=^jq-(?<version>.+)$
 readonly JQ_VERSION="${JQ_VERSION:-1.8.1}"
 readonly JQ_SHA256="${JQ_SHA256:-020468de7539ce70ef1bceaf7cde2e8c4f2ca6c3afb84642aabc5c97d9fc2a0d}"
-# renovate: datasource=github-releases depName=astral-sh/ruff
+# renovate: datasource=github-release-attachments depName=astral-sh/ruff
 readonly RUFF_VERSION="${RUFF_VERSION:-0.17.4}"
 readonly RUFF_SHA256="${RUFF_SHA256:-d1d6ec9ce1ce0c01e23532a157a677077ba1f82f7cd2cde6f0bd75e65f85df93}"
-# renovate: datasource=github-releases depName=dprint/dprint
+# renovate: datasource=github-release-attachments depName=dprint/dprint
 readonly DPRINT_VERSION="${DPRINT_VERSION:-0.64.1}"
 readonly DPRINT_SHA256="${DPRINT_SHA256:-aad2ee102014c563112dcdad65e131dbcfe123355ef948ae91d806e833cdbf40}"
-# renovate: datasource=github-releases depName=koalaman/shellcheck extractVersion=^v(?<version>.+)$
+# renovate: datasource=github-release-attachments depName=koalaman/shellcheck extractVersion=^v(?<version>.+)$
 readonly SHELLCHECK_VERSION="${SHELLCHECK_VERSION:-0.11.0}"
 readonly SHELLCHECK_SHA256="${SHELLCHECK_SHA256:-8c3be12b05d5c177a04c29e3c78ce89ac86f1595681cab149b65b97c4e227198}"
 # renovate: datasource=github-releases depName=bats-core/bats-core extractVersion=^v(?<version>.+)$
@@ -106,7 +107,7 @@ readonly BATS_VERSION="${BATS_VERSION:-1.13.0}"
 readonly BATS_SHA256="${BATS_SHA256:-a85e12b8828271a152b338ca8109aa23493b57950987c8e6dff97ba492772ff3}"
 readonly BATS_PREFIX="${BATS_PREFIX:-${XDG_DATA_HOME:-$HOME/.local/share}/bats-core}"
 # Older uv cannot install the managed CPython this script requests.
-# renovate: datasource=github-releases depName=astral-sh/uv
+# renovate: datasource=github-release-attachments depName=astral-sh/uv
 readonly UV_VERSION="${UV_VERSION:-0.13.5}"
 readonly UV_SHA256="${UV_SHA256:-57ef9d9ccb01fb1bd998df995b0dd221b52f7d7841fbea93f2d4463bf61fb7a9}"
 readonly UV_URL="${UV_URL:-https://github.com/astral-sh/uv/releases/download/${UV_VERSION}/uv-x86_64-unknown-linux-musl.tar.gz}"

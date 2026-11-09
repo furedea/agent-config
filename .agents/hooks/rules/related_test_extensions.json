@@ -363,6 +363,10 @@
   "agents/manifest.json": [
     "tests/test_python_runtime.py"
   ],
+  "flake.lock": [
+    "tests/test_generated_rules.py",
+    "tests/test_denial_difference.py"
+  ],
   "agents/hooks/lib/hook_dispatch.py": [
     "tests/hermes/test_hermes_hook_adapter.py",
     "tests/pi/test_pi_hook_adapter.py",

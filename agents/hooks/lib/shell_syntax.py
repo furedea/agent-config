@@ -450,12 +450,12 @@ def foreign_scripts(command: Command) -> list[str]:
             operands and arguments[operands[0]].startswith("-") and not powershell_options.takes_code(shell, argument)
         ):
             operands.pop(0)
-        if any(command.dynamic[position] for position in operands):
-            raise UnsupportedSyntax(f"{arguments[0]} running a computed script requires explicit review", "wrapper")
-        if not operands:
-            continue
         # Only PowerShell's -Command joins its words; elsewhere the words after the script are its positional arguments.
         words = operands if powershell_options.joins_following_words(shell, argument) else operands[:1]
+        if any(command.dynamic[position] for position in words):
+            raise UnsupportedSyntax(f"{arguments[0]} running a computed script requires explicit review", "wrapper")
+        if not words:
+            continue
         scripts.append(" ".join(arguments[position] for position in words))
     return scripts
 

@@ -160,6 +160,29 @@ def test_powershell_command_with_args_keeps_its_first_word_as_code(command: str)
     assert verdict("forbidden", command) == "deny"
 
 
+@pytest.mark.parametrize(
+    "command",
+    [
+        pytest.param(f"pwsh -cwa '{DELETE}' \"$ARG\"", id="-cwa with a computed argument"),
+        pytest.param(f"pwsh -CommandWithArgs '{DELETE}' a \"$ARG\" b", id="-CommandWithArgs with a computed argument"),
+    ],
+)
+def test_a_computed_argument_after_the_code_of_command_with_args_does_not_hide_a_deny(command: str) -> None:
+    assert verdict("forbidden", command) == "deny"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        pytest.param('pwsh -cwa "$CODE" arg', id="computed code of -cwa"),
+        pytest.param(f"pwsh -Command '{DELETE}' \"$ARG\"", id="-Command joins a computed word into the code"),
+    ],
+)
+@pytest.mark.parametrize("kind", ["allowed", "forbidden"])
+def test_computed_code_still_asks(kind: str, command: str) -> None:
+    assert verdict(kind, command) == "ask"
+
+
 def test_powershell_command_with_args_hands_the_rest_to_the_code_as_arguments() -> None:
     assert verdict("forbidden", f"pwsh -cwa 'Write-Output' '{DELETE}'") == "ask"
 

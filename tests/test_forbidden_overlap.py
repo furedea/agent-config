@@ -6,9 +6,15 @@ a forbidden form, or one that stops overlapping because a rule was deleted, chan
 """
 
 import json
+import sys
 
-from tests.rule_overlap import find_overlaps
+from tests.rule_overlap import COMMAND_LOOKUP, find_overlaps
 from tests.runtime import REPO_ROOT
+
+
+sys.path.insert(0, str(REPO_ROOT / "agents/hooks/lib"))
+
+from shell_wrappers import COMMAND_LOOKUP as GUARD_COMMAND_LOOKUP, WRAPPERS
 
 
 POLICY = json.loads((REPO_ROOT / "agents/command_permissions.json").read_text())["rules"]
@@ -26,6 +32,34 @@ FIND = r"(^|[[:space:]])find[[:space:]].*[[:space:]]-(delete|exec|execdir|ok|okd
 HERDR = r"^herdr[[:space:]]+agent[[:space:]]+start([[:space:]].*)?[[:space:]]--([[:space:]]|$)"
 CARGO = "^cargo mutants .*--in-place"
 MUTMUT = "^uv run .*mutmut apply"
+STRYKER = "^pnpm exec stryker .*--inPlace"
+VENV_PYTHON = r"(^|[[:space:]])([^[:space:]]*/)?\.venv/bin/python([0-9.]*)?([[:space:]]|$)"
+BROWSER_URL = "(^|[^a-z0-9+.-])(file|chrome):"
+DESKTOP_APP = (
+    "(^|[ =/.])(ghostty|terminal|iterm2?|warp(-stable)?|alacritty|kitty|wezterm(-gui)?|hyper|tabby"
+    "|system[[:space:]]+(settings|preferences)|systempreferences|keychain[[:space:]]+access|keychainaccess"
+    "|passwords|1password|onepassword[0-9]*|script[[:space:]]+editor|scripteditor2?|automator|shortcuts"
+    "|ターミナル|システム設定|システム環境設定|キーチェーンアクセス|パスワード|スクリプトエディタ|ショートカット)"
+    r"(\.app)?([ /:]|$)"
+)
+
+# The inner command of `xargs` is judged by the hooks, so every rule can meet it (#107). Added by the
+# wrapper-aware check and awaiting the user's confirmation, unlike the entries above.
+XARGS_UNCONFIRMED = {
+    ("xargs", VENV_PYTHON),
+    ("xargs", "^" + GIT_ADD),
+    ("xargs", "(^|[[:space:]])" + GIT_ADD),
+    ("xargs", "^" + GIT_COMMIT),
+    ("xargs", "(^|[[:space:]])" + GIT_COMMIT),
+    ("xargs", PIP),
+    ("xargs", FIND),
+    ("xargs", HERDR),
+    ("xargs", CARGO),
+    ("xargs", STRYKER),
+    ("xargs", MUTMUT),
+    ("xargs", BROWSER_URL),
+    ("xargs", DESKTOP_APP),
+}
 
 # (allow prefix, the whole forbidden pattern it overlaps)
 REVIEWED = {
@@ -49,11 +83,12 @@ REVIEWED = {
     ("python", PIP),
     ("find", FIND),
     ("herdr agent start", HERDR),
+    *XARGS_UNCONFIRMED,
 }
 
 
 def overlap_keys(prefixes: list[tuple[str, ...]], rules: list[dict]) -> set[tuple[str, str]]:
-    return {(" ".join(item.prefix), item.pattern) for item in find_overlaps(prefixes, rules)}
+    return {(" ".join(item.prefix), item.pattern) for item in find_overlaps(prefixes, rules, wrappers=WRAPPERS)}
 
 
 def test_the_overlaps_between_allow_prefixes_and_forbidden_rules_are_the_reviewed_ones() -> None:
@@ -67,6 +102,37 @@ def test_a_widened_allow_prefix_changes_the_overlaps() -> None:
 
 def test_a_deleted_forbidden_rule_changes_the_overlaps() -> None:
     assert overlap_keys(ALLOW, FORBIDDEN[1:]) != REVIEWED
+
+
+def test_an_allowed_wrapper_overlaps_the_scoped_rule_of_the_command_it_runs() -> None:
+    rules = [{"programs": ["uv"], "patterns": [MUTMUT], "justification": "test"}]
+    found = find_overlaps([("xargs",)], rules, wrappers=WRAPPERS)
+    assert [(item.prefix, item.pattern) for item in found] == [(("xargs",), MUTMUT)]
+    assert found[0].witness.lower().startswith("xargs uv run ")
+
+
+def test_a_wrapper_overlap_needs_the_inner_program_the_rule_governs() -> None:
+    rules = [{"programs": ["uv"], "patterns": ["^git add"], "justification": "test"}]
+    assert find_overlaps([("xargs", "-0")], rules, wrappers=WRAPPERS) == ()
+
+
+def test_a_wrapper_overlap_honors_the_exceptions_of_the_rule() -> None:
+    rules = [{"programs": ["uv"], "patterns": [MUTMUT], "exceptions": ["mutmut apply"], "justification": "test"}]
+    assert find_overlaps([("xargs",)], rules, wrappers=WRAPPERS) == ()
+
+
+def test_command_lookup_does_not_run_the_command_so_it_overlaps_nothing() -> None:
+    rules = [{"programs": ["uv"], "patterns": [MUTMUT], "justification": "test"}]
+    assert find_overlaps([("command", "-v"), ("command", "-V")], rules, wrappers=WRAPPERS) == ()
+
+
+def test_the_command_lookup_options_match_the_guard() -> None:
+    assert COMMAND_LOOKUP == GUARD_COMMAND_LOOKUP
+
+
+def test_a_wrapper_is_unwrapped_only_when_the_caller_names_it() -> None:
+    rules = [{"programs": ["uv"], "patterns": [MUTMUT], "justification": "test"}]
+    assert find_overlaps([("xargs",)], rules) == ()
 
 
 def test_patterns_that_share_a_long_start_are_distinct_overlaps() -> None:

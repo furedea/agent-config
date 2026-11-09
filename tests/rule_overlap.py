@@ -6,7 +6,7 @@ occurs in. Where the two meet, the prefix is wider than the rule's carve-out; Z3
 overlap so a reader can judge whether the width is intended. Findings are reported, never fixed.
 """
 
-from collections.abc import Sequence
+from collections.abc import Collection, Sequence
 from dataclasses import dataclass
 
 import z3
@@ -24,6 +24,8 @@ from tests.ere_to_z3 import (
 
 
 Prefix = tuple[str, ...]
+# Mirrors shell_wrappers.COMMAND_LOOKUP; test_forbidden_overlap pins the two together.
+COMMAND_LOOKUP = frozenset({"-v", "-V"})
 
 
 @dataclass(frozen=True)
@@ -51,21 +53,59 @@ class CompiledRule:
         A pattern that begins only in the free tail after the prefix words holds for every prefix alike,
         so it says nothing about this one.
         """
-        anywhere = z3.Star(any_character())
-        begins_early = z3.Concat(z3.Loop(any_character(), 0, span), self.body, anywhere)
+        return self.without_exceptions(z3.Loop(any_character(), 0, span))
+
+    def denied_command(self) -> z3.ReRef:
+        """Commands the pattern occurs in, wherever it begins, when no exception applies and the program is governed."""
+        denied = self.without_exceptions(z3.Star(any_character()))
+        if not self.programs:
+            return denied
+        return z3.Intersect(denied, self.run_by_program())
+
+    def without_exceptions(self, lead: z3.ReRef) -> z3.ReRef:
+        begins = z3.Concat(lead, self.body, z3.Star(any_character()))
         if not self.exceptions:
-            return begins_early
-        return z3.Intersect(begins_early, *(z3.Complement(exception) for exception in self.exceptions))
+            return begins
+        return z3.Intersect(begins, *(z3.Complement(exception) for exception in self.exceptions))
+
+    def run_by_program(self) -> z3.ReRef:
+        """Commands whose first word is one of the programs the rule governs."""
+        names = z3.Union(*(z3.Re(program) for program in sorted(self.programs)))
+        rest = z3.Concat(z3.Re(" "), z3.Star(any_character()))
+        return z3.Concat(z3.Re(START), names, z3.Union(z3.Re(END), rest))
 
 
-def find_overlaps(prefixes: Sequence[Prefix], rules: Sequence[dict]) -> tuple[Overlap, ...]:
+def find_overlaps(
+    prefixes: Sequence[Prefix], rules: Sequence[dict], wrappers: Collection[str] = ()
+) -> tuple[Overlap, ...]:
+    """Overlaps of each prefix with the rules.
+
+    A prefix that starts with a name in `wrappers` runs the text after its words as a command, so that
+    command is compared with the rules from its own start; the wrapper's options are left in that text.
+    """
     for prefix in prefixes:
         require_single_words(prefix)
     compiled = [rule for item in rules for rule in compile_rule(item)]
     found = []
     for prefix in prefixes:
-        found.extend(overlaps_of(prefix, compiled))
+        if is_command_lookup(prefix):
+            continue
+        found.extend(wrapped_overlaps_of(prefix, compiled) if prefix[0] in wrappers else overlaps_of(prefix, compiled))
     return tuple(found)
+
+
+def is_command_lookup(prefix: Prefix) -> bool:
+    """`command -v` only looks a name up, so nothing the rules forbid runs through it."""
+    return prefix[0] == "command" and len(prefix) > 1 and prefix[1] in COMMAND_LOOKUP
+
+
+def wrapped_overlaps_of(prefix: Prefix, rules: Sequence[CompiledRule]) -> list[Overlap]:
+    overlaps = []
+    for rule in rules:
+        inner = find_line(rule.denied_command())
+        if inner is not None:
+            overlaps.append(Overlap(prefix, rule.pattern, f"{' '.join(prefix)} {inner}"))
+    return overlaps
 
 
 def require_single_words(prefix: Prefix) -> None:

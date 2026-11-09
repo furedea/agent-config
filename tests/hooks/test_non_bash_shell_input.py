@@ -151,6 +151,22 @@ def test_powershell_code_starting_with_a_dash_is_still_read_for_deny_rules(comma
 @pytest.mark.parametrize(
     "command",
     [
+        pytest.param(f"pwsh -CommandWithArgs '-not $false; {DELETE}' arg1", id="-CommandWithArgs"),
+        pytest.param(f"pwsh -cwa '-not $false; {DELETE}' arg1", id="-cwa"),
+        pytest.param(f"pwsh --commandwithargs '-not $false; {DELETE}'", id="--commandwithargs"),
+    ],
+)
+def test_powershell_command_with_args_keeps_its_first_word_as_code(command: str) -> None:
+    assert verdict("forbidden", command) == "deny"
+
+
+def test_powershell_command_with_args_hands_the_rest_to_the_code_as_arguments() -> None:
+    assert verdict("forbidden", f"pwsh -cwa 'Write-Output' '{DELETE}'") == "ask"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
         "pwsh -Command '-not $false'",
         "pwsh -NonInteractive -Command 'Get-ChildItem'",
         "pwsh -NonInteractive 'Get-ChildItem'",
@@ -172,6 +188,10 @@ def test_powershell_code_starting_with_a_dash_still_asks(kind: str, command: str
         pytest.param("fish --init-command 'echo init' script.fish", id="after a separate --init-command"),
         pytest.param("fish -N -C 'echo init' script.fish", id="after a flag and a valued option"),
         pytest.param("fish -d 3 script.fish", id="after -d with a value"),
+        pytest.param("fish --init-com 'echo init' script.fish", id="after an abbreviated --init-command"),
+        pytest.param("fish --profile-s out.txt script.fish", id="after an abbreviated --profile-startup"),
+        pytest.param("fish --deb 3 script.fish", id="after an abbreviated --debug"),
+        pytest.param("fish --debug 3 script.fish", id="after --debug with a value"),
         pytest.param("fish script.fish arg", id="followed by a positional argument"),
         pytest.param("fish -- script.fish", id="after the end of options"),
         pytest.param("/opt/bin/fish script.fish", id="by path"),

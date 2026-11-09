@@ -11,6 +11,7 @@ import subprocess
 from typing import Self
 
 import fish_script
+import powershell_options
 import shell_input
 from shell_words import UnsupportedSyntax, literal_word, nodes, source_text, spreads
 from shell_wrappers import ASSIGNMENT, WRAPPERS, OptionScan, script_index, wrapped_index
@@ -75,9 +76,6 @@ SHELL_LOOKALIKE = re.compile(r"(?!ssh$)[a-z0-9_-]*sh")
 # Options that hand a script over, in any letter case and abbreviation PowerShell accepts: -c, -Command,
 # --commands, nu's -e and --execute, fish's --init-command, or a short bundle holding c such as tcsh's -fc.
 FOREIGN_COMMAND_OPTION = re.compile(r"-(-commands?|-execute|-init-command|e|[a-z]*c[a-z]*)(=.*)?", re.IGNORECASE)
-POWERSHELLS = frozenset({"powershell", "pwsh", "pwsh-preview"})
-# PowerShell's -e, -ec, -EncodedCommand: a base64 script, which the inspection does not decode.
-POWERSHELL_ENCODED_OPTION = re.compile(r"-(e|ec|en[a-z]*)", re.IGNORECASE)
 VERSION_SUFFIX = re.compile(r"[0-9._-]+$")
 
 
@@ -416,32 +414,13 @@ def is_foreign_shell(executable: str) -> bool:
     return shell in FOREIGN_SHELLS or (shell not in SHELLS and SHELL_LOOKALIKE.fullmatch(shell) is not None)
 
 
-def option_form(arguments: tuple[str, ...], argument: str) -> str:
-    """The option as written with one dash; PowerShell reads --name and /name as -name."""
-    if shell_name(Path(arguments[0]).name) in POWERSHELLS and argument.startswith(("/", "--")):
-        return "-" + argument.lstrip("/-")
-    return argument
-
-
-def is_encoded_option(arguments: tuple[str, ...], argument: str) -> bool:
-    """Whether the option carries a base64 script; only PowerShell has one, nu's -e is a plain script."""
-    return (
-        shell_name(Path(arguments[0]).name) in POWERSHELLS
-        and POWERSHELL_ENCODED_OPTION.fullmatch(option_form(arguments, argument)) is not None
-    )
-
-
-def is_powershell_command(arguments: tuple[str, ...], argument: str) -> bool:
-    """Whether the option is PowerShell's -Command or an abbreviation of it, after which every word is code."""
-    name = option_form(arguments, argument)[1:].lower()
-    return shell_name(Path(arguments[0]).name) in POWERSHELLS and bool(name) and "command".startswith(name)
-
-
 def foreign_option_indexes(arguments: tuple[str, ...]) -> list[int]:
+    shell = shell_name(Path(arguments[0]).name)
     return [
         index
         for index, argument in enumerate(arguments[1:], 1)
-        if FOREIGN_COMMAND_OPTION.fullmatch(option_form(arguments, argument)) or is_encoded_option(arguments, argument)
+        if FOREIGN_COMMAND_OPTION.fullmatch(powershell_options.form(shell, argument))
+        or powershell_options.is_encoded(shell, argument)
     ]
 
 
@@ -457,23 +436,26 @@ def foreign_scripts(command: Command) -> list[str]:
     script options are skipped. An encoded script has no text to read.
     """
     arguments = command.arguments
+    shell = shell_name(Path(arguments[0]).name)
     scripts = []
     for index in foreign_option_indexes(arguments):
         argument = arguments[index]
-        if is_encoded_option(arguments, argument):
+        if powershell_options.is_encoded(shell, argument):
             continue
         if "=" in argument:
             scripts.append(argument.partition("=")[2])
             continue
         operands = list(range(index + 1, len(arguments)))
-        while operands and arguments[operands[0]].startswith("-") and not is_powershell_command(arguments, argument):
+        while (
+            operands and arguments[operands[0]].startswith("-") and not powershell_options.takes_code(shell, argument)
+        ):
             operands.pop(0)
         if any(command.dynamic[position] for position in operands):
             raise UnsupportedSyntax(f"{arguments[0]} running a computed script requires explicit review", "wrapper")
         if not operands:
             continue
-        # Only PowerShell joins its words; elsewhere the words after the script are its positional arguments.
-        words = operands if shell_name(Path(arguments[0]).name) in POWERSHELLS else operands[:1]
+        # Only PowerShell's -Command joins its words; elsewhere the words after the script are its positional arguments.
+        words = operands if powershell_options.joins_following_words(shell, argument) else operands[:1]
         scripts.append(" ".join(arguments[position] for position in words))
     return scripts
 

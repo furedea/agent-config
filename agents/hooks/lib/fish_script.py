@@ -6,6 +6,20 @@ import shell_input
 from shell_words import UnsupportedSyntax
 
 
+# fish long options without a value; an abbreviation they share with a valued option is ambiguous.
+FLAG_LONG_OPTIONS = frozenset(
+    {
+        "--no-config",
+        "--no-execute",
+        "--private",
+        "--print-rusage-self",
+        "--print-debug-categories",
+        "--interactive",
+        "--login",
+        "--version",
+        "--help",
+    }
+)
 # fish options that take a value: -C, -c, -d, -o, -f, -D, -p and their long forms.
 VALUED_LETTERS = "CcdofDp"
 VALUED_LONG_OPTIONS = frozenset(
@@ -68,8 +82,15 @@ def replaces_file(argument: str) -> bool:
 def takes_next_word(argument: str) -> bool:
     """Whether the value of an option is the next word, not attached to it."""
     if argument.startswith("--"):
-        return "=" not in argument and argument in VALUED_LONG_OPTIONS
+        return "=" not in argument and is_valued_long_option(argument)
     return valued_letter(argument[1:]) == len(argument) - 2
+
+
+def is_valued_long_option(name: str) -> bool:
+    """Whether a long option, or an abbreviation that no other long option shares, takes a value."""
+    return any(option.startswith(name) for option in VALUED_LONG_OPTIONS) and not any(
+        option.startswith(name) for option in FLAG_LONG_OPTIONS
+    )
 
 
 def valued_letter(letters: str) -> int | None:

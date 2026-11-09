@@ -19,7 +19,7 @@ Host-specific settings, from the environment or
 \$XDG_CONFIG_HOME/agent-config/bootstrap_server.env:
     BIN_DIR                        user-space binaries (default: ~/.local/bin)
     BATS_PREFIX                    bats-core installation (default: ~/.local/share/bats-core)
-    PYTHON_VERSION                 uv-managed interpreter (default: 3.15.1)
+    PYTHON_VERSION                 uv-managed interpreter (default: 3.15.2)
     UV_PYTHON_INSTALL_DIR          interpreter location (uv default: ~/.local/share/uv/python)
     UV_CACHE_DIR                   uv cache (uv default: ~/.cache/uv)
     XDG_CACHE_HOME                 hook cache (default: ~/.cache)
@@ -74,7 +74,7 @@ function load_host_env() {
 load_host_env
 
 readonly BIN_DIR="${BIN_DIR:-$HOME/.local/bin}"
-readonly PYTHON_VERSION="${PYTHON_VERSION:-3.15.1}"
+readonly PYTHON_VERSION="${PYTHON_VERSION:-3.15.2}"
 MACHINE="${BOOTSTRAP_SERVER_MACHINE:-$(uname -m)}"
 readonly MACHINE
 # Renovate updates each pin below from the release or tag named on its comment. Every download is
@@ -114,10 +114,11 @@ readonly BATS_COMMIT="${BATS_COMMIT:-3bca150ec86275d6d9d5a4fd7d48ab8b6c6f3d87}"
 readonly BATS_VERSION="${BATS_VERSION:-${BATS_TAG#v}}"
 readonly BATS_REPO_URL="${BATS_REPO_URL:-https://github.com/bats-core/bats-core.git}"
 readonly BATS_PREFIX="${BATS_PREFIX:-${XDG_DATA_HOME:-$HOME/.local/share}/bats-core}"
-# Older uv cannot install the managed CPython this script requests.
+# uv 0.13.6 is the first release that can install CPython 3.15.2; older uv cannot install the
+# managed CPython this script requests.
 # renovate: datasource=github-release-attachments depName=astral-sh/uv
-readonly UV_VERSION="${UV_VERSION:-0.13.5}"
-readonly UV_SHA256="${UV_SHA256:-57ef9d9ccb01fb1bd998df995b0dd221b52f7d7841fbea93f2d4463bf61fb7a9}"
+readonly UV_VERSION="${UV_VERSION:-0.13.6}"
+readonly UV_SHA256="${UV_SHA256:-5d61f26b6c7213779eda90edc6971ea6b0b796bfb8d49a574c8ad69b59838548}"
 readonly UV_URL="${UV_URL:-https://github.com/astral-sh/uv/releases/download/${UV_VERSION}/uv-x86_64-unknown-linux-musl.tar.gz}"
 readonly AGENT_HARNESS_URL="${AGENT_HARNESS_URL:-https://github.com/furedea/agent-harness/releases/download/agent-harness-v${AGENT_HARNESS_VERSION}/agent-harness-x86_64-unknown-linux-musl.tar.xz}"
 readonly SHFMT_URL="${SHFMT_URL:-https://github.com/mvdan/sh/releases/download/v${SHFMT_VERSION}/shfmt_v${SHFMT_VERSION}_linux_amd64}"

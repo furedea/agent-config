@@ -1,0 +1,23 @@
+id: py_dataclass_slots
+language: python
+severity: warning
+message: "Declare the dataclass with `slots=True`."
+note: "Classes that use `cached_property` need `__dict__` and are skipped. Whether a dataclass is also `frozen=True` depends on it being a value object, which a syntax rule cannot tell."
+rule:
+  kind: decorated_definition
+  all:
+    - has:
+        kind: class_definition
+    - has:
+        kind: decorator
+        regex: ^@(dataclasses\.)?dataclass\b
+    - not:
+        has:
+          kind: decorator
+          regex: slots\s*=\s*True
+    - not:
+        has:
+          kind: class_definition
+          has:
+            pattern: cached_property
+            stopBy: end

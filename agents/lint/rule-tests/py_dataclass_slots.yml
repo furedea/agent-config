@@ -1,13 +1,13 @@
-id: py_frozen_slots_dataclass
+id: py_dataclass_slots
 valid:
   - |
     @dataclass(frozen=True, slots=True)
     class Age:
         value: int
   - |
-    @dataclasses.dataclass(slots=True, frozen=True)
-    class Age:
-        value: int
+    @dataclasses.dataclass(slots=True)
+    class Capture:
+        total: int
   - |
     @dataclass(frozen=True)
     class Report:
@@ -30,10 +30,10 @@ invalid:
     class Age:
         value: int
   - |
-    @dataclasses.dataclass(slots=True)
+    @dataclasses.dataclass(frozen=True)
     class Age:
         value: int
   - |
-    @dataclass(frozen=False, slots=True)
-    class Age:
-        value: int
+    @dataclass(slots=False)
+    class Capture:
+        total: int

@@ -9,9 +9,10 @@ import re
 import subprocess
 from typing import Self
 
+import fish_script
 import shell_input
 from shell_words import UnsupportedSyntax, literal_word, nodes, source_text, spreads
-from shell_wrappers import ASSIGNMENT, WRAPPERS, OptionScan, wrapped_index
+from shell_wrappers import ASSIGNMENT, WRAPPERS, OptionScan, script_index, wrapped_index
 
 
 COMMAND_PREVIEW_LIMIT = 200
@@ -220,6 +221,9 @@ def parse(source: str, depth: int = 0, directories: tuple[Path | None, ...] = ()
             inputs = input_scripts(partial(sources.scripts, owner, directories), tolerant=bool(scripts))
             scripts += [(script, innermost.wrapper_depth + 1) for script in inputs]
             unreviewed = unreviewed or (name not in SHELLS and bool(inputs))
+        if name == "fish":
+            files = fish_script.file_scripts(innermost.arguments, innermost.dynamic, directories)
+            scripts += [(script, innermost.wrapper_depth + 1) for script in files]
         if unreviewed:
             layers[-1] = replace(innermost, unreviewed=True)
         commands += layers
@@ -418,6 +422,12 @@ def is_encoded_option(arguments: tuple[str, ...], argument: str) -> bool:
     )
 
 
+def is_powershell_command(arguments: tuple[str, ...], argument: str) -> bool:
+    """Whether the option is PowerShell's -Command or an abbreviation of it, after which every word is code."""
+    name = option_form(arguments, argument)[1:].lower()
+    return shell_name(Path(arguments[0]).name) in POWERSHELLS and bool(name) and "command".startswith(name)
+
+
 def foreign_option_indexes(arguments: tuple[str, ...]) -> list[int]:
     return [
         index
@@ -447,7 +457,7 @@ def foreign_scripts(command: Command) -> list[str]:
             scripts.append(argument.partition("=")[2])
             continue
         operands = list(range(index + 1, len(arguments)))
-        while operands and arguments[operands[0]].startswith("-"):
+        while operands and arguments[operands[0]].startswith("-") and not is_powershell_command(arguments, argument):
             operands.pop(0)
         if any(command.dynamic[position] for position in operands):
             raise UnsupportedSyntax(f"{arguments[0]} running a computed script requires explicit review", "wrapper")
@@ -457,23 +467,6 @@ def foreign_scripts(command: Command) -> list[str]:
         words = operands if shell_name(Path(arguments[0]).name) in POWERSHELLS else operands[:1]
         scripts.append(" ".join(arguments[position] for position in words))
     return scripts
-
-
-# Shell options that take the next word as a value, which would hide where the -c script starts.
-SHELL_VALUED_OPTIONS = frozenset({"-o", "+o", "-O", "+O", "--rcfile", "--init-file"})
-
-
-def script_index(arguments: tuple[str, ...], option: int) -> int:
-    """Where the script of a shell's -c sits: the first word after it that is not an option, past a `--`."""
-    index = option + 1
-    while index < len(arguments) and arguments[index] != "--" and arguments[index][:1] in "-+":
-        if arguments[index] in SHELL_VALUED_OPTIONS:
-            raise UnsupportedSyntax("a shell option before the -c script requires explicit review", "wrapper")
-        index += 1
-    index += index < len(arguments) and arguments[index] == "--"
-    if index >= len(arguments):
-        raise UnsupportedSyntax("shell wrapper has no literal command", "wrapper")
-    return index
 
 
 def shell_name(executable: str) -> str:

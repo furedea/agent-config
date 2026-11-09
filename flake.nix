@@ -38,11 +38,18 @@
         in
         {
           # The rendered hooks run on this interpreter, so shebangs are pinned at build time.
-          default = pkgs.runCommand "agent-source" { buildInputs = [ (pythonFor pkgs) ]; } ''
-            cp -R ${./agents}/. "$out"
-            chmod -R u+w "$out"
-            patchShebangs --host "$out"
-          '';
+          default =
+            pkgs.runCommand "agent-source"
+              {
+                buildInputs = [ (pythonFor pkgs) ];
+                # The plain source path lets consumers read files at evaluation time without import-from-derivation.
+                passthru.tree = ./agents;
+              }
+              ''
+                cp -R ${./agents}/. "$out"
+                chmod -R u+w "$out"
+                patchShebangs --host "$out"
+              '';
         }
       );
 
@@ -53,6 +60,24 @@
           source = self.packages.${system}.default;
         in
         {
+          # A derivation here would force consumers to build the source before reading it.
+          source-tree =
+            pkgs.runCommand "agent-source-tree"
+              {
+                nativeBuildInputs = [ pkgs.findutils ];
+                treeType = builtins.typeOf source.tree;
+              }
+              ''
+                if [ "$treeType" != path ]; then
+                  echo "tree must be a plain path, got: $treeType" >&2
+                  exit 1
+                fi
+                (cd ${source.tree} && find . | sort) > expected
+                (cd ${source} && find . | sort) > actual
+                diff expected actual
+                touch "$out"
+              '';
+
           # An executable keeping `env python3` would run an unpinned interpreter.
           pinned-shebangs =
             pkgs.runCommand "agent-source-pinned-shebangs" { nativeBuildInputs = [ pkgs.findutils ]; }

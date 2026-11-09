@@ -239,13 +239,13 @@ PY
   [ -f "$_prefix/libexec/bats-core/bats" ]
 }
 
-@test "installs Python 3.15.1 through uv by default" {
+@test "installs Python 3.15.2 through uv by default" {
   run bootstrap_server
 
   [ "$status" -eq 0 ]
   run /bin/cat "$UV_ARGS_FILE"
-  [ "${lines[0]}" = "python install 3.15.1" ]
-  [[ "$output" == *"python find"*"3.15.1"* ]]
+  [ "${lines[0]}" = "python install 3.15.2" ]
+  [[ "$output" == *"python find"*"3.15.2"* ]]
 }
 
 @test "installs the requested Python through uv" {
@@ -269,7 +269,7 @@ PY
   run bootstrap_server PATH="$BATS_TEST_TMPDIR/logging-curl:$SANDBOX_TOOLS_DIR:$PATH" UV_URL=
 
   [ "$status" -ne 0 ]
-  grep -Fq "https://github.com/astral-sh/uv/releases/download/0.13.5/uv-x86_64-unknown-linux-musl.tar.gz" "$_curl_log"
+  grep -Fq "https://github.com/astral-sh/uv/releases/download/0.13.6/uv-x86_64-unknown-linux-musl.tar.gz" "$_curl_log"
 }
 
 @test "never runs a downloaded uv installer script" {
@@ -277,10 +277,10 @@ PY
 }
 
 @test "stops when the installed uv is older than the pinned version" {
-  run bootstrap_server FAKE_UV_VERSION=0.13.4
+  run bootstrap_server FAKE_UV_VERSION=0.13.5
 
   [ "$status" -ne 0 ]
-  [[ "$output" == *"0.13.4"*"0.13.5"* ]]
+  [[ "$output" == *"0.13.5"*"0.13.6"* ]]
   [ ! -e "$UV_ARGS_FILE" ]
 }
 
@@ -291,11 +291,11 @@ PY
   run bootstrap_server FAKE_UV_VERSION=0.12.9 UV_URL="file://$RELEASES/missing.tar.gz"
 
   [ "$status" -ne 0 ]
-  [[ "$output" == *"0.12.9"*"0.13.5"* ]]
+  [[ "$output" == *"0.12.9"*"0.13.6"* ]]
 }
 
 @test "accepts a uv version with a local or pre-release suffix" {
-  run bootstrap_server FAKE_UV_VERSION=0.13.5+local
+  run bootstrap_server FAKE_UV_VERSION=0.13.6+local
 
   [ "$status" -eq 0 ]
 }
@@ -305,7 +305,7 @@ PY
 
   [ "$status" -eq 0 ]
   run /bin/cat "$UV_ARGS_FILE"
-  [ "${lines[0]}" = "python install 3.15.1" ]
+  [ "${lines[0]}" = "python install 3.15.2" ]
 }
 
 @test "accepts a uv newer than the pinned version" {

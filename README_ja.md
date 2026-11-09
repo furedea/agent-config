@@ -17,7 +17,7 @@
 | `docs/DESIGN.md`              | 開発サイクル，検証，フックの判断                                |
 | `docs/adr/`                   | ソースに関する判断                                              |
 | `CONTRIBUTING.md`             | ローカルの変更を確認する方法                                    |
-| `flake.nix`                   | `packages.default`: シバンを Python 3.15.1 に固定した `agents/` |
+| `flake.nix`                   | `packages.default`: シバンを Python 3.15.2 に固定した `agents/` |
 
 ## 使い方
 
@@ -35,7 +35,7 @@ bash ~/agent-config/scripts/bootstrap_server.sh
 
 スクリプトは自身の場所からリポジトリを見つけるので，クローン先はどこでもよい．更新に使うため，クローンは残しておく．
 
-このスクリプトは，バージョンを固定した x86_64 Linux 向けのリリースバイナリ（`agent-harness`，`shfmt`，`rg`，`jq`，`ruff`，`dprint`，`shellcheck`，`bats`，`uv`）を `~/.local/bin` にダウンロードし，uv で Python 3.15.1 をインストールし，同じ `agent-harness` CLI で `agents/` をホームディレクトリにレンダリングし，フックのシバンをそのインタプリタに固定し，Claude Code が実行時に書き込んだ設定を保持し，ログインシェルが読み込む `~/.config/agent-config/agent_env.sh` を書き出す．他のアーキテクチャでは何もインストールする前に終了する．ソースからビルドする手順はスクリプトを参照．
+このスクリプトは，バージョンを固定した x86_64 Linux 向けのリリースバイナリ（`agent-harness`，`shfmt`，`rg`，`jq`，`ruff`，`dprint`，`shellcheck`，`bats`，`uv`）を `~/.local/bin` にダウンロードし，uv で Python 3.15.2 をインストールし，同じ `agent-harness` CLI で `agents/` をホームディレクトリにレンダリングし，フックのシバンをそのインタプリタに固定し，Claude Code が実行時に書き込んだ設定を保持し，ログインシェルが読み込む `~/.config/agent-config/agent_env.sh` を書き出す．他のアーキテクチャでは何もインストールする前に終了する．ソースからビルドする手順はスクリプトを参照．
 
 最後のコマンドは現在のシェルの `PATH` を更新する．今後のシェルでもツールを使えるように，同じ行を `~/.profile` か `~/.bashrc` に追加する．既存のサーバーを更新するには，次を実行する：
 

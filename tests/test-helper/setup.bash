@@ -170,7 +170,7 @@ function write_fake_uv() {
 set -euo pipefail
 case "${1:-} ${2:-}" in
   "--version "*)
-    printf 'uv %s\n' "${FAKE_UV_VERSION:-0.13.5}"
+    printf 'uv %s\n' "${FAKE_UV_VERSION:-0.13.6}"
     exit 0
     ;;
 esac

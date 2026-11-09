@@ -377,11 +377,18 @@ def is_foreign_shell(executable: str) -> bool:
     return shell in FOREIGN_SHELLS or (shell not in SHELLS and SHELL_LOOKALIKE.fullmatch(shell) is not None)
 
 
+def option_form(arguments: tuple[str, ...], argument: str) -> str:
+    """The option as written with one dash; PowerShell reads --name and /name as -name."""
+    if shell_name(Path(arguments[0]).name) in POWERSHELLS and argument.startswith(("/", "--")):
+        return "-" + argument.lstrip("/-")
+    return argument
+
+
 def is_encoded_option(arguments: tuple[str, ...], argument: str) -> bool:
     """Whether the option carries a base64 script; only PowerShell has one, nu's -e is a plain script."""
     return (
         shell_name(Path(arguments[0]).name) in POWERSHELLS
-        and POWERSHELL_ENCODED_OPTION.fullmatch(argument) is not None
+        and POWERSHELL_ENCODED_OPTION.fullmatch(option_form(arguments, argument)) is not None
     )
 
 
@@ -389,7 +396,7 @@ def foreign_option_indexes(arguments: tuple[str, ...]) -> list[int]:
     return [
         index
         for index, argument in enumerate(arguments[1:], 1)
-        if FOREIGN_COMMAND_OPTION.fullmatch(argument) or is_encoded_option(arguments, argument)
+        if FOREIGN_COMMAND_OPTION.fullmatch(option_form(arguments, argument)) or is_encoded_option(arguments, argument)
     ]
 
 

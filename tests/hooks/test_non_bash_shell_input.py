@@ -36,6 +36,10 @@ def verdict(kind: str, command: str) -> str:
         pytest.param(f"fish --init-command='{DELETE}'", id="fish --init-command attached"),
         pytest.param(f"fish --init-command '{DELETE}'", id="fish --init-command separate"),
         pytest.param(f"fish -C '{DELETE}'", id="fish -C"),
+        pytest.param(f"pwsh --c '{DELETE}'", id="pwsh --c"),
+        pytest.param(f"pwsh --command '{DELETE}'", id="pwsh --command"),
+        pytest.param(f"pwsh /c '{DELETE}'", id="pwsh /c"),
+        pytest.param(f"powershell /Command '{DELETE}'", id="powershell /Command"),
     ],
 )
 def test_a_visible_script_that_matches_a_deny_rule_is_denied(command: str) -> None:
@@ -63,6 +67,9 @@ def test_a_visible_script_that_matches_an_ask_prefix_asks(command: str) -> None:
         pytest.param("pwsh -e SQBHAGUAbABsAG8A", id="pwsh -e"),
         pytest.param("pwsh -ec SQBHAGUAbABsAG8A", id="pwsh -ec"),
         pytest.param("pwsh -EncodedCommand SQBHAGUAbABsAG8A", id="pwsh -EncodedCommand"),
+        pytest.param("pwsh --encodedcommand SQBHAGUAbABsAG8A", id="pwsh --encodedcommand"),
+        pytest.param("pwsh --ec SQBHAGUAbABsAG8A", id="pwsh --ec"),
+        pytest.param("pwsh /e SQBHAGUAbABsAG8A", id="pwsh /e"),
         pytest.param("powershell -enc SQBHAGUAbABsAG8A", id="powershell -enc"),
         pytest.param("nu --execute 'ls'", id="nu --execute"),
         pytest.param("pwsh -Command 'Get-ChildItem'", id="a harmless script"),

@@ -20,6 +20,12 @@ import cleanup_worktrees
 import session_store
 
 
+@pytest.fixture(autouse=True)
+def no_registry_rules(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep hook tests independent of the repository's own rules directory."""
+    monkeypatch.setenv("AGENT_LINT_DIR", str(tmp_path / "no-lint-rules"))
+
+
 @pytest.fixture
 def verification_calls(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     state = tmp_path.parent / (tmp_path.name + "-state")

@@ -23,6 +23,7 @@ import shell_syntax
 # Environment variables through which a commit can use another repository or index than the directory's own.
 REPOSITORY_VARIABLE = re.compile(r"\bGIT_(DIR|WORK_TREE|INDEX_FILE|COMMON_DIR|OBJECT_DIRECTORY)\+?=")
 COMMIT_HOOK = "guard_secret_commit.sh"
+EDITOR_MUTATIONS = frozenset({"create", "str_replace", "insert"})
 UNKNOWN_REPOSITORY = (
     "cannot tell which repository this commit uses, because a shell expansion, a directory stack, "
     "or a GIT_DIR-like variable picks it.\n\n"
@@ -210,7 +211,8 @@ def content_text(mode: str, payload: dict) -> str:
         )
     # Grep may name a directory; only a single file target can be scanned before the tool runs.
     path = hook_input.file_path(values)
-    if not path or not Path(path).is_file():
+    # str_replace_editor reads only through `view`; its other commands are writes.
+    if values.get("command") in EDITOR_MUTATIONS or not path or not Path(path).is_file():
         return ""
     with Path(path).open("rb") as stream:
         return stream.read(100000).decode(errors="replace")

@@ -118,6 +118,74 @@ def test_secret_paths_block_with_dsh_fields(
     assert blocked_path in result.stderr
 
 
+def patch_input(*lines: str) -> str:
+    return "\n".join(["*** Begin Patch", *lines, "*** End Patch"]) + "\n"
+
+
+def test_str_replace_editor_view_is_scanned_like_read(run_cli: CliRunner, project: Path) -> None:
+    (project / "notes.txt").write_text("use fixture-sensitive-marker here\n")
+    values = {"command": "view", "path": "notes.txt"}
+    payload = {"tool_name": "str_replace_editor", "tool_input": values, "cwd": str(project)}
+    result = run_cli(SCRIPT, "content", "read", payload=payload, cwd=project)
+    assert result.returncode == 0
+    assert json.loads(result.stdout)["decision"] == "block"
+
+
+@pytest.mark.parametrize("command", ["create", "str_replace", "insert"])
+def test_str_replace_editor_mutations_are_not_read_scanned(run_cli: CliRunner, project: Path, command: str) -> None:
+    (project / "notes.txt").write_text("use fixture-sensitive-marker here\n")
+    values = {"command": command, "path": "notes.txt"}
+    payload = {"tool_name": "str_replace_editor", "tool_input": values, "cwd": str(project)}
+    result = run_cli(SCRIPT, "content", "read", payload=payload, cwd=project)
+    assert result.returncode == 0
+    assert result.stdout == ""
+
+
+@pytest.mark.parametrize("field", ["input", "patch", "command"])
+def test_apply_patch_secret_paths_are_blocked(run_cli: CliRunner, harness: Path, field: str) -> None:
+    body = patch_input("*** Update File: ~/.ssh/config", "@@", "-a", "+b")
+    payload = {"tool_name": "apply_patch", "tool_input": {field: body}}
+    result = run_cli(SCRIPT, "paths", "patch", payload=payload)
+    assert result.returncode == 2
+    assert ".ssh" in result.stderr
+
+
+def test_apply_patch_harness_boundary_protects_the_adapter(run_cli: CliRunner, harness: Path) -> None:
+    body = patch_input("*** Update File: ~/.dsh/hooks/hook_adapter.py", "@@", "-a", "+b")
+    payload = {"tool_name": "apply_patch", "tool_input": {"input": body}}
+    result = run_cli(SCRIPT, "harness", payload=payload)
+    assert result.returncode == 2
+    assert "agent harness boundary" in result.stderr
+
+
+def test_apply_patch_added_text_is_scanned_for_secret_markers(run_cli: CliRunner, project: Path) -> None:
+    body = patch_input("*** Add File: notes.txt", "+fixture-sensitive-marker")
+    payload = {"tool_name": "apply_patch", "tool_input": {"input": body}, "cwd": str(project)}
+    result = run_cli(SCRIPT, "content", "apply-patch", payload=payload, cwd=project)
+    assert result.returncode == 0
+    assert json.loads(result.stdout)["decision"] == "block"
+
+
+def test_lint_covers_apply_patch_targets(run_cli: CliRunner, tmp_path: Path, executable: StubWriter) -> None:
+    executable(
+        "ruff",
+        """
+        import sys
+        if "--output-format=concise" in sys.argv:
+            print("ruff: F821 undefined name")
+            sys.exit(1)
+        """,
+    )
+    project = tmp_path / "patch-repo"
+    project.mkdir()
+    (project / "x.py").write_text("x = 1\n")
+    body = patch_input("*** Update File: x.py", "@@", "-x = 1", "+x = 2")
+    payload = {"tool_name": "apply_patch", "tool_input": {"input": body}, "cwd": str(project)}
+    result = run_cli(SCRIPT, "lint", payload=payload)
+    assert result.returncode == 0
+    assert "F821" in json.loads(result.stdout)["systemMessage"]
+
+
 @pytest.mark.parametrize("tool", ["write", "edit", "str_replace_editor"])
 def test_harness_boundary_protects_the_adapter_for_every_edit_tool(
     run_cli: CliRunner, harness: Path, tool: str

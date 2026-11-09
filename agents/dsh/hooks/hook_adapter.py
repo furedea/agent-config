@@ -22,6 +22,7 @@ ADAPTER = provider_adapter.Adapter(
             "write": "Write",
             "edit": "Edit",
             "str_replace_editor": "Edit",
+            "apply_patch": "apply_patch",
             "glob": "Glob",
             "grep": "Grep",
             "web_fetch": "WebFetch",

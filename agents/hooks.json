@@ -951,7 +951,7 @@
           ]
         },
         {
-          "matcher": "^(read|read_image|glob|grep)$",
+          "matcher": "^(read|read_image|glob|grep|str_replace_editor)$",
           "hooks": [
             {
               "command": "\"$HOME/.dsh/hooks/hook_adapter.py\" paths patch",
@@ -984,11 +984,31 @@
               "type": "command"
             }
           ]
+        },
+        {
+          "matcher": "^apply_patch$",
+          "hooks": [
+            {
+              "command": "\"$HOME/.dsh/hooks/hook_adapter.py\" paths patch",
+              "timeout": 30,
+              "type": "command"
+            },
+            {
+              "command": "\"$HOME/.dsh/hooks/hook_adapter.py\" harness",
+              "timeout": 30,
+              "type": "command"
+            },
+            {
+              "command": "\"$HOME/.dsh/hooks/hook_adapter.py\" content apply-patch",
+              "timeout": 30,
+              "type": "command"
+            }
+          ]
         }
       ],
       "tools/post-execute": [
         {
-          "matcher": "^(write|edit|str_replace_editor)$",
+          "matcher": "^(write|edit|str_replace_editor|apply_patch)$",
           "hooks": [
             {
               "command": "\"$HOME/.dsh/hooks/hook_adapter.py\" lint",

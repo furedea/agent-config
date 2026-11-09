@@ -6,6 +6,9 @@ rule:
   any:
     - pattern: fmt.Errorf($MSG, $$$ARGS)
     - pattern:
+        context: "func f() { fmt.Errorf($MSG) }"
+        selector: call_expression
+    - pattern:
         context: "func f() { errors.New($MSG) }"
         selector: call_expression
 constraints:

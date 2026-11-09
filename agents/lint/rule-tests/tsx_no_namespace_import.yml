@@ -1,0 +1,13 @@
+id: tsx_no_namespace_import
+valid:
+  - |
+    import { useState } from "react";
+
+    export const Counter = () => <div>{useState(0)[0]}</div>;
+  - |
+    import type { ReactNode } from "react";
+invalid:
+  - |
+    import * as React from "react";
+
+    export const Counter = () => <div>{React.version}</div>;

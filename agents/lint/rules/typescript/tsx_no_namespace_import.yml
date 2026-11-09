@@ -1,0 +1,7 @@
+id: tsx_no_namespace_import
+language: tsx
+severity: warning
+message: "Import the names you use instead of a namespace import."
+note: "The `.tsx` counterpart of ts_no_namespace_import; ast-grep parses `.tsx` files as the separate `tsx` language."
+rule:
+  kind: namespace_import

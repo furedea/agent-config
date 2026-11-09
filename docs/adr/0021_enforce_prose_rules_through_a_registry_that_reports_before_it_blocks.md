@@ -18,10 +18,10 @@ definition discards its cached scores.
 ## Decisions
 
 - **Registry shape.** One YAML file per rule. Required fields: `id`, `source` (a link to the line of `AGENTS.md` or
-  the style skill that states the rule), `language`, `method` (`linter`, `ast-grep`, `model`, or `prose`),
+  the style skill that states the rule), `quote` (the rule text copied from that line), `language`, `method` (`linter`, `ast-grep`, `model`, or `prose`),
   `threshold` (required for `model`, otherwise absent), `version`, and `examples` with at least one conforming and
   one violating case. A `linter` rule names the linter's own rule code and holds no logic. A test fails when a
-  `source` link does not resolve to an existing file and line, or when the quoted rule text no longer appears there,
+  `source` link does not resolve to an existing file and line, or when `quote` no longer appears there,
   so a prose edit cannot silently orphan a rule. `prose` records a rule that stays text only, so that the inventory
   is complete.
 - **Hook behaviour.** Findings are returned to the agent as feedback and never block. A rule becomes blocking only
@@ -31,7 +31,7 @@ definition discards its cached scores.
 - **Judging time.** Static rules run on the files changed by each edit. Model-judged rules run once at Stop over the
   units (functions or classes selected by ast-grep) changed in the session, not per edit.
 - **Cache key.** The key is: rule id, hash of the rule's judging definition (every field except `threshold`,
-  `source`, and `examples`), backend and model identifier, and content hash of the judged unit. The cache stores the
+  `version`, `source`, `quote`, and `examples`), backend and model identifier, and content hash of the judged unit. The cache stores the
   raw score, not the pass/fail verdict, and applies the rule's `threshold` after the lookup, so retuning a cutoff
   needs no invalidation. Because the definition is hashed, a changed rule cannot return a stale score, and no hand
   bump is needed; `version` only labels reports.

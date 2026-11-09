@@ -157,6 +157,8 @@ class Parser:
     position: int = field(default=0, init=False)
 
     def parse(self) -> z3.ReRef:
+        if "\n" in self.pattern:
+            raise UnsupportedPattern(f"newline in {self.pattern!r}: grep reads each line as a separate pattern")
         result = self.alternation()
         if self.position != len(self.pattern):
             raise UnsupportedPattern(f"unbalanced parenthesis in {self.pattern!r}")

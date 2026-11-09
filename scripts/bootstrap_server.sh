@@ -87,7 +87,7 @@ readonly RIPGREP_VERSION="${RIPGREP_VERSION:-14.1.1}"
 # renovate: datasource=github-releases depName=jqlang/jq extractVersion=^jq-(?<version>.+)$
 readonly JQ_VERSION="${JQ_VERSION:-1.8.1}"
 # renovate: datasource=github-releases depName=astral-sh/ruff
-readonly RUFF_VERSION="${RUFF_VERSION:-0.17.0}"
+readonly RUFF_VERSION="${RUFF_VERSION:-0.17.4}"
 # renovate: datasource=github-releases depName=dprint/dprint
 readonly DPRINT_VERSION="${DPRINT_VERSION:-0.64.1}"
 # renovate: datasource=github-releases depName=koalaman/shellcheck extractVersion=^v(?<version>.+)$

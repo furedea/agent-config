@@ -1,6 +1,6 @@
-"""Scan edited files with the registry's ast-grep rules and describe each finding for the agent."""
+"""Scan edited files with the ast-grep rules of the project that owns them and describe each finding."""
 
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable
 import json
 import os
 from pathlib import Path
@@ -12,24 +12,34 @@ from lib.formatter_policy import Step
 
 SCANNER = "ast-grep"
 CONFIG_NAME = "sgconfig.yml"
-DIRECTORY_VARIABLE = "AGENT_LINT_DIR"
 FAILURE_OUTPUT_LINES = 8
 
 
-def diagnostics(paths: Iterable[Path], environment: Mapping[str, str] = os.environ) -> tuple[str, ...]:
-    """Describe rule findings in existing files; stay silent without a rules directory or the scanner.
+def diagnostics(paths: Iterable[Path]) -> tuple[str, ...]:
+    """Describe rule findings in existing files; stay silent without an `sgconfig.yml` or the scanner.
 
-    The rules directory is `AGENT_LINT_DIR`, else the `lint` directory next to the deployed `hooks` directory.
-    It must hold the `sgconfig.yml` that names the rule directories. Findings are advice, so a scanner
-    failure is reported as a message and never raised.
+    Each file is scanned with the nearest `sgconfig.yml` above it, so the rules and their tests stay native
+    ast-grep files of the project. Findings are advice: a scanner failure is reported as a message, never raised.
     """
-    config = scanner_config(environment)
-    files = [str(path) for path in paths if path.is_file()]
-    if config is None or not files or shutil.which(SCANNER) is None:
+    if shutil.which(SCANNER) is None:
         return ()
+    by_config: dict[Path, list[str]] = {}
+    for path in paths:
+        if path.is_file() and (config := project_config(path)) is not None:
+            by_config.setdefault(config, []).append(str(path))
+    return tuple(message for config, files in by_config.items() for message in scan(config, files))
+
+
+def project_config(path: Path) -> Path | None:
+    """Find the nearest ancestor `sgconfig.yml` of a file."""
+    return next((c for directory in path.parents if (c := directory / CONFIG_NAME).is_file()), None)
+
+
+def scan(config: Path, files: list[str]) -> tuple[str, ...]:
+    """Run the scanner once for files sharing one configuration."""
     step = Step("ast-grep scan", (SCANNER, "scan", "--config", str(config), "--json=stream", *files))
     try:
-        result = process_runner.run_process(step, Path(files[0]), dict(environment))
+        result = process_runner.run_process(step, Path(files[0]), dict(os.environ))
     except OSError as error:
         return (f"Static rules failed\n{error}",)
     output = result.diagnostics.decode(errors="replace")
@@ -37,13 +47,6 @@ def diagnostics(paths: Iterable[Path], environment: Mapping[str, str] = os.envir
     if found or (result.returncode in (0, 1) and not result.timed_out):
         return found
     return (failure(output, result.timed_out),)
-
-
-def scanner_config(environment: Mapping[str, str]) -> Path | None:
-    """Locate the scanner configuration of the rules directory, or None when it is not deployed."""
-    default = Path(__file__).resolve().parents[2] / "lint"
-    config = Path(environment.get(DIRECTORY_VARIABLE) or default) / CONFIG_NAME
-    return config if config.is_file() else None
 
 
 def finding(line: str) -> str:

@@ -56,11 +56,11 @@ def hook(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) ->
 
 
 @pytest.fixture
-def lint_directory(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    directory = tmp_path / "lint"
+def lint_directory(tmp_path: Path) -> Path:
+    """The project root that owns the ast-grep rules, with the edited file below it."""
+    directory = tmp_path / "work"
     directory.mkdir()
     (directory / "sgconfig.yml").write_text("ruleDirs:\n  - rules\n")
-    monkeypatch.setenv("AGENT_LINT_DIR", str(directory))
     return directory
 
 
@@ -72,8 +72,8 @@ def scanner_calls(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 
 
 @pytest.fixture
-def source(tmp_path: Path) -> Path:
-    path = tmp_path / "work" / "source.py"
+def source(lint_directory: Path) -> Path:
+    path = lint_directory / "src" / "source.py"
     path.parent.mkdir()
     path.write_text("print('x')\n")
     return path
@@ -137,21 +137,20 @@ def test_a_clean_file_stays_silent(hook: Hook, executable: StubWriter, lint_dire
     assert hook.run(source) == (0, "")
 
 
-def test_missing_rules_directory_does_nothing(
-    hook: Hook,
-    executable: StubWriter,
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-    scanner_calls: Path,
-    source: Path,
+def test_each_file_is_scanned_with_the_nearest_project_config(
+    hook: Hook, executable: StubWriter, lint_directory: Path, scanner_calls: Path, source: Path
 ) -> None:
+    nested = lint_directory / "nested"
+    nested.mkdir()
+    (nested / "sgconfig.yml").write_text("ruleDirs:\n  - rules\n")
+    inner = nested / "inner.py"
+    inner.write_text("print('y')\n")
     install_scanner(executable, [FINDING])
-    monkeypatch.setenv("AGENT_LINT_DIR", str(tmp_path / "absent"))
-    assert hook.run(source) == (0, "")
-    assert not scanner_calls.exists()
+    hook.run(inner)
+    assert json.loads(scanner_calls.read_text())[2] == str(nested / "sgconfig.yml")
 
 
-def test_rules_directory_without_scanner_config_does_nothing(
+def test_project_without_scanner_config_does_nothing(
     hook: Hook, executable: StubWriter, lint_directory: Path, scanner_calls: Path, source: Path
 ) -> None:
     (lint_directory / "sgconfig.yml").unlink()

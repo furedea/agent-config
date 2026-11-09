@@ -255,6 +255,8 @@ class Parser:
             raise UnsupportedPattern(
                 f"backslash inside a bracket expression in {self.pattern!r}: grep dialects differ"
             )
+        if mark == "[" and self.peek() in {"=", "."}:
+            raise UnsupportedPattern(f"equivalence or collating element in {self.pattern!r}: locale dependent")
         if mark == "[" and self.peek() == ":":
             return self.posix_class()
         if self.peek() == "-" and self.peek(1) not in {"]", None}:

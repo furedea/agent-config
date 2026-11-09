@@ -200,7 +200,7 @@ def parse(source: str, depth: int = 0, directories: tuple[Path | None, ...] = ()
         unreviewed = any(takes_foreign_option(layer) for layer in layers)
         if not scripts and name in SHELLS:
             scripts = [(script, innermost.wrapper_depth + 1) for script in sources.scripts(owner, directories)]
-        elif not unreviewed and name in FOREIGN_SHELLS:
+        elif not unreviewed and is_foreign_shell(name):
             scripts = [(script, innermost.wrapper_depth + 1) for script in sources.scripts(owner, directories)]
             unreviewed = bool(scripts)
         if unreviewed:

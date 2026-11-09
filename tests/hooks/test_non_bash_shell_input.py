@@ -29,6 +29,9 @@ def verdict(kind: str, command: str) -> str:
         pytest.param(f"fish <<EOF\n{DELETE}\nEOF", id="fish heredoc"),
         pytest.param(f"nu <<< '{DELETE}'", id="nu here-string"),
         pytest.param(f"nohup pwsh -Command '{DELETE}'", id="behind a wrapper"),
+        pytest.param(f"echo '{DELETE}' | ysh", id="a shell known only by its name, on a pipe"),
+        pytest.param(f"lolsh <<EOF\n{DELETE}\nEOF", id="a shell known only by its name, heredoc"),
+        pytest.param(f"ysh <<< '{DELETE}'", id="a shell known only by its name, here-string"),
     ],
 )
 def test_a_visible_script_that_matches_a_deny_rule_is_denied(command: str) -> None:
@@ -65,6 +68,7 @@ def test_a_visible_script_that_matches_an_ask_prefix_asks(command: str) -> None:
         pytest.param("fish <<EOF\nls\nEOF", id="a harmless heredoc"),
         pytest.param("fish <<EOF\n$CMD\nEOF", id="a computed heredoc"),
         pytest.param("fish < script.fish", id="a script file"),
+        pytest.param("echo 'ls' | ysh", id="a shell known only by its name, harmless script"),
     ],
 )
 @pytest.mark.parametrize("kind", ["allowed", "forbidden"])

@@ -177,11 +177,14 @@ class Adapter:
 
     def lint(self, payload: dict) -> int:
         """Report shared quality diagnostics using the PostToolUse JSON contract."""
-        lint_format.emit(lint_format.diagnostics(self.normalized(payload)), self.profile.lint_output)
+        context = self.normalized(payload)
+        if not views_only(context):
+            lint_format.emit(lint_format.diagnostics(context), self.profile.lint_output)
         return 0
 
     def harness(self, payload: dict) -> int:
-        for name in edit_targets(self.normalized(payload)):
+        context = self.normalized(payload)
+        for name in () if views_only(context) else edit_targets(context):
             absolute = name if name.startswith(("/", "~/")) else str(Path.cwd() / name)
             values = {"file_path": absolute}
             if status := guard_file.check(
@@ -286,6 +289,12 @@ def tool_input(payload: dict) -> object:
     if name := hook_input.file_path(values):
         result["file_path"] = name
     return result
+
+
+def views_only(context: dict) -> bool:
+    """Tell whether an editor tool call only views a file, so edit-time guards have nothing to check."""
+    values = context["tool_input"]
+    return context.get("tool_name") == "Edit" and isinstance(values, dict) and values.get("command") == "view"
 
 
 def command_text(values: dict) -> str:

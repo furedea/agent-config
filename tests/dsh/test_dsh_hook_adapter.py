@@ -131,6 +131,43 @@ def test_str_replace_editor_view_is_scanned_like_read(run_cli: CliRunner, projec
     assert json.loads(result.stdout)["decision"] == "block"
 
 
+def test_str_replace_editor_view_is_not_held_to_the_harness_write_boundary(run_cli: CliRunner, harness: Path) -> None:
+    values = {"command": "view", "path": "~/.dsh/hooks/hook_adapter.py"}
+    result = run_cli(SCRIPT, "harness", payload={"tool_name": "str_replace_editor", "tool_input": values})
+    assert result.returncode == 0
+    assert result.stderr == ""
+
+
+@pytest.mark.parametrize("command", ["create", "str_replace", "insert"])
+def test_str_replace_editor_mutations_stay_inside_the_harness_boundary(
+    run_cli: CliRunner, harness: Path, command: str
+) -> None:
+    values = {"command": command, "path": "~/.dsh/hooks/hook_adapter.py"}
+    result = run_cli(SCRIPT, "harness", payload={"tool_name": "str_replace_editor", "tool_input": values})
+    assert result.returncode == 2
+    assert "agent harness boundary" in result.stderr
+
+
+def test_str_replace_editor_view_is_not_linted(run_cli: CliRunner, tmp_path: Path, executable: StubWriter) -> None:
+    executable(
+        "ruff",
+        """
+        import sys
+        if "--output-format=concise" in sys.argv:
+            print("ruff: F821 undefined name")
+            sys.exit(1)
+        """,
+    )
+    project = tmp_path / "view-repo"
+    project.mkdir()
+    (project / "x.py").write_text("x = 1\n")
+    values = {"command": "view", "path": str(project / "x.py")}
+    payload = {"tool_name": "str_replace_editor", "tool_input": values, "cwd": str(project)}
+    result = run_cli(SCRIPT, "lint", payload=payload)
+    assert result.returncode == 0
+    assert result.stdout == ""
+
+
 @pytest.mark.parametrize("command", ["create", "str_replace", "insert"])
 def test_str_replace_editor_mutations_are_not_read_scanned(run_cli: CliRunner, project: Path, command: str) -> None:
     (project / "notes.txt").write_text("use fixture-sensitive-marker here\n")

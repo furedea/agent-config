@@ -84,6 +84,17 @@ def test_every_prefix_and_rule_pair_is_reported_once() -> None:
     }
 
 
+@pytest.mark.parametrize("prefix", [("tool", "sub command"), ("tool\t", "x"), ("tool", "")])
+def test_a_prefix_word_holding_whitespace_or_nothing_is_refused(prefix: tuple[str, ...]) -> None:
+    with pytest.raises(ValueError, match="prefix word"):
+        find_overlaps([prefix], [GIT_ADD])
+
+
+def test_a_witness_may_hold_start_of_heading() -> None:
+    (overlap,) = find_overlaps([("echo",)], [{"patterns": ["^echo \x01$"], "justification": "test"}])
+    assert overlap.witness == "echo \x01"
+
+
 @pytest.mark.parametrize("pattern", [r"(a)\1", "(?=a)"])
 def test_a_pattern_outside_the_rule_dialect_is_refused_instead_of_skipped(pattern: str) -> None:
     with pytest.raises(UnsupportedPattern):

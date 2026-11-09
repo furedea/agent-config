@@ -84,8 +84,15 @@ def test_dropping_any_real_rule_is_found(index: int) -> None:
 DROPPED_FIELDS = frozenset({"exceptions", "programs"})
 DROPS_FIELDS = pytest.mark.xfail(
     strict=True,
+    raises=AssertionError,
     reason="furedea/agent-harness#203: generate-forbidden-commands (0.9.9) drops exceptions and programs",
 )
+
+
+def test_the_known_gap_is_only_a_failed_assertion_not_a_solver_timeout() -> None:
+    assert DROPS_FIELDS.kwargs["raises"] is AssertionError
+
+
 SOURCE_RULES = [
     pytest.param(rule, marks=DROPS_FIELDS if DROPPED_FIELDS & rule.keys() else (), id=f"rule {index}")
     for index, rule in enumerate(FORBIDDEN)

@@ -47,7 +47,7 @@ def claude_rules(permissions: Mapping[str, Sequence[str]]) -> list[Rule]:
         Rule(tuple(match["prefix"].split(" ")), decision)
         for decision in ("allow", "ask", "deny")
         for entry in permissions.get(decision, ())
-        if entry.startswith("Bash(") and entry not in CLAUDE_NON_PREFIX
+        if (entry == "Bash" or entry.startswith("Bash(")) and entry not in CLAUDE_NON_PREFIX
         for match in [claude_entry(entry)]
     ]
 

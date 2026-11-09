@@ -21,10 +21,15 @@ class Difference:
     denied_by: str
 
 
+# The largest real rule takes about 20 s to decide on an idle machine, so a loaded CI runner needs far more than
+# find_line's default; an undecided language is an error, never a pass.
+SOLVER_TIMEOUT_MS = 180_000
+
+
 def find_denial_difference(source: Sequence[dict], generated: Sequence[dict]) -> Difference | None:
     denied = {"source": denial_language(source), "generated": denial_language(generated)}
     for side, other in (("source", "generated"), ("generated", "source")):
-        line = find_line(z3.Intersect(denied[side], z3.Complement(denied[other])))
+        line = find_line(z3.Intersect(denied[side], z3.Complement(denied[other])), SOLVER_TIMEOUT_MS)
         if line is not None:
             return Difference(line, side)
     return None

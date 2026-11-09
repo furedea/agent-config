@@ -134,9 +134,9 @@ def test_a_codex_rule_in_an_unknown_layout_is_refused_instead_of_skipped(block: 
         codex_rules(text)
 
 
-@pytest.mark.parametrize("entry", ["Bash(git status)", "Bash(:*)", "Exec()"])
+@pytest.mark.parametrize("entry", ["Bash", "Bash(git status)", "Bash(:*)", "Exec()"])
 def test_an_entry_in_an_unknown_shape_is_refused_instead_of_skipped(entry: str) -> None:
-    parsers = {"Bash(git status)": claude_rules, "Bash(:*)": claude_rules, "Exec()": devin_rules}
+    parsers = {"Bash": claude_rules, "Bash(git status)": claude_rules, "Bash(:*)": claude_rules, "Exec()": devin_rules}
     with pytest.raises(ValueError, match="unrecognized"):
         parsers[entry]({"allow": [entry]})
 

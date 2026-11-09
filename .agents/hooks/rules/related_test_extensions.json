@@ -63,6 +63,7 @@
   ],
   "agents/claude/settings.json": [
     "tests/claude/test_settings.py",
+    "tests/test_generated_rules.py",
     "tests/hooks/test_sandbox_escape.py",
     "tests/hooks/test_allowed_command.py",
     "tests/hooks/test_command_cli.py",

@@ -20,20 +20,14 @@ runs:
         path: ${{ runner.temp }}/agent-harness/bin/agent-harness
         key: agent-harness-v1-${{ runner.os }}-${{ runner.arch }}-${{ steps.agent_harness.outputs.revision }}
 
-    - name: Install Rust toolchain
-      if: steps.agent_harness_cache.outputs.cache-hit != 'true'
-      uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
-      with:
-        toolchain: 1.98.1
-        rustflags: ""
-
+    # The caller has already set up Nix; the Rust toolchain comes from the locked flake, not from an installer action.
     - name: Install locked agent-harness
       if: steps.agent_harness_cache.outputs.cache-hit != 'true'
       shell: bash
       env:
         AGENT_HARNESS_REV: ${{ steps.agent_harness.outputs.revision }}
       run: |
-        cargo install \
+        nix develop .#agent-harness-build --command cargo install \
           --git https://github.com/furedea/agent-harness \
           --rev "$AGENT_HARNESS_REV" \
           --locked \

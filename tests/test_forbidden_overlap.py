@@ -19,9 +19,9 @@ GIT_ADD = (
     r"git[[:space:]]+add([[:space:]]+-[^[:space:]]*)*[[:space:]]+(\./?|-[A-Za-z]*A[A-Za-z]*|--all)([[:space:]]|$)"
 )
 GIT_COMMIT = (
-    r"git[[:space:]]+commit([[:space:]].*)?[[:space:]]+(--no-verify|-[aeiopqsvz]*n[^[:space:]]*)([[:space:]]|$)"
+    r"git[[:space:]]+commit([[:space:]].*)?[[:space:]]+(--no-veri[a-z]*|-[aeiopqsvz]*n[^[:space:]]*)([[:space:]]|$)"
 )
-PIP = r"(^|[[:space:]])python[0-9.]*([[:space:]]+-[A-Za-z]+)*[[:space:]]+-[A-Za-z]*m[[:space:]]*(pip|ensurepip)([[:space:]]|$)"
+PIP = r"(^|[[:space:]])python[0-9.]*([[:space:]]+(-[A-Za-z]*[WX]([^[:space:]]+|[[:space:]]+[^[:space:]]+)|--check-hash-based-pycs[[:space:]]+[^[:space:]]+|-[A-Za-z]+))*[[:space:]]+-[A-Za-z]*m[[:space:]]*(pip|ensurepip)([[:space:]]|$)"
 FIND = r"(^|[[:space:]])find[[:space:]].*[[:space:]]-(delete|exec|execdir|ok|okdir|fprint|fprint0|fprintf|fls)([[:space:]]|$)"
 HERDR = r"^herdr[[:space:]]+agent[[:space:]]+start([[:space:]].*)?[[:space:]]--([[:space:]]|$)"
 CARGO = "^cargo mutants .*--in-place"

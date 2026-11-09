@@ -178,6 +178,17 @@ def test_a_failing_scanner_is_reported_without_blocking(
     assert "cannot read sgconfig.yml" in context_of(output)
 
 
+def test_output_cut_at_the_limit_is_reported_instead_of_dropping_findings_silently(
+    hook: Hook, executable: StubWriter, lint_directory: Path, source: Path
+) -> None:
+    executable(
+        "ast-grep", 'import json, sys\nprint(json.dumps({"ruleId": "big", "text": "x" * 100000}))\nsys.exit(1)\n'
+    )
+    status, output = hook.run(source)
+    assert status == 0
+    assert "Static rule output truncated" in context_of(output)
+
+
 def test_non_edit_tools_and_missing_files_are_not_scanned(
     hook: Hook, executable: StubWriter, lint_directory: Path, scanner_calls: Path, source: Path
 ) -> None:

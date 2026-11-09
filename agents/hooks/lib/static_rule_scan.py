@@ -13,6 +13,7 @@ from lib.formatter_policy import Step
 SCANNER = "ast-grep"
 CONFIG_NAME = "sgconfig.yml"
 FAILURE_OUTPUT_LINES = 8
+TRUNCATED = "Static rule output truncated\nThe scanner output exceeded the size limit; some findings may be missing."
 
 
 def diagnostics(paths: Iterable[Path]) -> tuple[str, ...]:
@@ -44,6 +45,8 @@ def scan(config: Path, files: list[str]) -> tuple[str, ...]:
         return (f"Static rules failed\n{error}",)
     output = result.diagnostics.decode(errors="replace")
     found = tuple(message for line in output.splitlines() if (message := finding(line)))
+    if result.output_truncated:
+        return (*found, TRUNCATED)
     if found or (result.returncode in (0, 1) and not result.timed_out):
         return found
     return (failure(output, result.timed_out),)

@@ -178,6 +178,17 @@ def test_a_failing_scanner_is_reported_without_blocking(
     assert "cannot read sgconfig.yml" in context_of(output)
 
 
+def test_findings_before_an_abnormal_exit_are_kept_with_a_failure_notice(
+    hook: Hook, executable: StubWriter, lint_directory: Path, source: Path
+) -> None:
+    install_scanner(executable, [FINDING], status=8)
+    status, output = hook.run(source)
+    assert status == 0
+    findings, failure = context_of(output).split("\n\n")
+    assert findings.startswith("Static rule no-print")
+    assert failure.startswith("Static rules failed")
+
+
 def test_output_cut_at_the_limit_is_reported_instead_of_dropping_findings_silently(
     hook: Hook, executable: StubWriter, lint_directory: Path, source: Path
 ) -> None:

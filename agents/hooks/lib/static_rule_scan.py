@@ -45,11 +45,10 @@ def scan(config: Path, files: list[str]) -> tuple[str, ...]:
         return (f"Static rules failed\n{error}",)
     output = result.diagnostics.decode(errors="replace")
     found = tuple(message for line in output.splitlines() if (message := finding(line)))
-    if result.output_truncated:
-        return (*found, TRUNCATED)
-    if found or (result.returncode in (0, 1) and not result.timed_out):
-        return found
-    return (failure(output, result.timed_out),)
+    notes = (TRUNCATED,) if result.output_truncated else ()
+    if result.timed_out or result.returncode not in (0, 1):
+        notes += (failure(output, result.timed_out),)
+    return found + notes
 
 
 def finding(line: str) -> str:
@@ -64,5 +63,6 @@ def finding(line: str) -> str:
 
 def failure(output: str, timed_out: bool) -> str:
     """Describe a scanner that produced no findings and did not finish normally."""
-    reason = "timed out" if timed_out else "\n".join(output.strip().splitlines()[:FAILURE_OUTPUT_LINES])
+    lines = [line for line in output.strip().splitlines() if not finding(line)]
+    reason = "timed out" if timed_out else "\n".join(lines[:FAILURE_OUTPUT_LINES])
     return f"Static rules failed\n{reason or 'No diagnostic output.'}"

@@ -46,6 +46,8 @@ This command applies all of the following:
 - The common ruleset from `github/ruleset.json`, updating a same-named ruleset or creating it.
 - CodeQL default setup for public repositories; private and already configured ones are skipped.
   It takes over from any advanced CodeQL workflow, and a failure only warns, so verify its state.
+- Immutable releases for every repository, public or private. Only releases published afterwards
+  are locked (tag and assets); earlier releases stay mutable, and a failure only warns.
 
 Inspect the current policy payloads and relevant remote state before applying them, including
 whether the ruleset's branch target and required checks fit the repository. The command is not a

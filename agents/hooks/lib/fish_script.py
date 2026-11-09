@@ -20,6 +20,17 @@ FLAG_LONG_OPTIONS = frozenset(
         "--help",
     }
 )
+COMMAND, EXIT, NO_EXECUTE, INTERACTIVE = "command", "exit", "no-execute", "interactive"
+SHORT_MEANINGS = {"c": COMMAND, "v": EXIT, "h": EXIT, "n": NO_EXECUTE, "i": INTERACTIVE}
+# Each long option with what it means and the length of its shortest unambiguous abbreviation.
+LONG_MEANINGS = (
+    ("--command", COMMAND, 3),
+    ("--version", EXIT, 3),
+    ("--help", EXIT, 3),
+    ("--print-debug-categories", EXIT, 9),
+    ("--no-execute", NO_EXECUTE, 6),
+    ("--interactive", INTERACTIVE, 5),
+)
 # fish options that take a value: -C, -c, -d, -o, -f, -D, -p and their long forms.
 VALUED_LETTERS = "CcdofDp"
 VALUED_LONG_OPTIONS = frozenset(
@@ -51,32 +62,36 @@ def file_scripts(
 
 def script_index(arguments: tuple[str, ...]) -> int | None:
     """Where the script file sits: the first operand past fish's options and their values; -c supplies no file."""
-    index = 1
-    while index < len(arguments):
-        argument = arguments[index]
-        if argument == "--":
-            return index + 1 if index + 1 < len(arguments) else None
-        if not argument.startswith("-"):
-            return index
-        if argument == "-" or replaces_file(argument):
+    index, seen = 1, set()
+    while index < len(arguments) and arguments[index] != "--" and arguments[index].startswith("-"):
+        if arguments[index] == "-":
             return None
-        index += 2 if takes_next_word(argument) else 1
-    return None
+        seen |= meanings(arguments[index])
+        index += 2 if takes_next_word(arguments[index]) else 1
+    index += index < len(arguments) and arguments[index] == "--"
+    # fish drops -n when -i is given, and runs the file.
+    runs_nothing = {COMMAND, EXIT} & seen or (NO_EXECUTE in seen and INTERACTIVE not in seen)
+    return None if index >= len(arguments) or runs_nothing else index
 
 
-def replaces_file(argument: str) -> bool:
-    """Whether the option leaves no file to run: -c or --command supplies the script, -n or --no-execute runs none.
+def meanings(argument: str) -> set[str]:
+    """What an option does to the file: supply a script, exit early, run nothing, or keep fish interactive.
 
-    A long option may be abbreviated; a short one counts only in front of the value-taking letter of its bundle.
+    A long option may be abbreviated down to its shortest unambiguous form; a short one counts in front of
+    the value-taking letter of its bundle.
     """
     if argument.startswith("--"):
         name = argument.partition("=")[0]
-        return (len(name) >= 3 and "--command".startswith(name)) or (
-            len(name) >= 6 and "--no-execute".startswith(name)
-        )
+        return {
+            meaning for option, meaning, shortest in LONG_MEANINGS if len(name) >= shortest and option.startswith(name)
+        }
     letters = argument[1:]
     position = valued_letter(letters)
-    return any(letter in "cn" for letter in (letters if position is None else letters[: position + 1]))
+    return {
+        SHORT_MEANINGS[letter]
+        for letter in (letters if position is None else letters[: position + 1])
+        if letter in SHORT_MEANINGS
+    }
 
 
 def takes_next_word(argument: str) -> bool:

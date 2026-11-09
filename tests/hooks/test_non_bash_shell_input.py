@@ -195,6 +195,10 @@ def test_powershell_code_starting_with_a_dash_still_asks(kind: str, command: str
         pytest.param("fish script.fish arg", id="followed by a positional argument"),
         pytest.param("fish -- script.fish", id="after the end of options"),
         pytest.param("/opt/bin/fish script.fish", id="by path"),
+        pytest.param("fish -i -n script.fish", id="interactive cancels -n"),
+        pytest.param("fish -in script.fish", id="interactive and -n in one bundle"),
+        pytest.param("fish --interactive --no-execute script.fish", id="long interactive cancels --no-execute"),
+        pytest.param("fish --no-execute -i script.fish", id="interactive after --no-execute"),
     ],
 )
 def test_a_fish_script_file_that_matches_a_deny_rule_is_denied(isolated_project: Path, command: str) -> None:
@@ -254,6 +258,11 @@ def test_a_fish_script_file_in_fish_syntax_does_not_hide_a_denied_sibling(
         pytest.param("fish --no-exec script.fish", id="abbreviated --no-exec"),
         pytest.param("fish -Nn script.fish", id="-n in a bundle"),
         pytest.param("fish -n -C 'echo init' script.fish", id="-n before a valued option"),
+        pytest.param("fish --version script.fish", id="--version prints and exits"),
+        pytest.param("fish -v script.fish", id="-v prints and exits"),
+        pytest.param("fish --help script.fish", id="--help prints and exits"),
+        pytest.param("fish -h script.fish", id="-h prints and exits"),
+        pytest.param("fish --print-debug-categories script.fish", id="--print-debug-categories prints and exits"),
     ],
 )
 @pytest.mark.parametrize("kind", ["allowed", "forbidden"])

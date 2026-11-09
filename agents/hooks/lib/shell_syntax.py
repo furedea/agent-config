@@ -1,6 +1,8 @@
 """Inspect a conservative shell subset using shfmt's parser, never by executing input."""
 
+from collections.abc import Callable
 from dataclasses import dataclass, replace
+from functools import partial
 import json
 from pathlib import Path
 import re
@@ -45,12 +47,35 @@ SHELLS = frozenset(
         "zsh",
     }
 )
-# Shells whose syntax is not bash's, and names ending in sh that are no known shell: parsing their -c
-# script as bash would misread it, so a -c (or --command) option asks instead.
-FOREIGN_SHELLS = frozenset({"csh", "elvish", "es", "fish", "nu", "rc", "tcsh"})
-# Names ending in sh that may be a shell; a file extension (run.sh) or ssh is not one.
+# Shells whose syntax is not bash's. However one is invoked, the call asks: the inspection cannot tell
+# what such a shell would run, and each option or syntax it adds is another way to hand it a script.
+# Its script text, where visible, is read as bash only to find commands to deny.
+FOREIGN_SHELLS = frozenset(
+    {
+        "csh",
+        "elvish",
+        "es",
+        "fish",
+        "nu",
+        "nushell",
+        "powershell",
+        "pwsh",
+        "pwsh-preview",
+        "rc",
+        "tcsh",
+        "xonsh",
+        "ysh",
+    }
+)
+# Names ending in sh that are no listed shell but may be one; they ask only when handed a script, since
+# a file extension (run.sh) or ssh is not a shell, and so is any program that merely ends in sh.
 SHELL_LOOKALIKE = re.compile(r"(?!ssh$)[a-z0-9_-]*sh")
-FOREIGN_COMMAND_OPTION = re.compile(r"-(-command|[A-Za-z]*c[A-Za-z]*)(=.*)?")
+# Options that hand a script over, in any letter case and abbreviation PowerShell accepts: -c, -Command,
+# --commands, nu's -e and --execute, fish's --init-command, or a short bundle holding c such as tcsh's -fc.
+FOREIGN_COMMAND_OPTION = re.compile(r"-(-commands?|-execute|-init-command|e|[a-z]*c[a-z]*)(=.*)?", re.IGNORECASE)
+POWERSHELLS = frozenset({"powershell", "pwsh", "pwsh-preview"})
+# PowerShell's -e, -ec, -EncodedCommand: a base64 script, which the inspection does not decode.
+POWERSHELL_ENCODED_OPTION = re.compile(r"-(e|ec|en[a-z]*)", re.IGNORECASE)
 VERSION_SUFFIX = re.compile(r"[0-9._-]+$")
 
 
@@ -62,7 +87,8 @@ class Command:
     than the home directory); such arguments carry their source text. `writes` lists the files
     that output redirections would create or overwrite. `appends_input` marks a command that xargs
     runs with further arguments read from its input. `spreading` flags arguments that may become
-    several words at run time, options included.
+    several words at run time, options included. `unreviewed` marks a shell whose syntax is not
+    bash's receiving a script, which is never allowed without review.
     """
 
     raw: str
@@ -75,6 +101,7 @@ class Command:
     writes: tuple[str, ...] = ()
     appends_input: bool = False
     spreading: tuple[bool, ...] = ()
+    unreviewed: bool = False
 
     def __post_init__(self) -> None:
         if not self.words:
@@ -183,15 +210,31 @@ def parse(source: str, depth: int = 0, directories: tuple[Path | None, ...] = ()
         owner = owners.get(id(node), node)
         command = replace(literal_command(node, owner, data), wrapper_depth=depth + (id(node) in hidden_calls))
         layers = [command, *unwrapped(command)]
-        commands += layers
         for layer in layers:
             directories = reached_directories(directories, layer)
         innermost = layers[-1]
+        name = shell_name(Path(innermost.arguments[0]).name)
         scripts = [(script, layer.wrapper_depth + 1) for layer in layers for script in shell_scripts(layer)]
-        if not scripts and shell_name(Path(innermost.arguments[0]).name) in SHELLS:
-            scripts = [(script, innermost.wrapper_depth + 1) for script in sources.scripts(owner, directories)]
+        unreviewed = name in FOREIGN_SHELLS or any(takes_foreign_option(layer) for layer in layers)
+        if (name in SHELLS and not scripts) or is_foreign_shell(name):
+            inputs = input_scripts(partial(sources.scripts, owner, directories), tolerant=bool(scripts))
+            scripts += [(script, innermost.wrapper_depth + 1) for script in inputs]
+            unreviewed = unreviewed or (name not in SHELLS and bool(inputs))
+        if unreviewed:
+            layers[-1] = replace(innermost, unreviewed=True)
+        commands += layers
         commands += [nested for script, nested_depth in scripts for nested in parse(script, nested_depth, directories)]
     return tuple(commands)
+
+
+def input_scripts(read: Callable[[], list[str]], tolerant: bool) -> list[str]:
+    """The scripts a shell reads from its input; a tolerant caller already marked its call for review."""
+    try:
+        return read()
+    except UnsupportedSyntax:
+        if tolerant:
+            return []
+        raise
 
 
 def hidden_from_provider(records: tuple[dict, ...]) -> set[int]:
@@ -335,34 +378,85 @@ def shell_scripts(command: Command) -> list[str]:
         return [" ".join(arguments[1:])]
     if executable in WRAPPERS:
         return wrapper_scripts(command, executable)
-    shell = shell_name(executable)
-    foreign = shell in FOREIGN_SHELLS or (shell not in SHELLS and SHELL_LOOKALIKE.fullmatch(shell) is not None)
-    if shell not in SHELLS and not foreign:
+    if is_foreign_shell(executable):
+        return foreign_scripts(command)
+    if shell_name(executable) not in SHELLS:
         return []
     option = next(
         (
             index
             for index, argument in enumerate(arguments[1:], 1)
-            if argument.startswith("-")
-            and (
-                FOREIGN_COMMAND_OPTION.fullmatch(argument)
-                if foreign
-                else not argument.startswith("--") and "c" in argument
-            )
+            if argument.startswith("-") and not argument.startswith("--") and "c" in argument
         ),
         None,
     )
     if option is None:
         return []
-    if foreign:
-        raise UnsupportedSyntax(
-            f"{executable} may run its -c argument as a script this inspection cannot parse; requires explicit review",
-            "wrapper",
-        )
     script = script_index(arguments, option)
     if command.dynamic[script]:
         raise UnsupportedSyntax("a shell wrapper running a computed script requires explicit review", "wrapper")
     return [arguments[script]]
+
+
+def is_foreign_shell(executable: str) -> bool:
+    shell = shell_name(executable)
+    return shell in FOREIGN_SHELLS or (shell not in SHELLS and SHELL_LOOKALIKE.fullmatch(shell) is not None)
+
+
+def option_form(arguments: tuple[str, ...], argument: str) -> str:
+    """The option as written with one dash; PowerShell reads --name and /name as -name."""
+    if shell_name(Path(arguments[0]).name) in POWERSHELLS and argument.startswith(("/", "--")):
+        return "-" + argument.lstrip("/-")
+    return argument
+
+
+def is_encoded_option(arguments: tuple[str, ...], argument: str) -> bool:
+    """Whether the option carries a base64 script; only PowerShell has one, nu's -e is a plain script."""
+    return (
+        shell_name(Path(arguments[0]).name) in POWERSHELLS
+        and POWERSHELL_ENCODED_OPTION.fullmatch(option_form(arguments, argument)) is not None
+    )
+
+
+def foreign_option_indexes(arguments: tuple[str, ...]) -> list[int]:
+    return [
+        index
+        for index, argument in enumerate(arguments[1:], 1)
+        if FOREIGN_COMMAND_OPTION.fullmatch(option_form(arguments, argument)) or is_encoded_option(arguments, argument)
+    ]
+
+
+def takes_foreign_option(command: Command) -> bool:
+    """Whether a shell of foreign syntax is handed a script by an option, readable or encoded."""
+    return is_foreign_shell(Path(command.arguments[0]).name) and bool(foreign_option_indexes(command.arguments))
+
+
+def foreign_scripts(command: Command) -> list[str]:
+    """The text after each script option of a foreign shell, to be read as bash for what it would deny.
+
+    PowerShell joins every word after -Command into one script; leading options that were taken for
+    script options are skipped. An encoded script has no text to read.
+    """
+    arguments = command.arguments
+    scripts = []
+    for index in foreign_option_indexes(arguments):
+        argument = arguments[index]
+        if is_encoded_option(arguments, argument):
+            continue
+        if "=" in argument:
+            scripts.append(argument.partition("=")[2])
+            continue
+        operands = list(range(index + 1, len(arguments)))
+        while operands and arguments[operands[0]].startswith("-"):
+            operands.pop(0)
+        if any(command.dynamic[position] for position in operands):
+            raise UnsupportedSyntax(f"{arguments[0]} running a computed script requires explicit review", "wrapper")
+        if not operands:
+            continue
+        # Only PowerShell joins its words; elsewhere the words after the script are its positional arguments.
+        words = operands if shell_name(Path(arguments[0]).name) in POWERSHELLS else operands[:1]
+        scripts.append(" ".join(arguments[position] for position in words))
+    return scripts
 
 
 # Shell options that take the next word as a value, which would hide where the -c script starts.
@@ -383,8 +477,9 @@ def script_index(arguments: tuple[str, ...], option: int) -> int:
 
 
 def shell_name(executable: str) -> str:
-    """The shell a program name stands for, without a version suffix such as ksh93 or bash-5.2."""
-    return VERSION_SUFFIX.sub("", executable) or executable
+    """The shell a program name stands for: case folded (PWSH runs pwsh on macOS), no suffix as in ksh93 or bash-5.2."""
+    folded = executable.lower()
+    return VERSION_SUFFIX.sub("", folded) or folded
 
 
 def wrapper_scripts(command: Command, name: str) -> list[str]:

@@ -118,19 +118,28 @@ def test_known_shells_do_not_hide_scripts(shell: str) -> None:
 @pytest.mark.parametrize(
     "command",
     [
-        "lolsh -c 'git add .'",
         "/opt/bin/zzsh -lc 'echo hi'",
-        "nu -c 'git add .'",
         "tcsh -f -c 'repeat 1 gh repo delete x --yes'",
-        "csh -c 'gh repo delete x --yes'",
-        "fish -c 'gh repo delete x --yes'",
-        "fish --command='gh repo delete x --yes'",
-        "fish --command 'gh repo delete x --yes'",
         "rc -c 'gh pr merge 76 --merge'",
     ],
 )
 def test_an_unknown_program_that_runs_c_like_a_shell_asks(command: str) -> None:
     assert verdict("forbidden", command) == "ask"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "lolsh -c 'git add .'",
+        "nu -c 'git add .'",
+        "csh -c 'gh repo delete x --yes'",
+        "fish -c 'gh repo delete x --yes'",
+        "fish --command='gh repo delete x --yes'",
+        "fish --command 'gh repo delete x --yes'",
+    ],
+)
+def test_an_unknown_shell_whose_c_script_is_denied_text_is_denied(command: str) -> None:
+    assert verdict("forbidden", command) == "deny"
 
 
 @pytest.mark.parametrize("command", ["lolsh --help", "lolsh script.txt"])
@@ -287,7 +296,7 @@ def test_versioned_shells_are_inspected_like_their_base_shell(shell: str) -> Non
     assert verdict("forbidden", f"{shell} -c 'git add .'") == "deny"
 
 
-@pytest.mark.parametrize("command", ["lolsh2 -c 'echo hi'", "fish3 -c 'git add .'"])
+@pytest.mark.parametrize("command", ["lolsh2 -c 'echo hi'", "fish3 -c 'ls'"])
 def test_versioned_unknown_shells_ask(command: str) -> None:
     assert verdict("forbidden", command) == "ask"
 

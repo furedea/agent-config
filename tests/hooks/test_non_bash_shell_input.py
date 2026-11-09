@@ -32,6 +32,10 @@ def verdict(kind: str, command: str) -> str:
         pytest.param(f"echo '{DELETE}' | ysh", id="a shell known only by its name, on a pipe"),
         pytest.param(f"lolsh <<EOF\n{DELETE}\nEOF", id="a shell known only by its name, heredoc"),
         pytest.param(f"ysh <<< '{DELETE}'", id="a shell known only by its name, here-string"),
+        pytest.param(f"nu -e '{DELETE}'", id="nu -e is --execute, not an encoded script"),
+        pytest.param(f"fish --init-command='{DELETE}'", id="fish --init-command attached"),
+        pytest.param(f"fish --init-command '{DELETE}'", id="fish --init-command separate"),
+        pytest.param(f"fish -C '{DELETE}'", id="fish -C"),
     ],
 )
 def test_a_visible_script_that_matches_a_deny_rule_is_denied(command: str) -> None:
@@ -105,6 +109,9 @@ def test_forms_that_give_a_foreign_shell_no_script_keep_their_verdict(command: s
         pytest.param("python3 -W ignore -X dev -m ensurepip", id="python two valued options"),
         pytest.param("python3 -Wignore -m pip install x", id="python -W attached"),
         pytest.param("python3 --check-hash-based-pycs never -m pip install x", id="python long valued option"),
+        pytest.param("python3 -Wignore::DeprecationWarning -m pip install x", id="python -W attached with colons"),
+        pytest.param("python3 -Xutf8=0 -m pip install x", id="python -X attached with equals"),
+        pytest.param("python3 -IXutf8=0 -m ensurepip", id="python bundled -X attached with equals"),
     ],
 )
 def test_abbreviated_and_valued_options_do_not_hide_a_denied_form(command: str) -> None:

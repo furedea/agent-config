@@ -54,10 +54,11 @@ FOREIGN_SHELLS = frozenset(
 # Names ending in sh that may be a shell; a file extension (run.sh) or ssh is not one.
 SHELL_LOOKALIKE = re.compile(r"(?!ssh$)[a-z0-9_-]*sh")
 # Options that hand a script over, in any letter case and abbreviation PowerShell accepts: -c, -Command,
-# --commands, --execute, or a short bundle holding c such as tcsh's -fc.
-FOREIGN_COMMAND_OPTION = re.compile(r"-(-commands?|-execute|[a-z]*c[a-z]*)(=.*)?", re.IGNORECASE)
+# --commands, nu's -e and --execute, fish's --init-command, or a short bundle holding c such as tcsh's -fc.
+FOREIGN_COMMAND_OPTION = re.compile(r"-(-commands?|-execute|-init-command|e|[a-z]*c[a-z]*)(=.*)?", re.IGNORECASE)
+POWERSHELLS = frozenset({"powershell", "pwsh"})
 # PowerShell's -e, -ec, -EncodedCommand: a base64 script, which the inspection does not decode.
-FOREIGN_ENCODED_OPTION = re.compile(r"-(e|ec|en[a-z]*)", re.IGNORECASE)
+POWERSHELL_ENCODED_OPTION = re.compile(r"-(e|ec|en[a-z]*)", re.IGNORECASE)
 VERSION_SUFFIX = re.compile(r"[0-9._-]+$")
 
 
@@ -376,11 +377,19 @@ def is_foreign_shell(executable: str) -> bool:
     return shell in FOREIGN_SHELLS or (shell not in SHELLS and SHELL_LOOKALIKE.fullmatch(shell) is not None)
 
 
+def is_encoded_option(arguments: tuple[str, ...], argument: str) -> bool:
+    """Whether the option carries a base64 script; only PowerShell has one, nu's -e is a plain script."""
+    return (
+        shell_name(Path(arguments[0]).name) in POWERSHELLS
+        and POWERSHELL_ENCODED_OPTION.fullmatch(argument) is not None
+    )
+
+
 def foreign_option_indexes(arguments: tuple[str, ...]) -> list[int]:
     return [
         index
         for index, argument in enumerate(arguments[1:], 1)
-        if FOREIGN_COMMAND_OPTION.fullmatch(argument) or FOREIGN_ENCODED_OPTION.fullmatch(argument)
+        if FOREIGN_COMMAND_OPTION.fullmatch(argument) or is_encoded_option(arguments, argument)
     ]
 
 
@@ -399,7 +408,7 @@ def foreign_scripts(command: Command) -> list[str]:
     scripts = []
     for index in foreign_option_indexes(arguments):
         argument = arguments[index]
-        if FOREIGN_ENCODED_OPTION.fullmatch(argument):
+        if is_encoded_option(arguments, argument):
             continue
         if "=" in argument:
             scripts.append(argument.partition("=")[2])

@@ -1,0 +1,57 @@
+id: py_frozen_slots_dataclass
+source:
+  link: agents/skills/python-style/references/models.md#L19
+  quote: "use `dataclasses.dataclass(frozen=True, slots=True)`"
+language: python
+method: ast-grep
+version: 1
+examples:
+  conforming:
+    - |
+      @dataclass(frozen=True, slots=True)
+      class Age:
+          value: int
+    - |
+      # Exception: a class that needs `__dict__` (cached_property) cannot use slots.
+      @dataclass(frozen=True)
+      class Report:
+          rows: tuple[int, ...]
+
+          @cached_property
+          def total(self) -> int:
+              return sum(self.rows)
+  violating:
+    - |
+      @dataclass
+      class Age:
+          value: int
+    - |
+      @dataclass(frozen=True)
+      class Age:
+          value: int
+severity: warning
+message: "Declare value objects with `@dataclass(frozen=True, slots=True)`."
+note: "Classes that use `cached_property` need `__dict__` and are skipped. Mutable non-value-object dataclasses need an explicit exception."
+rule:
+  kind: decorated_definition
+  all:
+    - has:
+        kind: class_definition
+    - has:
+        kind: decorator
+        regex: ^@(dataclasses\.)?dataclass\b
+    - any:
+        - not:
+            has:
+              kind: decorator
+              regex: frozen\s*=\s*True
+        - not:
+            has:
+              kind: decorator
+              regex: slots\s*=\s*True
+    - not:
+        has:
+          kind: class_definition
+          has:
+            pattern: cached_property
+            stopBy: end

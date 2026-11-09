@@ -1,0 +1,39 @@
+id: py_frozen_slots_dataclass
+valid:
+  - |
+    @dataclass(frozen=True, slots=True)
+    class Age:
+        value: int
+  - |
+    @dataclasses.dataclass(slots=True, frozen=True)
+    class Age:
+        value: int
+  - |
+    @dataclass(frozen=True)
+    class Report:
+        rows: tuple[int, ...]
+
+        @cached_property
+        def total(self) -> int:
+            return sum(self.rows)
+  - |
+    @functools.total_ordering
+    class Age:
+        value: int
+invalid:
+  - |
+    @dataclass
+    class Age:
+        value: int
+  - |
+    @dataclass(frozen=True)
+    class Age:
+        value: int
+  - |
+    @dataclasses.dataclass(slots=True)
+    class Age:
+        value: int
+  - |
+    @dataclass(frozen=False, slots=True)
+    class Age:
+        value: int

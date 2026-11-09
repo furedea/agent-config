@@ -31,8 +31,9 @@ definition discards its cached scores.
 - **Judging time.** Static rules run on the files changed by each edit. Model-judged rules run once at Stop over the
   units (functions or classes selected by ast-grep) changed in the session, not per edit.
 - **Cache key.** The key is: rule id, hash of the rule's judging definition (every field except `threshold`,
-  `version`, `source`, `quote`, and `examples`), backend and model identifier, and content hash of the judged unit. The cache stores the
-  raw score, not the pass/fail verdict, and applies the rule's `threshold` after the lookup, so retuning a cutoff
+  `version`, `source`, and `quote`; `examples` stay in because the backend may send them to the model), backend name
+  and pinned version, model identifier, and content hash of the judged unit. A backend upgrade therefore discards
+  every cached score. The cache stores the raw score, not the pass/fail verdict, and applies the rule's `threshold` after the lookup, so retuning a cutoff
   needs no invalidation. Because the definition is hashed, a changed rule cannot return a stale score, and no hand
   bump is needed; `version` only labels reports.
 - **Backend.** `jev-lint` is pinned with all its dependencies through Nix and never fetched with `npx` at run time,

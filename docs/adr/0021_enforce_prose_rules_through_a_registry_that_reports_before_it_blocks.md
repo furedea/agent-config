@@ -8,12 +8,12 @@ rules that differ in how they can be judged (existing linter, ast-grep, model, p
 cutoffs are not yet fitted (ADR-0020), we decided for one registry of rule files under
 `agents/lint/rules/<language>/<id>.yml`, whose hook returns findings to the agent without blocking, promotes a rule
 to blocking only after its example tests show no false positive, runs model-judged rules once at Stop over the changed
-units, caches a raw score by rule id, rule version, model, and content hash of the judged unit, and pins `jev-lint` with its
+units, caches a raw score under a key stated in the Cache key decision below, and pins `jev-lint` with its
 dependencies through Nix behind the backend abstraction, and against blocking on edit, judging per edit, and running
 without a cache, to achieve rules that are declared once, traceable to their source text, and enforced without
 stopping the agent on an unproven rule or paying for repeated model calls, accepting that an unpromoted rule can be
-ignored by the agent, that a Stop-time verdict arrives after the edits it judges, and that a rule version must be
-bumped by hand whenever its meaning changes.
+ignored by the agent, that a Stop-time verdict arrives after the edits it judges, and that editing a rule's judging
+definition discards its cached scores.
 
 ## Decisions
 
@@ -30,10 +30,11 @@ bumped by hand whenever its meaning changes.
   been fitted on a larger corpus, as ADR-0020 requires.
 - **Judging time.** Static rules run on the files changed by each edit. Model-judged rules run once at Stop over the
   units (functions or classes selected by ast-grep) changed in the session, not per edit.
-- **Cache key.** Rule id, rule version, and content hash of the judged unit. The cache stores the raw score, not
-  the pass/fail verdict, and applies the rule's `threshold` after the lookup, so retuning a cutoff needs no
-  invalidation. The backend and model identifier are part of the key, so a model change invalidates every entry.
-  Changing a rule's meaning without bumping its version is a defect; the rule's example tests are the check.
+- **Cache key.** The key is: rule id, hash of the rule's judging definition (every field except `threshold`,
+  `source`, and `examples`), backend and model identifier, and content hash of the judged unit. The cache stores the
+  raw score, not the pass/fail verdict, and applies the rule's `threshold` after the lookup, so retuning a cutoff
+  needs no invalidation. Because the definition is hashed, a changed rule cannot return a stale score, and no hand
+  bump is needed; `version` only labels reports.
 - **Backend.** `jev-lint` is pinned with all its dependencies through Nix and never fetched with `npx` at run time,
   and the hook calls it only through the backend interface, so that ADR-0020's replacement stays possible. This
   replaces only the run mode of ADR-0020 (`npx` over a Nix-provided Node, whose transitive dependencies were not

@@ -36,6 +36,7 @@ def verdict(kind: str, command: str) -> str:
         pytest.param(f"fish --init-command='{DELETE}'", id="fish --init-command attached"),
         pytest.param(f"fish --init-command '{DELETE}'", id="fish --init-command separate"),
         pytest.param(f"fish -C '{DELETE}'", id="fish -C"),
+        pytest.param(f"echo '{DELETE}' | pwsh -Command -", id="pwsh -Command - reads the pipe"),
         pytest.param(f"pwsh --c '{DELETE}'", id="pwsh --c"),
         pytest.param(f"pwsh --command '{DELETE}'", id="pwsh --command"),
         pytest.param(f"pwsh /c '{DELETE}'", id="pwsh /c"),
@@ -87,20 +88,45 @@ def test_a_script_the_guard_cannot_judge_asks(kind: str, command: str) -> None:
     assert verdict(kind, command) == "ask"
 
 
+@pytest.mark.parametrize("shell", ["fish", "nu", "nushell", "pwsh", "powershell", "pwsh-preview", "ysh", "xonsh"])
+@pytest.mark.parametrize(
+    "arguments",
+    [
+        "",
+        "--version",
+        "--help",
+        "script.txt",
+        "-NoProfile",
+        "\N{EN DASH}Command 'ls'",
+        "\N{EM DASH}e SQBHAGUA",
+        "--c 'ls'",
+        "/c 'ls'",
+    ],
+)
+@pytest.mark.parametrize("kind", ["allowed", "forbidden"])
+def test_a_known_foreign_shell_asks_however_it_is_invoked(kind: str, shell: str, arguments: str) -> None:
+    assert verdict(kind, f"{shell} {arguments}".strip()) == "ask"
+
+
+@pytest.mark.parametrize("command", ["/opt/bin/fish --version", "nohup fish", "env A=1 pwsh", "fish3 --version"])
+def test_a_known_foreign_shell_asks_by_path_wrapper_and_version(command: str) -> None:
+    assert verdict("allowed", command) == "ask"
+
+
 @pytest.mark.parametrize(
     "command",
     [
-        "fish --version",
-        "pwsh --help",
-        "nu script.nu",
         "./run.sh -c conf",
         "ssh host ls",
         "lolsh --help",
+        "lolsh script.txt",
+        "echo fish",
+        "man fish",
         "echo hi | cat",
         "echo hi | grep h",
     ],
 )
-def test_forms_that_give_a_foreign_shell_no_script_keep_their_verdict(command: str) -> None:
+def test_names_and_arguments_that_are_no_foreign_shell_keep_their_verdict(command: str) -> None:
     assert verdict("allowed", command) == "allow"
 
 

@@ -45,13 +45,28 @@ SHELLS = frozenset(
         "zsh",
     }
 )
-# Shells whose syntax is not bash's, and names ending in sh that are no known shell. Their script is
-# read as bash, which can only find more commands to deny; whatever it says, the call asks, because
-# the inspection cannot tell what such a shell would run.
+# Shells whose syntax is not bash's. However one is invoked, the call asks: the inspection cannot tell
+# what such a shell would run, and each option or syntax it adds is another way to hand it a script.
+# Its script text, where visible, is read as bash only to find commands to deny.
 FOREIGN_SHELLS = frozenset(
-    {"csh", "elvish", "es", "fish", "nu", "nushell", "powershell", "pwsh", "rc", "tcsh", "xonsh"}
+    {
+        "csh",
+        "elvish",
+        "es",
+        "fish",
+        "nu",
+        "nushell",
+        "powershell",
+        "pwsh",
+        "pwsh-preview",
+        "rc",
+        "tcsh",
+        "xonsh",
+        "ysh",
+    }
 )
-# Names ending in sh that may be a shell; a file extension (run.sh) or ssh is not one.
+# Names ending in sh that are no listed shell but may be one; they ask only when handed a script, since
+# a file extension (run.sh) or ssh is not a shell, and so is any program that merely ends in sh.
 SHELL_LOOKALIKE = re.compile(r"(?!ssh$)[a-z0-9_-]*sh")
 # Options that hand a script over, in any letter case and abbreviation PowerShell accepts: -c, -Command,
 # --commands, nu's -e and --execute, fish's --init-command, or a short bundle holding c such as tcsh's -fc.
@@ -198,12 +213,10 @@ def parse(source: str, depth: int = 0, directories: tuple[Path | None, ...] = ()
         innermost = layers[-1]
         name = shell_name(Path(innermost.arguments[0]).name)
         scripts = [(script, layer.wrapper_depth + 1) for layer in layers for script in shell_scripts(layer)]
-        unreviewed = any(takes_foreign_option(layer) for layer in layers)
-        if not scripts and name in SHELLS:
+        unreviewed = name in FOREIGN_SHELLS or any(takes_foreign_option(layer) for layer in layers)
+        if not scripts and (name in SHELLS or is_foreign_shell(name)):
             scripts = [(script, innermost.wrapper_depth + 1) for script in sources.scripts(owner, directories)]
-        elif not unreviewed and is_foreign_shell(name):
-            scripts = [(script, innermost.wrapper_depth + 1) for script in sources.scripts(owner, directories)]
-            unreviewed = bool(scripts)
+            unreviewed = unreviewed or (name not in SHELLS and bool(scripts))
         if unreviewed:
             layers[-1] = replace(innermost, unreviewed=True)
         commands += layers

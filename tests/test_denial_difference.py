@@ -76,19 +76,18 @@ def test_dropping_any_real_rule_is_found(index: int) -> None:
     assert difference.denied_by == "source"
 
 
-# agent-harness 0.9.9 writes generate-forbidden-commands without `exceptions` and `programs`, so rules 2 to 5 of
-# the generated file deny lines the source allows or reads case-sensitively. Remove a marker, with its reason,
-# in the change that updates the locked agent-harness to a version that keeps both fields.
+# agent-harness 0.9.9 writes generate-forbidden-commands without the fields below, so a source rule that has
+# one is denied differently by its generated rule: broader without `exceptions`, and neither scoped to its
+# programs nor case-insensitive without `programs`. The shape test pins that nothing else differs.
+# Remove the xfail marker, with its reason, in the change that updates the locked agent-harness to a version
+# that keeps both fields; the shape test then needs the same update.
+DROPPED_FIELDS = frozenset({"exceptions", "programs"})
 DROPS_FIELDS = pytest.mark.xfail(
     strict=True, reason="agent-harness 0.9.9 generate-forbidden-commands drops exceptions and programs"
 )
-GENERATED_RULES = [
-    pytest.param(0),
-    pytest.param(1),
-    pytest.param(2, marks=DROPS_FIELDS),
-    pytest.param(3, marks=DROPS_FIELDS),
-    pytest.param(4, marks=DROPS_FIELDS),
-    pytest.param(5, marks=DROPS_FIELDS),
+SOURCE_RULES = [
+    pytest.param(rule, marks=DROPS_FIELDS if DROPPED_FIELDS & rule.keys() else (), id=f"rule {index}")
+    for index, rule in enumerate(FORBIDDEN)
 ]
 
 
@@ -99,14 +98,30 @@ def generated_forbidden(agent_harness: CliRunner, tmp_path_factory: pytest.TempP
     return json.loads(path.read_text())["rules"]
 
 
+def generated_rule_for(source: dict, generated: list[dict]) -> dict:
+    """The generated rule with the source rule's patterns; the order and grouping of rules are not compared."""
+    found = [rule for rule in generated if frozenset(rule["patterns"]) == frozenset(source["patterns"])]
+    assert len(found) == 1, f"expected one generated rule for {source['patterns']}"
+    return found[0]
+
+
 @pytest.mark.integration
 def test_the_generated_forbidden_rules_are_as_many_as_the_source(generated_forbidden: list[dict]) -> None:
-    assert len(generated_forbidden) == len(FORBIDDEN) == len(GENERATED_RULES)
+    assert len(generated_forbidden) == len(FORBIDDEN)
 
 
 @pytest.mark.integration
-@pytest.mark.parametrize("index", GENERATED_RULES)
-def test_a_generated_forbidden_rule_denies_the_lines_its_source_rule_denies(
-    index: int, generated_forbidden: list[dict]
+@pytest.mark.parametrize("source", [pytest.param(rule, id=f"rule {index}") for index, rule in enumerate(FORBIDDEN)])
+def test_a_generated_forbidden_rule_is_its_source_rule_without_the_dropped_fields(
+    source: dict, generated_forbidden: list[dict]
 ) -> None:
-    assert find_denial_difference([FORBIDDEN[index]], [generated_forbidden[index]]) is None
+    expected = {key: value for key, value in source.items() if key not in DROPPED_FIELDS}
+    assert generated_rule_for(source, generated_forbidden) == expected
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("source", SOURCE_RULES)
+def test_a_generated_forbidden_rule_denies_the_lines_its_source_rule_denies(
+    source: dict, generated_forbidden: list[dict]
+) -> None:
+    assert find_denial_difference([source], [generated_rule_for(source, generated_forbidden)]) is None

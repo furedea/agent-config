@@ -118,6 +118,22 @@ def test_devin_exec_entries_are_read_as_prefixes() -> None:
     ]
 
 
+@pytest.mark.parametrize(
+    "block",
+    [
+        'prefix_rule(decision = "allow", pattern = ["git"], justification = "x")',
+        'prefix_rule(pattern = ["git", ["status", "log"]], decision = "allow")',
+        'prefix_rule(pattern = ["git"], justification = "x", decision = "allow")',
+        'prefix_rule(pattern = [], decision = "allow")',
+        'prefix_rule(pattern = ["git"], decision = "maybe")',
+    ],
+)
+def test_a_codex_rule_in_an_unknown_layout_is_refused_instead_of_skipped(block: str) -> None:
+    text = f'prefix_rule(\n    pattern = ["ls"],\n    decision = "allow",\n)\n\n{block}\n'
+    with pytest.raises(ValueError, match="unrecognized Codex rule"):
+        codex_rules(text)
+
+
 @pytest.mark.parametrize("entry", ["Bash(git status)", "Bash(:*)", "Exec()"])
 def test_an_entry_in_an_unknown_shape_is_refused_instead_of_skipped(entry: str) -> None:
     parsers = {"Bash(git status)": claude_rules, "Bash(:*)": claude_rules, "Exec()": devin_rules}

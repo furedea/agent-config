@@ -75,8 +75,12 @@ def devin_entry(entry: str) -> Words:
 
 
 def codex_rules(text: str) -> list[Rule]:
+    """The prefix rules of a Codex rules file; a rule in a layout this does not read is an error, not a skip."""
+    matches = list(CODEX_RULE.finditer(text))
+    if len(matches) != text.count("prefix_rule("):
+        raise ValueError("unrecognized Codex rule: a prefix_rule is not in the pattern, decision layout")
     rules = []
-    for match in CODEX_RULE.finditer(text):
+    for match in matches:
         words = tuple(re.findall(r'"((?:[^"\\]|\\.)*)"', match["words"]))
         if match["decision"] not in CODEX_DECISIONS or not words:
             raise ValueError(f"unrecognized Codex rule: {match.group(0)}")

@@ -106,6 +106,19 @@ def test_commit_guard_checks_the_repository_of_the_bash_workdir(
     assert ".env" in result.stderr
 
 
+def test_dispatch_applies_a_relative_workdir_only_once(run_cli: CliRunner, project: Path, manifest: Path) -> None:
+    (project / "packages").mkdir()
+    adapter = REPO_ROOT / SCRIPT
+    manifest.write_text(
+        json.dumps({"hooks": {PRE: [{"matcher": "^bash$", "hooks": [{"command": f'"{adapter}" paths command'}]}]}})
+    )
+    values = {"command": "ls", "workdir": "packages"}
+    payload = {"hook_event_name": PRE, "tool_name": "bash", "tool_input": values, "cwd": str(project)}
+    result = run_cli(SCRIPT, "dispatch", PRE, payload=payload, cwd=project)
+    assert result.returncode == 0
+    assert result.stderr == ""
+
+
 def test_commit_guard_uses_the_payload_cwd_without_a_workdir(run_cli: CliRunner, project: Path) -> None:
     payload = {"tool_name": "bash", "tool_input": {"command": "git commit -m x"}, "cwd": str(project)}
     result = run_cli(SCRIPT, "shell", "commit", payload=payload, cwd=project)

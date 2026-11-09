@@ -241,11 +241,15 @@ class Adapter:
     def _in_workdir(self, payload: dict) -> dict:
         """Move to the directory a shell tool runs its command in, so guards inspect that repository."""
         values = payload.get("tool_input")
-        workdir = values.get("workdir") if isinstance(values, dict) else None
+        if not isinstance(values, dict):
+            return payload
+        workdir = values.get("workdir")
         if not isinstance(workdir, str) or not workdir:
             return payload
         os.chdir(workdir)
-        return payload | {"cwd": os.getcwd()}
+        # The forwarded cwd is already the workdir; keeping `workdir` would apply a relative one twice.
+        resolved = {key: value for key, value in values.items() if key != "workdir"}
+        return payload | {"cwd": os.getcwd(), "tool_input": resolved}
 
     def _accepts(self, kind: str, rest: list[str]) -> bool:
         commands = self._commands()

@@ -23,7 +23,15 @@ examples:
               self.assertEqual(1 + 1, 2)
 severity: warning
 message: "Write the test as a pytest function instead of using `unittest`."
+note: "`unittest.mock` is judged by py_no_unittest_mock, so `from unittest import mock` is skipped here."
 rule:
   any:
     - pattern: import unittest
-    - pattern: from unittest import TestCase
+    - pattern: import unittest as $ALIAS
+    - all:
+        - kind: import_from_statement
+        - has:
+            field: module_name
+            regex: ^unittest$
+        - not:
+            pattern: from unittest import mock

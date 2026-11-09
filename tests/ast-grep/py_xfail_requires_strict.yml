@@ -10,6 +10,12 @@ valid:
         assert False
 invalid:
   - |
+    @pytest.mark.xfail
+    def test_known_defect() -> None:
+        assert False
+  - |
+    pytestmark = pytest.mark.xfail
+  - |
     @pytest.mark.xfail(reason="defect 1")
     def test_known_defect() -> None:
         assert False

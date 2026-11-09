@@ -12,6 +12,12 @@ valid:
   - |
     def test_env(mocker) -> None:
         mocker.patch.dict("os.environ", {"A": "1"})
+  - |
+    def test_run(mocker) -> None:
+        mocker.patch("tool.run", fake_run)
+  - |
+    def test_run(mocker) -> None:
+        mocker.patch.object(Tool, "run", fake_run)
 invalid:
   - |
     def test_run(mocker) -> None:

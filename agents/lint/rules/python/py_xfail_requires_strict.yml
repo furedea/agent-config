@@ -19,10 +19,18 @@ examples:
 severity: warning
 message: "Add `strict=True` so the run fails when the test unexpectedly passes."
 rule:
-  pattern: pytest.mark.xfail($$$ARGS)
-  not:
-    has:
-      kind: argument_list
-      has:
-        kind: keyword_argument
-        regex: ^strict\s*=\s*True$
+  any:
+    - all:
+        - pattern: pytest.mark.xfail($$$ARGS)
+        - not:
+            has:
+              kind: argument_list
+              has:
+                kind: keyword_argument
+                regex: ^strict\s*=\s*True$
+    # The bare form (`@pytest.mark.xfail`, `pytestmark = pytest.mark.xfail`) is never strict.
+    - all:
+        - pattern: pytest.mark.xfail
+        - not:
+            inside:
+              kind: call

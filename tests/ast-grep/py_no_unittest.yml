@@ -4,7 +4,15 @@ valid:
     import pytest
   - |
     from unittest.mock import patch
+  - |
+    from unittest import mock
 invalid:
+  - |
+    from unittest import IsolatedAsyncioTestCase
+  - |
+    from unittest import TestCase, main
+  - |
+    import unittest as ut
   - |
     import unittest
   - |

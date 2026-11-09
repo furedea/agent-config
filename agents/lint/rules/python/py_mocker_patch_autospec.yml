@@ -16,13 +16,33 @@ examples:
           mocker.patch("tool.run")
 severity: warning
 message: "Pass `autospec=True` so the mock enforces the real signature."
+note: "Calls that pass `new` positionally (`mocker.patch(target, fake)`) are skipped because `autospec` cannot be combined with `new`."
 rule:
   any:
     - pattern: mocker.patch($$$ARGS)
     - pattern: mocker.patch.object($$$ARGS)
-  not:
-    has:
-      kind: argument_list
-      has:
-        kind: keyword_argument
-        regex: ^(autospec|new|new_callable|spec|spec_set|wraps)\s*=
+  all:
+    - not:
+        has:
+          kind: argument_list
+          has:
+            kind: keyword_argument
+            regex: ^(autospec|new|new_callable|spec|spec_set|wraps)\s*=
+    - not:
+        all:
+          - pattern: mocker.patch($$$ARGS)
+          - has:
+              kind: argument_list
+              has:
+                nthChild: 2
+                not:
+                  kind: keyword_argument
+    - not:
+        all:
+          - pattern: mocker.patch.object($$$ARGS)
+          - has:
+              kind: argument_list
+              has:
+                nthChild: 3
+                not:
+                  kind: keyword_argument

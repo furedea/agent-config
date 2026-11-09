@@ -31,7 +31,6 @@ class Age:
             raise ValueError(f"Age must be non-negative, got {self.value}")
 ```
 
-- Basically don't use `@staticmethod` — needing it indicates a design error
 - **Use classmethods as alternative constructors for pure construction** (no I/O). `from_X`, `parse_X`, `create_X`, `make_X` → classmethod. **If construction involves I/O (network, file system), separate into a module-level function** to keep the Value Object pure and testable.
 
 ```python

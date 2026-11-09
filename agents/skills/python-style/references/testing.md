@@ -3,10 +3,10 @@
 Use `tsdd` to decide when to add or reuse tests, which behavior to cover, and the appropriate
 verification level. The conventions below govern Python test tooling and structure.
 
-- Use only `pytest` as test framework, do not use `unittest`
+- Use `pytest` as test framework
 - Run tests using `uv run --frozen pytest`
 - Use `anyio` for async tests, do not use `asyncio`
-- Use `pytest-mock` for mocking (`mocker` fixture), do not use `unittest.mock` directly
+- Use `pytest-mock` for mocking (`mocker` fixture)
 - `pytest`, `anyio`, and `pytest-mock` belong in the template's test dependency group
 - Record a reproduced defect with `@pytest.mark.xfail(strict=True, reason="...")` and a comment
   naming the condition for removing the marker; `strict=True` fails the run when the test
@@ -31,7 +31,6 @@ only when needed.
 - **Helper function**: prefer over fixture when arguments need to be passed or setup is lightweight
 - **`@pytest.mark.parametrize`**: same logic with different inputs
 - **Fixture scope**: default `function`; use `module`/`session` only when setup is expensive
-- **Mocking**: use `mocker.patch("mod.func", autospec=True)` — enforces real signature, catches wrong-argument bugs silently missed by plain mocks
 
 Async test pattern:
 

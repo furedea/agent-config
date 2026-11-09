@@ -171,6 +171,31 @@ def test_str_replace_editor_mutations_stay_inside_the_harness_boundary(
     assert "agent harness boundary" in result.stderr
 
 
+@pytest.mark.parametrize("tool", ["write", "edit", "str_replace_editor", "apply_patch"])
+def test_a_failed_edit_is_not_linted(run_cli: CliRunner, tmp_path: Path, executable: StubWriter, tool: str) -> None:
+    executable(
+        "ruff",
+        """
+        import sys
+        if "--output-format=concise" in sys.argv:
+            print("ruff: F821 undefined name")
+            sys.exit(1)
+        """,
+    )
+    project = tmp_path / "failed-repo"
+    project.mkdir()
+    (project / "x.py").write_text("x = 1\n")
+    values = {"file_path": "x.py", "input": patch_input("*** Update File: x.py", "@@", "-x = 1", "+x = 2")}
+    payload = {"tool_name": tool, "tool_input": values, "tool_response": {"isError": True}, "cwd": str(project)}
+    result = run_cli(SCRIPT, "lint", payload=payload)
+    assert result.returncode == 0
+    assert result.stdout == ""
+
+    payload["tool_response"] = {"isError": False}
+    result = run_cli(SCRIPT, "lint", payload=payload)
+    assert "F821" in json.loads(result.stdout)["systemMessage"]
+
+
 def test_str_replace_editor_view_is_not_linted(run_cli: CliRunner, tmp_path: Path, executable: StubWriter) -> None:
     executable(
         "ruff",

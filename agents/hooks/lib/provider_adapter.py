@@ -178,7 +178,7 @@ class Adapter:
     def lint(self, payload: dict) -> int:
         """Report shared quality diagnostics using the PostToolUse JSON contract."""
         context = self.normalized(payload)
-        if not views_only(context):
+        if not views_only(context) and not failed(context):
             lint_format.emit(lint_format.diagnostics(context), self.profile.lint_output)
         return 0
 
@@ -304,6 +304,12 @@ def views_only(context: dict) -> bool:
     """Tell whether an editor tool call only views a file, so edit-time guards have nothing to check."""
     values = context["tool_input"]
     return context.get("tool_name") == "Edit" and isinstance(values, dict) and values.get("command") == "view"
+
+
+def failed(context: dict) -> bool:
+    """Tell whether the provider reported the tool call as an error, so nothing was edited to check."""
+    response = context.get("tool_response")
+    return isinstance(response, dict) and response.get("isError") is True
 
 
 def command_text(values: dict) -> str:

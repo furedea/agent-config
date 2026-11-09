@@ -11,11 +11,12 @@ import re
 import z3
 
 
-START = "\x02"
-END = "\x03"
 MAX_CODE_POINT = 0x2FFFF
-# Line breaks are folded to spaces before grep runs, and the sentinels never occur in a command.
-TEXT_CHARACTERS = ((4, 9), (11, 12), (14, MAX_CODE_POINT))
+# The two highest code points are reserved as the line's sentinels; Unicode noncharacters never occur in a command.
+START = chr(MAX_CODE_POINT - 1)
+END = chr(MAX_CODE_POINT)
+# Line breaks are folded to spaces before grep runs, and a shell argument cannot hold NUL.
+TEXT_CHARACTERS = ((1, 9), (11, 12), (14, MAX_CODE_POINT - 2))
 POSIX_CLASSES = {
     "space": ((9, 13), (32, 32)),
     "alpha": ((65, 90), (97, 122)),
@@ -233,6 +234,10 @@ class Parser:
         return complement_in_text(chosen) if negated else intersect(chosen, TEXT_CHARACTERS)
 
     def bracket_item(self, mark: str) -> Intervals:
+        if mark == "\\":
+            raise UnsupportedPattern(
+                f"backslash inside a bracket expression in {self.pattern!r}: grep dialects differ"
+            )
         if mark == "[" and self.peek() == ":":
             return self.posix_class()
         if self.peek() == "-" and self.peek(1) not in {"]", None}:

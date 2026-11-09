@@ -59,11 +59,20 @@ class CompiledRule:
 
 
 def find_overlaps(prefixes: Sequence[Prefix], rules: Sequence[dict]) -> tuple[Overlap, ...]:
+    for prefix in prefixes:
+        require_single_words(prefix)
     compiled = [rule for item in rules for rule in compile_rule(item)]
     found = []
     for prefix in prefixes:
         found.extend(overlaps_of(prefix, compiled))
     return tuple(found)
+
+
+def require_single_words(prefix: Prefix) -> None:
+    """Joining the words with spaces would merge arguments the provider keeps apart, so such a prefix is refused."""
+    for word in prefix:
+        if not word or any(character.isspace() for character in word):
+            raise ValueError(f"prefix word must be one non-empty word without whitespace: {prefix!r}")
 
 
 def compile_rule(rule: dict) -> list[CompiledRule]:

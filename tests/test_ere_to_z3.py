@@ -37,6 +37,9 @@ REAL_PATTERNS = [pattern for rule in FORBIDDEN for pattern in rule["patterns"]]
         pytest.param("^[a-c]$", ["b"], ["d", "-"], id="bracket range"),
         pytest.param("^[^a-c]$", ["d", " "], ["a", "bb"], id="negated bracket"),
         pytest.param("^[a-]$", ["a", "-"], ["b"], id="trailing dash is literal"),
+        pytest.param("^[-A]$", ["-", "A"], ["/", "B", "."], id="leading dash is literal"),
+        pytest.param("^a\x01$", ["a\x01"], ["a", "a\x02"], id="start of heading is an ordinary character"),
+        pytest.param("^a\x02$", ["a\x02"], ["a"], id="the former sentinel is an ordinary character"),
         pytest.param("^[]a]$", ["]", "a"], ["b"], id="leading bracket is literal"),
         pytest.param("^[[:space:]]$", [" ", "\t"], ["a"], id="space class"),
         pytest.param("^[^[:space:]]*$", ["abc", ""], ["a b"], id="negated class"),
@@ -67,7 +70,9 @@ def test_ignoring_case_also_folds_what_a_negated_bracket_excludes() -> None:
     assert not matches("^[^a]$", "A", ignore_case=True)
 
 
-@pytest.mark.parametrize("pattern", [r"\1", r"(a)\1", r"\w", "(?=a)", "[[:bogus:]]", "(a", "a)", "[a", "a{2", "*a"])
+@pytest.mark.parametrize(
+    "pattern", [r"\1", r"(a)\1", r"\w", "(?=a)", "[[:bogus:]]", "(a", "a)", "[a", "a{2", "*a", r"[\.]", r"[a\]]"]
+)
 def test_syntax_outside_the_rule_dialect_is_refused(pattern: str) -> None:
     with pytest.raises(UnsupportedPattern):
         matches(pattern, "a")

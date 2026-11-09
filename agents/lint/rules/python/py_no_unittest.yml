@@ -1,26 +1,5 @@
 id: py_no_unittest
-source:
-  link: agents/skills/python-style/references/testing.md#L6
-  quote: "Use only `pytest` as test framework, do not use `unittest`"
 language: python
-method: ast-grep
-version: 1
-examples:
-  conforming:
-    - |
-      import pytest
-
-
-      def test_total() -> None:
-          assert 1 + 1 == 2
-  violating:
-    - |
-      import unittest
-
-
-      class TotalTest(unittest.TestCase):
-          def test_total(self) -> None:
-              self.assertEqual(1 + 1, 2)
 severity: warning
 message: "Write the test as a pytest function instead of using `unittest`."
 note: "`unittest.mock` is judged by py_no_unittest_mock, so `from unittest import mock` is skipped here."

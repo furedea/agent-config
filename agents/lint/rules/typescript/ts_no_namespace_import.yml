@@ -1,17 +1,5 @@
 id: ts_no_namespace_import
-source:
-  link: agents/skills/typescript-style/references/code_style.md#L12
-  quote: "Prefer explicit named imports over namespace imports."
 language: typescript
-method: ast-grep
-version: 1
-examples:
-  conforming:
-    - |
-      import { readFile } from "node:fs/promises";
-  violating:
-    - |
-      import * as fs from "node:fs/promises";
 severity: warning
 message: "Import the names you use instead of a namespace import."
 rule:

@@ -1,23 +1,5 @@
 id: bash_local_underscore_prefix
-source:
-  link: agents/skills/bash-style/SKILL.md#L96
-  quote: "Declare function-local variables with `local` and prefix with `_`"
 language: bash
-method: ast-grep
-version: 1
-examples:
-  conforming:
-    - |
-      build_output() {
-        local _src="$1"
-        cp "$_src" out
-      }
-  violating:
-    - |
-      build_output() {
-        local src="$1"
-        cp "$src" out
-      }
 severity: warning
 message: "Prefix function-local variables with `_`."
 rule:

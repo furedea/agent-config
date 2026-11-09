@@ -1,19 +1,5 @@
 id: py_mocker_patch_autospec
-source:
-  link: agents/skills/python-style/references/testing.md#L34
-  quote: "**Mocking**: use `mocker.patch(\"mod.func\", autospec=True)` — enforces real signature"
 language: python
-method: ast-grep
-version: 1
-examples:
-  conforming:
-    - |
-      def test_run(mocker) -> None:
-          mocker.patch("tool.run", autospec=True)
-  violating:
-    - |
-      def test_run(mocker) -> None:
-          mocker.patch("tool.run")
 severity: warning
 message: "Pass `autospec=True` so the mock enforces the real signature."
 note: "Calls that pass `new` positionally (`mocker.patch(target, fake)`) are skipped because `autospec` cannot be combined with `new`."

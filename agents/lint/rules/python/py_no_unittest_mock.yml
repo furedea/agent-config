@@ -1,23 +1,5 @@
 id: py_no_unittest_mock
-source:
-  link: agents/skills/python-style/references/testing.md#L9
-  quote: "Use `pytest-mock` for mocking (`mocker` fixture), do not use `unittest.mock` directly"
 language: python
-method: ast-grep
-version: 1
-examples:
-  conforming:
-    - |
-      def test_run(mocker) -> None:
-          mocker.patch("tool.run", autospec=True)
-  violating:
-    - |
-      from unittest.mock import patch
-
-
-      def test_run() -> None:
-          with patch("tool.run"):
-              pass
 severity: warning
 message: "Use the `mocker` fixture from pytest-mock instead of importing `unittest.mock`."
 rule:

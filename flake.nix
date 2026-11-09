@@ -131,6 +131,10 @@
             env = {
               UV_PYTHON_DOWNLOADS = "never";
               UV_PYTHON_PREFERENCE = "only-system";
+            }
+            # The z3-solver wheel links libstdc++, which a Nix Python on Linux does not find by itself.
+            // nixpkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
+              LD_LIBRARY_PATH = nixpkgs.lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib ];
             };
 
             shellHook = ''

@@ -3,14 +3,14 @@
   "extends": ["github>furedea/renovate-config"],
   "customManagers": [
     {
-      "description": "Update the release versions the server bootstrap pins, together with the sha256 of the release asset pinned beside each version.",
+      "description": "Update the release pins of the server bootstrap together with the sha256 of the release asset pinned beside each. The release is looked up by tag, so a tool whose tag differs from its version pins the full tag.",
       "customType": "regex",
       "managerFilePatterns": ["/^scripts/bootstrap_server\\.sh$/"],
       "datasourceTemplate": "github-release-attachments",
+      "versioningTemplate": "semver-coerced",
       "matchStrings": [
-        "# renovate: datasource=github-release-attachments depName=(?<depName>\\S+)( extractVersion=(?<extractVersion>\\S+))?\\nreadonly [A-Z_]+_VERSION=\"\\$\\{[A-Z_]+_VERSION:-(?<currentValue>[^}]+)\\}\"\\nreadonly [A-Z_]+_SHA256=\"\\$\\{[A-Z_]+_SHA256:-(?<currentDigest>[a-f0-9]{64})\\}\""
-      ],
-      "extractVersionTemplate": "{{#if extractVersion}}{{{extractVersion}}}{{else}}^(?<version>.+)${{/if}}"
+        "# renovate: datasource=github-release-attachments depName=(?<depName>\\S+)\\nreadonly [A-Z_]+_(?:VERSION|TAG)=\"\\$\\{[A-Z_]+_(?:VERSION|TAG):-(?<currentValue>[^}]+)\\}\"\\nreadonly [A-Z_]+_SHA256=\"\\$\\{[A-Z_]+_SHA256:-(?<currentDigest>[a-f0-9]{64})\\}\""
+      ]
     },
     {
       "description": "Update the bats-core version the server bootstrap pins. bats-core publishes no release assets, so its sha256 is refreshed by scripts/update_bats_checksum.sh in the same PR.",
@@ -21,6 +21,16 @@
         "# renovate: datasource=github-releases depName=(?<depName>\\S+)( extractVersion=(?<extractVersion>\\S+))?\\nreadonly [A-Z_]+_VERSION=\"\\$\\{[A-Z_]+_VERSION:-(?<currentValue>[^}]+)\\}\""
       ],
       "extractVersionTemplate": "{{#if extractVersion}}{{{extractVersion}}}{{else}}^(?<version>.+)${{/if}}"
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "The bats-core hash is not updated by Renovate, so a person must run the script before merging.",
+      "matchDepNames": ["bats-core/bats-core"],
+      "automerge": false,
+      "prBodyNotes": [
+        "Run `scripts/update_bats_checksum.sh` and commit the new `BATS_SHA256` before merging: Renovate cannot hash the bats-core source archive, and a stale hash makes `scripts/bootstrap_server.sh` stop with `checksum mismatch`."
+      ]
     }
   ]
 }

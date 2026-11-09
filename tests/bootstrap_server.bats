@@ -119,6 +119,67 @@ setup() {
   [ ! -e "$BIN_DIR/shfmt" ]
 }
 
+@test "downloads each tool from the release tag Renovate pins" {
+  local _curl_log="$BATS_TEST_TMPDIR/curl-urls"
+  mkdir -p "$BATS_TEST_TMPDIR/logging-curl"
+  write_stub "$BATS_TEST_TMPDIR/logging-curl/curl" \
+    '#!/bin/sh' \
+    "printf '%s\\n' \"\$*\" >>'$_curl_log'" \
+    'case "$*" in *github.com*) exit 22 ;; esac' \
+    "exec '$(command -v curl)' \"\$@\""
+  local _entry
+  for _entry in SHFMT_URL=releases/download/v3.13.1/shfmt_v3.13.1_linux_amd64 \
+    JQ_URL=releases/download/jq-1.8.1/jq-linux-amd64 \
+    SHELLCHECK_URL=releases/download/v0.11.0/shellcheck-v0.11.0.linux.x86_64.tar.xz; do
+    : >|"$_curl_log"
+
+    run bootstrap_server PATH="$BATS_TEST_TMPDIR/logging-curl:$SANDBOX_TOOLS_DIR:$PATH" "${_entry%%=*}="
+
+    [ "$status" -ne 0 ]
+    grep -Fq "${_entry#*=}" "$_curl_log" || {
+      echo "wrong download URL for ${_entry%%=*}"
+      return 1
+    }
+  done
+}
+
+@test "keeps the release tag Renovate looks up in step with the version the script uses" {
+  local _tool
+  for _tool in SHFMT JQ SHELLCHECK AGENT_HARNESS; do
+    grep -Eq "^readonly ${_tool}_VERSION=\"\\$\\{${_tool}_VERSION:-\\$\\{${_tool}_TAG#[^}]+\\}\\}\"\$" "$SCRIPT" || {
+      echo "${_tool}_VERSION does not derive from ${_tool}_TAG"
+      return 1
+    }
+  done
+}
+
+@test "lets the Renovate manager read the version and hash of every release-asset tool" {
+  run python3 -I - "$REPO_ROOT/renovate.json" "$SCRIPT" <<'PY'
+import json
+import re
+import sys
+
+managers = json.load(open(sys.argv[1]))["customManagers"]
+script = open(sys.argv[2]).read()
+attachments = [m for m in managers if m.get("datasourceTemplate") == "github-release-attachments"]
+assert len(attachments) == 1, "expected one github-release-attachments manager"
+pattern = re.compile(attachments[0]["matchStrings"][0].replace("(?<", "(?P<"))
+found = [
+    (m.group("depName"), m.group("currentValue"), len(m.group("currentDigest")))
+    for m in pattern.finditer(script)
+]
+print(found)
+assert sorted(name for name, _, _ in found) == sorted([
+    "furedea/agent-harness", "mvdan/sh", "BurntSushi/ripgrep", "jqlang/jq",
+    "astral-sh/ruff", "dprint/dprint", "koalaman/shellcheck", "astral-sh/uv",
+]), "a release-asset tool is missing from the manager"
+assert all(length == 64 for _, _, length in found)
+assert {value for name, value, _ in found if name == "mvdan/sh"} == {"v3.13.1"}, "shfmt must be looked up by its full tag"
+PY
+
+  [ "$status" -eq 0 ]
+}
+
 @test "pins a sha256 for every download in the script itself" {
   local _variable
   for _variable in AGENT_HARNESS SHFMT RIPGREP JQ RUFF DPRINT SHELLCHECK BATS UV; do

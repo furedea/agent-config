@@ -79,11 +79,12 @@ def test_dropping_any_real_rule_is_found(index: int) -> None:
 # agent-harness 0.9.9 writes generate-forbidden-commands without the fields below, so a source rule that has
 # one is denied differently by its generated rule: broader without `exceptions`, and neither scoped to its
 # programs nor case-insensitive without `programs`. The shape test pins that nothing else differs.
-# Remove the xfail marker, with its reason, in the change that updates the locked agent-harness to a version
-# that keeps both fields; the shape test then needs the same update.
+# Tracked in furedea/agent-harness#203. Remove the xfail marker, with its reason, in the change that updates the
+# locked agent-harness to a version that keeps both fields; the shape test then needs the same update.
 DROPPED_FIELDS = frozenset({"exceptions", "programs"})
 DROPS_FIELDS = pytest.mark.xfail(
-    strict=True, reason="agent-harness 0.9.9 generate-forbidden-commands drops exceptions and programs"
+    strict=True,
+    reason="furedea/agent-harness#203: generate-forbidden-commands (0.9.9) drops exceptions and programs",
 )
 SOURCE_RULES = [
     pytest.param(rule, marks=DROPS_FIELDS if DROPPED_FIELDS & rule.keys() else (), id=f"rule {index}")

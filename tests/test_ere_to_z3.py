@@ -45,8 +45,7 @@ REAL_PATTERNS = [pattern for rule in FORBIDDEN for pattern in rule["patterns"]]
         pytest.param("^[^[:space:]]*$", ["abc", ""], ["a b"], id="negated class"),
         pytest.param(r"^a\.b$", ["a.b"], ["axb"], id="escaped dot"),
         pytest.param(r"^a\$$", ["a$"], ["a"], id="escaped dollar"),
-        pytest.param("^[[:alpha:]][[:digit:]][[:alnum:]]$", ["a1b"], ["11b", "a_b"], id="alpha digit alnum"),
-        pytest.param("^[[:upper:]][[:lower:]]$", ["Ab"], ["ab", "AB"], id="upper lower"),
+        pytest.param("^[[:digit:]]+$", ["0", "42"], ["a", "", "4a"], id="digit class"),
         pytest.param("ターミナル", ["xターミナルx"], ["ターミ"], id="non ASCII literal"),
     ],
 )
@@ -71,7 +70,10 @@ def test_ignoring_case_also_folds_what_a_negated_bracket_excludes() -> None:
 
 
 @pytest.mark.parametrize(
-    "pattern", [r"\1", r"(a)\1", r"\w", "(?=a)", "[[:bogus:]]", "(a", "a)", "[a", "a{2", "*a", r"[\.]", r"[a\]]"]
+    "pattern",
+    [r"\1", r"(a)\1", r"\w", "(?=a)", "[[:bogus:]]", "(a", "a)", "[a", "a{2", "*a", r"[\.]", r"[a\]]"]
+    + [r"\<a", r"a\>", r"\`a", r"a\'"]
+    + ["[[:alpha:]]", "[[:alnum:]]", "[[:upper:]]", "[[:lower:]]"],
 )
 def test_syntax_outside_the_rule_dialect_is_refused(pattern: str) -> None:
     with pytest.raises(UnsupportedPattern):

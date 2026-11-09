@@ -17,14 +17,15 @@ START = chr(MAX_CODE_POINT - 1)
 END = chr(MAX_CODE_POINT)
 # Line breaks are folded to spaces before grep runs, and a shell argument cannot hold NUL.
 TEXT_CHARACTERS = ((1, 9), (11, 12), (14, MAX_CODE_POINT - 2))
+# Only the classes whose members do not depend on the locale are modeled. `space` is read as the ASCII
+# white space, which is what the guard's text holds; the letter classes grow with a UTF-8 locale, so they
+# are refused rather than modeled as ASCII-only.
 POSIX_CLASSES = {
     "space": ((9, 13), (32, 32)),
-    "alpha": ((65, 90), (97, 122)),
     "digit": ((48, 57),),
-    "alnum": ((48, 57), (65, 90), (97, 122)),
-    "upper": ((65, 90),),
-    "lower": ((97, 122),),
 }
+# Escapes that are anchors in GNU grep (`\<` `\>` `\`` `\'`) and in BSD grep, so never a plain character.
+ANCHOR_ESCAPES = frozenset("<>`'")
 CASE_OFFSET = 32
 UPPERCASE = (65, 90)
 LOWERCASE = (97, 122)
@@ -213,7 +214,7 @@ class Parser:
 
     def escaped(self) -> z3.ReRef:
         mark = self.take()
-        if mark.isalnum():
+        if mark.isalnum() or mark in ANCHOR_ESCAPES:
             raise UnsupportedPattern(f"escape \\{mark} in {self.pattern!r}")
         return self.literal(ord(mark))
 

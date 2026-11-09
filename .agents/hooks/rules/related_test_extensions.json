@@ -28,7 +28,8 @@
     "tests/hooks/test_forbidden_command.py",
     "tests/hooks/test_command_cli.py",
     "tests/hooks/test_guard_file.py",
-    "tests/test_replay_commands.py"
+    "tests/test_replay_commands.py",
+    "tests/test_forbidden_overlap.py"
   ],
   "agents/hooks/rules/trusted_owners.json": [
     "tests/hooks/test_trusted_owners.py",
@@ -115,6 +116,7 @@
     "tests/codex/test_execpolicy.py",
     "tests/test_command_permission_sync.py",
     "tests/test_prefix_rules.py",
+    "tests/test_forbidden_overlap.py",
     "tests/hooks/test_guard_transformations.py",
     "tests/hooks/test_allowed_command.py",
     "tests/hooks/test_command_cli.py",
@@ -123,6 +125,15 @@
     "tests/devin/test_hook_adapter.py",
     "tests/hermes/test_hermes_hook_adapter.py",
     "tests/pi/test_pi_hook_adapter.py"
+  ],
+  "tests/ere_to_z3.py": [
+    "tests/test_ere_to_z3.py",
+    "tests/test_rule_overlap.py",
+    "tests/test_forbidden_overlap.py"
+  ],
+  "tests/rule_overlap.py": [
+    "tests/test_rule_overlap.py",
+    "tests/test_forbidden_overlap.py"
   ],
   "tests/prefix_audit.py": [
     "tests/test_prefix_audit.py",

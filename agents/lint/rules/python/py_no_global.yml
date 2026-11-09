@@ -1,0 +1,19 @@
+# Placeholder: the ast-grep rule itself is added by the ast-grep rule set (#74 stage 2C).
+id: py-no-global
+source:
+  file: agents/skills/python-style/references/code_style.md
+  line: 7
+  text: Don't use `global`, `nonlocal`
+language: python
+method: ast-grep
+version: 1
+examples:
+  conforming:
+    - |
+      def bump(counter: Counter) -> None:
+          counter.value += 1
+  violating:
+    - |
+      def bump() -> None:
+          global counter
+          counter += 1

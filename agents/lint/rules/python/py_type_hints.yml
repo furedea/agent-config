@@ -1,0 +1,18 @@
+id: py-type-hints
+source:
+  file: agents/skills/python-style/references/tooling.md
+  line: 25
+  text: Always include type hints
+language: python
+method: linter
+code: ANN201
+version: 1
+examples:
+  conforming:
+    - |
+      def total(prices: list[int]) -> int:
+          return sum(prices)
+  violating:
+    - |
+      def total(prices: list[int]):
+          return sum(prices)

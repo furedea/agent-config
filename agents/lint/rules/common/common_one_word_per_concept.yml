@@ -1,0 +1,17 @@
+id: common-one-word-per-concept
+source:
+  file: agents/AGENTS.md
+  line: 34
+  text: Name one concept with one word
+language: common
+method: prose
+version: 1
+examples:
+  conforming:
+    - |
+      def fetch_user(user_id: str) -> User: ...
+      def fetch_order(order_id: str) -> Order: ...
+  violating:
+    - |
+      def fetch_user(user_id: str) -> User: ...
+      def retrieve_order(order_id: str) -> Order: ...

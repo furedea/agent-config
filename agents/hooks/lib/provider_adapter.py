@@ -236,7 +236,16 @@ class Adapter:
         cwd = payload.get("cwd") or self.profile.cwd_fallback()
         if isinstance(cwd, str) and cwd:
             os.chdir(cwd)
-        return payload
+        return self._in_workdir(payload)
+
+    def _in_workdir(self, payload: dict) -> dict:
+        """Move to the directory a shell tool runs its command in, so guards inspect that repository."""
+        values = payload.get("tool_input")
+        workdir = values.get("workdir") if isinstance(values, dict) else None
+        if not isinstance(workdir, str) or not workdir:
+            return payload
+        os.chdir(workdir)
+        return payload | {"cwd": os.getcwd()}
 
     def _accepts(self, kind: str, rest: list[str]) -> bool:
         commands = self._commands()

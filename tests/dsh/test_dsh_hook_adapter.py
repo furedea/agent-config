@@ -25,6 +25,7 @@ def harness(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     rules.mkdir(parents=True)
     (rules / "protected_paths.json").write_text(json.dumps({"version": 1, "paths": ["~/.dsh/hooks/hook_adapter.py"]}))
     shutil.copyfile(REPO_ROOT / "agents/hooks/rules/secret_path_policy.json", rules / "secret_path_policy.json")
+    shutil.copyfile(REPO_ROOT / "agents/hooks/rules/secret_commit_policy.json", rules / "secret_commit_policy.json")
     shutil.copyfile(REPO_ROOT / "agents/hooks/rules/forbidden_commands.json", rules / "forbidden_commands.json")
     shutil.copyfile(REPO_ROOT / "agents/hooks/rules/allowed_commands.json", rules / "allowed_commands.json")
     (rules / "secret_content_patterns.json").write_text(
@@ -87,6 +88,28 @@ def test_shell_git_guard_reads_the_bash_tool(run_cli: CliRunner, project: Path, 
     assert result.returncode == (2 if blocked else 0)
     if blocked:
         assert "BLOCKED" in result.stderr
+
+
+@pytest.mark.parametrize("relative", [False, True])
+def test_commit_guard_checks_the_repository_of_the_bash_workdir(
+    run_cli: CliRunner, project: Path, relative: bool
+) -> None:
+    other = project / "other"
+    other.mkdir()
+    subprocess.run(["git", "init", "--quiet", str(other)], check=True, capture_output=True)
+    (other / ".env").write_text("SECRET=1\n")
+    subprocess.run(["git", "-C", str(other), "add", ".env"], check=True, capture_output=True)
+    values = {"command": "git commit -m x", "workdir": "other" if relative else str(other)}
+    payload = {"tool_name": "bash", "tool_input": values, "cwd": str(project)}
+    result = run_cli(SCRIPT, "shell", "commit", payload=payload, cwd=project)
+    assert result.returncode == 2
+    assert ".env" in result.stderr
+
+
+def test_commit_guard_uses_the_payload_cwd_without_a_workdir(run_cli: CliRunner, project: Path) -> None:
+    payload = {"tool_name": "bash", "tool_input": {"command": "git commit -m x"}, "cwd": str(project)}
+    result = run_cli(SCRIPT, "shell", "commit", payload=payload, cwd=project)
+    assert result.returncode == 0
 
 
 def test_forbidden_command_is_blocked(run_cli: CliRunner, project: Path) -> None:

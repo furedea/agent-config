@@ -77,11 +77,11 @@ readonly BIN_DIR="${BIN_DIR:-$HOME/.local/bin}"
 readonly PYTHON_VERSION="${PYTHON_VERSION:-3.15.1}"
 MACHINE="${BOOTSTRAP_SERVER_MACHINE:-$(uname -m)}"
 readonly MACHINE
-# Renovate updates each pin below from the release named on its comment. Every download is
-# verified against the sha256 pinned next to its version. For release assets Renovate rewrites
-# the hash in the same PR; it looks the release up by tag, so a tool whose tag differs from its
-# version pins the full tag (*_TAG) and derives the version from it. bats-core publishes only a
-# source archive, so after a bats bump run scripts/update_bats_checksum.sh.
+# Renovate updates each pin below from the release or tag named on its comment. Every download is
+# verified against the sha256 pinned next to its version, and Renovate rewrites the hash in the
+# same PR. It looks the release up by tag, so a tool whose tag differs from its version pins the
+# full tag (*_TAG) and derives the version from it. bats-core is fetched with git and checked
+# against the commit pinned next to its tag.
 # renovate: datasource=github-release-attachments depName=furedea/agent-harness
 readonly AGENT_HARNESS_TAG="${AGENT_HARNESS_TAG:-agent-harness-v0.9.10}"
 readonly AGENT_HARNESS_SHA256="${AGENT_HARNESS_SHA256:-41e31d9ab229426033a6743183b7d009b7ed2e209487bdf901396d0b26ca59fd}"
@@ -107,9 +107,12 @@ readonly DPRINT_SHA256="${DPRINT_SHA256:-aad2ee102014c563112dcdad65e131dbcfe1233
 readonly SHELLCHECK_TAG="${SHELLCHECK_TAG:-v0.11.0}"
 readonly SHELLCHECK_SHA256="${SHELLCHECK_SHA256:-8c3be12b05d5c177a04c29e3c78ce89ac86f1595681cab149b65b97c4e227198}"
 readonly SHELLCHECK_VERSION="${SHELLCHECK_VERSION:-${SHELLCHECK_TAG#v}}"
-# renovate: datasource=github-releases depName=bats-core/bats-core extractVersion=^v(?<version>.+)$
-readonly BATS_VERSION="${BATS_VERSION:-1.13.0}"
-readonly BATS_SHA256="${BATS_SHA256:-a85e12b8828271a152b338ca8109aa23493b57950987c8e6dff97ba492772ff3}"
+# bats-core publishes no release assets, so its tag is pinned to the commit it must point at.
+# renovate: datasource=github-tags depName=bats-core/bats-core
+readonly BATS_TAG="${BATS_TAG:-v1.13.0}"
+readonly BATS_COMMIT="${BATS_COMMIT:-3bca150ec86275d6d9d5a4fd7d48ab8b6c6f3d87}"
+readonly BATS_VERSION="${BATS_VERSION:-${BATS_TAG#v}}"
+readonly BATS_REPO_URL="${BATS_REPO_URL:-https://github.com/bats-core/bats-core.git}"
 readonly BATS_PREFIX="${BATS_PREFIX:-${XDG_DATA_HOME:-$HOME/.local/share}/bats-core}"
 # Older uv cannot install the managed CPython this script requests.
 # renovate: datasource=github-release-attachments depName=astral-sh/uv
@@ -123,7 +126,6 @@ readonly JQ_URL="${JQ_URL:-https://github.com/jqlang/jq/releases/download/jq-${J
 readonly RUFF_URL="${RUFF_URL:-https://github.com/astral-sh/ruff/releases/download/${RUFF_VERSION}/ruff-x86_64-unknown-linux-musl.tar.gz}"
 readonly DPRINT_URL="${DPRINT_URL:-https://github.com/dprint/dprint/releases/download/${DPRINT_VERSION}/dprint-x86_64-unknown-linux-musl.zip}"
 readonly SHELLCHECK_URL="${SHELLCHECK_URL:-https://github.com/koalaman/shellcheck/releases/download/v${SHELLCHECK_VERSION}/shellcheck-v${SHELLCHECK_VERSION}.linux.x86_64.tar.xz}"
-readonly BATS_URL="${BATS_URL:-https://github.com/bats-core/bats-core/archive/refs/tags/v${BATS_VERSION}.tar.gz}"
 
 WORK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/bootstrap_server.XXXXXX")"
 readonly WORK_DIR
@@ -261,12 +263,21 @@ function install_bats() {
     printf 'keep %s\n' "$BIN_DIR/bats"
     return 0
   fi
-  local _download="$WORK_DIR/bats.download" _source
-  download_verified "$BATS_URL" "$BATS_SHA256" "$_download"
-  _source="$(extract_archive "$_download")"
+  local _source="$WORK_DIR/bats-core"
+  clone_pinned "$BATS_REPO_URL" "$BATS_TAG" "$BATS_COMMIT" "$_source"
   bash "$_source/install.sh" "$BATS_PREFIX" >/dev/null
   ln -sf "$BATS_PREFIX/bin/bats" "$BIN_DIR/bats"
   printf 'install %s\n' "$BIN_DIR/bats"
+}
+
+# Stops the whole run, before anything is installed from it, unless the tag points at the pinned commit.
+function clone_pinned() {
+  local _url="$1" _tag="$2" _expected="$3" _destination="$4" _actual
+  git -c advice.detachedHead=false clone --quiet --depth 1 --branch "$_tag" "$_url" "$_destination"
+  _actual="$(git -C "$_destination" rev-parse HEAD)"
+  [[ -n "$_expected" && "$_actual" == "$_expected" ]] && return 0
+  printf 'commit mismatch for %s at %s: expected %s, got %s\n' "$_url" "$_tag" "${_expected:-<none>}" "$_actual" >&2
+  exit 1
 }
 
 function install_uv() {

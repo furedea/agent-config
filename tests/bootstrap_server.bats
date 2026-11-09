@@ -38,7 +38,7 @@ setup() {
     RUFF_URL="file://$RELEASES/missing.tar.gz" \
     DPRINT_URL="file://$RELEASES/missing.zip" \
     SHELLCHECK_URL="file://$RELEASES/missing.tar.xz" \
-    BATS_URL="file://$RELEASES/missing.tar.gz" \
+    BATS_REPO_URL="file://$RELEASES/missing.git" \
     UV_URL="file://$RELEASES/missing.tar.gz"
 
   [ "$status" -eq 0 ]
@@ -82,7 +82,7 @@ setup() {
 @test "refuses every download that does not match its pinned checksum and installs nothing" {
   local _entry _tool _variable
   for _entry in agent-harness:AGENT_HARNESS_SHA256 shfmt:SHFMT_SHA256 rg:RIPGREP_SHA256 jq:JQ_SHA256 \
-    ruff:RUFF_SHA256 shellcheck:SHELLCHECK_SHA256 bats:BATS_SHA256 dprint:DPRINT_SHA256 uv:UV_SHA256; do
+    ruff:RUFF_SHA256 shellcheck:SHELLCHECK_SHA256 dprint:DPRINT_SHA256 uv:UV_SHA256; do
     _tool="${_entry%%:*}"
     _variable="${_entry#*:}"
     rm -rf "$BIN_DIR"
@@ -145,7 +145,7 @@ setup() {
 
 @test "keeps the release tag Renovate looks up in step with the version the script uses" {
   local _tool
-  for _tool in SHFMT JQ SHELLCHECK AGENT_HARNESS; do
+  for _tool in SHFMT JQ SHELLCHECK AGENT_HARNESS BATS; do
     grep -Eq "^readonly ${_tool}_VERSION=\"\\$\\{${_tool}_VERSION:-\\$\\{${_tool}_TAG#[^}]+\\}\\}\"\$" "$SCRIPT" || {
       echo "${_tool}_VERSION does not derive from ${_tool}_TAG"
       return 1
@@ -175,14 +175,54 @@ assert sorted(name for name, _, _ in found) == sorted([
 ]), "a release-asset tool is missing from the manager"
 assert all(length == 64 for _, _, length in found)
 assert {value for name, value, _ in found if name == "mvdan/sh"} == {"v3.13.1"}, "shfmt must be looked up by its full tag"
+
+tags = [m for m in managers if m.get("datasourceTemplate") == "github-tags"]
+assert len(tags) == 1, "expected one github-tags manager for bats-core"
+tag_pattern = re.compile(tags[0]["matchStrings"][0].replace("(?<", "(?P<"))
+tag_found = [
+    (m.group("depName"), m.group("currentValue"), len(m.group("currentDigest")))
+    for m in tag_pattern.finditer(script)
+]
+assert tag_found == [("bats-core/bats-core", "v1.13.0", 40)], tag_found
 PY
 
   [ "$status" -eq 0 ]
 }
 
+# ============================================================
+# bats-core commit pinning
+# ============================================================
+
+@test "pins the bats-core release tag to a full commit in the script itself" {
+  grep -Eq '^readonly BATS_COMMIT="\$\{BATS_COMMIT:-[0-9a-f]{40}\}"$' "$SCRIPT"
+}
+
+@test "refuses a bats-core tag that does not point at the pinned commit and installs nothing" {
+  run bootstrap_server BATS_COMMIT="$(printf '%040d' 0)"
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"commit mismatch"* ]]
+  [ ! -e "$BIN_DIR/bats" ]
+  [ ! -e "$HOME_DIR/.local/share/bats-core" ]
+}
+
+@test "refuses a bats-core commit that is not pinned" {
+  run bootstrap_server BATS_COMMIT=
+
+  [ "$status" -ne 0 ]
+  [ ! -e "$BIN_DIR/bats" ]
+}
+
+@test "stops when the pinned bats-core tag does not exist" {
+  run bootstrap_server BATS_TAG=v0.0.1
+
+  [ "$status" -ne 0 ]
+  [ ! -e "$BIN_DIR/bats" ]
+}
+
 @test "pins a sha256 for every download in the script itself" {
   local _variable
-  for _variable in AGENT_HARNESS SHFMT RIPGREP JQ RUFF DPRINT SHELLCHECK BATS UV; do
+  for _variable in AGENT_HARNESS SHFMT RIPGREP JQ RUFF DPRINT SHELLCHECK UV; do
     grep -Eq "^readonly ${_variable}_SHA256=\"\\$\\{${_variable}_SHA256:-[0-9a-f]{64}\\}\"\$" "$SCRIPT" || {
       echo "no pinned sha256 for $_variable"
       return 1

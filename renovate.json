@@ -13,23 +13,13 @@
       ]
     },
     {
-      "description": "Update the bats-core version the server bootstrap pins. bats-core publishes no release assets, so its sha256 is refreshed by scripts/update_bats_checksum.sh in the same PR.",
+      "description": "Update the bats-core tag the server bootstrap pins together with the commit it points at. bats-core publishes no release assets, so the bootstrap fetches the tag with git and checks the commit.",
       "customType": "regex",
       "managerFilePatterns": ["/^scripts/bootstrap_server\\.sh$/"],
-      "datasourceTemplate": "github-releases",
+      "datasourceTemplate": "github-tags",
+      "versioningTemplate": "semver-coerced",
       "matchStrings": [
-        "# renovate: datasource=github-releases depName=(?<depName>\\S+)( extractVersion=(?<extractVersion>\\S+))?\\nreadonly [A-Z_]+_VERSION=\"\\$\\{[A-Z_]+_VERSION:-(?<currentValue>[^}]+)\\}\""
-      ],
-      "extractVersionTemplate": "{{#if extractVersion}}{{{extractVersion}}}{{else}}^(?<version>.+)${{/if}}"
-    }
-  ],
-  "packageRules": [
-    {
-      "description": "The bats-core hash is not updated by Renovate, so a person must run the script before merging.",
-      "matchDepNames": ["bats-core/bats-core"],
-      "automerge": false,
-      "prBodyNotes": [
-        "Run `scripts/update_bats_checksum.sh` and commit the new `BATS_SHA256` before merging: Renovate cannot hash the bats-core source archive, and a stale hash makes `scripts/bootstrap_server.sh` stop with `checksum mismatch`."
+        "# renovate: datasource=github-tags depName=(?<depName>\\S+)\\nreadonly BATS_TAG=\"\\$\\{BATS_TAG:-(?<currentValue>[^}]+)\\}\"\\nreadonly BATS_COMMIT=\"\\$\\{BATS_COMMIT:-(?<currentDigest>[a-f0-9]{40})\\}\""
       ]
     }
   ]

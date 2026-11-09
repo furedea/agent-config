@@ -39,7 +39,7 @@ function create_bootstrap_server_fixtures() {
   create_tarball ruff.tar.gz ruff-x86_64-unknown-linux-musl ruff
   create_tarball shellcheck.tar.xz shellcheck-v0.11.0 shellcheck
   create_dprint_archive
-  create_bats_archive
+  create_bats_repository
   create_uv_archive
 }
 
@@ -57,7 +57,8 @@ function bootstrap_server() {
     RUFF_URL="file://$RELEASES/ruff.tar.gz" \
     DPRINT_URL="file://$RELEASES/dprint.zip" \
     SHELLCHECK_URL="file://$RELEASES/shellcheck.tar.xz" \
-    BATS_URL="file://$RELEASES/bats-core.tar.gz" \
+    BATS_REPO_URL="file://$RELEASES/bats-core.git" \
+    BATS_COMMIT="$(git -C "$RELEASES/bats-core.git" rev-parse HEAD)" \
     UV_URL="file://$RELEASES/uv.tar.gz" \
     AGENT_HARNESS_SHA256="$(fixture_sha256 agent-harness.tar.xz)" \
     SHFMT_SHA256="$(fixture_sha256 shfmt)" \
@@ -66,7 +67,6 @@ function bootstrap_server() {
     RUFF_SHA256="$(fixture_sha256 ruff.tar.gz)" \
     DPRINT_SHA256="$(fixture_sha256 dprint.zip)" \
     SHELLCHECK_SHA256="$(fixture_sha256 shellcheck.tar.xz)" \
-    BATS_SHA256="$(fixture_sha256 bats-core.tar.gz)" \
     UV_SHA256="$(fixture_sha256 uv.tar.gz)" \
     FAKE_PYTHON="$FAKE_PYTHON" \
     UV_ARGS_FILE="$UV_ARGS_FILE" \
@@ -87,7 +87,7 @@ function path_without_sandbox_tools() {
   local _directory="$BATS_TEST_TMPDIR/host-tools" _command
   mkdir -p "$_directory"
   for _command in bash sh env cat curl tar xz gzip install mktemp rm cp mv ln mkdir chmod \
-    head tail find dirname uname sha256sum jq python3 grep sed; do
+    head tail find dirname uname sha256sum jq python3 grep sed git; do
     ln -sf "$(command -v "$_command")" "$_directory/$_command"
   done
   printf '%s\n' "$_directory"
@@ -133,18 +133,26 @@ function create_dprint_archive() {
   (cd "$BATS_TEST_TMPDIR/dprint-release" && python3 -m zipfile -c "$RELEASES/dprint.zip" dprint)
 }
 
-# Mimics bats-core's source archive: install.sh lays out bin/ and libexec/ under a prefix.
-function create_bats_archive() {
-  local _name="bats-core-1.13.0"
-  mkdir -p "$BATS_TEST_TMPDIR/$_name"
-  write_stub "$BATS_TEST_TMPDIR/$_name/install.sh" \
+# Mimics the bats-core repository at its release tag: install.sh lays out bin/ and libexec/
+# under a prefix.
+function create_bats_repository() {
+  local _repository="$RELEASES/bats-core.git"
+  mkdir -p "$_repository"
+  git -C "$_repository" init --quiet
+  git -C "$_repository" config user.email "test@test.com"
+  git -C "$_repository" config user.name "Test"
+  git -C "$_repository" config commit.gpgsign false
+  git -C "$_repository" config tag.gpgsign false
+  write_stub "$_repository/install.sh" \
     '#!/usr/bin/env bash' \
     'set -euo pipefail' \
     'mkdir -p "$1/bin" "$1/libexec/bats-core"' \
     "printf '%s\\n' '#!/bin/sh' 'exit 0' >\"\$1/bin/bats\"" \
     'chmod 0755 "$1/bin/bats"' \
     "printf 'fake\\n' >\"\$1/libexec/bats-core/bats\""
-  tar -czf "$RELEASES/bats-core.tar.gz" -C "$BATS_TEST_TMPDIR" "$_name"
+  git -C "$_repository" add install.sh
+  git -C "$_repository" commit --quiet -m "release"
+  git -C "$_repository" tag -a v1.13.0 -m "v1.13.0"
 }
 
 # uv ships uv and uvx inside a top-level directory, like the other release tarballs.

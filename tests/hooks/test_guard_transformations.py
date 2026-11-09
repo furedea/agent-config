@@ -19,18 +19,17 @@ guard = load_script_module("agents/hooks/guard_command.py", "guard_command")
 pytestmark = pytest.mark.usefixtures("isolated_project")
 
 PREFIXES = json.loads((REPO_ROOT / "agents/command_permissions.json").read_text())["rules"]
-# A bare `bash -c` holds no script to read, so the guard asks before it can apply the deny prefix.
-# Any script after it is judged by the other rules, so these prefixes are not spellings of one command.
-SHELL_PROGRAMS = frozenset({"bash", "sh", "zsh"})
-DENY = [
-    tuple(rule["prefix"])
-    for rule in PREFIXES
-    if rule["decision"] == "deny" and rule["prefix"][0] not in SHELL_PROGRAMS
-]
+DENY = [tuple(rule["prefix"]) for rule in PREFIXES if rule["decision"] == "deny"]
 ASK = [tuple(rule["prefix"]) for rule in PREFIXES if rule["decision"] == "ask"]
+# A bare `bash -c` holds no script to read, so the guard asks before it can apply the deny prefix.
+# These prefixes are tested with a harmless script after them, which is the form they govern.
+SHELL_PROGRAMS = frozenset({"bash", "sh", "zsh"})
+HARMLESS_SCRIPT = "true"
 
+# Every prefix is its own test case, so a regression in one rule cannot hide behind the others;
+# Hypothesis only chooses the spellings.
 PROPERTY = settings(
-    max_examples=150,
+    max_examples=12,
     deadline=None,
     derandomize=True,
     suppress_health_check=[HealthCheck.function_scoped_fixture],
@@ -66,11 +65,17 @@ def quoted(words: tuple[str, ...], styles: list[str]) -> str:
     return " ".join(pieces)
 
 
+def representative(prefix: tuple[str, ...]) -> tuple[str, ...]:
+    """The prefix as a complete command: a shell prefix gets the script it would run."""
+    return (*prefix, HARMLESS_SCRIPT) if prefix[0] in SHELL_PROGRAMS else prefix
+
+
 @st.composite
 def spellings(draw: st.DrawFn, prefix: tuple[str, ...]) -> tuple[str, int]:
     """A spelling of the prefix command and how many wrapper-like layers hide it from the provider."""
-    styles = draw(st.lists(st.sampled_from(["single", "double", "bare"]), min_size=len(prefix), max_size=len(prefix)))
-    command = quoted(prefix, styles)
+    words = representative(prefix)
+    styles = draw(st.lists(st.sampled_from(["single", "double", "bare"]), min_size=len(words), max_size=len(words)))
+    command = quoted(words, styles)
     if draw(st.booleans()):
         command = f"/usr/bin/{command}"
     layers: list[Callable[[str], str]] = draw(
@@ -89,41 +94,43 @@ def spellings(draw: st.DrawFn, prefix: tuple[str, ...]) -> tuple[str, int]:
     return (f"! {command}" if negated else command), len(layers) + negated
 
 
+@pytest.mark.parametrize("prefix", DENY, ids=" ".join)
 @PROPERTY
 @given(data=st.data())
-def test_a_deny_prefix_is_denied_in_every_supported_spelling(data: st.DataObject) -> None:
-    prefix = data.draw(st.sampled_from(DENY))
+def test_a_deny_prefix_is_denied_in_every_supported_spelling(prefix: tuple[str, ...], data: st.DataObject) -> None:
     command, _ = data.draw(spellings(prefix))
     assert verdict("forbidden", command) == "deny", command
 
 
+@pytest.mark.parametrize("prefix", ASK, ids=" ".join)
 @PROPERTY
 @given(data=st.data())
-def test_an_ask_prefix_behind_a_wrapper_or_script_asks(data: st.DataObject) -> None:
-    prefix = data.draw(st.sampled_from(ASK))
+def test_an_ask_prefix_behind_a_wrapper_or_script_asks(prefix: tuple[str, ...], data: st.DataObject) -> None:
     command, layers = data.draw(spellings(prefix))
     expected = "ask" if layers else "allow"
     assert verdict("allowed", command) == expected, command
 
 
-def policy_without(decision: str, path: Path) -> Path:
+def policy_without(prefix: tuple[str, ...], path: Path) -> Path:
     policy = json.loads((REPO_ROOT / "agents/command_permissions.json").read_text())
-    policy["rules"] = [rule for rule in policy["rules"] if rule["decision"] != decision]
+    policy["rules"] = [rule for rule in policy["rules"] if tuple(rule["prefix"]) != prefix]
     path.write_text(json.dumps(policy))
     return path
 
 
-def test_a_policy_that_lost_its_deny_prefixes_turns_the_deny_property_red(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+@pytest.mark.parametrize("prefix", [DENY[0], ("bash", "-c"), ("rm", "-rf")], ids=" ".join)
+def test_a_policy_that_lost_a_deny_prefix_turns_its_property_red(
+    prefix: tuple[str, ...], tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setenv("AGENT_COMMAND_PERMISSIONS", str(policy_without("deny", tmp_path / "policy.json")))
+    monkeypatch.setenv("AGENT_COMMAND_PERMISSIONS", str(policy_without(prefix, tmp_path / "policy.json")))
     with pytest.raises(AssertionError):
-        test_a_deny_prefix_is_denied_in_every_supported_spelling()
+        test_a_deny_prefix_is_denied_in_every_supported_spelling(prefix)
 
 
-def test_a_policy_that_lost_its_ask_prefixes_turns_the_ask_property_red(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+@pytest.mark.parametrize("prefix", [ASK[0], ("rm",)], ids=" ".join)
+def test_a_policy_that_lost_an_ask_prefix_turns_its_property_red(
+    prefix: tuple[str, ...], tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setenv("AGENT_COMMAND_PERMISSIONS", str(policy_without("ask", tmp_path / "policy.json")))
+    monkeypatch.setenv("AGENT_COMMAND_PERMISSIONS", str(policy_without(prefix, tmp_path / "policy.json")))
     with pytest.raises(AssertionError):
-        test_an_ask_prefix_behind_a_wrapper_or_script_asks()
+        test_an_ask_prefix_behind_a_wrapper_or_script_asks(prefix)

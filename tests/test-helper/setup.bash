@@ -147,11 +147,12 @@ function create_bats_archive() {
   tar -czf "$RELEASES/bats-core.tar.gz" -C "$BATS_TEST_TMPDIR" "$_name"
 }
 
-# uv ships its binaries inside a top-level directory, like the other release tarballs.
+# uv ships uv and uvx inside a top-level directory, like the other release tarballs.
 function create_uv_archive() {
   local _name="uv-x86_64-unknown-linux-musl"
   mkdir -p "$BATS_TEST_TMPDIR/$_name"
   write_fake_uv "$BATS_TEST_TMPDIR/$_name/uv"
+  write_stub "$BATS_TEST_TMPDIR/$_name/uvx" '#!/bin/sh' 'exit 0'
   tar -czf "$RELEASES/uv.tar.gz" -C "$BATS_TEST_TMPDIR" "$_name"
 }
 

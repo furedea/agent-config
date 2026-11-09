@@ -18,7 +18,7 @@ setup() {
 
   [ "$status" -eq 0 ]
   local _tool
-  for _tool in agent-harness shfmt rg jq ruff dprint shellcheck bats uv; do
+  for _tool in agent-harness shfmt rg jq ruff dprint shellcheck bats uv uvx; do
     [ -x "$BIN_DIR/$_tool" ] || {
       echo "missing tool: $_tool"
       return 1

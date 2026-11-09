@@ -273,9 +273,10 @@ function install_uv() {
   if [[ -x "$BIN_DIR/uv" ]]; then
     printf 'keep %s\n' "$BIN_DIR/uv"
   else
-    local _download="$WORK_DIR/uv.download"
+    local _download="$WORK_DIR/uv.download" _source
     download_verified "$UV_URL" "$UV_SHA256" "$_download"
-    install -m 0755 "$(extract_member "$_download" uv)" "$BIN_DIR/uv"
+    _source="$(extract_archive "$_download")"
+    install -m 0755 "$_source/uv" "$_source/uvx" "$BIN_DIR/"
     printf 'install %s\n' "$BIN_DIR/uv"
   fi
   require_uv_version

@@ -3,13 +3,24 @@
   "extends": ["github>furedea/renovate-config"],
   "customManagers": [
     {
-      "description": "Update the release versions the server bootstrap pins.",
+      "description": "Update the release pins of the server bootstrap together with the sha256 of the release asset pinned beside each. The release is looked up by tag, so a tool whose tag differs from its version pins the full tag.",
       "customType": "regex",
       "managerFilePatterns": ["/^scripts/bootstrap_server\\.sh$/"],
+      "datasourceTemplate": "github-release-attachments",
+      "versioningTemplate": "semver-coerced",
       "matchStrings": [
-        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)( extractVersion=(?<extractVersion>\\S+))?\\nreadonly [A-Z_]+_VERSION=\"\\$\\{[A-Z_]+_VERSION:-(?<currentValue>[^}]+)\\}\""
-      ],
-      "extractVersionTemplate": "{{#if extractVersion}}{{{extractVersion}}}{{else}}^(?<version>.+)${{/if}}"
+        "# renovate: datasource=github-release-attachments depName=(?<depName>\\S+)\\nreadonly [A-Z_]+_(?:VERSION|TAG)=\"\\$\\{[A-Z_]+_(?:VERSION|TAG):-(?<currentValue>[^}]+)\\}\"\\nreadonly [A-Z_]+_SHA256=\"\\$\\{[A-Z_]+_SHA256:-(?<currentDigest>[a-f0-9]{64})\\}\""
+      ]
+    },
+    {
+      "description": "Update the bats-core tag the server bootstrap pins together with the commit it points at. bats-core publishes no release assets, so the bootstrap fetches the tag with git and checks the commit.",
+      "customType": "regex",
+      "managerFilePatterns": ["/^scripts/bootstrap_server\\.sh$/"],
+      "datasourceTemplate": "github-tags",
+      "versioningTemplate": "semver-coerced",
+      "matchStrings": [
+        "# renovate: datasource=github-tags depName=(?<depName>\\S+)\\nreadonly BATS_TAG=\"\\$\\{BATS_TAG:-(?<currentValue>[^}]+)\\}\"\\nreadonly BATS_COMMIT=\"\\$\\{BATS_COMMIT:-(?<currentDigest>[a-f0-9]{40})\\}\""
+      ]
     }
   ]
 }

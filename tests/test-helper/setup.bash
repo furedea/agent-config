@@ -39,8 +39,8 @@ function create_bootstrap_server_fixtures() {
   create_tarball ruff.tar.gz ruff-x86_64-unknown-linux-musl ruff
   create_tarball shellcheck.tar.xz shellcheck-v0.11.0 shellcheck
   create_dprint_archive
-  create_bats_archive
-  create_uv_installer
+  create_bats_repository
+  create_uv_archive
 }
 
 # Runs the script with the sandbox tools present unless PATH is overridden.
@@ -57,13 +57,28 @@ function bootstrap_server() {
     RUFF_URL="file://$RELEASES/ruff.tar.gz" \
     DPRINT_URL="file://$RELEASES/dprint.zip" \
     SHELLCHECK_URL="file://$RELEASES/shellcheck.tar.xz" \
-    BATS_URL="file://$RELEASES/bats-core.tar.gz" \
-    UV_INSTALLER_URL="file://$RELEASES/uv_install.sh" \
+    BATS_REPO_URL="file://$RELEASES/bats-core.git" \
+    BATS_COMMIT="$(git -C "$RELEASES/bats-core.git" rev-parse HEAD)" \
+    UV_URL="file://$RELEASES/uv.tar.gz" \
+    AGENT_HARNESS_SHA256="$(fixture_sha256 agent-harness.tar.xz)" \
+    SHFMT_SHA256="$(fixture_sha256 shfmt)" \
+    RIPGREP_SHA256="$(fixture_sha256 ripgrep.tar.gz)" \
+    JQ_SHA256="$(fixture_sha256 jq)" \
+    RUFF_SHA256="$(fixture_sha256 ruff.tar.gz)" \
+    DPRINT_SHA256="$(fixture_sha256 dprint.zip)" \
+    SHELLCHECK_SHA256="$(fixture_sha256 shellcheck.tar.xz)" \
+    UV_SHA256="$(fixture_sha256 uv.tar.gz)" \
     FAKE_PYTHON="$FAKE_PYTHON" \
     UV_ARGS_FILE="$UV_ARGS_FILE" \
     AGENT_HARNESS_ARGS_FILE="$AGENT_HARNESS_ARGS_FILE" \
     "$@" \
     /bin/bash "$SCRIPT"
+}
+
+function fixture_sha256() {
+  local _sum
+  _sum="$(sha256sum "$RELEASES/$1")"
+  printf '%s\n' "${_sum%% *}"
 }
 
 # Prints a PATH holding only the host commands the script and its fixtures use,
@@ -72,7 +87,7 @@ function path_without_sandbox_tools() {
   local _directory="$BATS_TEST_TMPDIR/host-tools" _command
   mkdir -p "$_directory"
   for _command in bash sh env cat curl tar xz gzip install mktemp rm cp mv ln mkdir chmod \
-    head tail find dirname uname sha256sum jq python3 grep sed; do
+    head tail find dirname uname sha256sum jq python3 grep sed git; do
     ln -sf "$(command -v "$_command")" "$_directory/$_command"
   done
   printf '%s\n' "$_directory"
@@ -101,14 +116,6 @@ function create_agent_harness_archive() {
   mkdir -p "$BATS_TEST_TMPDIR/$_name"
   write_fake_agent_harness "$BATS_TEST_TMPDIR/$_name/agent-harness"
   tar -cJf "$RELEASES/agent-harness.tar.xz" -C "$BATS_TEST_TMPDIR" "$_name"
-  write_checksum "$RELEASES/agent-harness.tar.xz"
-}
-
-# Mirrors the release checksum format: "<sha256> *<asset name>".
-function write_checksum() {
-  local _archive="$1" _sum
-  _sum="$(sha256sum "$_archive")"
-  printf '%s *%s\n' "${_sum%% *}" "${_archive##*/}" >|"$_archive.sha256"
 }
 
 # Packs one stub binary inside a top-level directory, as the release tarballs do.
@@ -126,27 +133,35 @@ function create_dprint_archive() {
   (cd "$BATS_TEST_TMPDIR/dprint-release" && python3 -m zipfile -c "$RELEASES/dprint.zip" dprint)
 }
 
-# Mimics bats-core's source archive: install.sh lays out bin/ and libexec/ under a prefix.
-function create_bats_archive() {
-  local _name="bats-core-1.13.0"
-  mkdir -p "$BATS_TEST_TMPDIR/$_name"
-  write_stub "$BATS_TEST_TMPDIR/$_name/install.sh" \
+# Mimics the bats-core repository at its release tag: install.sh lays out bin/ and libexec/
+# under a prefix.
+function create_bats_repository() {
+  local _repository="$RELEASES/bats-core.git"
+  mkdir -p "$_repository"
+  git -C "$_repository" init --quiet
+  git -C "$_repository" config user.email "test@test.com"
+  git -C "$_repository" config user.name "Test"
+  git -C "$_repository" config commit.gpgsign false
+  git -C "$_repository" config tag.gpgsign false
+  write_stub "$_repository/install.sh" \
     '#!/usr/bin/env bash' \
     'set -euo pipefail' \
     'mkdir -p "$1/bin" "$1/libexec/bats-core"' \
     "printf '%s\\n' '#!/bin/sh' 'exit 0' >\"\$1/bin/bats\"" \
     'chmod 0755 "$1/bin/bats"' \
     "printf 'fake\\n' >\"\$1/libexec/bats-core/bats\""
-  tar -czf "$RELEASES/bats-core.tar.gz" -C "$BATS_TEST_TMPDIR" "$_name"
+  git -C "$_repository" add install.sh
+  git -C "$_repository" commit --quiet -m "release"
+  git -C "$_repository" tag -a v1.13.0 -m "v1.13.0"
 }
 
-function create_uv_installer() {
-  write_fake_uv "$RELEASES/uv"
-  write_stub "$RELEASES/uv_install.sh" \
-    '#!/bin/sh' \
-    'set -eu' \
-    'mkdir -p "${UV_UNMANAGED_INSTALL:?}"' \
-    "cp '$RELEASES/uv' \"\$UV_UNMANAGED_INSTALL/uv\""
+# uv ships uv and uvx inside a top-level directory, like the other release tarballs.
+function create_uv_archive() {
+  local _name="uv-x86_64-unknown-linux-musl"
+  mkdir -p "$BATS_TEST_TMPDIR/$_name"
+  write_fake_uv "$BATS_TEST_TMPDIR/$_name/uv"
+  write_stub "$BATS_TEST_TMPDIR/$_name/uvx" '#!/bin/sh' 'exit 0'
+  tar -czf "$RELEASES/uv.tar.gz" -C "$BATS_TEST_TMPDIR" "$_name"
 }
 
 function write_fake_uv() {

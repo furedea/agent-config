@@ -76,27 +76,7 @@ def test_dropping_any_real_rule_is_found(index: int) -> None:
     assert difference.denied_by == "source"
 
 
-# agent-harness 0.9.9 writes generate-forbidden-commands without the fields below, so a source rule that has
-# one is denied differently by its generated rule: broader without `exceptions`, and neither scoped to its
-# programs nor case-insensitive without `programs`. The shape test pins that nothing else differs.
-# Tracked in furedea/agent-harness#203. Remove the xfail marker, with its reason, in the change that updates the
-# locked agent-harness to a version that keeps both fields; the shape test then needs the same update.
-DROPPED_FIELDS = frozenset({"exceptions", "programs"})
-DROPS_FIELDS = pytest.mark.xfail(
-    strict=True,
-    raises=AssertionError,
-    reason="furedea/agent-harness#203: generate-forbidden-commands (0.9.9) drops exceptions and programs",
-)
-
-
-def test_the_known_gap_is_only_a_failed_assertion_not_a_solver_timeout() -> None:
-    assert DROPS_FIELDS.kwargs["raises"] is AssertionError
-
-
-SOURCE_RULES = [
-    pytest.param(rule, marks=DROPS_FIELDS if DROPPED_FIELDS & rule.keys() else (), id=f"rule {index}")
-    for index, rule in enumerate(FORBIDDEN)
-]
+SOURCE_RULES = [pytest.param(rule, id=f"rule {index}") for index, rule in enumerate(FORBIDDEN)]
 
 
 @pytest.fixture(scope="module")
@@ -120,11 +100,8 @@ def test_the_generated_forbidden_rules_are_as_many_as_the_source(generated_forbi
 
 @pytest.mark.integration
 @pytest.mark.parametrize("source", [pytest.param(rule, id=f"rule {index}") for index, rule in enumerate(FORBIDDEN)])
-def test_a_generated_forbidden_rule_is_its_source_rule_without_the_dropped_fields(
-    source: dict, generated_forbidden: list[dict]
-) -> None:
-    expected = {key: value for key, value in source.items() if key not in DROPPED_FIELDS}
-    assert generated_rule_for(source, generated_forbidden) == expected
+def test_a_generated_forbidden_rule_is_its_source_rule(source: dict, generated_forbidden: list[dict]) -> None:
+    assert generated_rule_for(source, generated_forbidden) == source
 
 
 @pytest.mark.integration

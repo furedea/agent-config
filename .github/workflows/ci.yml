@@ -96,6 +96,7 @@ jobs:
       - name: Run pytest
         env:
           CODEX_BIN: codex
+          REQUIRE_AST_GREP: "1"
           REQUIRE_CODEX_EXECPOLICY: "1"
         run: uv run pytest --cov
 

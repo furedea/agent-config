@@ -143,6 +143,18 @@ def test_every_forbidden_pattern_agrees_with_grep_near_its_boundary(
     assert matches(pattern, line, ignore_case=ignore_case) == expected, line
 
 
+@pytest.mark.parametrize("pattern", ["^Ä$", "[ä-ö]", "ß", "^é"])
+def test_a_cased_non_ascii_character_is_refused_when_ignoring_case(pattern: str) -> None:
+    with pytest.raises(UnsupportedPattern, match="case"):
+        matches(pattern, "x", ignore_case=True)
+    assert not matches(pattern, "x", ignore_case=False)
+
+
+@pytest.mark.parametrize("pattern", ["^ターミナル$", "^日本語$"])
+def test_an_uncased_non_ascii_character_is_fine_when_ignoring_case(pattern: str) -> None:
+    assert matches(pattern, pattern.strip("^$"), ignore_case=True)
+
+
 @pytest.mark.parametrize("pattern", REAL_PATTERNS)
 def test_a_witness_of_every_forbidden_pattern_is_matched_by_grep(pattern: str) -> None:
     line = witness(pattern)

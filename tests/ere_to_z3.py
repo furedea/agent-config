@@ -3,6 +3,11 @@
 The converter covers the dialect the rules use and refuses anything else, so a new construct fails
 loudly instead of being read wrongly. `^` and `$` become sentinel characters around the text, which
 lets one regular expression say "the pattern occurs somewhere in the line", as `grep -E` does.
+
+The converter models grep in the C locale. Constructs whose meaning the locale changes are refused (the
+letter classes, the case folding of a non-ASCII letter); `[[:space:]]` is the exception, read as ASCII white
+space because the rules use it throughout. Under a UTF-8 locale it also admits Unicode spaces such as U+2003,
+which this audit does not see.
 """
 
 from dataclasses import dataclass, field
@@ -126,7 +131,18 @@ def gaps(low: int, high: int, taken: Intervals) -> list[tuple[int, int]]:
     return remaining
 
 
+def is_cased_non_ascii(code: int) -> bool:
+    character = chr(code)
+    return code > 127 and (character.lower() != character or character.upper() != character)
+
+
 def fold_case(intervals: Intervals) -> Intervals:
+    """The set with the ASCII letters' other case added; a cased non-ASCII character is refused, as its
+    folding depends on the locale grep runs in."""
+    if any(is_cased_non_ascii(code) for low, high in intervals for code in range(low, high + 1)):
+        raise UnsupportedPattern(
+            "a cased non-ASCII character cannot be case folded: the locale decides its other case"
+        )
     shifted = [(low + CASE_OFFSET, high + CASE_OFFSET) for low, high in intersect(intervals, (UPPERCASE,))]
     shifted += [(low - CASE_OFFSET, high - CASE_OFFSET) for low, high in intersect(intervals, (LOWERCASE,))]
     return normalize(intervals + tuple(shifted))

@@ -9,7 +9,7 @@ import pytest
 from tests.runtime import CliRunner, REPO_ROOT, load_script_module
 
 
-PROVIDERS = ("codex", "devin", "hermes", "pi")
+PROVIDERS = ("codex", "devin", "dsh", "hermes", "pi")
 
 
 def script(provider: str) -> str:

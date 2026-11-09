@@ -135,6 +135,26 @@ def test_decision_output_is_reemitted(
     assert json.loads(capsys.readouterr().out.strip()) == output
 
 
+def test_system_message_output_is_reemitted(
+    manifest: Path, executable: StubWriter, capsys: pytest.CaptureFixture
+) -> None:
+    stub = executable(
+        "emit-message",
+        """
+        import json
+        print(json.dumps({"systemMessage": "lint says"}))
+        """,
+    )
+    write_manifest(
+        manifest,
+        "tools/post-execute",
+        [{"hooks": [{"command": str(stub), "type": "command"}]}],
+    )
+
+    assert hook_dispatch.run(manifest, "tools/post-execute", {}) == 0
+    assert json.loads(capsys.readouterr().out.strip()) == {"systemMessage": "lint says"}
+
+
 def test_nonzero_exit_other_than_two_is_ignored(manifest: Path, executable: StubWriter) -> None:
     stub = executable(
         "fail-soft",

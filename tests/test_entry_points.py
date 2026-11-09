@@ -11,6 +11,7 @@ from tests.runtime import REPO_ROOT
 ENTRY_POINTS = (
     "agents/codex/hooks/hook_adapter.py",
     "agents/devin/hooks/hook_adapter.py",
+    "agents/dsh/hooks/hook_adapter.py",
     "agents/hermes/hooks/hook_adapter.py",
     "agents/pi/hooks/hook_adapter.py",
     "agents/claude/statusline/statusline.py",

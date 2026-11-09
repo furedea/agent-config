@@ -10,7 +10,7 @@ import subprocess
 import sys
 
 DEFAULT_TIMEOUT = 60
-DECISION_KEYS = {"decision", "action"}
+DECISION_KEYS = {"decision", "action", "systemMessage"}
 
 
 def run(manifest: Path, event: str, payload: dict) -> int:

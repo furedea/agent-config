@@ -916,5 +916,88 @@
         }
       ]
     }
+  },
+  "dsh": {
+    "hooks": {
+      "tools/pre-execute": [
+        {
+          "matcher": "^bash$",
+          "hooks": [
+            {
+              "command": "\"$HOME/.dsh/hooks/hook_adapter.py\" paths command",
+              "timeout": 30,
+              "type": "command"
+            },
+            {
+              "command": "\"$HOME/.dsh/hooks/hook_adapter.py\" shell forbidden",
+              "timeout": 30,
+              "type": "command"
+            },
+            {
+              "command": "\"$HOME/.dsh/hooks/hook_adapter.py\" shell commit",
+              "timeout": 30,
+              "type": "command"
+            },
+            {
+              "command": "\"$HOME/.dsh/hooks/hook_adapter.py\" shell git",
+              "timeout": 30,
+              "type": "command"
+            },
+            {
+              "command": "\"$HOME/.dsh/hooks/hook_adapter.py\" shell allowed",
+              "timeout": 30,
+              "type": "command"
+            }
+          ]
+        },
+        {
+          "matcher": "^(read|read_image|glob|grep)$",
+          "hooks": [
+            {
+              "command": "\"$HOME/.dsh/hooks/hook_adapter.py\" paths patch",
+              "timeout": 30,
+              "type": "command"
+            },
+            {
+              "command": "\"$HOME/.dsh/hooks/hook_adapter.py\" content read",
+              "timeout": 30,
+              "type": "command"
+            }
+          ]
+        },
+        {
+          "matcher": "^(write|edit|str_replace_editor)$",
+          "hooks": [
+            {
+              "command": "\"$HOME/.dsh/hooks/hook_adapter.py\" paths patch",
+              "timeout": 30,
+              "type": "command"
+            },
+            {
+              "command": "\"$HOME/.dsh/hooks/hook_adapter.py\" harness",
+              "timeout": 30,
+              "type": "command"
+            },
+            {
+              "command": "\"$HOME/.dsh/hooks/hook_adapter.py\" content write",
+              "timeout": 30,
+              "type": "command"
+            }
+          ]
+        }
+      ],
+      "tools/post-execute": [
+        {
+          "matcher": "^(write|edit|str_replace_editor)$",
+          "hooks": [
+            {
+              "command": "\"$HOME/.dsh/hooks/hook_adapter.py\" lint",
+              "timeout": 120,
+              "type": "command"
+            }
+          ]
+        }
+      ]
+    }
   }
 }

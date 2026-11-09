@@ -205,7 +205,9 @@ def content_text(mode: str, payload: dict) -> str:
     if mode == "prompt":
         return payload.get("prompt") or ""
     if mode == "write":
-        return "".join(values.get(key) or "" for key in ("content", "new_string", "new_source"))
+        return "".join(
+            values.get(key) or "" for key in ("content", "new_string", "new_source", "new_str", "file_text")
+        )
     # Grep may name a directory; only a single file target can be scanned before the tool runs.
     path = hook_input.file_path(values)
     if not path or not Path(path).is_file():
@@ -262,7 +264,7 @@ def scan_content(mode: str, payload: dict, directory: Path) -> None:
     )
     if mode == "prompt":
         decision = {"decision": "block", "reason": f"BLOCKED: {reason}. Prompt contains sensitive information."}
-    elif payload.get("provider") in {"devin", "hermes", "pi"}:
+    elif payload.get("provider") in {"devin", "dsh", "hermes", "pi"}:
         decision = {"decision": "block", "reason": f"BLOCKED: {reason}"}
     else:
         decision = {

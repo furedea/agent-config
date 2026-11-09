@@ -58,6 +58,11 @@ def additional_context(event: str, result: dict) -> dict:
     return denial(result) or (context if message else result)
 
 
+def system_message_output(message: str) -> dict:
+    """Encode diagnostics for providers that read a top-level systemMessage."""
+    return {"systemMessage": message}
+
+
 def no_cwd() -> str:
     return ""
 
@@ -76,6 +81,7 @@ class Profile:
     events: Mapping[str, str] = field(default_factory=dict)
     compaction_events: Mapping[str, str] = field(default_factory=dict)
     formatter: Formatter = system_message
+    lint_output: Callable[[str], dict] = lint_format.context
     content_modes: tuple[str, ...] = CONTENT_MODES
     cwd_fallback: Callable[[], str] = os.getcwd
     manifest_env: str = ""
@@ -171,7 +177,7 @@ class Adapter:
 
     def lint(self, payload: dict) -> int:
         """Report shared quality diagnostics using the PostToolUse JSON contract."""
-        lint_format.emit(lint_format.diagnostics(self.normalized(payload)))
+        lint_format.emit(lint_format.diagnostics(self.normalized(payload)), self.profile.lint_output)
         return 0
 
     def harness(self, payload: dict) -> int:

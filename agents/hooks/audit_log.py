@@ -42,7 +42,7 @@ def _label(value: object, fallback: str = "unknown") -> str:
 
 def _provider(payload: dict, explicit: str | None = None) -> str:
     candidate = explicit or payload.get("provider")
-    if candidate in {"claude", "codex", "devin", "hermes", "pi"}:
+    if candidate in {"claude", "codex", "devin", "dsh", "hermes", "pi"}:
         return candidate
     return "codex" if payload.get("turn_id") else "claude"
 

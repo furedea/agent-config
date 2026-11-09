@@ -145,6 +145,36 @@ def test_generated_pi_hooks_use_only_supported_events_and_native_tools(
     assert not any("Bash" in matcher for matcher in matchers)
 
 
+def test_generated_dsh_hooks_use_only_supported_events_and_native_tools(
+    agent_harness: CliRunner, tmp_path: Path
+) -> None:
+    path = tmp_path / "hooks.json"
+    agent_harness("generate-dsh-hooks", "--output", str(path))
+    hooks = json.loads(path.read_text())["hooks"]
+    assert set(hooks) == {"tools/pre-execute", "tools/post-execute"}
+    commands = [hook["command"] for groups in hooks.values() for group in groups for hook in group["hooks"]]
+    assert any('hook_adapter.py" shell forbidden' in command for command in commands)
+    assert any('hook_adapter.py" paths patch' in command for command in commands)
+    assert any('hook_adapter.py" lint' in command for command in commands)
+    assert not any('hook_adapter.py" native' in command for command in commands)
+    post_matchers = [group.get("matcher", "") for group in hooks["tools/post-execute"]]
+    assert any("edit" in matcher for matcher in post_matchers)
+    matchers = [group.get("matcher", "") for groups in hooks.values() for group in groups]
+    assert any("bash" in matcher for matcher in matchers)
+    assert not any("Bash" in matcher for matcher in matchers)
+
+
+@pytest.mark.parametrize("tool", ["write", "edit", "str_replace_editor"])
+@pytest.mark.parametrize("event", ["tools/pre-execute", "tools/post-execute"])
+def test_generated_dsh_edit_matchers_cover_every_edit_tool(
+    agent_harness: CliRunner, tmp_path: Path, tool: str, event: str
+) -> None:
+    path = tmp_path / "hooks.json"
+    agent_harness("generate-dsh-hooks", "--output", str(path))
+    matchers = [group.get("matcher", "") for group in json.loads(path.read_text())["hooks"][event]]
+    assert any(tool in matcher for matcher in matchers)
+
+
 def test_generated_claude_settings_allow_no_unused_notification_host(agent_harness: CliRunner, tmp_path: Path) -> None:
     path = tmp_path / "settings.json"
     agent_harness("generate-claude-settings", "--output", str(path))

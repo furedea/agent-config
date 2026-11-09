@@ -113,3 +113,7 @@ This is most useful for `pull_request` and `push` triggers where users push mult
   cache broad paths that may contain credentials. When using an external shared
   backend, do not let untrusted workflows write caches that privileged
   workflows later execute.
+
+## 8. Workflow File Names
+
+Name workflow files in kebab-case with the `.yml` extension (e.g. `release-please.yml`). This is the GitHub Actions convention and an exception to the general underscore rule for file names.

@@ -39,6 +39,10 @@ def verdict(kind: str, command: str) -> str:
         pytest.param(f"echo '{DELETE}' | pwsh -Command -", id="pwsh -Command - reads the pipe"),
         pytest.param(f"pwsh-preview /Command '{DELETE}'", id="pwsh-preview /Command"),
         pytest.param(f"pwsh-preview7 --c '{DELETE}'", id="versioned pwsh-preview --c"),
+        pytest.param(f"echo '{DELETE}' | fish -C 'echo init'", id="an init command beside a script on the pipe"),
+        pytest.param(f"FISH -c '{DELETE}'", id="upper case name"),
+        pytest.param(f"PWSH /Command '{DELETE}'", id="upper case PowerShell name"),
+        pytest.param(f"BASH -c '{DELETE}'", id="upper case bash name"),
         pytest.param(f"pwsh --c '{DELETE}'", id="pwsh --c"),
         pytest.param(f"pwsh --command '{DELETE}'", id="pwsh --command"),
         pytest.param(f"pwsh /c '{DELETE}'", id="pwsh /c"),
@@ -110,9 +114,25 @@ def test_a_known_foreign_shell_asks_however_it_is_invoked(kind: str, shell: str,
     assert verdict(kind, f"{shell} {arguments}".strip()) == "ask"
 
 
-@pytest.mark.parametrize("command", ["/opt/bin/fish --version", "nohup fish", "env A=1 pwsh", "fish3 --version"])
-def test_a_known_foreign_shell_asks_by_path_wrapper_and_version(command: str) -> None:
+@pytest.mark.parametrize(
+    "command",
+    [
+        "/opt/bin/fish --version",
+        "nohup fish",
+        "env A=1 pwsh",
+        "fish3 --version",
+        "PWSH -c 'ls'",
+        "Fish --version",
+        "/usr/local/bin/NU script.nu",
+    ],
+)
+def test_a_known_foreign_shell_asks_by_path_wrapper_version_and_letter_case(command: str) -> None:
     assert verdict("allowed", command) == "ask"
+
+
+def test_a_fish_positional_argument_is_not_read_as_the_script() -> None:
+    command = f"fish -c 'printf \"%s\\n\" $argv;' '{DELETE}'"
+    assert verdict("forbidden", command) == "ask"
 
 
 @pytest.mark.parametrize(
@@ -136,8 +156,8 @@ def test_names_and_arguments_that_are_no_foreign_shell_keep_their_verdict(comman
     "command",
     [
         pytest.param("git commit --no-verif -m x", id="git commit --no-verif"),
-        pytest.param(f"git commit --no-ver -m x", id="git commit --no-ver"),
-        pytest.param(f"git commit -m x --no-v", id="git commit --no-v"),
+        pytest.param("git commit --no-veri -m x", id="git commit --no-veri"),
+        pytest.param("git commit -m x --no-veri", id="git commit trailing --no-veri"),
         pytest.param("python3 -W ignore -m pip install x", id="python -W with a value"),
         pytest.param("python3 -X dev -m pip install x", id="python -X with a value"),
         pytest.param("python3 -IW ignore -m pip install x", id="python bundled -W with a value"),
@@ -157,6 +177,7 @@ def test_abbreviated_and_valued_options_do_not_hide_a_denied_form(command: str) 
     "command",
     [
         "git commit --no-edit -m x",
+        "git commit --no-verbose -m x",
         "git commit --no-status -m x",
         "python3 -W ignore -m pytest",
         "python3 -X dev script.py",

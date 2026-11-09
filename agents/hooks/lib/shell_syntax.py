@@ -1,6 +1,8 @@
 """Inspect a conservative shell subset using shfmt's parser, never by executing input."""
 
+from collections.abc import Callable
 from dataclasses import dataclass, replace
+from functools import partial
 import json
 from pathlib import Path
 import re
@@ -214,14 +216,25 @@ def parse(source: str, depth: int = 0, directories: tuple[Path | None, ...] = ()
         name = shell_name(Path(innermost.arguments[0]).name)
         scripts = [(script, layer.wrapper_depth + 1) for layer in layers for script in shell_scripts(layer)]
         unreviewed = name in FOREIGN_SHELLS or any(takes_foreign_option(layer) for layer in layers)
-        if not scripts and (name in SHELLS or is_foreign_shell(name)):
-            scripts = [(script, innermost.wrapper_depth + 1) for script in sources.scripts(owner, directories)]
-            unreviewed = unreviewed or (name not in SHELLS and bool(scripts))
+        if (name in SHELLS and not scripts) or is_foreign_shell(name):
+            inputs = input_scripts(partial(sources.scripts, owner, directories), tolerant=bool(scripts))
+            scripts += [(script, innermost.wrapper_depth + 1) for script in inputs]
+            unreviewed = unreviewed or (name not in SHELLS and bool(inputs))
         if unreviewed:
             layers[-1] = replace(innermost, unreviewed=True)
         commands += layers
         commands += [nested for script, nested_depth in scripts for nested in parse(script, nested_depth, directories)]
     return tuple(commands)
+
+
+def input_scripts(read: Callable[[], list[str]], tolerant: bool) -> list[str]:
+    """The scripts a shell reads from its input; a tolerant caller already marked its call for review."""
+    try:
+        return read()
+    except UnsupportedSyntax:
+        if tolerant:
+            return []
+        raise
 
 
 def hidden_from_provider(records: tuple[dict, ...]) -> set[int]:
@@ -438,8 +451,11 @@ def foreign_scripts(command: Command) -> list[str]:
             operands.pop(0)
         if any(command.dynamic[position] for position in operands):
             raise UnsupportedSyntax(f"{arguments[0]} running a computed script requires explicit review", "wrapper")
-        if operands:
-            scripts.append(" ".join(arguments[position] for position in operands))
+        if not operands:
+            continue
+        # Only PowerShell joins its words; elsewhere the words after the script are its positional arguments.
+        words = operands if shell_name(Path(arguments[0]).name) in POWERSHELLS else operands[:1]
+        scripts.append(" ".join(arguments[position] for position in words))
     return scripts
 
 
@@ -461,8 +477,9 @@ def script_index(arguments: tuple[str, ...], option: int) -> int:
 
 
 def shell_name(executable: str) -> str:
-    """The shell a program name stands for, without a version suffix such as ksh93 or bash-5.2."""
-    return VERSION_SUFFIX.sub("", executable) or executable
+    """The shell a program name stands for: case folded (PWSH runs pwsh on macOS), no suffix as in ksh93 or bash-5.2."""
+    folded = executable.lower()
+    return VERSION_SUFFIX.sub("", folded) or folded
 
 
 def wrapper_scripts(command: Command, name: str) -> list[str]:

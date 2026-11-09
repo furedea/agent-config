@@ -50,7 +50,8 @@ of rules across tools, and that editing a rule's definition discards its cached 
   not yet precise enough (ADR-0020).
 - **Judge per edit.** Rejected: cost and latency grow with every edit, and most intermediate states are rewritten
   before they matter.
-- **No cache.** Rejected: Stop would re-judge unchanged units on every session.
+- **No cache.** Rejected: Stop fires more than once in a session, and each firing would
+  re-judge units that did not change since the previous one.
 
 Revisit when false-positive reports after promotion show that the example tests are not a sufficient criterion, when
 the lack of a cross-tool inventory hides rules that are still prose or duplicated, when Stop-time findings are mostly

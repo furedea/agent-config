@@ -66,7 +66,11 @@ def expanded_paths(pattern: str, directories: tuple[Path | None, ...]) -> list[s
     walk = GlobWalk()
     if pattern.startswith("~"):
         head, separator, tail = pattern.partition("/")
-        return walk.expand(f"{Path(head).expanduser()}{separator}{tail}", Path.home())
+        try:
+            home_head = Path(head).expanduser()
+        except RuntimeError as error:
+            raise UnexpandableGlob(f"cannot expand {pattern}, whose home directory is unknown") from error
+        return walk.expand(f"{home_head}{separator}{tail}", Path.home())
     if Path(pattern).is_absolute():
         return walk.expand(pattern, Path("/"))
     if None in directories:

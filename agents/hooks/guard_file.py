@@ -54,13 +54,21 @@ def protected_reason(value: str, path: Path) -> str:
             raise ValueError("invalid path")
     except ValueError as error:
         raise ValueError(f"invalid protected path policy: {path}") from error
-    if Path(value).expanduser() not in {Path(item).expanduser() for item in paths}:
+    if home_expanded(value) not in {home_expanded(item) for item in paths}:
         return ""
     return (
         f"{value} is part of the agent harness boundary.\n\n"
         "Change the source under agents/ in the agent-config repository, then regenerate the installed files. "
         "The provider permissions and sandbox remain the hard boundary."
     )
+
+
+def home_expanded(value: str) -> Path:
+    """Expand a leading `~`; a `~user` whose home is unknown stays literal, so it matches no protected path."""
+    try:
+        return Path(value).expanduser()
+    except RuntimeError:
+        return Path(value)
 
 
 def commit_filename_rules(path: Path) -> list[dict]:

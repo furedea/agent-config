@@ -38,6 +38,7 @@ def protected_policy(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
         ("~/.claude/settings.json", True),
         ("~/.claude/custom-protected.json", True),
         ("~/.claude/hooks/custom.sh", False),
+        ("~no-such-user-for-agent-config/x", False),
         ("agents/hooks/guard_command.py", False),
         ("agents/AGENTS.md", False),
         ("agents/codex/hooks/hook_adapter.py", False),

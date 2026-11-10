@@ -137,14 +137,16 @@ earlier turn. Do not wait for `blocked` and do not relay approval prompts: the u
 through Herdr's sound, toast, and sidebar status (or the provider's notification hook) and
 approves in the recipient's own pane, while the parent keeps waiting.
 
-When the wait returns done, read the reply with `herdr agent read`. For an implementation, a reply
-without `LANE-READY` or `LANE-BLOCKED` means the turn ended while work continues (for example the
-recipient is waiting for CI in the background): treat it as incomplete and wait again with
-`--until working --timeout 1800000`, then `--until done --timeout 1800000`. A review recipient
-carries no marker, so read its findings instead. Otherwise check the PR state and report to the
-user. Treat `LANE-BLOCKED` and its reason as incomplete work. When any wait returns on
-`--timeout`, check the recipient's state with `herdr agent list`: if it is blocked, wait again; otherwise report the
-state to the user. This works for Claude and Codex recipients alike.
+When the wait returns done, read the reply with `herdr agent read`. A review recipient carries no
+marker, so read its findings. For an implementation, a reply without `LANE-READY` or
+`LANE-BLOCKED` may mean the turn ended while work continues (for example the recipient is waiting
+for CI in the background): check `herdr agent list`. If the recipient is working, or blocked,
+wait again with `herdr agent wait <name> --until done --timeout 1800000`; if it is already done
+or idle, the turn really ended, so report the reply to the user at once. Otherwise check the PR
+state and report to the user. Treat `LANE-BLOCKED` and its reason as incomplete work. When a wait
+returns on `--timeout`, check `herdr agent list` the same way: wait again while the recipient is
+working or blocked, re-read the reply if it is done, and report any other state to the user. This
+works for Claude and Codex recipients alike.
 Follow `herdr` for waiting, blocked sessions, and complete response retrieval.
 Successful submission or a settled agent state does not prove that the assigned task is complete;
 read the response and compare it with the requested outcome.

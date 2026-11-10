@@ -3,16 +3,15 @@
 These tests check rendering and link integrity, not claims about model compliance with prose.
 """
 
+import json
+import re
 from collections import Counter
 from collections.abc import Iterator
-import json
 from pathlib import Path
-import re
 
 import pytest
 
-from tests.runtime import CliRunner, REPO_ROOT
-
+from tests.runtime import REPO_ROOT, CliRunner
 
 SKILLS = REPO_ROOT / "agents/skills"
 SKILL_NAMES = sorted(path.name for path in SKILLS.iterdir() if path.is_dir())

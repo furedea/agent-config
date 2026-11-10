@@ -1,17 +1,16 @@
 """Load command policy once and preserve the existing POSIX ERE matching contract."""
 
-from collections.abc import Sequence
 import json
 import os
-from pathlib import Path, PurePosixPath
 import re
 import subprocess
+from collections.abc import Sequence
 from dataclasses import replace
+from pathlib import Path, PurePosixPath
 
 import git_safety
 import shell_syntax
 import shell_wrappers
-
 
 # Characters a URL parser drops anywhere in a URL, so a scheme split by them still loads.
 URL_IGNORED_CHARACTERS = str.maketrans("", "", "\t\n\r")
@@ -149,7 +148,7 @@ def argument_reason(arguments: tuple[str, ...], rules: list[dict]) -> str:
 
 def project_root() -> Path | None:
     """The Git root that owns the project's policy."""
-    start = os.environ.get("AGENT_PROJECT_DIR", os.environ.get("CLAUDE_PROJECT_DIR", os.getcwd()))
+    start = os.environ.get("AGENT_PROJECT_DIR", os.environ.get("CLAUDE_PROJECT_DIR", str(Path.cwd())))
     try:
         root = subprocess.check_output(
             ["git", "-C", start, "rev-parse", "--show-toplevel"], text=True, stderr=subprocess.DEVNULL
@@ -188,8 +187,8 @@ def without_option_values(command: shell_syntax.Command) -> shell_syntax.Command
     """The command with each git commit option value masked, in its words and its decoded arguments.
 
     Flag rules read the rest: a value such as the message in `-m "--no-verify"` or `-nm"fix: x"` is
-    data, not a flag; so is every path after `--`. A value in the next word becomes a placeholder; one attached to its option
-    is cut off, leaving the option letters.
+    data, not a flag; so is every path after `--`. A value in the next word becomes a placeholder; one attached to
+    its option is cut off, leaving the option letters.
     """
     masks = commit_option_masks(command.arguments)
     words = tuple(masks.get(index, word) for index, word in enumerate(command.words))

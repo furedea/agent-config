@@ -5,25 +5,25 @@ from pathlib import Path
 
 import pytest
 from pytest_mock import MockerFixture
-
 from tests.runtime import load_script_module
-
 
 guard = load_script_module("agents/hooks/guard_command.py", "guard_command")
 pytestmark = pytest.mark.usefixtures("isolated_project")
+COMPANION = "~/.claude/plugins/cache/openai-codex/codex/1.0.3/scripts/codex-companion.mjs"
+HOME_COMPANION = f"{Path.home()}/.claude/plugins/cache/openai-codex/codex/1.0.3/scripts/codex-companion.mjs"
 
 
 @pytest.mark.parametrize(
     "command",
     [
-        'cd /tmp/project && node "~/.claude/plugins/cache/openai-codex/codex/1.0.3/scripts/codex-companion.mjs" --task review',
-        'node "~/.claude/plugins/cache/openai-codex/codex/1.0.3/scripts/codex-companion.mjs" --task review; echo done',
-        'node "~/.claude/plugins/cache/openai-codex/codex/1.0.3/scripts/codex-companion.mjs" --task review | tee /tmp/log',
-        'node "~/.claude/plugins/cache/openai-codex/codex/1.0.3/scripts/codex-companion.mjs" --task review > /tmp/log',
-        'env A=1 node "~/.claude/plugins/cache/openai-codex/codex/1.0.3/scripts/codex-companion.mjs" --task review',
-        'A=1 node "~/.claude/plugins/cache/openai-codex/codex/1.0.3/scripts/codex-companion.mjs" --task review',
-        'cd /tmp/project && "~/.claude/plugins/cache/openai-codex/codex/1.0.3/scripts/codex-companion.mjs" --task review',
-        'echo ready; timeout 30 node "~/.claude/plugins/cache/openai-codex/codex/1.0.3/scripts/codex-companion.mjs" --task review',
+        f'cd /tmp/project && node "{COMPANION}" --task review',
+        f'node "{COMPANION}" --task review; echo done',
+        f'node "{COMPANION}" --task review | tee /tmp/log',
+        f'node "{COMPANION}" --task review > /tmp/log',
+        f'env A=1 node "{COMPANION}" --task review',
+        f'A=1 node "{COMPANION}" --task review',
+        f'cd /tmp/project && "{COMPANION}" --task review',
+        f'echo ready; timeout 30 node "{COMPANION}" --task review',
     ],
 )
 def test_companion_requires_one_simple_command(command: str) -> None:
@@ -38,10 +38,10 @@ def test_companion_requires_one_simple_command(command: str) -> None:
 @pytest.mark.parametrize(
     "command",
     [
-        'node "~/.claude/plugins/cache/openai-codex/codex/1.0.3/scripts/codex-companion.mjs" --task "review $HOME"',
-        'node "~/.claude/plugins/cache/openai-codex/codex/1.0.3/scripts/codex-companion.mjs" --task $TASK',
-        'node "~/.claude/plugins/cache/openai-codex/codex/1.0.3/scripts/codex-companion.mjs" --focus "review `pwd`"',
-        'node "~/.claude/plugins/cache/openai-codex/codex/1.0.3/scripts/codex-companion.mjs" --task "review $(pwd)"',
+        f'node "{COMPANION}" --task "review $HOME"',
+        f'node "{COMPANION}" --task $TASK',
+        f'node "{COMPANION}" --focus "review `pwd`"',
+        f'node "{COMPANION}" --task "review $(pwd)"',
     ],
 )
 def test_companion_rejects_expansions_outside_single_quotes(command: str) -> None:
@@ -58,7 +58,7 @@ def test_companion_is_denied_when_its_simple_command_shape_cannot_be_parsed(mock
         autospec=True,
         side_effect=guard.shell_syntax.UnsupportedSyntax("parser unavailable"),
     )
-    command = 'node "~/.claude/plugins/cache/openai-codex/codex/1.0.3/scripts/codex-companion.mjs" --cwd /tmp/project --task "確認"'
+    command = f'node "{COMPANION}" --cwd /tmp/project --task "確認"'
     assert guard.decide("forbidden", {"tool_input": {"command": command}}).decision == "deny"
 
 
@@ -66,11 +66,11 @@ def test_companion_is_denied_when_its_simple_command_shape_cannot_be_parsed(mock
 @pytest.mark.parametrize(
     "command",
     [
-        f'node "{Path.home()}/.claude/plugins/cache/openai-codex/codex/1.0.3/scripts/codex-companion.mjs" --task review',
-        f'node "{Path.home()}/.claude/plugins/cache/openai-codex/codex/1.0.3/scripts/codex-companion.mjs" --cwd /tmp/project --task "日本語のタスクを確認"',
-        f"node \"{Path.home()}/.claude/plugins/cache/openai-codex/codex/1.0.3/scripts/codex-companion.mjs\" --task 'review $HOME'",
-        f'node "{Path.home()}/.claude/plugins/cache/openai-codex/codex/1.0.3/scripts/codex-companion.mjs" --cwd /tmp/project --task "引用符と && | > は本文" --background',
-        'echo "~/.claude/plugins/cache/openai-codex/codex/1.0.3/scripts/codex-companion.mjs" | tee /tmp/log',
+        f'node "{HOME_COMPANION}" --task review',
+        f'node "{HOME_COMPANION}" --cwd /tmp/project --task "日本語のタスクを確認"',
+        f"node \"{HOME_COMPANION}\" --task 'review $HOME'",
+        f'node "{HOME_COMPANION}" --cwd /tmp/project --task "引用符と && | > は本文" --background',
+        f'echo "{COMPANION}" | tee /tmp/log',
         'node "/plugin path/other.mjs" > /tmp/log',
     ],
 )

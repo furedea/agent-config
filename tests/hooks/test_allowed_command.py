@@ -1,9 +1,7 @@
 """Allowed-command contracts inspect text without executing the submitted commands."""
 
 import pytest
-
 from tests.runtime import load_script_module
-
 
 guard = load_script_module("agents/hooks/guard_command.py", "guard_command")
 literal_words = load_script_module("agents/hooks/lib/literal_words.py", "literal_words")
@@ -42,7 +40,8 @@ pytestmark = pytest.mark.usefixtures("isolated_project")
         pytest.param('gh pr view "$NUMBER" --json state', id="quoted run-time words in listed GitHub forms"),
         pytest.param('gh pr create --head topic --body-file "$D/pr.md"', id="run-time body files"),
         pytest.param(
-            "gh pr create --head topic --title 'fix: x' --body \"$(cat <<'EOF'\nUse `git add -A` never.\n$HOME stays.\nEOF\n)\"",
+            "gh pr create --head topic --title 'fix: x' "
+            "--body \"$(cat <<'EOF'\nUse `git add -A` never.\n$HOME stays.\nEOF\n)\"",
             id="PR bodies inline through a quoted heredoc",
         ),
         pytest.param("gh pr review 42 --comment -b 'Looks good'", id="reviewable GitHub operations 1"),

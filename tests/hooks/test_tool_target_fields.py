@@ -4,9 +4,7 @@ import json
 from pathlib import Path
 
 import pytest
-
 from tests.runtime import CliRunner, load_script_module
-
 
 SCRIPT = "agents/hooks/guard_file.py"
 MARKER = "fixture-sensitive-marker"

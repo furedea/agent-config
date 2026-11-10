@@ -4,10 +4,9 @@ Every provider is read as a list of prefix rules and judged with one model: the 
 among the prefixes that begin the command wins, and a command no prefix begins is left undecided.
 """
 
+import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-import re
-
 
 Words = tuple[str, ...]
 

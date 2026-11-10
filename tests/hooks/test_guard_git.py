@@ -5,9 +5,7 @@ from pathlib import Path
 
 import pytest
 from pytest_mock import MockerFixture
-
 from tests.runtime import CliRunner, load_script_module
-
 
 guard = load_script_module("agents/hooks/guard_git.py", "guard_git")
 pytestmark = pytest.mark.usefixtures("isolated_project")

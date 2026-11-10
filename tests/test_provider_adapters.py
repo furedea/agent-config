@@ -1,13 +1,12 @@
 """Behavior every provider hook adapter shares, exercised through each real entry point."""
 
 import json
-from pathlib import Path
 import shutil
+from pathlib import Path
 
 import pytest
 
-from tests.runtime import CliRunner, REPO_ROOT, load_script_module
-
+from tests.runtime import REPO_ROOT, CliRunner, load_script_module
 
 PROVIDERS = ("codex", "devin", "dsh", "hermes", "pi")
 

@@ -1,8 +1,7 @@
 """Identify the package manager and test runner a JavaScript project uses."""
 
-from pathlib import Path
 import re
-
+from pathlib import Path
 
 RUNNER_PREFIXES = {
     "pnpm": ("pnpm", "exec"),

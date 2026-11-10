@@ -4,9 +4,8 @@ import json
 from pathlib import Path
 
 import pytest
-from pytest_mock import MockerFixture
-
 from lib import formatter_policy, lint_engine, process_runner
+from pytest_mock import MockerFixture
 
 
 def test_personal_dprint_runs_from_the_target_directory(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

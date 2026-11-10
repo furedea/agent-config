@@ -1,11 +1,10 @@
 """A removed language project ignores sources that git ignores."""
 
 import json
-from pathlib import Path
 import subprocess
+from pathlib import Path
 
 import pytest
-
 from tests.runtime import REPO_ROOT, load_script_module
 
 selection = load_script_module("agents/hooks/lib/check_selection.py", "check_selection")

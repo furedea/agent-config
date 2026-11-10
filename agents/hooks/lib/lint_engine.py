@@ -1,14 +1,14 @@
 """Execute planned quality steps and return bounded diagnostics."""
 
-from collections.abc import Callable, Iterable
-from dataclasses import dataclass
 import os
-from pathlib import Path
 import shutil
 import tempfile
+from collections.abc import Callable, Iterable
+from dataclasses import dataclass
+from pathlib import Path
 
-from lib.formatter_policy import PERSONAL_PRETTIER_CONFIG_NAME, Step, personal_config, plan
 from lib import process_runner
+from lib.formatter_policy import PERSONAL_PRETTIER_CONFIG_NAME, Step, personal_config, plan
 
 
 @dataclass(frozen=True, slots=True)

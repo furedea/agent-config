@@ -2,7 +2,6 @@
 
 import re
 
-
 NAMES = frozenset({"powershell", "pwsh", "pwsh-preview"})
 # PowerShell's -e, -ec, -EncodedCommand: a base64 script, which the inspection does not decode.
 ENCODED_OPTION = re.compile(r"-(e|ec|en[a-z]*)", re.IGNORECASE)
@@ -31,7 +30,10 @@ def takes_code(shell: str, argument: str) -> bool:
 
 
 def joins_following_words(shell: str, argument: str) -> bool:
-    """Whether every word after the option is code; after -CommandWithArgs only the first is, the rest are arguments."""
+    """Whether every word after the option is code.
+
+    After -CommandWithArgs only the first is; the rest are arguments.
+    """
     return is_powershell(shell) and not is_with_args(form(shell, argument)[1:].lower())
 
 

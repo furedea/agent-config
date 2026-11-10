@@ -1,17 +1,16 @@
 """Execute bounded checks in the registered worktree and retain a bounded output tail."""
 
-from dataclasses import dataclass
-from enum import StrEnum
 import os
-from pathlib import Path
 import signal
 import subprocess
 import threading
 import time
+from dataclasses import dataclass
+from enum import StrEnum
+from pathlib import Path
 
 from check_evidence import first_error, summarize
 from check_selection import Invocation
-
 
 OUTPUT_LIMIT_BYTES = 1024 * 1024
 

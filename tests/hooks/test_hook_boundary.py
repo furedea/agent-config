@@ -2,15 +2,14 @@
 
 import io
 import json
-from pathlib import Path
 import subprocess
 import sys
+from pathlib import Path
 from types import ModuleType
 from unittest.mock import Mock
 
 import pytest
 from pytest_mock import MockerFixture
-
 from tests.runtime import REPO_ROOT, load_script_module
 
 hook_adapter = load_script_module("agents/codex/hooks/hook_adapter.py", "codex_hook_adapter")

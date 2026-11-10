@@ -1,8 +1,8 @@
 #!/usr/bin/env -S python3 -IB
 """Translate Codex hook payloads at the boundary to shared hook implementations."""
 
-from pathlib import Path
 import sys
+from pathlib import Path
 
 SCRIPT = Path(__file__).resolve()
 # Deployed adapters live in ~/.<provider>/hooks beside ~/.claude/hooks; the source tree keeps agents/hooks.

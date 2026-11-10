@@ -1,13 +1,13 @@
 """Lane metadata never authorizes commands in a sandbox-writable primary."""
 
 import json
-from pathlib import Path
 import shlex
 import tempfile
 from collections.abc import Iterator
+from pathlib import Path
 
+import cleanup_worktrees
 import pytest
-
 from tests.hooks.cleanup_worktrees_runtime import (
     branches,
     cleanup,
@@ -16,8 +16,6 @@ from tests.hooks.cleanup_worktrees_runtime import (
     task_worktree,
 )
 from tests.runtime import real_git
-
-import cleanup_worktrees
 
 
 @pytest.fixture

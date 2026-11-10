@@ -1,12 +1,11 @@
 """Locate the command a process wrapper runs, refusing any option it does not list."""
 
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
-import re
 from typing import Self
 
 from shell_words import UnsupportedSyntax
-
 
 # Shell options that take the next word as a value, which would hide where the -c script starts.
 SHELL_VALUED_OPTIONS = frozenset({"-o", "+o", "-O", "+O", "--rcfile", "--init-file"})
@@ -165,7 +164,10 @@ class OptionScan:
         return True
 
     def take_attached(self) -> int:
-        """Record an option written with its value attached or bundled with other short flags; return the tokens it spans."""
+        """Record an option written with its value attached or bundled with other short flags.
+
+        Return the tokens it spans.
+        """
         token = self.arguments[self.index]
         if token.startswith("--"):
             key, _, value = token.partition("=")

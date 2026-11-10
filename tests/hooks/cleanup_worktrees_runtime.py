@@ -1,18 +1,15 @@
 """Shared Git worktree setup and cleanup process helpers."""
 
-from contextlib import redirect_stderr, redirect_stdout
 import io
 import json
-from pathlib import Path
 import subprocess
 import sys
-
-import pytest
-
-from tests.runtime import REPO_ROOT
+from contextlib import redirect_stderr, redirect_stdout
+from pathlib import Path
 
 import cleanup_worktrees
-
+import pytest
+from tests.runtime import REPO_ROOT
 
 SCRIPT = REPO_ROOT / "agents/hooks/cleanup_worktrees.py"
 

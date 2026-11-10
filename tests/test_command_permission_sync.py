@@ -1,13 +1,12 @@
 """Generated Claude permissions and precise command rules share the same boundaries."""
 
 import json
-from pathlib import Path
 import re
+from pathlib import Path
 
 import pytest
 
-from tests.runtime import CliRunner, REPO_ROOT
-
+from tests.runtime import REPO_ROOT, CliRunner
 
 pytestmark = pytest.mark.integration
 POLICY = json.loads((REPO_ROOT / "agents/command_permissions.json").read_text())

@@ -22,7 +22,6 @@ from tests.ere_to_z3 import (
     search_language,
 )
 
-
 Prefix = tuple[str, ...]
 # Mirrors shell_wrappers.COMMAND_LOOKUP; test_forbidden_overlap pins the two together.
 COMMAND_LOOKUP = frozenset({"-v", "-V"})
@@ -56,7 +55,10 @@ class CompiledRule:
         return self.without_exceptions(z3.Loop(any_character(), 0, span))
 
     def denied_command(self) -> z3.ReRef:
-        """Commands the pattern occurs in, wherever it begins, when no exception applies and the program is governed."""
+        """Commands the pattern occurs in, wherever it begins, once no exception applies.
+
+        The program must also be one the rule governs.
+        """
         denied = self.without_exceptions(z3.Star(any_character()))
         if not self.programs:
             return denied

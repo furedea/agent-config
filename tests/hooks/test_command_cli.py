@@ -1,11 +1,10 @@
 """Command entry points preserve policy discovery, Git context and diagnostics."""
 
 import json
-from pathlib import Path
 import subprocess
+from pathlib import Path
 
 import pytest
-
 from tests.runtime import CliRunner
 
 

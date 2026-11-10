@@ -1,13 +1,11 @@
 """Codex protocol translation using actual entry points and isolated policy files."""
 
 import json
-from pathlib import Path
 import shutil
+from pathlib import Path
 
 import pytest
-
-from tests.runtime import CliRunner, REPO_ROOT, StubWriter
-
+from tests.runtime import REPO_ROOT, CliRunner, StubWriter
 
 SCRIPT = "agents/codex/hooks/hook_adapter.py"
 

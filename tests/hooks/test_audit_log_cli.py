@@ -2,13 +2,12 @@
 
 import json
 import os
-from pathlib import Path
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
-
-from tests.runtime import CliRunner, REPO_ROOT
+from tests.runtime import REPO_ROOT, CliRunner
 
 
 def audit_paths(state: Path) -> list[Path]:

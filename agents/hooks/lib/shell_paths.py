@@ -1,15 +1,14 @@
 """Name the paths a shell command touches, expanding braces and globs the way the shell would."""
 
+import os
+import re
+import shlex
 from collections.abc import Iterator
 from fnmatch import fnmatchcase
 from itertools import islice
-import os
 from pathlib import Path
-import re
-import shlex
 
 import shell_syntax
-
 
 GLOB = re.compile(r"[*?[]")
 # Brace expansion multiplies; past this many words the command needs review rather than stall the hook.
@@ -66,8 +65,9 @@ def expanded_paths(pattern: str, directories: tuple[Path | None, ...]) -> list[s
         raise UnexpandableGlob(f"cannot expand {pattern}, whose value is known only at run time")
     walk = GlobWalk()
     if pattern.startswith("~"):
-        return walk.expand(os.path.expanduser(pattern), Path.home())
-    if os.path.isabs(pattern):
+        head, separator, tail = pattern.partition("/")
+        return walk.expand(f"{Path(head).expanduser()}{separator}{tail}", Path.home())
+    if Path(pattern).is_absolute():
         return walk.expand(pattern, Path("/"))
     if None in directories:
         raise UnexpandableGlob(f"cannot expand {pattern} in a directory known only at run time")

@@ -1,13 +1,12 @@
 """Normalize provider hook payloads into unique filesystem targets."""
 
+import os
+import tempfile
 from collections.abc import Generator
 from contextlib import contextmanager
-import os
 from pathlib import Path
-import tempfile
 
 import patch_input
-
 
 EXTENSIONS = {
     ".py": "py",
@@ -60,7 +59,7 @@ def payload_directory(payload: object) -> Generator[None]:
     if not isinstance(value, str) or not value or not Path(value).is_dir():
         yield
         return
-    previous = os.getcwd()
+    previous = Path.cwd()
     os.chdir(value)
     try:
         yield

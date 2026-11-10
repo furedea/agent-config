@@ -1,13 +1,11 @@
 """The lint/format CLI runs real tools and preserves process-level failures."""
 
 import json
-from pathlib import Path
 import shutil
+from pathlib import Path
 
 import pytest
-
 from tests.runtime import CliRunner, StubWriter, load_script_module
-
 
 lint_format = load_script_module("agents/hooks/lint_format.py", "lint_format")
 

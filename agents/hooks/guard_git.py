@@ -2,9 +2,8 @@
 """Explain dangerous Git operations before the provider's hard permission boundary."""
 
 import json
-from pathlib import Path
 import sys
-
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
@@ -14,9 +13,8 @@ import audit_log
 import git_safety
 import hook_decision
 import hook_input
-from hook_decision import Verdict
 import shell_syntax
-
+from hook_decision import Verdict
 
 RULE = "guard_dangerous_git.sh"
 

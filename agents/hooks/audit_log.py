@@ -1,27 +1,24 @@
 #!/usr/bin/env -S python3 -IB
 """Record bounded hook metadata without retaining prompts, commands, or file bodies."""
 
-from collections.abc import Iterable
-from dataclasses import dataclass
-from datetime import UTC, datetime
 import hashlib
 import json
 import math
 import os
-from pathlib import Path
 import re
 import sys
 import time
-
+from collections.abc import Iterable
+from dataclasses import dataclass
+from datetime import UTC, datetime
+from pathlib import Path
 
 SCRIPT = Path(__file__).resolve()
 sys.path.insert(0, str(SCRIPT.parent / "lib"))
 
-from session_store import file_lock, private_directory, worktree_id
-
 import hook_input
 import patch_input
-
+from session_store import file_lock, private_directory, worktree_id
 
 RETENTION_SECONDS = 7 * 24 * 60 * 60
 LOG_LIMIT_BYTES = 1024 * 1024
@@ -54,7 +51,7 @@ def _session(value: object) -> str:
 
 
 def _cwd(payload: dict) -> Path:
-    value = payload.get("cwd") or os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd()
+    value = payload.get("cwd") or os.environ.get("CLAUDE_PROJECT_DIR") or str(Path.cwd())
     if not isinstance(value, str) or not value:
         return Path.cwd().resolve()
     try:

@@ -1,9 +1,7 @@
 """Dangerous Git flags are evaluated as arguments, not substrings of shell text."""
 
 import pytest
-
 from tests.runtime import load_script_module
-
 
 git = load_script_module("agents/hooks/lib/git_safety.py", "git_safety")
 syntax = load_script_module("agents/hooks/lib/shell_syntax.py", "shell_syntax")

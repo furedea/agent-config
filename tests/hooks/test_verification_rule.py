@@ -2,9 +2,7 @@
 
 import json
 
-
 from tests.runtime import REPO_ROOT
-
 
 DEFAULTS = REPO_ROOT / "agents/hooks/rules/related_test_defaults.json"
 

@@ -2,13 +2,12 @@
 
 import json
 import os
-from pathlib import Path
 import subprocess
+from pathlib import Path
 
 import pytest
 
 from tests.runtime import CliRunner
-
 
 ADAPTERS = (".codex/hooks", ".devin/hooks", ".hermes/hooks", ".pi/hooks")
 

@@ -4,8 +4,7 @@ import json
 from pathlib import Path
 
 import pytest
-
-from tests.runtime import REPO_ROOT
+import session_store as store
 from tests.hooks.herdr_runtime import (
     CLOSE,
     CREATE,
@@ -14,17 +13,15 @@ from tests.hooks.herdr_runtime import (
     after,
     created,
     decision,
-    open_primary,
     open_lane,
+    open_primary,
     run,
     set_agents,
     set_terminals,
     start_agent,
     workspace_list,
 )
-
-
-import session_store as store
+from tests.runtime import REPO_ROOT
 
 
 @pytest.mark.parametrize("command", ["herdr workspace close w9", "herdr worktree remove --workspace w9"])

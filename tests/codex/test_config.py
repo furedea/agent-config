@@ -1,13 +1,11 @@
 """Codex sessions get the same sandboxed delivery environment as Claude sessions."""
 
 import json
-from pathlib import Path
 import tomllib
+from pathlib import Path
 
 import pytest
-
 from tests.runtime import REPO_ROOT, CliRunner
-
 
 CLEANUP_COMMAND = '"$HOME/.claude/hooks/cleanup_worktrees.py" session-start'
 

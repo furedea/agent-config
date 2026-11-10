@@ -1,13 +1,11 @@
 import json
 import os
-from pathlib import Path
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
-
 from tests.runtime import REPO_ROOT, load_script_module
-
 
 sys.path.insert(0, str(REPO_ROOT / "agents/hooks/lib"))
 gate = load_script_module("agents/hooks/lib/session_gate.py", "session_gate")

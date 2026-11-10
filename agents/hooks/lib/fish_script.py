@@ -5,7 +5,6 @@ from pathlib import Path
 import shell_input
 from shell_words import UnsupportedSyntax
 
-
 # fish long options without a value; an abbreviation they share with a valued option is ambiguous.
 FLAG_LONG_OPTIONS = frozenset(
     {

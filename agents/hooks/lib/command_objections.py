@@ -1,19 +1,18 @@
 """Every objection the command guard can raise: per segment, per command line, and per named script."""
 
 import os
-from pathlib import Path
 import re
+from pathlib import Path
 from typing import Protocol
 
 import automation_paths
 import command_policy
 import herdr_grammar
 import hook_decision
-from hook_decision import Verdict
 import literal_words
 import shell_inspection
 import shell_syntax
-
+from hook_decision import Verdict
 
 REQUEST_PROGRAMS = frozenset({"curl", "wget"})
 REMOTE_REASON = (
@@ -161,7 +160,9 @@ def settings_objection(command: str, commands: tuple[shell_syntax.Command, ...])
 
 
 def pinned_program_objection(command: str, commands: tuple[shell_syntax.Command, ...], policy: Policy) -> Verdict:
-    """A program whose rule pins a path runs unprompted only as the one command of the line, by that path, in a listed form.
+    """A program whose rule pins a path runs unprompted only as the one command of the line.
+
+    It must run by that path, in a listed form.
 
     A PATH lookup, an assignment, a wrapper, another statement, or an expansion can change what runs
     after this check, so each of them, the bare name included, asks.

@@ -2,15 +2,13 @@
 
 import json
 import os
-from pathlib import Path
 import shlex
 import shutil
 import subprocess
+from pathlib import Path
 
 import pytest
-
 from tests.runtime import CliRunner
-
 
 pytestmark = pytest.mark.integration
 

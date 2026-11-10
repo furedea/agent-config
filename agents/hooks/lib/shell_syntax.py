@@ -1,13 +1,13 @@
 """Inspect a conservative shell subset using shfmt's parser, never by executing input."""
 
+import json
+import re
+import subprocess
 from collections.abc import Callable
 from contextlib import suppress
 from dataclasses import dataclass, replace
 from functools import partial
-import json
 from pathlib import Path
-import re
-import subprocess
 from typing import Self
 
 import fish_script
@@ -15,7 +15,6 @@ import powershell_options
 import shell_input
 from shell_words import UnsupportedSyntax, literal_word, nodes, source_text, spreads
 from shell_wrappers import ASSIGNMENT, WRAPPERS, OptionScan, script_index, wrapped_index
-
 
 COMMAND_PREVIEW_LIMIT = 200
 RUN_TIME_PLACEHOLDER = "_"
@@ -130,7 +129,7 @@ class Command:
 
     @property
     def command_arguments_text(self) -> str:
-        """The command's decoded arguments, quotes removed, with each argument containing whitespace as a placeholder."""
+        """The command's decoded arguments, quotes removed; an argument containing whitespace is a placeholder."""
         return " ".join(
             RUN_TIME_PLACEHOLDER if re.search(r"\s", argument) else argument for argument in self.arguments
         )
@@ -256,7 +255,9 @@ def hidden_from_provider(records: tuple[dict, ...]) -> set[int]:
 
 
 def reached_directories(directories: tuple[Path | None, ...], command: Command) -> tuple[Path | None, ...]:
-    """Add where a cd, pushd, popd, or env -C may lead to the directories reachable so far; None is one known only at run time.
+    """Add where a cd, pushd, popd, or env -C may lead to the directories reachable so far.
+
+    None is a directory known only at run time.
 
     Earlier directories stay reachable, since a cd inside a subshell or before || may not take effect.
     """
@@ -450,7 +451,7 @@ def foreign_scripts(command: Command) -> list[str]:
             operands and arguments[operands[0]].startswith("-") and not powershell_options.takes_code(shell, argument)
         ):
             operands.pop(0)
-        # Only PowerShell's -Command joins its words; elsewhere the words after the script are its positional arguments.
+        # Only PowerShell's -Command joins its words; elsewhere the words after the script are positional arguments.
         words = operands if powershell_options.joins_following_words(shell, argument) else operands[:1]
         if any(command.dynamic[position] for position in words):
             raise UnsupportedSyntax(f"{arguments[0]} running a computed script requires explicit review", "wrapper")
@@ -461,13 +462,19 @@ def foreign_scripts(command: Command) -> list[str]:
 
 
 def shell_name(executable: str) -> str:
-    """The shell a program name stands for: case folded (PWSH runs pwsh on macOS), no suffix as in ksh93 or bash-5.2."""
+    """The shell a program name stands for: case folded (PWSH runs pwsh on macOS), without a version suffix.
+
+    ksh93 and bash-5.2 are examples of the suffix.
+    """
     folded = executable.lower()
     return VERSION_SUFFIX.sub("", folded) or folded
 
 
 def wrapper_scripts(command: Command, name: str) -> list[str]:
-    """The scripts a wrapper such as script -c, flock -c, or watch hands to a shell; every one counts, as the program picks."""
+    """The scripts a wrapper such as script -c, flock -c, or watch hands to a shell.
+
+    Every one counts, as the program picks.
+    """
     arguments = command.arguments
     scan = OptionScan(name, arguments).run()
     if not scan.runs_script:

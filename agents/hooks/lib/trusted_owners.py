@@ -8,18 +8,17 @@ it is answered at once, with no lookup (hosts without `gh` or credentials, and p
 Any other repository is asked of, in order: the remembered answer, `gh`, and the unauthenticated public GitHub API.
 """
 
-from dataclasses import dataclass
 import hashlib
 import http.client
 import json
 import os
-from pathlib import Path
 import re
 import subprocess
 import time
-from typing import IO
 import urllib.request
-
+from dataclasses import dataclass
+from pathlib import Path
+from typing import IO
 
 LOOKUP_TIMEOUT_SECONDS = 5
 PUBLIC_API = "https://api.github.com/repos/{owner}/{name}"
@@ -177,7 +176,7 @@ def is_fork(owner: str, name: str, trusted: TrustedOwners) -> bool | NoAnswer:
     if answer is not None:
         remember(cache, answer)
         return answer == "true"
-    return NoAnswer(tuple(failures) + (f"{owner}/{name} is not in the repositories list of trusted_owners.json",))
+    return NoAnswer((*failures, f"{owner}/{name} is not in the repositories list of trusted_owners.json"))
 
 
 def cached_answer(cache: Path) -> str | None:

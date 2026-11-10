@@ -1,15 +1,13 @@
 """Hermes protocol translation using actual entry points and isolated policy files."""
 
 import json
-from pathlib import Path
 import shutil
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
-
-from tests.runtime import CliRunner, REPO_ROOT
-
+from tests.runtime import REPO_ROOT, CliRunner
 
 pytestmark = pytest.mark.usefixtures("harness")
 

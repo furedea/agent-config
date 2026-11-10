@@ -6,7 +6,6 @@ from tests.ere_to_z3 import UnsupportedPattern
 from tests.rule_overlap import Overlap, find_overlaps
 from tests.runtime import load_script_module
 
-
 command_policy = load_script_module("agents/hooks/lib/command_policy.py", "command_policy")
 
 GIT_ADD = {"patterns": [r"^git[[:space:]]+add[[:space:]]+\.([[:space:]]|$)"], "justification": "test"}

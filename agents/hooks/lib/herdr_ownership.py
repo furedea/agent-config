@@ -7,15 +7,14 @@ user's own shell or session, and prompting it needs the user's judgment.
 
 import json
 import os
-from pathlib import Path
 import subprocess
+from pathlib import Path
 from typing import TypeGuard
 
 import session_store
-from session_store import ScopeError, SessionRecord, atomic_json, file_lock, read_json
 import shell_syntax
 from herdr_grammar import has_global_option
-
+from session_store import ScopeError, SessionRecord, atomic_json, file_lock, read_json
 
 AGENTS_FILE = "herdr_agents.json"
 LIST_TIMEOUT_SECONDS = 5

@@ -1,13 +1,11 @@
 """File-boundary contracts through real hook processes and disposable Git state."""
 
 import json
-from pathlib import Path
 import subprocess
+from pathlib import Path
 
 import pytest
-
 from tests.runtime import CliRunner
-
 
 SCRIPT = "agents/hooks/guard_file.py"
 

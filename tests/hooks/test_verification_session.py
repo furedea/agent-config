@@ -1,13 +1,11 @@
 import json
 import os
-from pathlib import Path
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
-
 from tests.runtime import REPO_ROOT
-
 
 hook = REPO_ROOT / "agents/hooks/verification_session.py"
 sys.path.insert(0, str(REPO_ROOT / "agents/hooks/lib"))

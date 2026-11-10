@@ -1,12 +1,10 @@
 import json
-from pathlib import Path
 import stat
+from pathlib import Path
 
 import pytest
 from pytest_mock import MockerFixture
-
 from tests.runtime import REPO_ROOT, load_script_module
-
 
 verify_page = load_script_module(
     "agents/skills/explain-visually/scripts/verify_page.py",

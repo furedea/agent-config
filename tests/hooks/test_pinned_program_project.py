@@ -1,11 +1,10 @@
 """Project rules with program_path count only from a trusted owner, and never weaken the global policy."""
 
 import json
-from pathlib import Path
 import subprocess
+from pathlib import Path
 
 import pytest
-
 from tests.hooks.pinned_program_support import (
     FORBIDDEN_RULES,
     GLOBAL_RULES,
@@ -189,7 +188,7 @@ def test_the_swe_conform_ledger_rule_closes_the_earlier_bypasses(project: Path, 
 @pytest.mark.usefixtures("ledger")
 def test_the_swe_conform_ledger_rule_is_ignored_in_an_untrusted_project(project: Path) -> None:
     set_origin(project, "https://github.com/someone/tool.git")
-    decision = guard.decide("allowed", {"tool_input": {"command": f"PATH=/tmp/shadow ledger ping"}})
+    decision = guard.decide("allowed", {"tool_input": {"command": "PATH=/tmp/shadow ledger ping"}})
     assert decision.decision == "allow"
     assert "trusted_owners.json" in (decision.notice or "")
 

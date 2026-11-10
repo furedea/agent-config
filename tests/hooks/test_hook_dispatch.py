@@ -1,13 +1,11 @@
 """Manifest fan-out executes configured commands and propagates their decisions."""
 
 import json
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import pytest
-
 from tests.runtime import REPO_ROOT, StubWriter
-
 
 sys.path.insert(0, str(REPO_ROOT / "agents/hooks/lib"))
 import hook_dispatch

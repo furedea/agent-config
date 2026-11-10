@@ -1,7 +1,7 @@
 """Match the shared secret-path policy against parsed literal path candidates."""
 
-from fnmatch import fnmatchcase
 import json
+from fnmatch import fnmatchcase
 from pathlib import Path
 
 

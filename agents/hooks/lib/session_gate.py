@@ -1,19 +1,18 @@
 """Verify session changes and replace each check's latest receipt atomically."""
 
-from dataclasses import dataclass
 import hashlib
 import json
 import os
-from pathlib import Path
 import shlex
 import shutil
 import time
+from dataclasses import dataclass
+from pathlib import Path
 
+import check_selection
 from check_execution import Status, execute
 from session_snapshot import Snapshot, capture
 from session_store import SessionRecord, StateError, prune
-import check_selection
-
 
 HOOK_ROOT = Path(__file__).resolve().parent.parent
 GATE_BUDGET_SECONDS = 540

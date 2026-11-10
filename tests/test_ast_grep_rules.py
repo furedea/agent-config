@@ -1,15 +1,14 @@
 """ast-grep rule contracts: every rule has native valid and invalid cases, and every case behaves as declared."""
 
 import os
-from pathlib import Path
 import re
 import shutil
 import subprocess
+from pathlib import Path
 
 import pytest
 
 from tests.runtime import REPO_ROOT
-
 
 LINT_ROOT = REPO_ROOT / "agents/hooks/lint"
 SG_CONFIG = LINT_ROOT / "sgconfig.yml"

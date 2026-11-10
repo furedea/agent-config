@@ -6,12 +6,11 @@ with a reason. Whether an exception is real is the user's judgment, so an edit t
 suppression markers to a code file than it removes asks; moving or deleting one does not.
 """
 
-from dataclasses import dataclass
 import json
-from pathlib import Path
 import re
 import sys
-
+from dataclasses import dataclass
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
@@ -21,7 +20,6 @@ import audit_log
 import hook_decision
 import hook_input
 from hook_decision import Verdict
-
 
 RULE = "guard_suppression.sh"
 CODE_SUFFIXES = frozenset(

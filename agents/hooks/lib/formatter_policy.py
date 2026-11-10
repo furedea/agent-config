@@ -1,11 +1,10 @@
 """Select project quality tools without executing them."""
 
-from dataclasses import dataclass
 import json
-from pathlib import Path
 import re
 import tomllib
-
+from dataclasses import dataclass
+from pathlib import Path
 
 PYTHON_FORMATTER_NAMES = frozenset({"black", "autopep8", "blue", "yapf"})
 HOOK_MANIFEST_NAMES = ("lefthook.yml", "lefthook.yaml", ".pre-commit-config.yaml")

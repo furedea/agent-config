@@ -12,19 +12,17 @@ Usage: cleanup_worktrees.py [--dry-run]
        cleanup_worktrees.py session-start  as a hook, reading the payload's cwd
 """
 
-from dataclasses import dataclass
 import json
 import os
-from pathlib import Path
 import subprocess
 import sys
-
+from dataclasses import dataclass
+from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
 
 import herdr_ownership
 import session_store
-
 
 PROTECTED_BRANCHES = frozenset({"main", "master"})
 MERGED_PULL_REQUEST_LIMIT = "200"

@@ -5,7 +5,6 @@ import os
 from pathlib import Path
 
 import pytest
-
 from tests.hooks.pinned_program_support import (
     GLOBAL_RULES,
     PINNED,

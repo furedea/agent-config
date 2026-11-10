@@ -2,17 +2,13 @@
 
 import io
 import json
-from pathlib import Path
 import shutil
+from pathlib import Path
 
 import pytest
-from pytest_mock import MockerFixture
-
-from tests.runtime import StubWriter, load_script_module
-
-
 from lib import formatter_policy, lint_engine, process_runner
-
+from pytest_mock import MockerFixture
+from tests.runtime import StubWriter, load_script_module
 
 lint_format = load_script_module("agents/hooks/lint_format.py", "lint_format")
 

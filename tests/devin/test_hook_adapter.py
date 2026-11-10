@@ -1,15 +1,13 @@
 """Devin protocol translation using actual entry points and isolated policy files."""
 
 import json
-from pathlib import Path
 import shutil
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
-
-from tests.runtime import CliRunner, REPO_ROOT, StubWriter
-
+from tests.runtime import REPO_ROOT, CliRunner, StubWriter
 
 SCRIPT = "agents/devin/hooks/hook_adapter.py"
 VERIFY = REPO_ROOT / "agents/hooks/verification_session.py"

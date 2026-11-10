@@ -1,18 +1,16 @@
 """Merged task worktrees and branches are removed only when nothing unmerged would be lost."""
 
 import json
-from pathlib import Path
 import shlex
 import subprocess
 import sys
-
-import pytest
-
-from tests.hooks.cleanup_worktrees_runtime import SCRIPT, branches, cleanup, git, task_worktree
-from tests.runtime import real_git
+from pathlib import Path
 
 import herdr_ownership
+import pytest
 import session_store
+from tests.hooks.cleanup_worktrees_runtime import SCRIPT, branches, cleanup, git, task_worktree
+from tests.runtime import real_git
 
 
 def test_a_merged_clean_worktree_and_its_branch_are_removed(primary: Path, merged: dict[str, str]) -> None:

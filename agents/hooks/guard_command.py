@@ -6,13 +6,12 @@ in a form the precise allowlist does not list, or a command that cannot be inspe
 is handed to the user instead of being refused outright.
 """
 
-from dataclasses import dataclass, replace
 import json
 import os
-from pathlib import Path
 import re
 import sys
-
+from dataclasses import dataclass, replace
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
@@ -26,10 +25,10 @@ import command_policy
 import foreign_shell_policy
 import hook_decision
 import hook_input
-from hook_decision import Verdict
 import literal_words
 import shell_syntax
 import trusted_owners
+from hook_decision import Verdict
 
 
 @dataclass(frozen=True, slots=True)

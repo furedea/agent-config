@@ -1,9 +1,8 @@
 """List a project's existing source files the way git sees them."""
 
 import os
-from pathlib import Path
 import subprocess
-
+from pathlib import Path
 
 GIT_TIMEOUT_SECONDS = 10
 

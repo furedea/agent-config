@@ -1,20 +1,18 @@
 """A session may drive only the Herdr agents it started; other panes may be the user's."""
 
 import json
-from pathlib import Path
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
 from pytest_mock import MockerFixture
-
-from tests.runtime import REPO_ROOT
 from tests.hooks.herdr_runtime import after, decision, hook, run, set_agents, start_agent
-
+from tests.runtime import REPO_ROOT
 
 sys.path.insert(0, str(REPO_ROOT / "agents/hooks/lib"))
-import session_store as store
 import herdr_ownership
+import session_store as store
 
 
 def test_a_session_prompts_the_agent_it_started(repository: Path, herdr: Path) -> None:

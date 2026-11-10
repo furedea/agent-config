@@ -2,22 +2,19 @@
 
 import json
 import os
-from pathlib import Path
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
-
-from tests.runtime import REPO_ROOT, StubWriter
 from tests.hooks.herdr_runtime import TERMINAL, set_agents
-
+from tests.runtime import REPO_ROOT, StubWriter
 
 sys.path.insert(0, str(REPO_ROOT / "agents/hooks"))
 sys.path.insert(0, str(REPO_ROOT / "agents/hooks/lib"))
-from tests.hooks.cleanup_worktrees_runtime import git
-
 import cleanup_worktrees
 import session_store
+from tests.hooks.cleanup_worktrees_runtime import git
 
 
 @pytest.fixture

@@ -17,20 +17,6 @@ import cleanup_worktrees
 SCRIPT = REPO_ROOT / "agents/hooks/cleanup_worktrees.py"
 
 
-class MergedHeads(dict[str, str]):
-    """Merged PR heads by branch, plus the fake Herdr files that dependent fixtures rewrite."""
-
-    def __init__(self, state: Path, workspace_listing: Path, sandbox_tmp: Path) -> None:
-        super().__init__()
-        self.state = state
-        self.workspace_listing = workspace_listing
-        self.sandbox_tmp = sandbox_tmp
-
-    def __setitem__(self, branch: str, oid: str) -> None:
-        super().__setitem__(branch, oid)
-        self.state.write_text(json.dumps([{"headRefName": b, "headRefOid": o} for b, o in self.items()]))
-
-
 def git(*arguments: str, cwd: Path) -> str:
     return subprocess.run(["git", *arguments], cwd=cwd, check=True, capture_output=True, text=True).stdout.strip()
 

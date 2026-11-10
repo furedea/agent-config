@@ -47,8 +47,8 @@ def harness(isolated_project: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 
 
 @pytest.fixture
-def project(harness: Path) -> Path:
-    root = harness.parent / "repo"
+def project(isolated_project: Path) -> Path:
+    root = isolated_project / "repo"
     root.mkdir()
     subprocess.run(["git", "init", "--quiet", "-b", "main", str(root)], check=True)
     return root
@@ -157,6 +157,7 @@ def patch_input(*lines: str) -> str:
     return "\n".join(["*** Begin Patch", *lines, "*** End Patch"]) + "\n"
 
 
+@pytest.mark.usefixtures("harness")
 def test_str_replace_editor_view_is_scanned_like_read(run_cli: CliRunner, project: Path) -> None:
     (project / "notes.txt").write_text("use fixture-sensitive-marker here\n")
     values = {"command": "view", "path": "notes.txt"}
@@ -257,6 +258,7 @@ def test_apply_patch_harness_boundary_protects_the_adapter(run_cli: CliRunner) -
     assert "agent harness boundary" in result.stderr
 
 
+@pytest.mark.usefixtures("harness")
 def test_apply_patch_added_text_is_scanned_for_secret_markers(run_cli: CliRunner, project: Path) -> None:
     body = patch_input("*** Add File: notes.txt", "+fixture-sensitive-marker")
     payload = {"tool_name": "apply_patch", "tool_input": {"input": body}, "cwd": str(project)}
@@ -295,6 +297,7 @@ def test_harness_boundary_protects_the_adapter_for_every_edit_tool(run_cli: CliR
 
 
 @pytest.mark.parametrize("tool", ["read", "read_image"])
+@pytest.mark.usefixtures("harness")
 def test_content_read_guards_secret_markers_in_read_targets(run_cli: CliRunner, project: Path, tool: str) -> None:
     (project / "notes.txt").write_text("use fixture-sensitive-marker here\n")
     payload = {"tool_name": tool, "tool_input": {"file_path": "notes.txt"}, "cwd": str(project)}
@@ -315,6 +318,7 @@ def test_content_read_guards_secret_markers_in_read_targets(run_cli: CliRunner, 
         {"command": "insert", "path": "/x", "insert_line": 0, "new_str": "fixture-sensitive-marker", "old_str": None},
     ],
 )
+@pytest.mark.usefixtures("harness")
 def test_content_write_guards_secret_markers_in_every_dsh_edit_field(
     run_cli: CliRunner, project: Path, values: dict
 ) -> None:

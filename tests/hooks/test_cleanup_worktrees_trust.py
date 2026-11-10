@@ -1,7 +1,6 @@
 """Lane metadata never authorizes commands in a sandbox-writable primary."""
 
 import json
-import os
 from pathlib import Path
 import shlex
 import tempfile
@@ -10,7 +9,6 @@ from collections.abc import Iterator
 import pytest
 
 from tests.hooks.cleanup_worktrees_runtime import (
-    MergedHeads,
     branches,
     cleanup,
     cleanup_with_real_policy,
@@ -23,14 +21,14 @@ import cleanup_worktrees
 
 
 @pytest.fixture
-def temporary(tmp_path: Path, merged: MergedHeads, location: str) -> Iterator[Path]:
+def temporary(tmp_path: Path, sandbox_tmp: Path, location: str) -> Iterator[Path]:
     if location not in {"tmp", "private-tmp"}:
         yield tmp_path
         return
 
-    merged.sandbox_tmp.mkdir()
+    sandbox_tmp.mkdir()
     candidates = [Path("/tmp"), Path("/private/tmp"), Path("/tmp/claude"), Path("/private/tmp/claude")]
-    candidates.append(Path(os.environ["TMPDIR"]))
+    candidates.append(sandbox_tmp)
     failures = []
     for candidate in dict.fromkeys(candidates):
         try:

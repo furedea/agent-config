@@ -351,7 +351,6 @@ def test_a_declaration_is_not_written_to_the_cache(
     assert is_ignored()
 
 
-@pytest.mark.usefixtures("api")
 def test_a_project_cannot_widen_the_declaration(project: Path, origin: SetOrigin) -> None:
     origin("git@github.com:furedea/private-tool.git")
     (project / ".agents/hooks/rules/trusted_owners.json").write_text(

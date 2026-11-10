@@ -58,8 +58,8 @@ def harness(isolated_project: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 
 
 @pytest.fixture
-def project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, harness: Path) -> Path:
-    root = harness.parent / "repo"
+def project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, isolated_project: Path) -> Path:
+    root = isolated_project / "repo"
     root.mkdir()
     subprocess.run(["git", "init", "--quiet", "-b", "main", str(root)], check=True)
     monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path / "state"))

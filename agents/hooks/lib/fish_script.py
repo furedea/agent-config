@@ -3,7 +3,7 @@
 from pathlib import Path
 
 import shell_input
-from shell_words import UnsupportedSyntax
+from shell_words import UnsupportedSyntaxError
 
 # fish long options without a value; an abbreviation they share with a valued option is ambiguous.
 FLAG_LONG_OPTIONS = frozenset(
@@ -55,7 +55,7 @@ def file_scripts(
         return []
     try:
         return shell_input.file_scripts(Path(arguments[index]), directories)
-    except UnsupportedSyntax:
+    except UnsupportedSyntaxError:
         return []
 
 

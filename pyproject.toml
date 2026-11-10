@@ -140,6 +140,9 @@ select = [
   "PERF",
   "E",
   "W",
+  "D",
+  "DOC",
+  "N",
   "F",
   "PGH",
   "PLC",
@@ -160,10 +163,16 @@ ignore = [
   "PLR2004",
   # PLR0917: PLR0913 (max-args = 3) already caps the total, which bounds the positional count
   "PLR0917",
+  "D104",
+  "D105",
+  "D107",
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["PLR0913"]
+"tests/**" = ["D", "PLR0913"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
 [tool.ruff.lint.mccabe]
 max-complexity = 10

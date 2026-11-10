@@ -179,7 +179,7 @@ def pinned_program_objection(command: str, commands: tuple[shell_syntax.Command,
         return hook_decision.ALLOW
     try:
         single = shell_syntax.is_one_simple_command(command) and literal_words.has_literal_words(command)
-    except shell_syntax.UnsupportedSyntax:
+    except shell_syntax.UnsupportedSyntaxError:
         single = False
     offending = next(
         (name for name, item in calls if not single or not is_listed_pinned_call(item, pinned, policy)), None
@@ -269,7 +269,7 @@ def companion_objection(command: str, commands: tuple[shell_syntax.Command, ...]
         )
     try:
         simple = len(commands) == 1 and shell_syntax.is_one_simple_command(command)
-    except shell_syntax.UnsupportedSyntax:
+    except shell_syntax.UnsupportedSyntaxError:
         simple = False
     if simple:
         arguments = commands[0].arguments

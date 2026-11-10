@@ -222,7 +222,7 @@ def commit_subcommand_index(arguments: tuple[str, ...]) -> int | None:
     try:
         while (step := shell_wrappers.wrapped_index(arguments[program:])) is not None:
             program += step
-    except shell_syntax.UnsupportedSyntax:
+    except shell_syntax.UnsupportedSyntaxError:
         return None
     if Path(arguments[program]).name != "git":
         return None

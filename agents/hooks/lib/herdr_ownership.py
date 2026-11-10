@@ -24,7 +24,7 @@ def check(record: SessionRecord, command: str) -> None:
     """Refuse ownership actions that cannot be tied to this session's terminals."""
     try:
         commands = shell_syntax.parse(command)
-    except shell_syntax.UnsupportedSyntax:
+    except shell_syntax.UnsupportedSyntaxError:
         return
     for parsed in commands:
         action = parsed.arguments[1:3]
@@ -63,7 +63,7 @@ def confirm(record: SessionRecord, command: str, response: object) -> None:
     """Update ownership only for matching successful results of one simple direct call."""
     try:
         commands = shell_syntax.parse(command)
-    except shell_syntax.UnsupportedSyntax:
+    except shell_syntax.UnsupportedSyntaxError:
         return
     if not _is_single_call(command, commands):
         return
@@ -110,7 +110,7 @@ def _is_single_call(command: str, commands: tuple[shell_syntax.Command, ...]) ->
             and not has_global_option(commands[0].arguments)
             and shell_syntax.is_one_simple_command(command)
         )
-    except shell_syntax.UnsupportedSyntax:
+    except shell_syntax.UnsupportedSyntaxError:
         return False
 
 

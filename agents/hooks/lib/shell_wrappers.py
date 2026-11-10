@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Self
 
-from shell_words import UnsupportedSyntax
+from shell_words import UnsupportedSyntaxError
 
 # Shell options that take the next word as a value, which would hide where the -c script starts.
 SHELL_VALUED_OPTIONS = frozenset({"-o", "+o", "-O", "+O", "--rcfile", "--init-file"})
@@ -133,7 +133,7 @@ class OptionScan:
         if self.name != "chrt":
             return LEADING_OPERANDS.get(self.name, 0)
         if any(self.dynamic[self.index : self.index + 1]):
-            raise UnsupportedSyntax("a chrt priority known only at run time requires explicit review", "wrapper")
+            raise UnsupportedSyntaxError("a chrt priority known only at run time requires explicit review", "wrapper")
         return int(self.index < len(self.arguments) and PRIORITY.fullmatch(self.arguments[self.index]) is not None)
 
     def run(self) -> Self:
@@ -223,7 +223,7 @@ class OptionScan:
         return self.arguments[position] if position < len(self.arguments) else None
 
     def _refuse(self, token: str) -> None:
-        raise UnsupportedSyntax(f"{self.name} option requires explicit review: {token}", "wrapper")
+        raise UnsupportedSyntaxError(f"{self.name} option requires explicit review: {token}", "wrapper")
 
 
 def script_index(arguments: tuple[str, ...], option: int) -> int:
@@ -231,9 +231,9 @@ def script_index(arguments: tuple[str, ...], option: int) -> int:
     index = option + 1
     while index < len(arguments) and arguments[index] != "--" and arguments[index][:1] in "-+":
         if arguments[index] in SHELL_VALUED_OPTIONS:
-            raise UnsupportedSyntax("a shell option before the -c script requires explicit review", "wrapper")
+            raise UnsupportedSyntaxError("a shell option before the -c script requires explicit review", "wrapper")
         index += 1
     index += index < len(arguments) and arguments[index] == "--"
     if index >= len(arguments):
-        raise UnsupportedSyntax("shell wrapper has no literal command", "wrapper")
+        raise UnsupportedSyntaxError("shell wrapper has no literal command", "wrapper")
     return index

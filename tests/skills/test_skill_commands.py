@@ -100,7 +100,7 @@ class Hooks:
     def cannot_inspect(self, text: str) -> bool:
         try:
             self.shell_syntax.parse(text)
-        except sys.modules["shell_words"].UnsupportedSyntax:
+        except sys.modules["shell_words"].UnsupportedSyntaxError:
             return True
         return False
 

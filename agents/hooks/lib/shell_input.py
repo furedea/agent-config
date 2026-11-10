@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Self
 
-from shell_words import UnsupportedSyntax, literal_word, nodes, source_text, spreads
+from shell_words import UnsupportedSyntaxError, literal_word, nodes, source_text, spreads
 
 # Options of echo, which writes its remaining arguments; the backslash escapes they toggle are refused.
 ECHO_OPTIONS = re.compile(r"-[neE]+")
@@ -103,7 +103,7 @@ def heredoc_text(redirect: dict) -> str:
     """Return the static script of a heredoc, refusing one the shell computes."""
     parts = redirect["Hdoc"].get("Parts", [])
     if any(part.get("Type") != "Lit" for part in parts):
-        raise UnsupportedSyntax("a shell heredoc whose text is computed requires explicit review", "heredoc")
+        raise UnsupportedSyntaxError("a shell heredoc whose text is computed requires explicit review", "heredoc")
     return "".join(part.get("Value", "") for part in parts)
 
 
@@ -160,5 +160,7 @@ def _static_script(word: dict, data: bytes) -> str:
     return value
 
 
-def _computed_input() -> UnsupportedSyntax:
-    return UnsupportedSyntax("a shell reading a computed script from its input requires explicit review", "wrapper")
+def _computed_input() -> UnsupportedSyntaxError:
+    return UnsupportedSyntaxError(
+        "a shell reading a computed script from its input requires explicit review", "wrapper"
+    )

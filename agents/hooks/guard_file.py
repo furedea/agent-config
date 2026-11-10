@@ -30,11 +30,11 @@ UNKNOWN_REPOSITORY = (
 )
 
 
-def policy_path(environment: str, name: str, directory: Path) -> Path:
+def _policy_path(environment: str, name: str, directory: Path) -> Path:
     return Path(os.environ.get(environment, str(directory / "rules" / name)))
 
 
-def load_policy(path: Path, field: str) -> list:
+def _load_policy(path: Path, field: str) -> list:
     try:
         data = json.loads(path.read_text())
         if not isinstance(data, dict) or type(data.get("version")) is not int or data["version"] != 1:
@@ -47,9 +47,9 @@ def load_policy(path: Path, field: str) -> list:
         raise ValueError(f"invalid policy: {path}") from error
 
 
-def protected_reason(value: str, path: Path) -> str:
+def _protected_reason(value: str, path: Path) -> str:
     try:
-        paths = load_policy(path, "paths")
+        paths = _load_policy(path, "paths")
         if not all(isinstance(item, str) and item for item in paths):
             raise ValueError("invalid path")
     except ValueError as error:
@@ -72,16 +72,22 @@ def home_expanded(value: str) -> Path:
 
 
 def commit_filename_rules(path: Path) -> list[dict]:
+    """Load the secret-filename rules of a commit policy file.
+
+    Raises:
+        ValueError: The file is unreadable, has an unsupported version, is empty, or holds a rule
+            without a pattern and reason, or with a pattern that does not compile.
+    """
     try:
-        rules = load_policy(path, "rules")
+        rules = _load_policy(path, "rules")
         for rule in rules:
-            validate_filename_rule(rule)
+            _validate_filename_rule(rule)
         return rules
     except ValueError as error:
         raise ValueError(f"invalid secret commit policy: {path}") from error
 
 
-def validate_filename_rule(rule: object) -> None:
+def _validate_filename_rule(rule: object) -> None:
     if not isinstance(rule, dict) or not all(
         isinstance(rule.get(key), str) and rule[key] for key in ("pattern", "reason")
     ):
@@ -89,7 +95,7 @@ def validate_filename_rule(rule: object) -> None:
     regex_matches(rule["pattern"], "")
 
 
-class UnplacedCommit(ValueError):
+class UnplacedCommitError(ValueError):
     """The parser cannot read the command, so where its commit runs is left to the user."""
 
 
@@ -111,11 +117,11 @@ def staged_filename_matches(rules: list[dict], location: tuple[str, ...]) -> lis
     return matches
 
 
-def commit_reason(command: str, directory: Path) -> str:
+def _commit_reason(command: str, directory: Path) -> str:
     locations = commit_locations(command)
     if not locations:
         return ""
-    path = policy_path("AGENT_SECRET_COMMIT_POLICY", "secret_commit_policy.json", directory)
+    path = _policy_path("AGENT_SECRET_COMMIT_POLICY", "secret_commit_policy.json", directory)
     rules = commit_filename_rules(path)
     matches = reachable_staged_matches(rules, locations)
     if not matches:
@@ -153,7 +159,7 @@ def commit_locations(command: str) -> list[tuple[str, ...]]:
     """
     try:
         commands = shell_syntax.parse(command)
-    except shell_syntax.UnsupportedSyntax:
+    except shell_syntax.UnsupportedSyntaxError:
         return unparsed_commit_locations(command)
     # Scripts a shell reads appear only in the parsed commands. The shell joins quoted pieces and line
     # continuations of a word, so GIT_''DIR= still names GIT_DIR.
@@ -182,7 +188,7 @@ def unparsed_commit_locations(command: str) -> list[tuple[str, ...]]:
         r"\b(cd|pushd|popd)\b|\s(-C|--git-dir|--work-tree)\b", command
     ):
         return [("-C", str(Path.cwd()))]
-    raise UnplacedCommit(UNKNOWN_REPOSITORY)
+    raise UnplacedCommitError(UNKNOWN_REPOSITORY)
 
 
 def commit_path_options(item: shell_syntax.Command) -> tuple[str, ...] | None:
@@ -209,6 +215,10 @@ def commit_path_options(item: shell_syntax.Command) -> tuple[str, ...] | None:
 
 
 def content_text(mode: str, payload: dict) -> str:
+    """Return the text a hook mode scans: the prompt, the written content, or the first 100000 bytes of a read file.
+
+    A read yields "" for a missing file, a directory, or an editor command that only mutates.
+    """
     values = payload.get("tool_input") or {}
     if mode == "prompt":
         return payload.get("prompt") or ""
@@ -225,7 +235,7 @@ def content_text(mode: str, payload: dict) -> str:
         return stream.read(100000).decode(errors="replace")
 
 
-def content_match(text: str, path: Path) -> tuple[str, str] | None:
+def _content_match(text: str, path: Path) -> tuple[str, str] | None:
     # Preserve the existing optional scanner contract; path guards are separate.
     if not text or not path.is_file():
         return None
@@ -248,10 +258,10 @@ def content_match(text: str, path: Path) -> tuple[str, str] | None:
     return None
 
 
-def scan_content(mode: str, payload: dict, directory: Path) -> None:
-    match = content_match(
+def _scan_content(mode: str, payload: dict, directory: Path) -> None:
+    match = _content_match(
         content_text(mode, payload),
-        policy_path("AGENT_SECRET_CONTENT_PATTERNS", "secret_content_patterns.json", directory),
+        _policy_path("AGENT_SECRET_CONTENT_PATTERNS", "secret_content_patterns.json", directory),
     )
     if match is None:
         return
@@ -294,13 +304,15 @@ def check(mode: str, payload: dict, directory: Path = ROOT) -> int:
     tool = "Edit"
     try:
         if mode in {"prompt", "read", "write"}:
-            scan_content(mode, payload, directory)
+            _scan_content(mode, payload, directory)
             return 0
         tool = payload.get("tool_name") or tool
         value = hook_input.file_path(payload.get("tool_input") or {})
         if not value:
             return 0
-        reason = protected_reason(value, policy_path("AGENT_PROTECTED_PATH_POLICY", "protected_paths.json", directory))
+        reason = _protected_reason(
+            value, _policy_path("AGENT_PROTECTED_PATH_POLICY", "protected_paths.json", directory)
+        )
         if not reason:
             return 0
     except (OSError, ValueError, TypeError, AttributeError) as error:
@@ -309,8 +321,8 @@ def check(mode: str, payload: dict, directory: Path = ROOT) -> int:
         audit_log.Refusal(
             tool,
             "guard_harness_files.sh",
-            session(payload),
-            payload=context(payload),
+            _session(payload),
+            payload=_context(payload),
             targets=(value,) if value else (),
         )
     )
@@ -321,37 +333,41 @@ def check(mode: str, payload: dict, directory: Path = ROOT) -> int:
 def commit_verdict(payload: dict, directory: Path = ROOT) -> hook_decision.Verdict:
     """Deny a commit of staged secrets, and ask when the parser cannot tell where a commit runs."""
     with hook_input.payload_directory(payload):
-        return judged_commit(payload, directory)
+        return _judged_commit(payload, directory)
 
 
-def judged_commit(payload: dict, directory: Path) -> hook_decision.Verdict:
+def _judged_commit(payload: dict, directory: Path) -> hook_decision.Verdict:
     tool = "Bash"
     try:
         tool = payload.get("tool_name") or tool
         command = (payload.get("tool_input") or {}).get("command") or ""
-        reason = commit_reason(command, directory) if command else ""
-    except UnplacedCommit as error:
+        reason = _commit_reason(command, directory) if command else ""
+    except UnplacedCommitError as error:
         audit_log.escalated(
-            audit_log.Refusal(tool, COMMIT_HOOK, session(payload), payload=context(payload), detail="syntax")
+            audit_log.Refusal(tool, COMMIT_HOOK, _session(payload), payload=_context(payload), detail="syntax")
         )
         return hook_decision.ask(f"Needs review: {error}", "syntax")
     except (OSError, ValueError, TypeError, AttributeError, subprocess.CalledProcessError) as error:
         reason = str(error)
     if not reason:
         return hook_decision.ALLOW
-    audit_log.blocked(audit_log.Refusal(tool, COMMIT_HOOK, session(payload), payload=context(payload)))
+    audit_log.blocked(audit_log.Refusal(tool, COMMIT_HOOK, _session(payload), payload=_context(payload)))
     return hook_decision.deny(f"BLOCKED: {reason}")
 
 
-def context(payload: object) -> dict | None:
+def _context(payload: object) -> dict | None:
     return payload if isinstance(payload, dict) else None
 
 
-def session(payload: object) -> str:
+def _session(payload: object) -> str:
     return payload.get("session_id", "") if isinstance(payload, dict) else ""
 
 
 def main(arguments: list[str]) -> int:
+    """Run the hook named by the single mode argument on the JSON payload from standard input.
+
+    Returns the hook's exit status: 1 for a bad mode, 2 for a payload that is not valid JSON.
+    """
     if len(arguments) != 1 or arguments[0] not in {"harness", "commit", "prompt", "read", "write"}:
         print("Usage: guard_file.py <harness|commit|prompt|read|write>", file=sys.stderr)
         return 1

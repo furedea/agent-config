@@ -56,7 +56,7 @@ def test_companion_is_denied_when_its_simple_command_shape_cannot_be_parsed(mock
         guard.shell_syntax,
         "is_one_simple_command",
         autospec=True,
-        side_effect=guard.shell_syntax.UnsupportedSyntax("parser unavailable"),
+        side_effect=guard.shell_syntax.UnsupportedSyntaxError("parser unavailable"),
     )
     command = f'node "{COMPANION}" --cwd /tmp/project --task "確認"'
     assert guard.decide("forbidden", {"tool_input": {"command": command}}).decision == "deny"

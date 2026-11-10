@@ -207,7 +207,7 @@ class Adapter:
                 candidates = (
                     _edit_targets(context) if mode == "patch" else _command_paths(_command_text(context["tool_input"]))
                 )
-        except shell_paths.UnexpandableGlob as error:
+        except shell_paths.UnexpandableGlobError as error:
             audit_log.blocked(_secret_path_refusal(mode, "", context))
             return hook_decision.emit(hook_decision.ask(f"Needs review: {error}.").hardened())
         for value in candidates:
@@ -335,7 +335,7 @@ def _edit_targets(context: dict) -> list[str]:
 def _command_paths(command: str) -> list[str]:
     try:
         return shell_paths.command_paths(command)
-    except shell_syntax.UnsupportedSyntax as error:
+    except shell_syntax.UnsupportedSyntaxError as error:
         raise ValueError(f"{error}\n\nCommand: {shell_syntax.command_preview(command)}") from error
 
 

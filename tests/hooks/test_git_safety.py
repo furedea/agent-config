@@ -162,7 +162,7 @@ def test_a_heredoc_fed_to_a_shell_is_parsed_as_a_script() -> None:
 
 @pytest.mark.parametrize("command", ["bash <<EOF\necho $X\nEOF", "echo $'\\x41'"])
 def test_scripts_whose_text_is_computed_still_require_review(command: str) -> None:
-    with pytest.raises(syntax.UnsupportedSyntax):
+    with pytest.raises(syntax.UnsupportedSyntaxError):
         syntax.parse(command)
 
 
@@ -288,15 +288,15 @@ def test_sudo_with_a_script_shell_is_judged_as_the_shell_it_runs() -> None:
 
 
 def test_unknown_wrapper_options_are_not_silently_skipped() -> None:
-    with pytest.raises(syntax.UnsupportedSyntax):
+    with pytest.raises(syntax.UnsupportedSyntaxError):
         syntax.parse("xargs --unknown-option git add .")
-    with pytest.raises(syntax.UnsupportedSyntax):
+    with pytest.raises(syntax.UnsupportedSyntaxError):
         syntax.parse("sudo --unknown-option git status")
 
 
 @pytest.mark.parametrize("command", ["sudo -D /other git commit", "sudo -R /other git status", "sudo -D/other git x"])
 def test_sudo_directory_changes_need_review_since_they_are_not_tracked(command: str) -> None:
-    with pytest.raises(syntax.UnsupportedSyntax):
+    with pytest.raises(syntax.UnsupportedSyntaxError):
         syntax.parse(command)
 
 

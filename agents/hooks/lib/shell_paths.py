@@ -18,7 +18,7 @@ VISIT_LIMIT = 10000
 HOME_VARIABLE = re.compile(r"\$(?:HOME\b|\{HOME\})")
 
 
-class UnexpandableGlob(ValueError):
+class UnexpandableGlobError(ValueError):
     """A glob whose expansion depends on a value known only at run time."""
 
 
@@ -75,7 +75,7 @@ def expanded_paths(pattern: str, directories: tuple[Path | None, ...]) -> list[s
     """
     pattern = HOME_VARIABLE.sub(lambda _: str(Path.home()), pattern)
     if "$" in pattern or "`" in pattern:
-        raise UnexpandableGlob(f"cannot expand {pattern}, whose value is known only at run time")
+        raise UnexpandableGlobError(f"cannot expand {pattern}, whose value is known only at run time")
     walk = GlobWalk()
     if pattern.startswith("~"):
         head, separator, tail = pattern.partition("/")
@@ -86,7 +86,7 @@ def expanded_paths(pattern: str, directories: tuple[Path | None, ...]) -> list[s
     if Path(pattern).is_absolute():
         return walk.expand(pattern, Path("/"))
     if None in directories:
-        raise UnexpandableGlob(f"cannot expand {pattern} in a directory known only at run time")
+        raise UnexpandableGlobError(f"cannot expand {pattern} in a directory known only at run time")
     return [path for directory in directories if directory for path in walk.expand(pattern, directory)]
 
 
@@ -95,7 +95,7 @@ def known_home(word: str) -> Path:
     try:
         return Path(word.partition("/")[0]).expanduser()
     except RuntimeError as error:
-        raise UnexpandableGlob(f"cannot expand {word}, whose home directory is unknown") from error
+        raise UnexpandableGlobError(f"cannot expand {word}, whose home directory is unknown") from error
 
 
 class GlobWalk:
@@ -162,7 +162,7 @@ class GlobWalk:
             return []
         self.visited += len(listed)
         if self.visited > VISIT_LIMIT:
-            raise UnexpandableGlob(f"a glob here visits more than {VISIT_LIMIT} files")
+            raise UnexpandableGlobError(f"a glob here visits more than {VISIT_LIMIT} files")
         return listed
 
 
@@ -176,13 +176,13 @@ def unquoted_words(source: str) -> list[str]:
 
 def brace_expansions(word: str) -> list[str]:
     """Expand comma braces as the shell does before globbing, so {.env,x} is judged as .env and x."""
-    words = list(islice(brace_words(word), BRACE_EXPANSION_LIMIT + 1))
+    words = list(islice(_brace_words(word), BRACE_EXPANSION_LIMIT + 1))
     if len(words) > BRACE_EXPANSION_LIMIT:
-        raise UnexpandableGlob(f"{word} expands to more than {BRACE_EXPANSION_LIMIT} words")
+        raise UnexpandableGlobError(f"{word} expands to more than {BRACE_EXPANSION_LIMIT} words")
     return words
 
 
-def brace_words(word: str) -> Iterator[str]:
+def _brace_words(word: str) -> Iterator[str]:
     starts = (start for start, character in enumerate(word) if character == "{")
     groups = ((start, group) for start in starts if (group := brace_group(word, start)) is not None)
     if (first := next(groups, None)) is None:
@@ -190,7 +190,7 @@ def brace_words(word: str) -> Iterator[str]:
         return
     start, (end, alternatives) = first
     for alternative in alternatives:
-        yield from brace_words(word[:start] + alternative + word[end + 1 :])
+        yield from _brace_words(word[:start] + alternative + word[end + 1 :])
 
 
 def brace_group(word: str, start: int) -> tuple[int, list[str]] | None:

@@ -13,5 +13,5 @@ def test_an_unknown_home_directory_is_unsupported_syntax(monkeypatch: pytest.Mon
         raise RuntimeError("Could not determine home directory.")
 
     monkeypatch.setattr(Path, "home", unknown_home)
-    with pytest.raises(words.UnsupportedSyntax, match="home directory is unknown"):
+    with pytest.raises(words.UnsupportedSyntaxError, match="home directory is unknown"):
         words.home_directory()

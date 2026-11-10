@@ -70,6 +70,26 @@ flowchart LR
 - 各チェックは 300 秒まで実行できる．`RUN_RELATED_TESTS_TIMEOUT_SECONDS` を明示的に設定すると，その上限を上書きする．
 - チェックのツールはまずエージェントの `PATH` から探す．見つからず，プロジェクトの `flake.nix` が dev shell を宣言していれば，同じタイムアウトとログのまま `nix develop --no-write-lock-file --command ...` で実行する（`flake.lock` は書き込まない）．`PATH` にも dev shell にも無いツールは `Verification unavailable` と報告する．これは失敗ではなく Stop をブロックしないが，成功でもないため，`verify` は 0 以外で終了する．この結果は再利用せず毎回再試行する．dev shell を宣言しているプロジェクトは dev shell に入れる前提なので，nix が dev shell に入る前にエラーで終了した場合（`flake.nix` の評価エラーなど）は失敗として Stop をブロックし，nix の出力をログに残す．この失敗は `dev_shell_failed` として記録し，`missing_tool` と同様に再利用せず検証のたびに再実行する．`flake.nix` が壊れていれば nix がすぐ失敗するので毎回ブロックし，一時的な nix の問題なら `verify --force` なしで次の Stop で解消する．起動前に予算を使い切った場合だけは同じ「利用不可」として扱い，毎回再試行する．
 
+## Stop 時のモデルルール
+
+検証が通ったあと，同じ Stop フックがセッションの変更を `agents/hooks/lint/model-rules/` のモデルルールで採点する．対象は Python と TypeScript で，コマンド/クエリ命名（M-05），エラーメッセージが操作と対象を示すこと（M-21），既知の欠陥マーカーに除去条件を添えること（M-60）の 3 つ．[ADR-0021](adr/0021_enforce_prose_rules_with_each_tools_own_checks_that_report_before_they_block.md) を参照．ルールは助言であり，しきい値は未調整なので，昇格するまでは `AGENTS.md` とスタイルスキルの文章を残す．
+
+- **渡し方．** `results.json` の検証レシートと同じ方式にする．まだ採点していない入力に対する指摘は Stop を 1 回だけブロックし，エージェントに見せる．同じ入力では通知だけにし（`findings unchanged; not rerun`），二度とブロックしない．`stop_hook_active` が立っているときもブロックしない．実行できなかった場合（キルスイッチ，信頼されないリポジトリ，Keychain 項目の欠落，`op` や `jev-lint` の欠落，タイムアウト，0 以外の終了，読めない出力）は 1 行の通知にとどめ，ブロックしない．
+- **何を採点するか．** `jev-lint review` には「セッション開始以降すべて」を 1 回で採点するモードがない．`--base <commit>` はそのコミット以降のコミット（`base...HEAD`）を，指定しなければ未コミットの変更と git が追跡していないファイルを採点する．そこでフックは両方を実行する．前者にはセッション開始時に `HEAD` が指していたコミット（`baseline.json` に記録．古い記録には無く，その場合は後者のみ）を渡し，後者は常に実行する．1 回の Stop で採点する対象は最大 20 個で，ファイル単位でまとめて採り，残りはスキップとして報告する．判定キャッシュにある対象は数えない．`trusted_owners.json` が信頼しない所有者のリポジトリは，モデルに送らない．`AGENT_MODEL_RULES=off` でルールを止められる．
+- **プロセス境界．** `jev-lint review --json --no-config --fail-on error -R <rules> -c <cache> [--base <commit>]` を `op run --environment <id> --` の下で実行し，キーは `op` が注入する．`--no-config` は，リポジトリの `.jev-lint.yaml` がコードの送り先を別のエンドポイントに変えるのを防ぐ．子プロセスに渡す環境変数は `PATH`，`HOME`，`USER`，`LANG`，`LC_ALL`，`XDG_STATE_HOME`，`TMPDIR` だけで，`op` にだけサービスアカウントのトークンを加える．トークンもキーも，読まず，表示せず，記録せず，`op` と `jev-lint` の標準エラーは捨てる．先に（キー不要の）`--dry-run` で対象数を数える．
+- **キャッシュ．** `${XDG_STATE_HOME:-~/.local/state}/agent-harness/model-rules/verdicts.json`．全リポジトリとセッションで共有し，隣のロックファイルで直列化する．ルールを黙らせうる信頼された入力なので，そのパスを `secret_path_policy.json` に入れ，パスを名指しするツール呼び出しを拒否する．この guard が見るのは，ツール呼び出しやコマンドが文字どおり名指しするパスだけである．実行時にパスを組み立てるコマンドや，書き込むプログラムは対象外で，sandbox は state ディレクトリ配下への書き込みを許している．
+
+### 新しいマシンの準備
+
+フックには `PATH` 上の `jev-lint` と `op`（`jev-lint` は dotfiles が agent-config から入れる），そして現在のユーザーの macOS Keychain 項目が 2 つ必要．マシンごとに 1 回だけ行う．
+
+1. 1Password で，Environment `jev` とその専用 vault に読み取り専用でアクセスできるサービスアカウントを作る．トークン（`ops_` で始まる）と Environment ID を控える．ID は UUID ではなく，英小文字と数字である．
+2. 両方をログインキーチェーンに保存する．値をコマンドラインに書かず，プロンプトに入力すれば，シェル履歴に残らない．`security add-generic-password -a "$USER" -s agent-model-rules-op-token -w` と `security add-generic-password -a "$USER" -s agent-model-rules-op-environment -w`．
+3. 値を表示せずに，両方あることを確かめる．`security find-generic-password -a "$USER" -s agent-model-rules-op-token` と，`-s agent-model-rules-op-environment` で同じことをする（`-w` を付けなければ属性だけが出て，値は出ない）．
+4. `op` がプロンプト無しでキーを注入できることを，有無だけ表示して確かめる．`OP_SERVICE_ACCOUNT_TOKEN="$(security find-generic-password -a "$USER" -s agent-model-rules-op-token -w)" op run --environment "<id>" -- sh -c 'test -n "$TYPESAFE_API_KEY" && echo present'`．
+
+項目が無ければ，フックは Stop のたびに `Model rules skipped` と報告するだけで，ほかには何もしない．
+
 ## フックの判断
 
 - 拒否は，deny プレフィックス，禁止パターン，危険な Git 操作，シークレットのポリシー，検証登録の欠落に限る．

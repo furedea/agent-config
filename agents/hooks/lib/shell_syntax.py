@@ -13,7 +13,7 @@ from typing import Self
 import fish_script
 import powershell_options
 import shell_input
-from shell_words import UnsupportedSyntaxError, literal_word, nodes, source_text, spreads
+from shell_words import UnsupportedSyntaxError, literal_word, nodes, single_quoted_source, source_text, spreads
 from shell_wrappers import ASSIGNMENT, WRAPPERS, OptionScan, script_index, wrapped_index
 
 COMMAND_PREVIEW_LIMIT = 200
@@ -101,10 +101,13 @@ class Command:
     appends_input: bool = False
     spreading: tuple[bool, ...] = ()
     unreviewed: bool = False
+    quoted_words: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         if not self.words:
             object.__setattr__(self, "words", self.arguments)
+        if not self.quoted_words:
+            object.__setattr__(self, "quoted_words", self.words)
         if not self.dynamic:
             object.__setattr__(self, "dynamic", (False,) * len(self.arguments))
         if not self.spreading:
@@ -163,6 +166,7 @@ class Command:
     def rebased(self, index: int, head: tuple[str, ...] = (), depth: int | None = None) -> Self:
         """Keep the arguments from one index onward, optionally behind a canonical head or one wrapper deeper."""
         words = (*head, *self.words[index:])
+        quoted_words = (*head, *self.quoted_words[index:])
         raw = " ".join((*words, self.trailer)).rstrip()
         wrapper_depth = self.wrapper_depth if depth is None else depth
         return replace(
@@ -171,6 +175,7 @@ class Command:
             arguments=(*head, *self.arguments[index:]),
             wrapper_depth=wrapper_depth,
             words=words,
+            quoted_words=quoted_words,
             dynamic=((False,) * len(head)) + self.dynamic[index:],
             spreading=((False,) * len(head)) + self.spreading[index:],
         )
@@ -352,6 +357,7 @@ def literal_command(node: dict, owner: dict, data: bytes) -> Command:
         tuple(value for value, _ in decoded),
         redirections=tuple(targets),
         words=tuple(source_text(word, data) for word in node["Args"]),
+        quoted_words=tuple(single_quoted_source(word, data) for word in node["Args"]),
         trailer=" ".join(source_text(redirect, data) for redirect in redirects),
         dynamic=tuple(flag for _, flag in decoded),
         spreading=tuple(spreads(word, data) for word in node["Args"]),

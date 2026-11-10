@@ -205,6 +205,7 @@ def test_local_curl_data_cannot_read_files(data: str, decision: str, suffix: str
         r"curl -s -o /dev/null --write-out '%{http_code}\n' http://127.0.0.1:4399/app/",
         "curl -s -D - --compressed -o /dev/null http://127.0.0.1:4411/x",
         "curl -s --dump-header - --compressed -o /dev/null 'http://[::1]:4411/x'",
+        'curl -s -w "status" http://localhost/',
     ],
 )
 def test_local_curl_fixed_diagnostics_are_allowed(command: str, suffix: str) -> None:
@@ -245,7 +246,6 @@ def test_local_curl_headers_are_limited_to_dev_check_metadata(header: str, decis
         r'curl -s -w "\"" -w https://example.com/ -L -x https://example.com/ -K /etc/hosts -w "\"" http://localhost/',
         r'curl -s -w "\\\"" -w https://example.com/ -d @/etc/hosts -w "\\\"" http://localhost/',
         r'curl -s -w "\\\"" -L -x https://example.com/ -K /etc/hosts -w "\\\"" http://localhost/',
-        'curl -s -w "status" http://localhost/',
         r'curl -s --write-out "%{http_code}\n" http://localhost/',
     ],
 )

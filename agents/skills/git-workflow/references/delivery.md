@@ -67,9 +67,8 @@ After every push, wait for the PR's checks before handling review findings or re
 A repository with no PR CI workflow or no required checks has nothing to wait for here; a missing
 run or an empty `--required` result in such a repository is not a failure.
 
-1. Print the pushed commit with `git rev-parse HEAD`, then find its CI run with
-   `gh run list --commit <sha>`, writing the literal SHA (a shell variable triggers a confirmation
-   prompt); the run exists from push time, possibly `queued`. If none is listed, wait briefly and look again, up to a fixed
+1. Find the CI run for the pushed commit (`git rev-parse HEAD`) with `gh run list --commit <sha>`;
+   the run exists from push time, possibly `queued`. If none is listed, wait briefly and look again, up to a fixed
    bound (for example 2 minutes). If none appears within it, the workflow did not trigger: stop and
    report instead of waiting forever.
 2. Wait for each relevant run with `gh run watch <run-id> --exit-status` as one blocking background

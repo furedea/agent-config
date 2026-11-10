@@ -120,6 +120,21 @@ def test_normalization_leaves_the_provider_payload_untouched(provider: str) -> N
 
 
 @pytest.mark.parametrize("provider", PROVIDERS)
+def test_an_unknown_home_directory_error_blocks_instead_of_exiting_without_a_decision(
+    provider: str, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    adapter = load_script_module(script(provider), f"{provider}_hook_adapter_home_error").ADAPTER
+
+    def unknown_home(*_: object) -> int:
+        raise RuntimeError("Could not determine home directory.")
+
+    monkeypatch.setattr(adapter, "_payload", dict)
+    monkeypatch.setattr(adapter, "dispatch", unknown_home)
+    assert adapter.main(["paths", "command"]) == 2
+    assert "BLOCKED: Could not determine home directory." in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("provider", PROVIDERS)
 @pytest.mark.parametrize("mode", ["allowed", "forbidden", "git"])
 @pytest.mark.usefixtures("harness")
 def test_escalations_are_denied_for_providers_whose_hooks_cannot_ask(

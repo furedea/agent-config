@@ -7,24 +7,26 @@ from pathlib import Path
 
 COMMAND_NOT_FOUND_EXIT = 127
 _DEV_SHELL_OUTPUT = re.compile(r"\bdevShells?\b")
+_ENTERED_MARKER = "dev-shell-entered"
 _NOT_FOUND_MARKER = "dev-shell-tool-not-found:"
-# The probe tells a tool the dev shell lacks apart from a test run that itself fails.
+_REASON_LIMIT = 200
+# The probe separates three endings: nix never reached the command (no entered marker), the dev shell lacks the
+# tool (not-found marker and exit 127), and the tool itself ran and failed.
 _PROBE = (
+    f'echo "{_ENTERED_MARKER}" >&2; '
     f'command -v "$1" >/dev/null 2>&1 || {{ echo "{_NOT_FOUND_MARKER} $1" >&2; exit {COMMAND_NOT_FOUND_EXIT}; }}; '
     'exec "$@"'
 )
 
 
 @dataclass(frozen=True, slots=True)
-class Launch:
-    """The argument vector to start, and whether it enters the flake dev shell."""
+class ProcessEnd:
+    """How a launched process ended, as far as the retained output tail shows."""
 
-    arguments: tuple[str, ...]
-    via_dev_shell: bool
-
-    def tool_missing(self, returncode: int, output: str) -> bool:
-        """Whether the dev shell started but did not provide the tool, as opposed to the tool itself failing."""
-        return self.via_dev_shell and returncode == COMMAND_NOT_FOUND_EXIT and _NOT_FOUND_MARKER in output
+    returncode: int
+    output: str
+    timed_out: bool
+    truncated: bool
 
 
 @dataclass(frozen=True, slots=True)
@@ -32,6 +34,38 @@ class MissingTool:
     """No PATH entry and no dev shell provides the tool; the reason names what was tried."""
 
     reason: str
+
+
+@dataclass(frozen=True, slots=True)
+class Launch:
+    """The tool a check needs, the argument vector that starts it, and whether that enters the flake dev shell."""
+
+    tool: str
+    arguments: tuple[str, ...]
+    via_dev_shell: bool
+
+    def diagnose(self, end: ProcessEnd) -> MissingTool | None:
+        """Tell an environment problem from a test result: None means the tool itself ran and its outcome stands.
+
+        A run through the dev shell is an environment problem when nix never reached the command (evaluation or
+        build error, or the budget spent before the shell started) or when the shell lacks the tool.
+        """
+        if not self.via_dev_shell:
+            return None
+        if _ENTERED_MARKER not in end.output:
+            # A truncated tail may have dropped the marker, which proves the shell started.
+            return None if end.truncated else self._not_started(end)
+        if end.returncode == COMMAND_NOT_FOUND_EXIT and _NOT_FOUND_MARKER in end.output:
+            return MissingTool(f"{self.tool} not found on PATH or in the flake dev shell")
+        return None
+
+    def _not_started(self, end: ProcessEnd) -> MissingTool | None:
+        if end.timed_out:
+            return MissingTool("the flake dev shell did not start within the check budget")
+        if end.returncode:
+            last_line = next((line for line in reversed(end.output.splitlines()) if line.strip()), "no output")
+            return MissingTool(f"the flake dev shell did not start: {last_line.strip()[:_REASON_LIMIT]}")
+        return None
 
 
 def plan_launch(arguments: tuple[str, ...], root: Path, search_path: str | None) -> Launch | MissingTool:
@@ -42,17 +76,13 @@ def plan_launch(arguments: tuple[str, ...], root: Path, search_path: str | None)
     """
     tool = arguments[0]
     if shutil.which(tool, path=search_path):
-        return Launch(arguments, via_dev_shell=False)
+        return Launch(tool, arguments, via_dev_shell=False)
     if not _declares_dev_shell(root):
         return MissingTool(f"{tool} not found on PATH and the project has no flake dev shell")
     if not shutil.which("nix", path=search_path):
         return MissingTool(f"{tool} not found on PATH; the project has a flake dev shell but nix is not on PATH")
-    return Launch(("nix", "develop", "--command", "sh", "-c", _PROBE, "sh", *arguments), via_dev_shell=True)
-
-
-def missing_in_dev_shell(tool: str) -> MissingTool:
-    """Describe a tool the project's dev shell was entered for but did not provide."""
-    return MissingTool(f"{tool} not found on PATH or in the flake dev shell")
+    entered = ("nix", "develop", "--command", "sh", "-c", _PROBE, "sh", *arguments)
+    return Launch(tool, entered, via_dev_shell=True)
 
 
 def _declares_dev_shell(root: Path) -> bool:

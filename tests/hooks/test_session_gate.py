@@ -242,3 +242,20 @@ def test_a_failure_next_to_a_missing_tool_still_blocks(
     monkeypatch.setattr(gate, "execute", lambda *_: failed)
     (record.root / "source.py").write_text("task edit")
     assert gate.gate(record)["decision"] == "block"
+
+
+@pytest.mark.parametrize(
+    ("statuses", "expected"),
+    [
+        (["missing_tool"], "unavailable"),
+        (["passed", "missing_tool"], "unavailable"),
+        (["failed", "missing_tool"], "failed"),
+        (["timeout", "missing_tool"], "failed"),
+        (["passed", "skipped"], "passed"),
+    ],
+)
+def test_status_reports_a_missing_tool_as_unavailable_unless_a_check_failed(
+    statuses: list[str], expected: str
+) -> None:
+    rows = [{"applicability": "current", "status": status} for status in statuses]
+    assert gate.current_status(rows) == expected

@@ -11,7 +11,7 @@ from pathlib import Path
 
 from check_evidence import first_error, summarize
 from check_selection import Invocation
-from dev_shell import Launch, MissingTool, missing_in_dev_shell, plan_launch
+from dev_shell import Launch, MissingTool, ProcessEnd, plan_launch
 
 OUTPUT_LIMIT_BYTES = 1024 * 1024
 
@@ -61,12 +61,13 @@ def execute(invocation: Invocation, root: Path, budget: float) -> Result:
     if isinstance(launch, MissingTool):
         return _missing_tool(invocation, launch)
     try:
-        output, timed_out, returncode = _run(_Process.prepare(invocation, launch, root), budget)
+        end = _run(_Process.prepare(invocation, launch, root), budget)
     except OSError as error:
         return Result(Status.UNAVAILABLE, f"{invocation.label}: unavailable · {error}", str(error))
-    if launch.tool_missing(returncode, output):
-        return _missing_tool(invocation, missing_in_dev_shell(invocation.arguments[0]))
-    status = Status.TIMEOUT if timed_out else Status.FAILED if returncode else Status.PASSED
+    if missing := launch.diagnose(end):
+        return _missing_tool(invocation, missing)
+    output = end.output
+    status = Status.TIMEOUT if end.timed_out else Status.FAILED if end.returncode else Status.PASSED
     evidence = summarize(invocation.label, output)
     if status == Status.PASSED and evidence.executed == 0:
         related_empty = invocation.label == "vitest" and invocation.scope.endswith(" changed files")
@@ -102,7 +103,7 @@ class _Process:
         return cls(launch.arguments, root, environment)
 
 
-def _run(process: _Process, budget: float) -> tuple[str, bool, int]:
+def _run(process: _Process, budget: float) -> ProcessEnd:
     with subprocess.Popen(
         process.arguments,
         cwd=process.root,
@@ -111,20 +112,22 @@ def _run(process: _Process, budget: float) -> tuple[str, bool, int]:
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
     ) as running:
-        output, timed_out = _collect(running, max(0.01, budget))
-        return output, timed_out, running.returncode
+        return _collect(running, max(0.01, budget))
 
 
-def _collect(process: subprocess.Popen[bytes], budget: float) -> tuple[str, bool]:
+def _collect(process: subprocess.Popen[bytes], budget: float) -> ProcessEnd:
     tail = bytearray()
+    truncated = False
     assert process.stdout is not None
     stream = process.stdout
 
     def drain() -> None:
+        nonlocal truncated
         while chunk := os.read(stream.fileno(), 65536):
             tail.extend(chunk)
             if len(tail) > OUTPUT_LIMIT_BYTES:
                 del tail[:-OUTPUT_LIMIT_BYTES]
+                truncated = True
 
     reader = threading.Thread(target=drain, daemon=True)
     reader.start()
@@ -140,4 +143,4 @@ def _collect(process: subprocess.Popen[bytes], budget: float) -> tuple[str, bool
             pass
         process.wait()
         reader.join(timeout=2)
-    return tail.decode("utf-8", errors="replace"), timed_out
+    return ProcessEnd(process.returncode, tail.decode("utf-8", errors="replace"), timed_out, truncated)

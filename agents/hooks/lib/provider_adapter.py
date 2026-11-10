@@ -100,7 +100,7 @@ class Adapter:
             return 1
         try:
             return self.dispatch(kind, rest, self._payload())
-        except (OSError, ValueError, TypeError, AttributeError) as error:
+        except (OSError, RuntimeError, ValueError, TypeError, AttributeError) as error:
             print(f"BLOCKED: {error}", file=sys.stderr)
             return 2
 

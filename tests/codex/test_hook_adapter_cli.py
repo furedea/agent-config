@@ -206,6 +206,13 @@ def test_home_globs_expand_against_the_home_directory(run_cli: CliRunner, presen
     assert result.returncode == (2 if present else 0)
 
 
+@pytest.mark.parametrize("command", ["cat ~no-such-user-for-agent-config/.ssh/*", "cat ~/.ssh/id_rsa ~*/x"])
+def test_a_glob_of_an_unknown_home_directory_needs_review(run_cli: CliRunner, harness: Path, command: str) -> None:
+    result = run_cli(SCRIPT, "paths", "command", payload={"tool_input": {"command": command}})
+    assert result.returncode == 2
+    assert "review" in result.stderr.lower()
+
+
 def fill(directory: Path, count: int) -> None:
     directory.mkdir(parents=True)
     for index in range(count):

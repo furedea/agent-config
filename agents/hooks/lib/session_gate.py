@@ -79,9 +79,9 @@ def stop(record: SessionRecord, *, stop_hook_active: bool = False) -> dict[str, 
         advice = model_rules_gate.advise(
             record, stop_hook_active=stop_hook_active, budget_seconds=min(model_rules_gate.BUDGET_SECONDS, left)
         )
-    if advice.blocking:
-        return {"decision": "block", "reason": advice.message}
     messages = [text for text in (result.get("systemMessage"), advice.message) if text]
+    if advice.blocking:
+        return {"decision": "block", "reason": "\n".join(messages)}
     return {"systemMessage": "\n".join(messages)}
 
 

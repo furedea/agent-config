@@ -72,6 +72,14 @@ def test_new_findings_block_once_and_name_rule_and_location(record: session_stor
     assert "notes.txt:3" in result["reason"]
 
 
+def test_a_model_rules_block_keeps_the_verification_report(record: session_store.SessionRecord) -> None:
+    result = stop(record)
+
+    assert result["decision"] == "block"
+    assert result["reason"].startswith("Verification skipped")
+    assert "command-query-naming" in result["reason"]
+
+
 def test_the_same_findings_on_unchanged_inputs_only_notify(record: session_store.SessionRecord, tools: Tools) -> None:
     stop(record)
     again = stop(record)

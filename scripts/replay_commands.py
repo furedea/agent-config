@@ -33,34 +33,42 @@ REPOSITORY_HOOKS = Path(__file__).resolve().parents[1] / "agents/hooks"
 
 @dataclass(frozen=True, slots=True)
 class RecordedCommand:
+    """A Bash command found in a session log, with the working directory it ran in ("" when the log has none)."""
+
     command: str
     cwd: str
 
 
 @dataclass(frozen=True, slots=True)
 class Judgment:
+    """The outcome of replaying one command: `reason` is empty for an allow and names the guard otherwise."""
+
     decision: str
     reason: str
     command: str
 
 
 def main(arguments: list[str]) -> int:
-    options = parser().parse_args(arguments)
+    """Replay every logged command since `--since` and print the report; the exit status is always 0.
+
+    Argument errors exit through argparse with status 2.
+    """
+    options = _parser().parse_args(arguments)
     home = Path.home()
-    commands = [*claude_commands(home, options.since), *codex_commands(home, options.since)]
+    commands = [*_claude_commands(home, options.since), *_codex_commands(home, options.since)]
     replayer = Replayer(options.hooks.resolve())
-    print(report(options.since, [replayer.judge(command) for command in commands]))
+    print(_report(options.since, [replayer.judge(command) for command in commands]))
     return 0
 
 
-def parser() -> argparse.ArgumentParser:
+def _parser() -> argparse.ArgumentParser:
     result = argparse.ArgumentParser(description="Replay recent Bash commands through the command hooks.")
-    result.add_argument("--since", required=True, type=since_time, help="YYYY-MM-DD[THH:MM], local time")
+    result.add_argument("--since", required=True, type=_since_time, help="YYYY-MM-DD[THH:MM], local time")
     result.add_argument("--hooks", type=Path, default=REPOSITORY_HOOKS, help="hooks directory (default: agents/hooks)")
     return result
 
 
-def since_time(value: str) -> datetime:
+def _since_time(value: str) -> datetime:
     for pattern in SINCE_FORMATS:
         try:
             return datetime.strptime(value, pattern).astimezone()
@@ -69,56 +77,58 @@ def since_time(value: str) -> datetime:
     raise argparse.ArgumentTypeError(f"expected YYYY-MM-DD[THH:MM], got {value!r}")
 
 
-def claude_commands(home: Path, since: datetime) -> Iterator[RecordedCommand]:
+def _claude_commands(home: Path, since: datetime) -> Iterator[RecordedCommand]:
     """Bash tool calls the assistant made in each session transcript."""
-    entries = (entry for path in sorted(home.glob(".claude/projects/*/*.jsonl")) for entry in log_entries(path, since))
+    entries = (
+        entry for path in sorted(home.glob(".claude/projects/*/*.jsonl")) for entry in _log_entries(path, since)
+    )
     for entry in entries:
-        if entry.get("type") == "assistant" and is_recent(entry, since):
-            cwd = text(entry.get("cwd"))
-            yield from (RecordedCommand(command, cwd) for command in bash_tool_uses(entry))
+        if entry.get("type") == "assistant" and _is_recent(entry, since):
+            cwd = _text(entry.get("cwd"))
+            yield from (RecordedCommand(command, cwd) for command in _bash_tool_uses(entry))
 
 
-def bash_tool_uses(entry: dict) -> list[str]:
-    content = mapping(entry.get("message")).get("content")
+def _bash_tool_uses(entry: dict) -> list[str]:
+    content = _mapping(entry.get("message")).get("content")
     blocks = [block for block in content if isinstance(block, dict)] if isinstance(content, list) else []
     calls = [block for block in blocks if block.get("type") == "tool_use" and block.get("name") == "Bash"]
-    return [command for call in calls if (command := text(mapping(call.get("input")).get("command")))]
+    return [command for call in calls if (command := _text(_mapping(call.get("input")).get("command")))]
 
 
-def codex_commands(home: Path, since: datetime) -> Iterator[RecordedCommand]:
+def _codex_commands(home: Path, since: datetime) -> Iterator[RecordedCommand]:
     """Shell calls in Codex rollouts: exec_command calls in older logs, completed command items in newer ones."""
     for path in sorted(home.glob(".codex/sessions/**/*.jsonl*")):
         if path.suffix in {".jsonl", ".zst"}:
-            yield from codex_log_commands(path, since)
+            yield from _codex_log_commands(path, since)
 
 
-def codex_log_commands(path: Path, since: datetime) -> Iterator[RecordedCommand]:
+def _codex_log_commands(path: Path, since: datetime) -> Iterator[RecordedCommand]:
     """One rollout's calls, each run in the latest working directory the session reported."""
     session_cwd = ""
-    for entry in log_entries(path, since):
-        payload = mapping(entry.get("payload"))
+    for entry in _log_entries(path, since):
+        payload = _mapping(entry.get("payload"))
         if entry.get("type") in {"session_meta", "turn_context"}:
-            session_cwd = text(payload.get("cwd")) or session_cwd
-        if (recorded := codex_call(payload, session_cwd)) and is_recent(entry, since):
+            session_cwd = _text(payload.get("cwd")) or session_cwd
+        if (recorded := _codex_call(payload, session_cwd)) and _is_recent(entry, since):
             yield recorded
 
 
-def codex_call(payload: dict, session_cwd: str) -> RecordedCommand | None:
+def _codex_call(payload: dict, session_cwd: str) -> RecordedCommand | None:
     if payload.get("type") == "function_call" and payload.get("name") == "exec_command":
         try:
-            arguments = mapping(json.loads(text(payload.get("arguments"))))
+            arguments = _mapping(json.loads(_text(payload.get("arguments"))))
         except ValueError:
             return None
-        command = text(arguments.get("cmd"))
-        return RecordedCommand(command, text(arguments.get("workdir")) or session_cwd) if command else None
-    item = mapping(payload.get("item"))
+        command = _text(arguments.get("cmd"))
+        return RecordedCommand(command, _text(arguments.get("workdir")) or session_cwd) if command else None
+    item = _mapping(payload.get("item"))
     if payload.get("type") != "item_completed" or item.get("type") != "CommandExecution":
         return None
-    command = shell_script(item.get("command"))
-    return RecordedCommand(command, text(item.get("cwd")) or session_cwd) if command else None
+    command = _shell_script(item.get("command"))
+    return RecordedCommand(command, _text(item.get("cwd")) or session_cwd) if command else None
 
 
-def shell_script(command: object) -> str:
+def _shell_script(command: object) -> str:
     """The script a login shell ran, since the hooks judge the script, not the shell that wraps it."""
     if isinstance(command, str):
         return command
@@ -129,33 +139,33 @@ def shell_script(command: object) -> str:
     return shlex.join(command)
 
 
-def log_entries(path: Path, since: datetime) -> Iterator[dict]:
+def _log_entries(path: Path, since: datetime) -> Iterator[dict]:
     """Decode one JSON object per line, skipping logs last written before the period starts."""
     if path.stat().st_mtime < since.timestamp():
         return
     try:
-        with open_log(path) as stream:
-            yield from (entry for line in stream if isinstance(entry := json_object(line), dict))
+        with _open_log(path) as stream:
+            yield from (entry for line in stream if isinstance(entry := _json_object(line), dict))
     except (OSError, EOFError, zstd.ZstdError) as error:
         print(f"skipped the rest of {path}: {error}", file=sys.stderr)
 
 
-def json_object(line: str) -> object:
+def _json_object(line: str) -> object:
     try:
         return json.loads(line)
     except ValueError:
         return None
 
 
-def open_log(path: Path) -> TextIO:
+def _open_log(path: Path) -> TextIO:
     if path.suffix == ".zst":
         return zstd.open(path, "rt", encoding="utf-8", errors="replace")
     return path.open(encoding="utf-8", errors="replace")
 
 
-def is_recent(entry: dict, since: datetime) -> bool:
+def _is_recent(entry: dict, since: datetime) -> bool:
     try:
-        timestamp = datetime.fromisoformat(text(entry.get("timestamp")))
+        timestamp = datetime.fromisoformat(_text(entry.get("timestamp")))
     except ValueError:
         return False
     return timestamp.tzinfo is not None and timestamp >= since
@@ -165,10 +175,10 @@ class Replayer:
     """Judge commands with one hooks directory's guards, in the order the PreToolUse hooks run."""
 
     def __init__(self, hooks: Path) -> None:
-        use_checkout_permissions(hooks)
-        command_guard = load(hooks, "guard_command")
-        git_guard = load(hooks, "guard_git")
-        silence(sys.modules["audit_log"])
+        _use_checkout_permissions(hooks)
+        command_guard = _load(hooks, "guard_command")
+        git_guard = _load(hooks, "guard_git")
+        _silence(sys.modules["audit_log"])
         self.guards: tuple[tuple[str, Callable[[dict], Any]], ...] = (
             ("forbidden", lambda payload: command_guard.decide("forbidden", payload)),
             ("git", git_guard.decide),
@@ -188,14 +198,14 @@ class Replayer:
         return Judgment("allow", "", recorded.command)
 
 
-def use_checkout_permissions(hooks: Path) -> None:
+def _use_checkout_permissions(hooks: Path) -> None:
     """A checkout keeps the generated prefix list beside its hooks directory, not among the rules."""
     checkout = hooks.parent / "command_permissions.json"
     if not (hooks / "rules/command_permissions.json").is_file() and checkout.is_file():
         os.environ.setdefault("AGENT_COMMAND_PERMISSIONS", str(checkout))
 
 
-def load(hooks: Path, name: str) -> ModuleType:
+def _load(hooks: Path, name: str) -> ModuleType:
     spec = util.spec_from_file_location(name, hooks / f"{name}.py")
     if spec is None or spec.loader is None:
         raise ImportError(f"cannot load {name} from {hooks}")
@@ -204,42 +214,42 @@ def load(hooks: Path, name: str) -> ModuleType:
     return module
 
 
-def silence(audit_log: ModuleType) -> None:
+def _silence(audit_log: ModuleType) -> None:
     """Replayed verdicts are measurements, not refusals, so they stay out of the audit log."""
     for writer in ("blocked", "escalated"):
         setattr(audit_log, writer, lambda *_, **__: None)
 
 
-def report(since: datetime, judgments: list[Judgment]) -> str:
+def _report(since: datetime, judgments: list[Judgment]) -> str:
     decisions = Counter(judgment.decision for judgment in judgments)
-    objections = sorted((judgment for judgment in judgments if judgment.decision != "allow"), key=objection_key)
-    reasons = Counter(objection_key(judgment) for judgment in objections)
+    objections = sorted((judgment for judgment in judgments if judgment.decision != "allow"), key=_objection_key)
+    reasons = Counter(_objection_key(judgment) for judgment in objections)
     lines = [f"Replayed {len(judgments)} commands since {since:%Y-%m-%dT%H:%M}", ""]
     lines += [f"  {decision:<5} {decisions[decision]}" for decision in DECISIONS]
     lines += ["", "Reasons"]
     lines += [f"  {decision:<5} {count:>5}  {reason}" for (decision, reason), count in sorted(reasons.items())]
     lines += ["", "Asked and denied commands"]
     for judgment in objections:
-        lines += [f"  {judgment.decision:<5} {judgment.reason}", f"    {excerpt(judgment.command)}"]
+        lines += [f"  {judgment.decision:<5} {judgment.reason}", f"    {_excerpt(judgment.command)}"]
     return "\n".join(lines)
 
 
-def objection_key(judgment: Judgment) -> tuple[str, str]:
+def _objection_key(judgment: Judgment) -> tuple[str, str]:
     return judgment.decision, judgment.reason
 
 
-def excerpt(command: str) -> str:
+def _excerpt(command: str) -> str:
     lines = command.splitlines() or [""]
     first = lines[0][:EXCERPT_LIMIT]
     more = len(lines) - 1
     return f"{first} (+{more} more lines)" if more else first
 
 
-def mapping(value: object) -> dict:
+def _mapping(value: object) -> dict:
     return value if isinstance(value, dict) else {}
 
 
-def text(value: object) -> str:
+def _text(value: object) -> str:
     return value if isinstance(value, str) else ""
 
 

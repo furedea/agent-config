@@ -37,7 +37,7 @@ LOWERCASE = (97, 122)
 Intervals = tuple[tuple[int, int], ...]
 
 
-class UnsupportedPattern(ValueError):
+class UnsupportedPatternError(ValueError):
     """The pattern uses syntax outside the dialect the command rules are written in."""
 
 
@@ -139,7 +139,7 @@ def fold_case(intervals: Intervals) -> Intervals:
     """The set with the ASCII letters' other case added; a cased non-ASCII character is refused, as its
     folding depends on the locale grep runs in."""
     if any(is_cased_non_ascii(code) for low, high in intervals for code in range(low, high + 1)):
-        raise UnsupportedPattern(
+        raise UnsupportedPatternError(
             "a cased non-ASCII character cannot be case folded: the locale decides its other case"
         )
     shifted = [(low + CASE_OFFSET, high + CASE_OFFSET) for low, high in intersect(intervals, (UPPERCASE,))]
@@ -157,10 +157,10 @@ class Parser:
 
     def parse(self) -> z3.ReRef:
         if "\n" in self.pattern:
-            raise UnsupportedPattern(f"newline in {self.pattern!r}: grep reads each line as a separate pattern")
+            raise UnsupportedPatternError(f"newline in {self.pattern!r}: grep reads each line as a separate pattern")
         result = self.alternation()
         if self.position != len(self.pattern):
-            raise UnsupportedPattern(f"unbalanced parenthesis in {self.pattern!r}")
+            raise UnsupportedPatternError(f"unbalanced parenthesis in {self.pattern!r}")
         return result
 
     def alternation(self) -> z3.ReRef:
@@ -199,7 +199,7 @@ class Parser:
         bounds = self.pattern[self.position : end] if end != -1 else ""
         low, comma, high = bounds.partition(",")
         if not low.isdigit() or (comma and high and not high.isdigit()):
-            raise UnsupportedPattern(f"invalid interval in {self.pattern!r}")
+            raise UnsupportedPatternError(f"invalid interval in {self.pattern!r}")
         self.position = end + 1
         if comma and not high:
             return z3.Concat(z3.Loop(operand, int(low), int(low)), z3.Star(operand))
@@ -218,21 +218,21 @@ class Parser:
         if mark == "\\":
             return self.escaped()
         if mark in {"*", "+", "?", "{", ")"}:
-            raise UnsupportedPattern(f"nothing to repeat or unbalanced {mark!r} in {self.pattern!r}")
+            raise UnsupportedPatternError(f"nothing to repeat or unbalanced {mark!r} in {self.pattern!r}")
         return self.literal(ord(mark))
 
     def group(self) -> z3.ReRef:
         if self.peek() == "?":
-            raise UnsupportedPattern(f"extension group in {self.pattern!r}")
+            raise UnsupportedPatternError(f"extension group in {self.pattern!r}")
         result = self.alternation()
         if self.take() != ")":
-            raise UnsupportedPattern(f"unbalanced parenthesis in {self.pattern!r}")
+            raise UnsupportedPatternError(f"unbalanced parenthesis in {self.pattern!r}")
         return result
 
     def escaped(self) -> z3.ReRef:
         mark = self.take()
         if mark.isalnum() or mark in ANCHOR_ESCAPES:
-            raise UnsupportedPattern(f"escape \\{mark} in {self.pattern!r}")
+            raise UnsupportedPatternError(f"escape \\{mark} in {self.pattern!r}")
         return self.literal(ord(mark))
 
     def literal(self, code: int) -> z3.ReRef:
@@ -253,18 +253,18 @@ class Parser:
 
     def bracket_item(self, mark: str) -> Intervals:
         if mark == "\\":
-            raise UnsupportedPattern(
+            raise UnsupportedPatternError(
                 f"backslash inside a bracket expression in {self.pattern!r}: grep dialects differ"
             )
         if mark == "[" and self.peek() in {"=", "."}:
-            raise UnsupportedPattern(f"equivalence or collating element in {self.pattern!r}: locale dependent")
+            raise UnsupportedPatternError(f"equivalence or collating element in {self.pattern!r}: locale dependent")
         if mark == "[" and self.peek() == ":":
             return self.posix_class()
         if self.peek() == "-" and self.peek(1) not in {"]", None}:
             self.position += 1
             high = self.take()
             if ord(high) < ord(mark):
-                raise UnsupportedPattern(f"reversed range in {self.pattern!r}")
+                raise UnsupportedPatternError(f"reversed range in {self.pattern!r}")
             return ((ord(mark), ord(high)),)
         return ((ord(mark), ord(mark)),)
 
@@ -272,7 +272,7 @@ class Parser:
         end = self.pattern.find(":]", self.position)
         name = self.pattern[self.position + 1 : end] if end != -1 else ""
         if name not in POSIX_CLASSES:
-            raise UnsupportedPattern(f"character class {name!r} in {self.pattern!r}")
+            raise UnsupportedPatternError(f"character class {name!r} in {self.pattern!r}")
         self.position = end + 2
         return POSIX_CLASSES[name]
 
@@ -283,6 +283,6 @@ class Parser:
     def take(self) -> str:
         mark = self.peek()
         if mark is None:
-            raise UnsupportedPattern(f"unexpected end of {self.pattern!r}")
+            raise UnsupportedPatternError(f"unexpected end of {self.pattern!r}")
         self.position += 1
         return mark

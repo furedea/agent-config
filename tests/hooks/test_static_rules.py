@@ -71,6 +71,23 @@ def scanner_calls(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     return calls
 
 
+@pytest.fixture(autouse=True)
+def shared_config(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """The deployed shared rules, absent until a test creates them."""
+    config = tmp_path / "shared-lint" / "sgconfig.yml"
+    monkeypatch.setattr(lint_format.static_rule_scan, "SHARED_CONFIG", config)
+    return config
+
+
+def deploy_shared_rules(config: Path) -> None:
+    config.parent.mkdir()
+    config.write_text("ruleDirs:\n  - rules\n")
+
+
+def scanned_configs(scanner_calls: Path) -> list[str]:
+    return [json.loads(line)[2] for line in scanner_calls.read_text().splitlines()]
+
+
 @pytest.fixture
 def source(lint_directory: Path) -> Path:
     path = lint_directory / "src" / "source.py"
@@ -148,6 +165,65 @@ def test_each_file_is_scanned_with_the_nearest_project_config(
     install_scanner(executable, [FINDING])
     hook.run(inner)
     assert json.loads(scanner_calls.read_text())[2] == str(nested / "sgconfig.yml")
+
+
+def test_shared_rules_run_in_a_project_without_its_own_config(
+    hook: Hook, executable: StubWriter, lint_directory: Path, scanner_calls: Path, shared_config: Path, source: Path
+) -> None:
+    (lint_directory / "sgconfig.yml").unlink()
+    deploy_shared_rules(shared_config)
+    install_scanner(executable, [FINDING])
+    status, output = hook.run(source)
+    assert status == 0
+    assert scanned_configs(scanner_calls) == [str(shared_config)]
+    assert context_of(output).startswith("Static rule no-print")
+
+
+def test_shared_and_project_rules_both_run_and_their_findings_are_merged(
+    hook: Hook, executable: StubWriter, lint_directory: Path, scanner_calls: Path, shared_config: Path, source: Path
+) -> None:
+    deploy_shared_rules(shared_config)
+    install_scanner(executable, [FINDING])
+    status, output = hook.run(source)
+    assert status == 0
+    assert scanned_configs(scanner_calls) == [str(shared_config), str(lint_directory / "sgconfig.yml")]
+    assert context_of(output).count("Static rule no-print") == 2
+
+
+def test_a_project_config_that_is_the_shared_config_is_scanned_once(
+    hook: Hook,
+    executable: StubWriter,
+    lint_directory: Path,
+    scanner_calls: Path,
+    source: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(lint_format.static_rule_scan, "SHARED_CONFIG", lint_directory / "sgconfig.yml")
+    install_scanner(executable, [FINDING])
+    hook.run(source)
+    assert scanned_configs(scanner_calls) == [str(lint_directory / "sgconfig.yml")]
+
+
+def test_a_failing_shared_scan_does_not_hide_project_findings_or_block(
+    hook: Hook, executable: StubWriter, lint_directory: Path, shared_config: Path, source: Path
+) -> None:
+    deploy_shared_rules(shared_config)
+    executable(
+        "ast-grep",
+        RECORD_CALLS
+        + f"""
+    if sys.argv[3] == {str(shared_config)!r}:
+        print("Error: bad shared rule", file=sys.stderr)
+        sys.exit(8)
+    print(json.dumps({{**{FINDING!r}, "file": sys.argv[-1]}}))
+    sys.exit(1)
+""",
+    )
+    status, output = hook.run(source)
+    assert status == 0
+    assert "Static rules failed" in context_of(output)
+    assert "Static rule no-print" in context_of(output)
+    assert "decision" not in json.loads(output)
 
 
 def test_project_without_scanner_config_does_nothing(

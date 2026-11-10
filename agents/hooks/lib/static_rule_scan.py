@@ -12,23 +12,32 @@ from lib.formatter_policy import Step
 
 SCANNER = "ast-grep"
 CONFIG_NAME = "sgconfig.yml"
+SHARED_CONFIG = Path(__file__).resolve().parent.parent / "lint" / CONFIG_NAME
 FAILURE_OUTPUT_LINES = 8
 TRUNCATED = "Static rule output truncated\nThe scanner output exceeded the size limit; some findings may be missing."
 
 
 def diagnostics(paths: Iterable[Path]) -> tuple[str, ...]:
-    """Describe rule findings in existing files; stay silent without an `sgconfig.yml` or the scanner.
+    """Describe rule findings in existing files; stay silent without any `sgconfig.yml` or the scanner.
 
-    Each file is scanned with the nearest `sgconfig.yml` above it, so the rules and their tests stay native
-    ast-grep files of the project. Findings are advice: a scanner failure is reported as a message, never raised.
+    Each file is scanned with the shared rules shipped beside the hooks and with the nearest `sgconfig.yml` above
+    it, so the rules and their tests stay native ast-grep files. `ast-grep --config` takes one file, hence two runs.
+    Findings are advice: a scanner failure is reported as a message, never raised.
     """
     if shutil.which(SCANNER) is None:
         return ()
     by_config: dict[Path, list[str]] = {}
-    for path in paths:
-        if path.is_file() and (config := project_config(path)) is not None:
-            by_config.setdefault(config, []).append(str(path))
+    scans = [(config, str(path)) for path in paths if path.is_file() for config in configs_for(path)]
+    for config, file in scans:
+        by_config.setdefault(config, []).append(file)
     return tuple(message for config, files in by_config.items() for message in scan(config, files))
+
+
+def configs_for(path: Path) -> tuple[Path, ...]:
+    """Pick the shared config, then the project's own unless it is the same file."""
+    candidates = (SHARED_CONFIG, project_config(path))
+    found = {config.resolve(): config for config in candidates if config is not None and config.is_file()}
+    return tuple(found.values())
 
 
 def project_config(path: Path) -> Path | None:

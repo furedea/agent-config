@@ -28,9 +28,13 @@ class VerificationRun:
     started: float
 
     def current_receipt(self, inputs: str, invocation: check_selection.Invocation) -> tuple[str, dict, bool | None]:
-        """Reuse a valid receipt or execute the check; the flag is None when nothing ran."""
+        """Reuse a valid receipt or execute the check; the flag is None when nothing ran.
+
+        A missing-tool or dev-shell-entry-failure receipt is never reused (see Status.retried): its cause may clear
+        by itself, so each pass tries again. A real failure still blocks every time, and a pass replaces it.
+        """
         check_id, identity, previous, reusable = receipt_state(self.state, inputs, invocation)
-        if not self.force and reusable:
+        if not self.force and reusable and not Status(previous["status"]).retried:
             return check_id, previous, None
         budget = min(_check_budget(), max(0.01, GATE_BUDGET_SECONDS - (time.monotonic() - self.started)))
         result = execute(invocation, self.record.root, budget)
@@ -76,7 +80,7 @@ def _verify(record: SessionRecord, *, force: bool) -> dict[str, str]:
         return _save_skip(record, state, skip_reason)
     receipts: dict[str, dict] = {}
     lines: list[str] = []
-    failed = new_failure = executed = passed = False
+    failed = new_failure = executed = passed = missing = False
     inputs = verification_inputs(current)
     for invocation in invocations:
         check_id, receipt, failed_now = run.current_receipt(inputs, invocation)
@@ -85,7 +89,8 @@ def _verify(record: SessionRecord, *, force: bool) -> dict[str, str]:
             new_failure |= failed_now
         receipts[check_id] = receipt
         passed |= receipt["status"] == Status.PASSED
-        failed |= receipt["status"] not in {Status.PASSED, Status.SKIPPED}
+        failed |= Status(receipt["status"]).failing
+        missing |= receipt["status"] == Status.MISSING_TOOL
         lines.append(receipt["summary"])
         if log := receipt.get("log"):
             lines.append(f"Details: {log}" if Path(log).is_file() else "Details: unavailable (expired)")
@@ -102,6 +107,8 @@ def _verify(record: SessionRecord, *, force: bool) -> dict[str, str]:
     if failed:
         message = "Verification failed" if new_failure else "Verification unresolved · unchanged; not rerun"
         return _notification("\n".join([message, *lines]), block=new_failure)
+    if missing:
+        return {"systemMessage": "\n".join(["Verification unavailable · a required tool was not found", *lines])}
     outcome = "passed" if passed else "skipped"
     message = (
         f"Verification {outcome} · total {time.monotonic() - started:.1f}s"
@@ -190,8 +197,10 @@ def _current_status(rows: list[dict]) -> str:
     for applicability in ("stale", "not_run"):
         if any(row["applicability"] == applicability for row in rows):
             return applicability
-    if any(row["status"] not in {Status.PASSED, Status.SKIPPED} for row in rows):
+    if any(Status(row["status"]).failing for row in rows):
         return "failed"
+    if any(row["status"] == Status.MISSING_TOOL for row in rows):
+        return "unavailable"
     return "passed" if any(row["status"] == Status.PASSED for row in rows) else "skipped"
 
 

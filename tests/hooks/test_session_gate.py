@@ -9,6 +9,7 @@ from tests.runtime import REPO_ROOT, load_script_module
 
 sys.path.insert(0, str(REPO_ROOT / "agents/hooks/lib"))
 gate = load_script_module("agents/hooks/lib/session_gate.py", "session_gate")
+import check_execution
 import session_store
 
 
@@ -216,3 +217,98 @@ def test_invalid_test_configuration_blocks_once_then_only_notifies(record: sessi
     assert first["reason"].startswith("Verification unresolved · invalid test configuration\n")
     assert second == {"systemMessage": first["reason"]}
     assert calls() == []
+
+
+def test_missing_tool_is_reported_as_unavailable_without_blocking_stop(
+    record: session_store.SessionRecord, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    unavailable = check_execution.Result(
+        check_execution.Status.MISSING_TOOL, "pytest: uv not found on PATH or in a flake dev shell"
+    )
+    monkeypatch.setattr(gate, "execute", lambda *_: unavailable)
+    (record.root / "source.py").write_text("task edit")
+    first = gate.gate(record)
+    assert "decision" not in first
+    assert first["systemMessage"].startswith("Verification unavailable")
+    assert "failed" not in first["systemMessage"]
+    assert "uv not found" in first["systemMessage"]
+    assert gate.unresolved(record)
+
+
+def test_a_failure_next_to_a_missing_tool_still_blocks(
+    record: session_store.SessionRecord, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    failed = check_execution.Result(check_execution.Status.FAILED, "pytest: 1 failed")
+    monkeypatch.setattr(gate, "execute", lambda *_: failed)
+    (record.root / "source.py").write_text("task edit")
+    assert gate.gate(record)["decision"] == "block"
+
+
+def test_dev_shell_entry_failure_blocks_then_is_rerun_and_passes_once_nix_succeeds(
+    record: session_store.SessionRecord, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    calls_made: list[int] = []
+    outcomes = iter(
+        [
+            check_execution.Result(check_execution.Status.DEV_SHELL_FAILED, "pytest: nix daemon unreachable"),
+            check_execution.Result(check_execution.Status.DEV_SHELL_FAILED, "pytest: nix daemon unreachable"),
+            check_execution.Result(check_execution.Status.PASSED, "pytest: 1 passed"),
+        ]
+    )
+
+    def fake_execute(*_: object) -> check_execution.Result:
+        calls_made.append(1)
+        return next(outcomes)
+
+    monkeypatch.setattr(gate, "execute", fake_execute)
+    (record.root / "source.py").write_text("task edit")
+    first = gate.gate(record)
+    assert first["decision"] == "block"
+    assert first["reason"].startswith("Verification failed")
+    second = gate.gate(record)
+    assert second["decision"] == "block"
+    assert "not rerun" not in second["reason"]
+    assert len(calls_made) == 2
+    assert gate.gate(record)["systemMessage"].startswith("Verification passed")
+
+
+def test_missing_tool_receipt_is_retried_on_the_next_pass_not_reused(
+    record: session_store.SessionRecord, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    outcomes = iter(
+        [
+            check_execution.Result(check_execution.Status.MISSING_TOOL, "pytest: dev shell did not start"),
+            check_execution.Result(check_execution.Status.PASSED, "pytest: 1 passed"),
+        ]
+    )
+    monkeypatch.setattr(gate, "execute", lambda *_: next(outcomes))
+    (record.root / "source.py").write_text("task edit")
+    assert gate.gate(record)["systemMessage"].startswith("Verification unavailable")
+    assert gate.gate(record)["systemMessage"].startswith("Verification passed")
+
+
+@pytest.mark.parametrize(
+    ("statuses", "expected"),
+    [
+        (["missing_tool"], "unavailable"),
+        (["passed", "missing_tool"], "unavailable"),
+        (["failed", "missing_tool"], "failed"),
+        (["timeout", "missing_tool"], "failed"),
+        (["passed", "skipped"], "passed"),
+    ],
+)
+def test_status_reports_a_missing_tool_as_unavailable_unless_a_check_failed(
+    statuses: list[str], expected: str
+) -> None:
+    rows = [{"applicability": "current", "status": status} for status in statuses]
+    assert gate._current_status(rows) == expected
+
+
+def test_status_command_reports_unavailable_for_a_saved_missing_tool_receipt(
+    record: session_store.SessionRecord, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    unavailable = check_execution.Result(check_execution.Status.MISSING_TOOL, "pytest: uv not found")
+    monkeypatch.setattr(gate, "execute", lambda *_: unavailable)
+    (record.root / "source.py").write_text("task edit")
+    gate.gate(record)
+    assert gate.status(record)["state"] == "unavailable"

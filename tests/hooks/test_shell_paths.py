@@ -9,12 +9,12 @@ paths = load_script_module("agents/hooks/lib/shell_paths.py", "shell_paths_home_
 
 
 def test_glob_of_an_unknown_home_directory_cannot_be_expanded_so_the_command_is_reviewed() -> None:
-    with pytest.raises(paths.UnexpandableGlob):
+    with pytest.raises(paths.UnexpandableGlobError):
         paths.command_paths("cat ~/.ssh/id_rsa ~no-such-user-for-agent-config/*")
 
 
 def test_plain_path_of_an_unknown_home_directory_is_reviewed_like_a_glob() -> None:
-    with pytest.raises(paths.UnexpandableGlob):
+    with pytest.raises(paths.UnexpandableGlobError):
         paths.command_paths("cat ~no-such-user-for-agent-config/.aws/credentials")
 
 

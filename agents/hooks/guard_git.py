@@ -47,7 +47,7 @@ def inspect(command: str) -> Verdict:
     """Ask about the first segment a run-time word could hide, and raise for the first destructive one."""
     try:
         commands = shell_syntax.parse(command)
-    except shell_syntax.UnsupportedSyntax as error:
+    except shell_syntax.UnsupportedSyntaxError as error:
         preview = shell_syntax.command_preview(command)
         return hook_decision.ask(f"Needs review: {error}.\n\nCommand: {preview}", "syntax")
     for item in commands:

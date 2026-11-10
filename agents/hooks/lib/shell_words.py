@@ -27,7 +27,7 @@ BRACES = frozenset("{}")
 LINE_CONTINUATION = "\\\n"
 
 
-class UnsupportedSyntax(ValueError):
+class UnsupportedSyntaxError(ValueError):
     """The command cannot be statically inspected by this supplementary guard."""
 
     def __init__(
@@ -54,13 +54,13 @@ def literal_word(word: dict, source: bytes) -> tuple[str, bool]:
     dynamic = False
     for part in word_nodes(word):
         if part.get("Type") in QUOTED_PARTS and part.get("Dollar"):
-            raise UnsupportedSyntax("dollar-quoted shell words require explicit review", "dollar-quote")
+            raise UnsupportedSyntaxError("dollar-quoted shell words require explicit review", "dollar-quote")
         if part.get("Type") == "ParamExp":
             dynamic |= not is_home_parameter(part)
         elif part.get("Type") in SUBSTITUTIONS:
             dynamic = True
         elif part.get("Type") not in WORD_PARTS:
-            raise UnsupportedSyntax("shell expansions require explicit review", "expansion")
+            raise UnsupportedSyntaxError("shell expansions require explicit review", "expansion")
     parts = word.get("Parts", [])
     for index, part in enumerate(parts):
         if part.get("Type") == "Lit" and not is_literal_text(part.get("Value", ""), first=index == 0):
@@ -143,17 +143,22 @@ def unquoted(text: str) -> str:
     try:
         values = shlex.split(text.replace(LINE_CONTINUATION, ""), posix=True)
     except ValueError as error:
-        raise UnsupportedSyntax("a shell word could not be decoded unambiguously", "parse-failure") from error
+        raise UnsupportedSyntaxError("a shell word could not be decoded unambiguously", "parse-failure") from error
     if len(values) != 1:
-        raise UnsupportedSyntax("a shell word could not be decoded unambiguously", "parse-failure")
+        raise UnsupportedSyntaxError("a shell word could not be decoded unambiguously", "parse-failure")
     return values[0]
 
 
 def home_directory() -> str:
+    """Return the home directory a `$HOME` or leading `~` expands to.
+
+    Raises:
+        UnsupportedSyntaxError: The system cannot tell the home directory, so the expansion needs review.
+    """
     try:
         return str(Path.home())
     except RuntimeError as error:
-        raise UnsupportedSyntax(
+        raise UnsupportedSyntaxError(
             "the home directory is unknown, so its expansion requires explicit review", "expansion"
         ) from error
 

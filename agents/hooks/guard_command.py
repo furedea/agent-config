@@ -128,7 +128,7 @@ def command_verdict(kind: str, payload: dict, policy: Policy) -> Verdict:
     command = payload.get("tool_input", {}).get("command") or ""
     try:
         commands = shell_syntax.parse(command)
-    except shell_syntax.UnsupportedSyntax as error:
+    except shell_syntax.UnsupportedSyntaxError as error:
         preview = shell_syntax.command_preview(command)
         return hook_decision.ask(f"Needs review: {error}.\n\nCommand: {preview}", error.kind)
     if (

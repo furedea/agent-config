@@ -36,7 +36,7 @@ def allows_literal_rules(command: str, commands: tuple[shell_syntax.Command, ...
         if not shell_syntax.is_one_simple_command(command):
             return False
         return has_literal_words(command)
-    except shell_syntax.UnsupportedSyntax:
+    except shell_syntax.UnsupportedSyntaxError:
         return False
 
 

@@ -30,7 +30,7 @@ TARGET_LANGUAGES = {
 }
 
 
-class UnknownTestCommand(ValueError):
+class UnknownTestCommandError(ValueError):
     """A JavaScript project has no executable test configuration."""
 
 
@@ -465,7 +465,7 @@ def script_plan(selection: Selection, manager: str, test_script: str) -> list[In
         arguments = (manager, "run", "test") if manager == "bun" else (manager, "test")
         return [Invocation(f"{manager} test", "full suite", arguments)]
     if selection.targets or changed_language(selection.scope.rule, selection.scope.changed):
-        raise UnknownTestCommand("test command could not be determined")
+        raise UnknownTestCommandError("test command could not be determined")
     # A dependency or lockfile bump in a project that declares no JavaScript tests has nothing to run.
     return []
 

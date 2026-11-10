@@ -51,7 +51,7 @@ def test_bats_directory_mapping_is_non_recursive_and_deduplicated(tmp_path: Path
 def test_javascript_without_a_test_command_is_not_success(tmp_path: Path) -> None:
     rules = project(tmp_path, {})
     (tmp_path / "package.json").write_text("{}")
-    with pytest.raises(selection.UnknownTestCommand):
+    with pytest.raises(selection.UnknownTestCommandError):
         selection.language_plan(tmp_path, rules, ("src/file.ts",))
 
 
@@ -79,7 +79,7 @@ def test_unmapped_sources_beside_mapped_ones_still_require_their_runner(tmp_path
     rules = project(tmp_path, {"src/assets/**": ["tests/artifacts.rs"]})
     (tmp_path / "package.json").write_text("{}")
     touch_all(tmp_path, ["Cargo.toml", "tests/artifacts.rs"])
-    with pytest.raises(selection.UnknownTestCommand):
+    with pytest.raises(selection.UnknownTestCommandError):
         selection.language_plan(tmp_path, rules, ("src/assets/bridge.ts", "src/app.ts"))
 
 

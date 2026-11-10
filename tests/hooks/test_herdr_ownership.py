@@ -117,7 +117,7 @@ def test_an_ownership_action_asks_when_its_simple_command_shape_cannot_be_parsed
         herdr_ownership.shell_syntax,
         "is_one_simple_command",
         autospec=True,
-        side_effect=herdr_ownership.shell_syntax.UnsupportedSyntax("parser unavailable"),
+        side_effect=herdr_ownership.shell_syntax.UnsupportedSyntaxError("parser unavailable"),
     )
     record = store.register(repository, "codex", "session")
     with pytest.raises(store.ScopeError, match="one simple direct Herdr call"):

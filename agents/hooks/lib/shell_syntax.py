@@ -13,7 +13,7 @@ from typing import Self
 import fish_script
 import powershell_options
 import shell_input
-from shell_words import UnsupportedSyntax, literal_word, nodes, source_text, spreads
+from shell_words import UnsupportedSyntaxError, literal_word, nodes, source_text, spreads
 from shell_wrappers import ASSIGNMENT, WRAPPERS, OptionScan, script_index, wrapped_index
 
 COMMAND_PREVIEW_LIMIT = 200
@@ -196,11 +196,11 @@ def parse(source: str, depth: int = 0, directories: tuple[Path | None, ...] = ()
     if not source.strip():
         return ()
     if depth > 8:
-        raise UnsupportedSyntax("shell wrapper nesting exceeds the inspection limit", "wrapper")
+        raise UnsupportedSyntaxError("shell wrapper nesting exceeds the inspection limit", "wrapper")
     records = tuple(nodes(syntax_tree(source)))
     owners = {id(node["Cmd"]): node for node in records if isinstance(node.get("Cmd"), dict)}
     if any(node.get("Type") not in ALLOWED_NODES for node in records):
-        raise UnsupportedSyntax("dynamic or unsupported shell syntax requires explicit review", "expansion")
+        raise UnsupportedSyntaxError("dynamic or unsupported shell syntax requires explicit review", "expansion")
     hidden_calls = hidden_from_provider(records)
     data = source.encode()
     sources = shell_input.InputSources.of(records, data)
@@ -234,7 +234,7 @@ def fish_file_commands(command: Command, directories: tuple[Path | None, ...]) -
     """The commands in the script file a fish call runs; a file in fish's own syntax is left to the name-based ask."""
     nested: list[Command] = []
     for script in fish_script.file_scripts(command.arguments, command.dynamic, directories):
-        with suppress(UnsupportedSyntax):
+        with suppress(UnsupportedSyntaxError):
             nested += parse(script, command.wrapper_depth + 1, directories)
     return nested
 
@@ -243,7 +243,7 @@ def input_scripts(read: Callable[[], list[str]], tolerant: bool) -> list[str]:
     """The scripts a shell reads from its input; a tolerant caller already marked its call for review."""
     try:
         return read()
-    except UnsupportedSyntax:
+    except UnsupportedSyntaxError:
         if tolerant:
             return []
         raise
@@ -329,10 +329,12 @@ def syntax_tree(source: str) -> dict:
             ["shfmt", "-ln", "bash", "--to-json"], input=source, text=True, capture_output=True, timeout=5, check=False
         )
         if result.returncode:
-            raise UnsupportedSyntax("unsupported or invalid shell syntax", "parse-failure")
+            raise UnsupportedSyntaxError("unsupported or invalid shell syntax", "parse-failure")
         return json.loads(result.stdout)
     except (OSError, subprocess.TimeoutExpired, json.JSONDecodeError) as error:
-        raise UnsupportedSyntax("shell parser unavailable; command cannot be validated", "parse-failure") from error
+        raise UnsupportedSyntaxError(
+            "shell parser unavailable; command cannot be validated", "parse-failure"
+        ) from error
 
 
 def literal_command(node: dict, owner: dict, data: bytes) -> Command:
@@ -388,7 +390,7 @@ def shell_scripts(command: Command) -> list[str]:
     executable = Path(arguments[0]).name
     if executable == "eval":
         if any(command.dynamic[1:]):
-            raise UnsupportedSyntax("eval of a computed script requires explicit review", "wrapper")
+            raise UnsupportedSyntaxError("eval of a computed script requires explicit review", "wrapper")
         return [" ".join(arguments[1:])]
     if executable in WRAPPERS:
         return wrapper_scripts(command, executable)
@@ -408,7 +410,7 @@ def shell_scripts(command: Command) -> list[str]:
         return []
     script = script_index(arguments, option)
     if command.dynamic[script]:
-        raise UnsupportedSyntax("a shell wrapper running a computed script requires explicit review", "wrapper")
+        raise UnsupportedSyntaxError("a shell wrapper running a computed script requires explicit review", "wrapper")
     return [arguments[script]]
 
 
@@ -456,7 +458,9 @@ def foreign_scripts(command: Command) -> list[str]:
         # Only PowerShell's -Command joins its words; elsewhere the words after the script are positional arguments.
         words = operands if powershell_options.joins_following_words(shell, argument) else operands[:1]
         if any(command.dynamic[position] for position in words):
-            raise UnsupportedSyntax(f"{arguments[0]} running a computed script requires explicit review", "wrapper")
+            raise UnsupportedSyntaxError(
+                f"{arguments[0]} running a computed script requires explicit review", "wrapper"
+            )
         if not words:
             continue
         scripts.append(" ".join(arguments[position] for position in words))
@@ -482,9 +486,9 @@ def wrapper_scripts(command: Command, name: str) -> list[str]:
     if not scan.runs_script:
         return []
     if any(command.dynamic):
-        raise UnsupportedSyntax(f"a {name} command string built at run time requires explicit review", "wrapper")
+        raise UnsupportedSyntaxError(f"a {name} command string built at run time requires explicit review", "wrapper")
     if name == "watch":
         return [" ".join(arguments[scan.index :])]
     if None in scan.scripts:
-        raise UnsupportedSyntax(f"{name} has no literal command", "wrapper")
+        raise UnsupportedSyntaxError(f"{name} has no literal command", "wrapper")
     return [script for script in scan.scripts if script is not None]

@@ -273,4 +273,14 @@ def test_status_reports_a_missing_tool_as_unavailable_unless_a_check_failed(
     statuses: list[str], expected: str
 ) -> None:
     rows = [{"applicability": "current", "status": status} for status in statuses]
-    assert gate.current_status(rows) == expected
+    assert gate._current_status(rows) == expected
+
+
+def test_status_command_reports_unavailable_for_a_saved_missing_tool_receipt(
+    record: session_store.SessionRecord, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    unavailable = check_execution.Result(check_execution.Status.MISSING_TOOL, "pytest: uv not found")
+    monkeypatch.setattr(gate, "execute", lambda *_: unavailable)
+    (record.root / "source.py").write_text("task edit")
+    gate.gate(record)
+    assert gate.status(record)["state"] == "unavailable"

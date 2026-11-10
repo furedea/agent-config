@@ -45,9 +45,9 @@ own repositories get model judgement.
     that can silence rules and a file inside the repository could be committed or edited by the agent. A backend
     or model change is handled by `jev-lint`'s own cache keying.
 - **Where it runs.** The Stop-time run is an agent-config hook (Python) wired next to the existing Stop entry
-    (`agents/hooks.json` to `verification_session`) and reusing `trusted_owners`. agent-harness only ships the
-    Nix-pinned `jev-lint` package; it holds no model-rule logic, and the Rust `JudgementBackend` of agent-harness #209
-    is removed as dead code.
+    (`agents/hooks.json` to `verification_session`) and reusing `trusted_owners`. agent-harness holds no
+    model-rule logic: it only distributes configuration, while `jev-lint` is a tool that this hook runs, like
+    ast-grep. The Rust `JudgementBackend` of agent-harness #209 is removed as dead code.
 - **Repository gate.** Code is sent to the model only for repositories whose owner `trusted_owners` trusts (the
     owner's own repositories). For any other repository the hook skips model rules and says so in one line. An
     environment variable (`AGENT_MODEL_RULES=off`) switches model rules off entirely.
@@ -62,8 +62,9 @@ own repositories get model judgement.
     (M-05), error messages that name the operation and subject (M-21), and known-defect markers (`xfail`,
     `test.fails`) that carry a comment naming the removal condition (M-60). Their prose is deleted when the rule is
     promoted, not before.
-- **Backend.** `jev-lint` is pinned with all its dependencies through Nix and never fetched with `npx` at run time,
-    and the hook calls it only through one small module, so that ADR-0020's replacement stays possible. This
+- **Backend.** `jev-lint` is built and pinned with all its dependencies through Nix as `packages.<system>.jev-lint`
+    in this repository's flake, and dotfiles installs it from agent-config. It is never fetched with `npx` at run
+    time, and the hook calls it only through one small module, so that ADR-0020's replacement stays possible. This
     replaces only the run mode of ADR-0020 (`npx` over a Nix-provided Node, whose transitive dependencies were not
     pinned); ADR-0020's choice of `jev-lint` stands, and both ADRs are still Proposed. Model-judged rules are never
     skipped silently: a skip or failure is reported as in Failure behaviour.

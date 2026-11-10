@@ -1,18 +1,17 @@
 """Select verification commands from changed paths and explicit project mappings."""
 
-from collections.abc import Iterator
-from dataclasses import dataclass
 import fnmatch
 import json
 import os
-from pathlib import Path
 import tomllib
+from collections.abc import Iterator
+from dataclasses import dataclass
+from pathlib import Path
 
 from go_selection import GO_FULL_SUITE, go_files, go_package_exists, go_test_arguments
 from javascript_runner import javascript_runner, package_manager, runner_arguments
 from rust_targets import rust_test_target
 from source_listing import remaining_sources
-
 
 LANGUAGES = ("bats", "python", "javascript_typescript", "rust", "go")
 TARGET_LANGUAGES = {

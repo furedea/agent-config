@@ -3,10 +3,9 @@
 
 import json
 import math
-import os
 import sys
 import time
-
+from pathlib import Path
 
 SEPARATOR = "\033[38;5;240m │ \033[0m"
 
@@ -45,7 +44,7 @@ def render(payload: dict, now: int) -> str:
     """Format a provider snapshot without launching processes."""
     cwd = payload.get("cwd") or ""
     model = (payload.get("model") or {}).get("display_name") or ""
-    segments = [segment(14, os.path.basename(cwd.rstrip("/")) or cwd)]
+    segments = [segment(14, Path(cwd).name or cwd)]
     if model:
         segments.append(segment(111, model))
     used = percentage((payload.get("context_window") or {}).get("used_percentage") or 0)

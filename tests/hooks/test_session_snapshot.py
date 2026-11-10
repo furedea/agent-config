@@ -1,13 +1,11 @@
 import hashlib
-from io import BufferedReader
 import os
-from pathlib import Path
 import subprocess
+from io import BufferedReader
+from pathlib import Path
 
 import pytest
-
 from tests.runtime import load_script_module
-
 
 snapshot = load_script_module("agents/hooks/lib/session_snapshot.py", "session_snapshot")
 

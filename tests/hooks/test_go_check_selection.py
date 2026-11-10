@@ -4,7 +4,6 @@ import json
 from pathlib import Path
 
 import pytest
-
 from tests.runtime import REPO_ROOT, load_script_module
 
 selection = load_script_module("agents/hooks/lib/check_selection.py", "check_selection")

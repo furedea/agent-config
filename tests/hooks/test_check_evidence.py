@@ -1,9 +1,7 @@
 """Runner output is evidence only for observations it actually reports."""
 
 import pytest
-
 from tests.runtime import load_script_module
-
 
 output = load_script_module("agents/hooks/lib/check_evidence.py", "check_evidence")
 

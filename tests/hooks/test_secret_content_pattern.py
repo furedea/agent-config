@@ -5,9 +5,7 @@ import shutil
 import subprocess
 
 import pytest
-
 from tests.runtime import REPO_ROOT
-
 
 PATTERNS = json.loads((REPO_ROOT / "agents/hooks/rules/secret_content_patterns.json").read_text())
 

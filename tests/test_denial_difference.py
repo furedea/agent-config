@@ -5,8 +5,7 @@ import json
 import pytest
 
 from tests.denial_difference import Difference, find_denial_difference
-from tests.runtime import CliRunner, REPO_ROOT
-
+from tests.runtime import REPO_ROOT, CliRunner
 
 NO_VERIFY = {"patterns": ["^git commit .*--no-verify"], "justification": "test"}
 GUARDED = {

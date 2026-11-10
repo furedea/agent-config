@@ -1,9 +1,7 @@
 """The command guard judges the program behind every wrapper, shell, and option spelling it knows."""
 
 import pytest
-
 from tests.runtime import load_script_module
-
 
 guard = load_script_module("agents/hooks/guard_command.py", "guard_command")
 pytestmark = pytest.mark.usefixtures("isolated_project")

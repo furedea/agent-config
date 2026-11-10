@@ -1,15 +1,13 @@
 """Statusline formatting can be checked without starting shells or Git."""
 
-import re
 import json
 import os
-from pathlib import Path
+import re
 import subprocess
+from pathlib import Path
 
 import pytest
-
 from tests.runtime import REPO_ROOT, load_script_module
-
 
 statusline = load_script_module("agents/claude/statusline/statusline.py", "statusline")
 

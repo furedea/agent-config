@@ -7,7 +7,6 @@ words can shift every value after it; a closed grammar refuses such words instea
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 
-
 GLOBAL_OPTIONS = ("--session", "--machine", "--remote")
 ValueRule = Callable[[str], bool]
 

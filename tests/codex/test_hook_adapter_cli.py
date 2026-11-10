@@ -1,13 +1,11 @@
 """Codex protocol translation using actual entry points and isolated policy files."""
 
 import json
-from pathlib import Path
 import shutil
+from pathlib import Path
 
 import pytest
-
-from tests.runtime import CliRunner, REPO_ROOT, StubWriter
-
+from tests.runtime import REPO_ROOT, CliRunner, StubWriter
 
 SCRIPT = "agents/codex/hooks/hook_adapter.py"
 
@@ -206,6 +204,14 @@ def test_home_globs_expand_against_the_home_directory(run_cli: CliRunner, presen
     (ssh / ("id_rsa" if present else "known_hosts")).write_text("fixture")
     result = run_cli(SCRIPT, "paths", "command", payload={"tool_input": {"command": "cat ~/.ss*/id_rsa"}})
     assert result.returncode == (2 if present else 0)
+
+
+@pytest.mark.usefixtures("harness")
+@pytest.mark.parametrize("command", ["cat ~no-such-user-for-agent-config/.ssh/*", "cat ~/.ssh/id_rsa ~*/x"])
+def test_a_glob_of_an_unknown_home_directory_needs_review(run_cli: CliRunner, command: str) -> None:
+    result = run_cli(SCRIPT, "paths", "command", payload={"tool_input": {"command": command}})
+    assert result.returncode == 2
+    assert "review" in result.stderr.lower()
 
 
 def fill(directory: Path, count: int) -> None:

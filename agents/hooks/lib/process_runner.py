@@ -1,15 +1,14 @@
 """Run quality processes with bounded I/O and a fixed execution deadline."""
 
-from dataclasses import dataclass, field
-from pathlib import Path
 import shutil
 import subprocess
 import tempfile
 import threading
+from dataclasses import dataclass, field
+from pathlib import Path
 from typing import BinaryIO
 
 from lib.formatter_policy import Step
-
 
 STEP_TIMEOUT_SECONDS = 60.0
 PROCESS_OUTPUT_LIMIT_BYTES = 64 * 1024

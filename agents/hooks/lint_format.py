@@ -1,18 +1,16 @@
 #!/usr/bin/env -S python3 -IB
 """Adapt normalized quality diagnostics to the provider hook contract."""
 
-from collections.abc import Callable
 import json
-from pathlib import Path
 import sys
-
+from collections.abc import Callable
+from pathlib import Path
 
 SCRIPT = Path(__file__).resolve()
 sys.path.insert(0, str(SCRIPT.parent))
 sys.path.insert(0, str(SCRIPT.parent / "lib"))
 
 from lib import formatter_policy, hook_input, lint_engine, process_runner, static_rule_scan
-
 
 EXTENSIONS = hook_input.EXTENSIONS
 LANGUAGES = frozenset(EXTENSIONS.values())

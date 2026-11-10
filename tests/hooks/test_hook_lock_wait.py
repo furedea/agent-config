@@ -1,19 +1,17 @@
 """Native hook entries tolerate brief contention without losing session state."""
 
-from contextlib import ExitStack
 import json
 import os
-from pathlib import Path
 import subprocess
 import sys
 import time
-
-import pytest
-
-from tests.hooks.herdr_runtime import CREATE, created, hook, set_agents
+from contextlib import ExitStack
+from pathlib import Path
 
 import herdr_ownership
+import pytest
 import session_store as store
+from tests.hooks.herdr_runtime import CREATE, created, hook, set_agents
 
 
 def start_hook(

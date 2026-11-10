@@ -11,11 +11,10 @@ import sys
 from tests.rule_overlap import COMMAND_LOOKUP, find_overlaps
 from tests.runtime import REPO_ROOT
 
-
 sys.path.insert(0, str(REPO_ROOT / "agents/hooks/lib"))
 
-from shell_wrappers import COMMAND_LOOKUP as GUARD_COMMAND_LOOKUP, WRAPPERS
-
+from shell_wrappers import COMMAND_LOOKUP as GUARD_COMMAND_LOOKUP
+from shell_wrappers import WRAPPERS
 
 POLICY = json.loads((REPO_ROOT / "agents/command_permissions.json").read_text())["rules"]
 FORBIDDEN = json.loads((REPO_ROOT / "agents/hooks/rules/forbidden_commands.json").read_text())["rules"]
@@ -27,8 +26,16 @@ GIT_ADD = (
 GIT_COMMIT = (
     r"git[[:space:]]+commit([[:space:]].*)?[[:space:]]+(--no-veri[a-z]*|-[aeiopqsvz]*n[^[:space:]]*)([[:space:]]|$)"
 )
-PIP = r"(^|[[:space:]])python[0-9.]*([[:space:]]+(-[A-Za-z]*[WX]([^[:space:]]+|[[:space:]]+[^[:space:]]+)|--check-hash-based-pycs[[:space:]]+[^[:space:]]+|-[A-Za-z]+))*[[:space:]]+-[A-Za-z]*m[[:space:]]*(pip|ensurepip)([[:space:]]|$)"
-FIND = r"(^|[[:space:]])find[[:space:]].*[[:space:]]-(delete|exec|execdir|ok|okdir|fprint|fprint0|fprintf|fls)([[:space:]]|$)"
+PIP = (
+    r"(^|[[:space:]])python[0-9.]*"
+    r"([[:space:]]+(-[A-Za-z]*[WX]([^[:space:]]+|[[:space:]]+[^[:space:]]+)"
+    r"|--check-hash-based-pycs[[:space:]]+[^[:space:]]+|-[A-Za-z]+))*"
+    r"[[:space:]]+-[A-Za-z]*m[[:space:]]*(pip|ensurepip)([[:space:]]|$)"
+)
+FIND = (
+    r"(^|[[:space:]])find[[:space:]].*[[:space:]]"
+    r"-(delete|exec|execdir|ok|okdir|fprint|fprint0|fprintf|fls)([[:space:]]|$)"
+)
 HERDR = r"^herdr[[:space:]]+agent[[:space:]]+start([[:space:]].*)?[[:space:]]--([[:space:]]|$)"
 CARGO = "^cargo mutants .*--in-place"
 MUTMUT = "^uv run .*mutmut apply"

@@ -1,13 +1,11 @@
 """Secret-content decisions using public synthetic samples and real CLI processes."""
 
 import json
-from pathlib import Path
 import shutil
+from pathlib import Path
 
 import pytest
-
 from tests.runtime import REPO_ROOT, CliRunner
-
 
 SCRIPT = "agents/hooks/guard_file.py"
 

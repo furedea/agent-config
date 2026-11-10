@@ -1,19 +1,17 @@
 """Overlapping successful results preserve every ownership record in the session."""
 
+import json
 from collections.abc import Generator
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
-import json
 from pathlib import Path
 from threading import Event
 
-import pytest
-from pytest_mock import MockerFixture
-
-from tests.hooks.herdr_runtime import CREATE, created
-
 import herdr_ownership
+import pytest
 import session_store as store
+from pytest_mock import MockerFixture
+from tests.hooks.herdr_runtime import CREATE, created
 
 
 @pytest.mark.parametrize("kind", ["agent", "workspace"])

@@ -1,17 +1,15 @@
 """Untrusted worktree metadata and Git configuration cannot affect cleanup or current detection."""
 
 import os
-from pathlib import Path
 import shlex
 import shutil
-
-import pytest
-import pytest_mock
-
-from tests.hooks.cleanup_worktrees_runtime import branches, cleanup, git, task_worktree
-from tests.runtime import real_git
+from pathlib import Path
 
 import cleanup_worktrees
+import pytest
+import pytest_mock
+from tests.hooks.cleanup_worktrees_runtime import branches, cleanup, git, task_worktree
+from tests.runtime import real_git
 
 
 @pytest.mark.parametrize("planted", ["commondir", "both"])

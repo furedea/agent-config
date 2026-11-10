@@ -1,19 +1,18 @@
 """The fork check falls back from gh to the public GitHub API and the declared repositories."""
 
-from collections.abc import Callable
-from email.message import Message
 import http.client
 import io
 import json
-from pathlib import Path
 import subprocess
 import sys
-from typing import Self
 import urllib.error
 import urllib.request
+from collections.abc import Callable
+from email.message import Message
+from pathlib import Path
+from typing import Self
 
 import pytest
-
 from tests.runtime import REPO_ROOT, StubWriter, load_script_module
 
 pytestmark = pytest.mark.usefixtures("api")

@@ -3,8 +3,8 @@
 from pathlib import Path
 
 import hook_decision
-from hook_decision import Verdict
 import shell_syntax
+from hook_decision import Verdict
 
 
 def objection(commands: tuple[shell_syntax.Command, ...]) -> Verdict:

@@ -2,9 +2,8 @@
 """Mechanical lifecycle entry points for registered verification sessions."""
 
 import json
-from pathlib import Path
 import sys
-
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT / "lib"))
@@ -27,7 +26,6 @@ from session_store import (
     resume,
     session_directory,
 )
-
 
 EVENTS = ("session-start", "pre-tool-use", "post-tool-use", "stop", "session-end")
 

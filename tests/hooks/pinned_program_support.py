@@ -43,7 +43,9 @@ def swe_conform_ledger_rule() -> dict:
             f"^ledger release({common}| --generation [0-9]+)*$",
             f"^ledger result({common}| --generation [0-9]+| --result {text})*$",
         ],
-        "justification": "Allow the fleet ledger's local spool commands in their documented forms; every other form asks.",
+        "justification": (
+            "Allow the fleet ledger's local spool commands in their documented forms; every other form asks."
+        ),
     }
 
 

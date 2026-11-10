@@ -5,17 +5,15 @@ that are meant to be denied, or to wait for approval, are listed with a reason i
 skill_command_expectations.json; every other command must run without approval.
 """
 
-from dataclasses import dataclass
 import json
-from pathlib import Path
 import re
 import sys
 import textwrap
+from dataclasses import dataclass
+from pathlib import Path
 
 import pytest
-
 from tests.runtime import REPO_ROOT, load_script_module
-
 
 SOURCES = (REPO_ROOT / "agents/AGENTS.md", *sorted((REPO_ROOT / "agents/skills").rglob("*.md")))
 EXPECTATIONS = json.loads(Path(__file__).with_name("skill_command_expectations.json").read_text())
@@ -44,8 +42,8 @@ def skill_commands(source: Path) -> list[SkillCommand]:
     A script is also one command as a whole, because a line alone cannot show what its block denies.
     """
     commands = []
-    for _, block in FENCE.findall(source.read_text()):
-        block = textwrap.dedent(block)
+    for _, fenced_block in FENCE.findall(source.read_text()):
+        block = textwrap.dedent(fenced_block)
         is_script = bool(SCRIPT.search(block))
         lines = [block.strip()] if "<<" in block else block.replace("\\\n", " ").splitlines()
         scope = "fragment" if is_script else "command"

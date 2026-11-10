@@ -9,7 +9,6 @@ import json
 from tests.prefix_audit import Finding, audit_prefixes
 from tests.runtime import REPO_ROOT
 
-
 RULES = json.loads((REPO_ROOT / "agents/command_permissions.json").read_text())["rules"]
 
 # Reported by the first P1 run (#73). Remove an entry in the change that merges it into its ancestor.

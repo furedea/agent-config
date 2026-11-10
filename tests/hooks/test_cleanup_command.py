@@ -3,9 +3,7 @@
 from pathlib import Path
 
 import pytest
-
 from tests.runtime import load_script_module
-
 
 guard = load_script_module("agents/hooks/guard_command.py", "guard_command")
 CLEANUP_PATHS = ["~/.claude/hooks/cleanup_worktrees.py", str(Path.home() / ".claude/hooks/cleanup_worktrees.py")]

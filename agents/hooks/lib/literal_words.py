@@ -1,11 +1,10 @@
 """Decide whether a command's words are literal enough for the rules marked literal_words."""
 
-from pathlib import Path
 import re
+from pathlib import Path
 
 import shell_inspection
 import shell_syntax
-
 
 # Settings that can send a request to a local server somewhere else: a proxy, or another configuration file.
 # The only programs the literal_words rules govern; through any wrapper they get main's rules, or no
@@ -42,7 +41,10 @@ def allows_literal_rules(command: str, commands: tuple[shell_syntax.Command, ...
 
 
 def has_literal_words(command: str) -> bool:
-    """Whether no word can expand at run time: no parameter, arithmetic, command or process substitution, glob, or tilde."""
+    """Whether no word can expand at run time.
+
+    That means no parameter, arithmetic, command or process substitution, glob, or tilde.
+    """
     return not (
         EXPANDING_TEXT.search(shell_inspection.text_outside_quotes(command))
         or DOUBLE_QUOTE_EXPANDING_TEXT.search(shell_inspection.double_quoted_text(command))

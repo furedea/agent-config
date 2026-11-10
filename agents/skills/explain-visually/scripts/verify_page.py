@@ -4,19 +4,18 @@
 from __future__ import annotations
 
 import argparse
-from collections.abc import Iterable, Sequence
-from dataclasses import dataclass
-from html.parser import HTMLParser
 import json
 import os
-from pathlib import Path
 import re
 import shutil
 import signal
 import subprocess
 import sys
 import tempfile
-
+from collections.abc import Iterable, Sequence
+from dataclasses import dataclass
+from html.parser import HTMLParser
+from pathlib import Path
 
 AUTHORITY_METADATA = "explain-visually-authority"
 SOURCE_METADATA = "explain-visually-source"
@@ -210,12 +209,16 @@ def validate_html(html: str) -> tuple[str, ...]:
         elif expected_value is not None and actual_value != expected_value:
             errors.append(f"The {name} metadata must be {expected_value}.")
 
-    for resource in inspector.external_resources:
-        errors.append(f"The page loads an external resource: {resource}.")
-    for resource in _external_css_resources(inspector.style_parts):
-        errors.append(f"The page loads an external resource from CSS: {resource}.")
-    for resource in _external_script_resources(inspector.script_parts):
-        errors.append(f"The page loads an external resource from JavaScript: {resource}.")
+    external_resources = (
+        ("", inspector.external_resources),
+        (" from CSS", _external_css_resources(inspector.style_parts)),
+        (" from JavaScript", _external_script_resources(inspector.script_parts)),
+    )
+    errors.extend(
+        f"The page loads an external resource{origin}: {resource}."
+        for origin, resources in external_resources
+        for resource in resources
+    )
 
     return tuple(errors)
 

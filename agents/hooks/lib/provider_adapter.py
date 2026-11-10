@@ -4,18 +4,18 @@ Each provider adapter declares only a Profile of provider facts. Payload normali
 guard dispatch, and CLI validation live here so the providers cannot drift apart.
 """
 
-from collections.abc import Callable, Mapping
-from dataclasses import dataclass, field
 import json
 import os
-from pathlib import Path
 import sys
+from collections.abc import Callable, Mapping
+from dataclasses import dataclass, field
+from pathlib import Path
 
 import audit_log
 import guard_command
 import guard_file
-import guard_suppression
 import guard_git
+import guard_suppression
 import hook_decision
 import hook_dispatch
 import hook_input
@@ -25,7 +25,6 @@ import secret_path_policy
 import shell_paths
 import shell_syntax
 import verification_session
-
 
 SECRET_PATH_RULE = "guard_secret_paths.sh"
 SHELL_MODES = ("allowed", "forbidden", "git", "commit")
@@ -101,7 +100,7 @@ class Adapter:
             return 1
         try:
             return self.dispatch(kind, rest, self._payload())
-        except (OSError, ValueError, TypeError, AttributeError) as error:
+        except (OSError, RuntimeError, ValueError, TypeError, AttributeError) as error:
             print(f"BLOCKED: {error}", file=sys.stderr)
             return 2
 
@@ -249,7 +248,7 @@ class Adapter:
         os.chdir(workdir)
         # The forwarded cwd is already the workdir; keeping `workdir` would apply a relative one twice.
         resolved = {key: value for key, value in values.items() if key != "workdir"}
-        return payload | {"cwd": os.getcwd(), "tool_input": resolved}
+        return payload | {"cwd": str(Path.cwd()), "tool_input": resolved}
 
     def _accepts(self, kind: str, rest: list[str]) -> bool:
         commands = self._commands()

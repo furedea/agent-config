@@ -1,13 +1,11 @@
 """File-boundary contracts through real hook processes and disposable Git state."""
 
 import json
-from pathlib import Path
 import subprocess
+from pathlib import Path
 
 import pytest
-
 from tests.runtime import CliRunner
-
 
 SCRIPT = "agents/hooks/guard_file.py"
 
@@ -40,6 +38,7 @@ def protected_policy(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
         ("~/.claude/settings.json", True),
         ("~/.claude/custom-protected.json", True),
         ("~/.claude/hooks/custom.sh", False),
+        ("~no-such-user-for-agent-config/x", False),
         ("agents/hooks/guard_command.py", False),
         ("agents/AGENTS.md", False),
         ("agents/codex/hooks/hook_adapter.py", False),

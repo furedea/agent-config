@@ -7,7 +7,6 @@ import pytest
 
 from tests.runtime import CliRunner
 
-
 pytestmark = pytest.mark.integration
 
 

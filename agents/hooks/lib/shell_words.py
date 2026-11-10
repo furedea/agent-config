@@ -1,11 +1,10 @@
 """Decode shfmt word nodes into literal values, or into source text the shell computes at run time."""
 
-from collections.abc import Iterator
-import os
 import re
 import shlex
+from collections.abc import Iterator
+from pathlib import Path
 from typing import Literal
-
 
 # Every command inside a substitution, clause, or function body is a CallExpr that parse judges on
 # its own, so a body is judged where it is defined and a call by its own name; the substituted word
@@ -151,12 +150,12 @@ def unquoted(text: str) -> str:
 
 
 def home_directory() -> str:
-    home = os.path.expanduser("~")
-    if home == "~":
+    try:
+        return str(Path.home())
+    except RuntimeError as error:
         raise UnsupportedSyntax(
             "the home directory is unknown, so its expansion requires explicit review", "expansion"
-        )
-    return home
+        ) from error
 
 
 def nodes(value: object) -> Iterator[dict]:

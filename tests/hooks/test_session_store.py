@@ -1,15 +1,13 @@
 import fcntl
 import json
 import os
-from pathlib import Path
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
 from pytest_mock import MockerFixture
-
 from tests.runtime import REPO_ROOT
-
 
 sys.path.insert(0, str(REPO_ROOT / "agents/hooks/lib"))
 import session_store as store

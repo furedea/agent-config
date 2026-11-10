@@ -1,12 +1,11 @@
 """Shared Herdr ownership command and response helpers."""
 
 import json
-from pathlib import Path
 import subprocess
 import sys
+from pathlib import Path
 
 from tests.runtime import REPO_ROOT
-
 
 hook = REPO_ROOT / "agents/hooks/verification_session.py"
 
@@ -90,7 +89,7 @@ def set_agents(names: Path, text: str) -> None:
     """Prepare the agent listing when live agents change, without a Python child."""
     agents = []
     for line in text.splitlines():
-        name, workspace, terminal, session = (line.split() + ["", "", ""])[:4]
+        name, workspace, terminal, session = [*line.split(), "", "", ""][:4]
         agents.append(
             {
                 "name": name,

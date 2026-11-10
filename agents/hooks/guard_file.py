@@ -3,22 +3,21 @@
 
 import json
 import os
-from pathlib import Path
 import re
 import subprocess
 import sys
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "lib"))
 
 import audit_log
-from command_policy import regex_matches
 import git_safety
 import hook_decision
 import hook_input
 import shell_syntax
-
+from command_policy import regex_matches
 
 # Environment variables through which a commit can use another repository or index than the directory's own.
 REPOSITORY_VARIABLE = re.compile(r"\bGIT_(DIR|WORK_TREE|INDEX_FILE|COMMON_DIR|OBJECT_DIRECTORY)\+?=")
@@ -55,13 +54,21 @@ def protected_reason(value: str, path: Path) -> str:
             raise ValueError("invalid path")
     except ValueError as error:
         raise ValueError(f"invalid protected path policy: {path}") from error
-    if os.path.expanduser(value) not in {os.path.expanduser(item) for item in paths}:
+    if home_expanded(value) not in {home_expanded(item) for item in paths}:
         return ""
     return (
         f"{value} is part of the agent harness boundary.\n\n"
         "Change the source under agents/ in the agent-config repository, then regenerate the installed files. "
         "The provider permissions and sandbox remain the hard boundary."
     )
+
+
+def home_expanded(value: str) -> Path:
+    """Expand a leading `~`; a `~user` whose home is unknown stays literal, so it matches no protected path."""
+    try:
+        return Path(value).expanduser()
+    except RuntimeError:
+        return Path(value)
 
 
 def commit_filename_rules(path: Path) -> list[dict]:

@@ -2,13 +2,11 @@
 
 import io
 import json
-from pathlib import Path
 import shutil
+from pathlib import Path
 
 import pytest
-
 from tests.runtime import StubWriter, load_script_module
-
 
 lint_format = load_script_module("agents/hooks/lint_format.py", "lint_format_for_static_rules")
 hook_adapter = load_script_module("agents/codex/hooks/hook_adapter.py", "codex_hook_adapter_for_static_rules")

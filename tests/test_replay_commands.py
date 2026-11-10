@@ -1,15 +1,14 @@
 """Replaying recorded session commands judges them with the hooks and reports only to the terminal."""
 
-from compression import zstd
 import json
-from pathlib import Path
 import re
 import shutil
+from compression import zstd
+from pathlib import Path
 
 import pytest
 
 from tests.runtime import REPO_ROOT, CliRunner
-
 
 SCRIPT = "scripts/replay_commands.py"
 SINCE = "2026-10-17"

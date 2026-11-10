@@ -2,7 +2,6 @@
 
 from pathlib import Path
 
-
 from tests.runtime import StubWriter, load_script_module
 
 execution = load_script_module("agents/hooks/lib/check_execution.py", "check_execution")

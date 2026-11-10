@@ -7,9 +7,8 @@ another process or session. Any other option asks, so an option a CLI update add
 
 import command_policy
 import hook_decision
-from hook_decision import Verdict
 import shell_syntax
-
+from hook_decision import Verdict
 
 BROWSER_GLOBAL = frozenset({"--json", "--headed", "--session"})
 BROWSER = {

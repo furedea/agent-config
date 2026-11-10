@@ -1,9 +1,9 @@
 """Git wrappers delegate without re-entering PATH-based platform shims."""
 
 import os
-from pathlib import Path
 import shlex
 import subprocess
+from pathlib import Path
 
 import pytest
 

@@ -1,9 +1,8 @@
 """Evaluate explicit Git operations without relying on whitespace-based argument parsing."""
 
-from pathlib import Path
 import re
 import subprocess
-
+from pathlib import Path
 
 PROTECTED_BRANCHES = {"main", "master"}
 DESTRUCTIVE_VERBS = {"clean", "filter-branch", "filter-repo", "replace"}
@@ -51,11 +50,11 @@ LONG_OPTIONS = {
         "--quiet --recurse-submodules --remotes --set-upstream-to --show-current --sort --track --unset-upstream "
         "--verbose",
         "worktree": "--force",
-        "commit": "--ahead-behind --all --allow-empty --allow-empty-message --amend --author --branch --cleanup --date "
-        "--dry-run --edit --file --fixup --gpg-sign --include --inter-hunk-context --interactive --long --message "
-        "--no-post-rewrite --no-verify --null --only --patch --pathspec-file-nul --pathspec-from-file --porcelain "
-        "--post-rewrite --quiet --reedit-message --reset-author --reuse-message --short --signoff --squash --status "
-        "--template --trailer --unified --untracked-files --verbose --verify",
+        "commit": "--ahead-behind --all --allow-empty --allow-empty-message --amend --author --branch --cleanup "
+        "--date --dry-run --edit --file --fixup --gpg-sign --include --inter-hunk-context --interactive --long "
+        "--message --no-post-rewrite --no-verify --null --only --patch --pathspec-file-nul --pathspec-from-file "
+        "--porcelain --post-rewrite --quiet --reedit-message --reset-author --reuse-message --short --signoff "
+        "--squash --status --template --trailer --unified --untracked-files --verbose --verify",
         "tag": "--annotate --cleanup --color --column --contains --create-reflog --delete --edit --file --force "
         "--format --ignore-case --list --local-user --merged --message --no-column --no-contains --no-merged "
         "--omit-empty --points-at --sign --sort --trailer --verify",

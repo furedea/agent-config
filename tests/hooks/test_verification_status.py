@@ -1,18 +1,15 @@
 """Status observes current applicability without executing or renewing verification."""
 
 import json
-from pathlib import Path
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
-
-from tests.runtime import CliRunner, REPO_ROOT, StubWriter
-
+from tests.runtime import REPO_ROOT, CliRunner, StubWriter
 
 sys.path.insert(0, str(REPO_ROOT / "agents/hooks/lib"))
 import session_store
-
 
 SCRIPT = "agents/hooks/verification_session.py"
 

@@ -1,14 +1,13 @@
 """Project allow rules count only from a trusted, non-fork owner decided by the origin URL."""
 
-from collections.abc import Callable
 import json
-from pathlib import Path
 import subprocess
 import sys
+from collections.abc import Callable
+from pathlib import Path
 
 import pytest
-
-from tests.runtime import CliRunner, REPO_ROOT, StubWriter, load_script_module
+from tests.runtime import REPO_ROOT, CliRunner, StubWriter, load_script_module
 
 SetOrigin = Callable[[str], None]
 AnswerGh = Callable[[str | None], Path]

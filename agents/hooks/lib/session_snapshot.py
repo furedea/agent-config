@@ -1,13 +1,12 @@
 """Capture verification inputs without storing source content or a Git index."""
 
-from dataclasses import dataclass
 import hashlib
 import json
 import os
-from pathlib import Path
 import stat
 import subprocess
-
+from dataclasses import dataclass
+from pathlib import Path
 
 # Larger tracked files are signed by metadata so SessionStart stays inside its hook timeout.
 HASH_LIMIT_BYTES = 1 << 20
@@ -133,7 +132,7 @@ def file_signature(root: Path, path: Path, *, hash_content: bool = True) -> str 
 def link_signature(root: Path, path: Path, *, hash_content: bool) -> str | None:
     """Record link text, and the target's signature only for a regular file inside the worktree."""
     try:
-        text = os.readlink(path)
+        text = str(path.readlink())
     except FileNotFoundError:
         return None
     except OSError as error:
@@ -164,4 +163,5 @@ def content_signature(path: Path, metadata: os.stat_result) -> str:
 def stat_signature(metadata: os.stat_result) -> str:
     """ctime cannot be set by a user, so restoring size and mtime after an edit is still detected."""
     mode = stat.S_IMODE(metadata.st_mode)
-    return f"stat:{stat.S_IFMT(metadata.st_mode):o}:{mode:o}:{metadata.st_size}:{metadata.st_mtime_ns}:{metadata.st_ctime_ns}"
+    file_type = stat.S_IFMT(metadata.st_mode)
+    return f"stat:{file_type:o}:{mode:o}:{metadata.st_size}:{metadata.st_mtime_ns}:{metadata.st_ctime_ns}"

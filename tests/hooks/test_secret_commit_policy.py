@@ -4,9 +4,7 @@ import json
 import subprocess
 
 import pytest
-
 from tests.runtime import REPO_ROOT
-
 
 POLICY = json.loads((REPO_ROOT / "agents/hooks/rules/secret_commit_policy.json").read_text())
 

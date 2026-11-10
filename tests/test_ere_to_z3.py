@@ -1,14 +1,14 @@
 """The POSIX ERE to Z3 converter accepts exactly the strings the system grep accepts (P2 and P3 of #73)."""
 
-from functools import cache
 import json
+from functools import cache
 
-from hypothesis import HealthCheck, given, settings, strategies as st
 import pytest
+from hypothesis import HealthCheck, given, settings
+from hypothesis import strategies as st
 
 from tests.ere_to_z3 import UnsupportedPattern, matches, witness
 from tests.runtime import REPO_ROOT, load_script_module
-
 
 command_policy = load_script_module("agents/hooks/lib/command_policy.py", "command_policy")
 FORBIDDEN = json.loads((REPO_ROOT / "agents/hooks/rules/forbidden_commands.json").read_text())["rules"]
@@ -71,11 +71,13 @@ def test_ignoring_case_also_folds_what_a_negated_bracket_excludes() -> None:
 
 @pytest.mark.parametrize(
     "pattern",
-    [r"\1", r"(a)\1", r"\w", "(?=a)", "[[:bogus:]]", "(a", "a)", "[a", "a{2", "*a", r"[\.]", r"[a\]]"]
-    + [r"\<a", r"a\>", r"\`a", r"a\'"]
-    + ["^[[=a=]]$", "^[[.a.]]$", "^[[.hyphen.]]$"]
-    + ["a\nb", "^a$\n^b$"]
-    + ["[[:alpha:]]", "[[:alnum:]]", "[[:upper:]]", "[[:lower:]]"],
+    [
+        *[r"\1", r"(a)\1", r"\w", "(?=a)", "[[:bogus:]]", "(a", "a)", "[a", "a{2", "*a", r"[\.]", r"[a\]]"],
+        *[r"\<a", r"a\>", r"\`a", r"a\'"],
+        *["^[[=a=]]$", "^[[.a.]]$", "^[[.hyphen.]]$"],
+        *["a\nb", "^a$\n^b$"],
+        *["[[:alpha:]]", "[[:alnum:]]", "[[:upper:]]", "[[:lower:]]"],
+    ],
 )
 def test_syntax_outside_the_rule_dialect_is_refused(pattern: str) -> None:
     with pytest.raises(UnsupportedPattern):

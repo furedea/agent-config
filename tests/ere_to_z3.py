@@ -10,11 +10,10 @@ space because the rules use it throughout. Under a UTF-8 locale it also admits U
 which this audit does not see.
 """
 
-from dataclasses import dataclass, field
 import re
+from dataclasses import dataclass, field
 
 import z3
-
 
 MAX_CODE_POINT = 0x2FFFF
 # The two highest code points are reserved as the line's sentinels; Unicode noncharacters never occur in a command.

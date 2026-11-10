@@ -1,8 +1,7 @@
 """Interpret runner evidence and order summaries independently of execution."""
 
-from dataclasses import dataclass
 import re
-
+from dataclasses import dataclass
 
 ANSI = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
 DISPLAY_ORDER = {

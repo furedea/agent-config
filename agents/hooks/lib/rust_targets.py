@@ -1,7 +1,7 @@
 """Resolve Rust integration test files to Cargo test targets."""
 
-from pathlib import Path
 import tomllib
+from pathlib import Path
 
 
 def rust_test_target(root: Path, filename: str) -> str:

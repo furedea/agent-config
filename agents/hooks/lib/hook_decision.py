@@ -1,10 +1,9 @@
 """Carry one guard's verdict to whichever provider asked, in the Claude-native hook contract."""
 
-from dataclasses import dataclass, replace
 import json
 import sys
+from dataclasses import dataclass, replace
 from typing import Literal, Self
-
 
 Decision = Literal["allow", "ask", "deny"]
 REVIEW_HINT = "Use a non-destructive approved form, or ask the user to review the command policy."

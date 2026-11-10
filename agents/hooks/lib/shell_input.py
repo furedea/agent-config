@@ -1,12 +1,11 @@
 """Find the scripts a shell reads from its standard input: a pipe, a heredoc, a here-string, or a file."""
 
+import re
 from dataclasses import dataclass
 from pathlib import Path
-import re
 from typing import Self
 
 from shell_words import UnsupportedSyntax, literal_word, nodes, source_text, spreads
-
 
 # Options of echo, which writes its remaining arguments; the backslash escapes they toggle are refused.
 ECHO_OPTIONS = re.compile(r"-[neE]+")

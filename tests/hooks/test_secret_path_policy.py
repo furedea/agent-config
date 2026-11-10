@@ -1,9 +1,7 @@
 """Secret path rules deny credential-shaped files without denying ordinary source code."""
 
 import pytest
-
 from tests.runtime import REPO_ROOT, load_script_module
-
 
 policy = load_script_module("agents/hooks/lib/secret_path_policy.py", "secret_path_policy")
 RULES = policy.load(REPO_ROOT / "agents/hooks/rules/secret_path_policy.json")
@@ -41,7 +39,8 @@ def test_credential_paths_are_denied(path: str) -> None:
     "path",
     [
         "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock",
-        "~/Library/Group Containers/2BUA8C4S2C.com.1password/Library/Application Support/1Password/Data/1password.sqlite",
+        "~/Library/Group Containers/2BUA8C4S2C.com.1password/"
+        "Library/Application Support/1Password/Data/1password.sqlite",
     ],
 )
 def test_1password_data_and_sockets_are_denied_for_reading(path: str) -> None:

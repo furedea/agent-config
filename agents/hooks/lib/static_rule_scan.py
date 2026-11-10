@@ -1,14 +1,13 @@
 """Scan edited files with the ast-grep rules of the project that owns them and describe each finding."""
 
-from collections.abc import Iterable
 import json
 import os
-from pathlib import Path
 import shutil
+from collections.abc import Iterable
+from pathlib import Path
 
 from lib import process_runner
 from lib.formatter_policy import Step
-
 
 SCANNER = "ast-grep"
 CONFIG_NAME = "sgconfig.yml"

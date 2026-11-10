@@ -4,16 +4,15 @@ Each deny prefix must still be denied, and each ask prefix must still ask, after
 wrapped, quoted, run through a shell -c script, or handed to the shell builtin, in any combination.
 """
 
-from collections.abc import Callable
 import json
-from pathlib import Path
 import shlex
+from collections.abc import Callable
+from pathlib import Path
 
-from hypothesis import HealthCheck, given, settings, strategies as st
 import pytest
-
+from hypothesis import HealthCheck, given, settings
+from hypothesis import strategies as st
 from tests.runtime import REPO_ROOT, load_script_module
-
 
 guard = load_script_module("agents/hooks/guard_command.py", "guard_command")
 pytestmark = pytest.mark.usefixtures("isolated_project")

@@ -9,20 +9,19 @@ Usage: replay_commands.py --since YYYY-MM-DD[THH:MM] [--hooks DIR]
 """
 
 import argparse
+import json
+import os
+import shlex
+import sys
 from collections import Counter
 from collections.abc import Callable, Iterator
 from compression import zstd
 from dataclasses import dataclass
 from datetime import datetime
 from importlib import util
-import json
-import os
 from pathlib import Path
-import shlex
-import sys
 from types import ModuleType
 from typing import Any, TextIO
-
 
 DECISIONS = ("allow", "ask", "deny")
 SINCE_FORMATS = ("%Y-%m-%d", "%Y-%m-%dT%H:%M")

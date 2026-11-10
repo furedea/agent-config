@@ -7,10 +7,9 @@ from pathlib import Path
 import command_policy
 import hook_decision
 import hook_input
-from hook_decision import Verdict
 import session_snapshot
 import shell_syntax
-
+from hook_decision import Verdict
 
 # Browser and desktop automation outside the sandbox, whose listed forms must match with quotes removed too.
 PROGRAMS = frozenset({"agent-browser", "agent-desktop"})

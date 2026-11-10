@@ -1,17 +1,14 @@
 """Explicit verify and native Stop share evidence, measured by process invocations."""
 
 import json
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import pytest
-
-from tests.runtime import CliRunner, REPO_ROOT
-
+from tests.runtime import REPO_ROOT, CliRunner
 
 sys.path.insert(0, str(REPO_ROOT / "agents/hooks/lib"))
 import session_store
-
 
 SCRIPT = "agents/hooks/verification_session.py"
 

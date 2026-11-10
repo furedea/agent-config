@@ -1,13 +1,13 @@
 """Fan a provider event payload out to the commands declared in a hook manifest."""
 
-from collections.abc import Iterator
 import json
 import os
-from pathlib import Path
 import re
 import shlex
 import subprocess
 import sys
+from collections.abc import Iterator
+from pathlib import Path
 
 DEFAULT_TIMEOUT = 60
 DECISION_KEYS = {"decision", "action"}

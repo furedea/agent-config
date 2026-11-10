@@ -4,9 +4,7 @@ import json
 from pathlib import Path
 
 import pytest
-
 from tests.runtime import CliRunner
-
 
 ESCAPE_RULE = "Bash(dangerouslyDisableSandbox:true)"
 

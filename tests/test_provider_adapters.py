@@ -1,13 +1,12 @@
 """Behavior every provider hook adapter shares, exercised through each real entry point."""
 
 import json
-from pathlib import Path
 import shutil
+from pathlib import Path
 
 import pytest
 
-from tests.runtime import CliRunner, REPO_ROOT, load_script_module
-
+from tests.runtime import REPO_ROOT, CliRunner, load_script_module
 
 PROVIDERS = ("codex", "devin", "dsh", "hermes", "pi")
 
@@ -118,6 +117,21 @@ def test_normalization_leaves_the_provider_payload_untouched(provider: str) -> N
     original = json.loads(json.dumps(payload))
     adapter.normalized(payload)
     assert payload == original
+
+
+@pytest.mark.parametrize("provider", PROVIDERS)
+def test_an_unknown_home_directory_error_blocks_instead_of_exiting_without_a_decision(
+    provider: str, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    adapter = load_script_module(script(provider), f"{provider}_hook_adapter_home_error").ADAPTER
+
+    def unknown_home(*_: object) -> int:
+        raise RuntimeError("Could not determine home directory.")
+
+    monkeypatch.setattr(adapter, "_payload", dict)
+    monkeypatch.setattr(adapter, "dispatch", unknown_home)
+    assert adapter.main(["paths", "command"]) == 2
+    assert "BLOCKED: Could not determine home directory." in capsys.readouterr().err
 
 
 @pytest.mark.parametrize("provider", PROVIDERS)

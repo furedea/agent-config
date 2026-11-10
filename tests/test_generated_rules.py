@@ -20,8 +20,7 @@ from tests.generated_rules import (
     devin_rules,
     policy_rules,
 )
-from tests.runtime import CliRunner, REPO_ROOT
-
+from tests.runtime import REPO_ROOT, CliRunner
 
 SOURCE = policy_rules(json.loads((REPO_ROOT / "agents/command_permissions.json").read_text())["rules"])
 

@@ -1,15 +1,13 @@
 """Audit summaries retain bounded metadata without recording event bodies."""
 
-from datetime import UTC, datetime, timedelta
 import json
 import os
-from pathlib import Path
 import time
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
 
 import pytest
-
 from tests.runtime import load_script_module
-
 
 audit = load_script_module("agents/hooks/audit_log.py", "audit_log")
 
@@ -153,7 +151,7 @@ def test_timestamp_is_utc_when_appended(tmp_path: Path, monkeypatch: pytest.Monk
         for path in (tmp_path / "state/agent-harness/audit").glob("*/*/*.jsonl")
         for line in path.read_text().splitlines()
     ]
-    timestamp = datetime.fromisoformat(rows[0]["ts"].replace("Z", "+00:00"))
+    timestamp = datetime.fromisoformat(rows[0]["ts"])
     assert timestamp.tzinfo == UTC
     assert timestamp.utcoffset() == timedelta(0)
 

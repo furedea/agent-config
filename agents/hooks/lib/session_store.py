@@ -1,19 +1,18 @@
 """Private, bounded verification state keyed by native provider sessions."""
 
-from collections.abc import Generator, Iterator
-from contextlib import contextmanager
-from dataclasses import dataclass
 import fcntl
 import hashlib
 import json
 import os
-from pathlib import Path
 import shutil
 import tempfile
 import time
+from collections.abc import Generator, Iterator
+from contextlib import contextmanager
+from dataclasses import dataclass
+from pathlib import Path
 
 from session_snapshot import Snapshot, capture
-
 
 SCHEMA = 1
 RETENTION_SECONDS = 7 * 24 * 60 * 60
@@ -163,7 +162,7 @@ def create_record(key: SessionKey, directory: Path, *, resuming: bool) -> Sessio
         )
         atomic_json(staging / "results.json", {"checks": {}, "session_id": key.session_id, "revalidate_all": resuming})
         atomic_bytes(staging / ".lock", b"")
-        os.rename(staging, directory)
+        Path(staging).rename(directory)
     return SessionRecord(directory, key.root, key.provider)
 
 
@@ -228,7 +227,7 @@ def atomic_bytes(path: Path, value: bytes) -> None:
             stream.write(value)
             stream.flush()
             os.fsync(stream.fileno())
-        os.replace(temporary, path)
+        Path(temporary).replace(path)
     finally:
         Path(temporary).unlink(missing_ok=True)
 

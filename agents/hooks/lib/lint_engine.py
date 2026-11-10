@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from lib import process_runner
-from lib.formatter_policy import PERSONAL_PRETTIER_CONFIG_NAME, Step, personal_config, plan
+from lib.formatter_policy import Step, plan
 
 
 @dataclass(frozen=True, slots=True)
@@ -54,8 +54,6 @@ def replace_formatted_file(path: Path, contents: bytes) -> None:
 def run_step(step: Step, path: Path) -> str:
     """Run a quality step and return only failures or explicitly meaningful warnings."""
     environment = dict(os.environ)
-    if step.writes_stdout:
-        environment["PRETTIERD_DEFAULT_CONFIG"] = str(personal_config(PERSONAL_PRETTIER_CONFIG_NAME, "prettier.json"))
     result = process_runner.run_process(step, path, environment)
     diagnostics = diagnostic_text(result.diagnostics, result.output_truncated)
     if result.timed_out:

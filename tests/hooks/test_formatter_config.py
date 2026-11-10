@@ -1,11 +1,11 @@
 """Formatter configs resolve from the project, then the home directory, then the hook defaults."""
 
 import json
+import shutil
 from pathlib import Path
 
 import pytest
-from lib import formatter_policy, lint_engine, process_runner
-from pytest_mock import MockerFixture
+from lib import formatter_policy, lint_engine
 
 
 def test_personal_dprint_runs_from_the_target_directory(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -26,7 +26,6 @@ def test_personal_configs_in_home_are_not_project_declarations(
     home = tmp_path / "home"
     home.mkdir()
     (home / "dprint.json").write_text("{}")
-    (home / ".prettierrc").write_text("{}")
     monkeypatch.setenv("HOME", str(home))
     steps = formatter_policy.plan("json_toml", home / "project" / "config.json")
     assert [step.label for step in steps] == ["dprint format", "dprint lint"]
@@ -39,11 +38,23 @@ def test_personal_configs_behind_a_symlinked_home_are_not_project_declarations(
     home = tmp_path / "real-home"
     home.mkdir()
     (home / "dprint.json").write_text("{}")
-    (home / ".prettierrc").write_text("{}")
     (tmp_path / "home").symlink_to(home)
     monkeypatch.setenv("HOME", str(tmp_path / "home"))
     steps = formatter_policy.plan("json_toml", home / "project" / "config.json")
     assert [step.label for step in steps] == ["dprint format", "dprint lint"]
+
+
+@pytest.mark.parametrize("kind", ["json_toml", "md"])
+def test_leftover_personal_prettierrc_does_not_shadow_dprint(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, kind: str
+) -> None:
+    home = tmp_path / "home"
+    home.mkdir()
+    (home / ".prettierrc").write_text("{}")
+    monkeypatch.setenv("HOME", str(home))
+    steps = formatter_policy.plan(kind, home / "project" / "file.md")
+    assert all(step.policy_error is None for step in steps)
+    assert "dprint format" in [step.label for step in steps]
 
 
 def test_project_declarations_in_the_home_directory_still_apply(
@@ -68,32 +79,39 @@ def test_bundled_dprint_config_is_used_without_a_personal_config(
     assert json.loads(config.read_text())["plugins"]
 
 
-def run_prettierd_environment(tmp_path: Path, mocker: MockerFixture) -> dict[str, str]:
-    execute = mocker.patch.object(
-        process_runner, "run_process", return_value=process_runner.ProcessResult(0), autospec=True
-    )
+def test_bundled_dprint_config_formats_markdown_with_four_space_lists_and_kept_wrapping() -> None:
+    config = json.loads((formatter_policy.BUNDLED_CONFIG_DIRECTORY / "dprint.json").read_text())
+    assert config["markdown"] == {"listIndentKind": "pythonMarkdown", "textWrap": "maintain"}
+    assert "md" in config["includes"][0]
+    assert any("markdown" in plugin for plugin in config["plugins"])
+
+
+@pytest.mark.integration
+@pytest.mark.skipif(shutil.which("dprint") is None, reason="dprint is not installed")
+def test_bundled_dprint_config_formats_markdown_end_to_end(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
     target = tmp_path / "project" / "file.md"
     target.parent.mkdir(parents=True)
-    target.write_text("text\n")
-    step = formatter_policy.Step("prettierd format", ("prettierd", str(target)), writes_stdout=True, mutates=True)
-    lint_engine.run_step(step, target)
-    return execute.call_args.args[2]
+    target.write_text("- a\n  - b\n\nline one\nline two\n")
+    assert lint_engine.check_file("md", target, readonly=False) == ()
+    assert target.read_text() == "- a\n    - b\n\nline one\nline two\n"
 
 
-def test_prettierd_prefers_the_personal_prettier_config(
-    tmp_path: Path, mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    home = tmp_path / "home"
-    home.mkdir()
-    (home / ".prettierrc").write_text("{}")
-    monkeypatch.setenv("HOME", str(home))
-    assert run_prettierd_environment(tmp_path, mocker)["PRETTIERD_DEFAULT_CONFIG"] == str(home / ".prettierrc")
-
-
-def test_prettierd_uses_the_bundled_config_without_a_personal_config(
-    tmp_path: Path, mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+@pytest.mark.integration
+@pytest.mark.skipif(shutil.which("dprint") is None, reason="dprint is not installed")
+def test_project_dprint_config_without_markdown_plugin_leaves_markdown_untouched(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setenv("HOME", str(tmp_path / "home"))
-    config = Path(run_prettierd_environment(tmp_path, mocker)["PRETTIERD_DEFAULT_CONFIG"])
-    assert config.parent.name == "defaults"
-    assert json.loads(config.read_text())["proseWrap"] == "preserve"
+    project = tmp_path / "project"
+    project.mkdir()
+    plugins = [
+        plugin
+        for plugin in json.loads((formatter_policy.BUNDLED_CONFIG_DIRECTORY / "dprint.json").read_text())["plugins"]
+        if "json" in plugin
+    ]
+    (project / "dprint.json").write_text(json.dumps({"includes": ["**/*.json"], "plugins": plugins}))
+    target = project / "file.md"
+    target.write_text("- a\n  - b\n")
+    assert lint_engine.check_file("md", target, readonly=False) == ()
+    assert target.read_text() == "- a\n  - b\n"

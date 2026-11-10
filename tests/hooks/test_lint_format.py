@@ -38,7 +38,7 @@ def test_missing_project_marker_has_no_invented_root(tmp_path: Path) -> None:
         ("lua", "file.lua", ("stylua", "selene")),
         ("tex", "file.tex", ("tex-fmt", "chktex")),
         ("tex", "file.bib", ("tex-fmt",)),
-        ("md", "file.md", ("autocorrect", "prettierd")),
+        ("md", "file.md", ("autocorrect", "dprint", "dprint")),
         ("txt", "file.txt", ("autocorrect",)),
         ("gha", ".github/workflows/ci.yml", ("actionlint", "zizmor")),
         ("gha", ".github/workflows/ci.yaml", ("actionlint", "zizmor")),
@@ -232,6 +232,28 @@ def test_other_project_formatter_prevents_personal_dprint_fallback(tmp_path: Pat
     assert steps[0].policy_error is not None
     assert "prettier" in steps[0].policy_error
     assert steps[0].arguments == ()
+
+
+def test_markdown_uses_dprint_without_a_resident_formatter(tmp_path: Path) -> None:
+    steps = formatter_policy.plan("md", tmp_path / "file.md")
+    assert [step.label for step in steps] == ["autocorrect format", "dprint format", "dprint lint"]
+    assert [step.arguments[:2] for step in steps[1:]] == [("dprint", "fmt"), ("dprint", "check")]
+    assert not any("prettierd" in step.arguments for step in steps)
+
+
+def test_markdown_project_prettier_config_yields_the_policy_step(tmp_path: Path) -> None:
+    (tmp_path / ".prettierrc").write_text("{}")
+    steps = formatter_policy.plan("md", tmp_path / "file.md")
+    assert steps[0].label == "autocorrect format"
+    assert steps[1].policy_error is not None
+    assert "prettier" in steps[1].policy_error
+
+
+def test_markdown_ignores_biome_which_does_not_format_it(tmp_path: Path) -> None:
+    (tmp_path / "biome.json").write_text("{}")
+    steps = formatter_policy.plan("md", tmp_path / "file.md")
+    assert [step.label for step in steps] == ["autocorrect format", "dprint format", "dprint lint"]
+    assert all(step.policy_error is None for step in steps)
 
 
 def test_conflicting_project_formatters_are_not_guessed(tmp_path: Path) -> None:

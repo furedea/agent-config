@@ -90,6 +90,7 @@ def test_shell_git_guard_reads_the_bash_tool(run_cli: CliRunner, project: Path, 
         assert "BLOCKED" in result.stderr
 
 
+@pytest.mark.usefixtures("harness")
 @pytest.mark.parametrize("relative", [False, True])
 def test_commit_guard_checks_the_repository_of_the_bash_workdir(
     run_cli: CliRunner, project: Path, relative: bool
@@ -106,6 +107,7 @@ def test_commit_guard_checks_the_repository_of_the_bash_workdir(
     assert ".env" in result.stderr
 
 
+@pytest.mark.usefixtures("harness")
 def test_dispatch_applies_a_relative_workdir_only_once(run_cli: CliRunner, project: Path, manifest: Path) -> None:
     (project / "packages").mkdir()
     adapter = REPO_ROOT / SCRIPT
@@ -119,6 +121,7 @@ def test_dispatch_applies_a_relative_workdir_only_once(run_cli: CliRunner, proje
     assert result.stderr == ""
 
 
+@pytest.mark.usefixtures("harness")
 def test_commit_guard_uses_the_payload_cwd_without_a_workdir(run_cli: CliRunner, project: Path) -> None:
     payload = {"tool_name": "bash", "tool_input": {"command": "git commit -m x"}, "cwd": str(project)}
     result = run_cli(SCRIPT, "shell", "commit", payload=payload, cwd=project)

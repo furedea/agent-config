@@ -9,7 +9,6 @@ COMMAND_NOT_FOUND_EXIT = 127
 _DEV_SHELL_OUTPUT = re.compile(r"\bdevShells?\b")
 _ENTERED_MARKER = "dev-shell-entered"
 _NOT_FOUND_MARKER = "dev-shell-tool-not-found:"
-_REASON_LIMIT = 200
 # The probe separates three endings: nix never reached the command (no entered marker), the dev shell lacks the
 # tool (not-found marker and exit 127), and the tool itself ran and failed.
 _PROBE = (
@@ -45,26 +44,21 @@ class Launch:
     via_dev_shell: bool
 
     def diagnose(self, end: ProcessEnd) -> MissingTool | None:
-        """Tell an environment problem from a test result: None means the tool itself ran and its outcome stands.
+        """Tell an environment problem from a code result: None means the outcome stands and is judged as usual.
 
-        A run through the dev shell is an environment problem when nix never reached the command (evaluation or
-        build error, or the budget spent before the shell started) or when the shell lacks the tool.
+        A project that declares a dev shell is expected to enter it, so nix exiting before the shell starts
+        (evaluation or build error, for example in a flake.nix edited this session) is a failure with nix's output
+        as the log, not an environment problem. Only two endings are environment problems: the budget spent before
+        the shell started (retried on the next pass), and a working shell that lacks the tool.
         """
         if not self.via_dev_shell:
             return None
         if _ENTERED_MARKER not in end.output:
             # A truncated tail may have dropped the marker, which proves the shell started.
-            return None if end.truncated else self._not_started(end)
+            started_late = end.timed_out and not end.truncated
+            return MissingTool("the flake dev shell did not start within the check budget") if started_late else None
         if end.returncode == COMMAND_NOT_FOUND_EXIT and _NOT_FOUND_MARKER in end.output:
             return MissingTool(f"{self.tool} not found on PATH or in the flake dev shell")
-        return None
-
-    def _not_started(self, end: ProcessEnd) -> MissingTool | None:
-        if end.timed_out:
-            return MissingTool("the flake dev shell did not start within the check budget")
-        if end.returncode:
-            last_line = next((line for line in reversed(end.output.splitlines()) if line.strip()), "no output")
-            return MissingTool(f"the flake dev shell did not start: {last_line.strip()[:_REASON_LIMIT]}")
         return None
 
 

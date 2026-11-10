@@ -117,18 +117,19 @@ def test_dev_shell_that_lacks_the_tool_is_a_missing_tool(project: Path, tmp_path
     assert len(nix_calls(tmp_path)) == 1
 
 
-def test_nix_develop_that_fails_before_the_command_is_unavailable_not_a_test_failure(
+def test_broken_flake_that_nix_cannot_enter_is_a_blocking_failure_with_nix_output(
     project: Path, executable: StubWriter
 ) -> None:
     (project / "flake.nix").write_text(FLAKE_WITH_DEV_SHELL)
     executable(
         "nix",
-        "import sys\nprint('error: flake does not provide attribute devShells.x86_64-linux.default')\nsys.exit(1)\n",
+        "import sys\nprint('error: syntax error, unexpected end of file in flake.nix')\nsys.exit(1)\n",
     )
     result = execution.execute(GO_TEST, project, 30)
-    assert result.status == execution.Status.MISSING_TOOL
-    assert "did not start" in result.summary
-    assert "devShells.x86_64-linux" in result.summary
+    assert result.status == execution.Status.FAILED
+    assert result.failed
+    assert "syntax error" in result.output
+    assert "syntax error" in result.summary
 
 
 def test_dev_shell_still_building_when_the_budget_ends_is_unavailable_not_a_timeout(

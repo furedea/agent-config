@@ -65,19 +65,20 @@ For what the PR body owns relative to the Issue and plan, follow
 
 After every push, wait for the PR's checks before handling review findings or reporting.
 
-1. Run `gh pr checks <n> --watch --fail-fast` in the background and wait for its completion
-   notification; do not poll. Right after a push only some checks may be registered while the main
-   workflow run is still queued, so an early successful exit is not completion. The wait is complete
-   only when the repository's required aggregate check (`all-green` where it exists) appears in
-   `gh pr checks <n>` and is no longer pending; elsewhere, when the required checks are present and
-   finished. If `--watch` returns earlier, start it again, or follow the queued or in-progress run
-   with `gh run watch <run-id>`.
-2. On failure, identify the failing check with `gh pr checks <n>` and read its log with
+1. Find the CI run for the pushed commit with `gh run list --commit <sha>`; the run exists from
+   push time, possibly `queued`. If none is listed, wait briefly and look again, up to a fixed
+   bound (for example 2 minutes). If none appears within it, the workflow did not trigger: stop and
+   report instead of waiting forever.
+2. Wait for each relevant run with `gh run watch <run-id> --exit-status` as one blocking background
+   command and take its completion notification. Do not poll: one blocking command, or one bounded
+   wait for the run to appear, is fine; repeated manual checks across turns are not.
+3. When the runs have finished, confirm the repository's required check (`all-green` where it
+   exists) with `gh pr checks <n> --required`.
+4. On failure, identify the failing check with `gh pr checks <n>` and read its log with
    `gh run view <run-id> --log-failed`.
-3. Classify the cause:
+5. Classify the cause:
     - Review check (`claude-review`, `codex-review`) that failed because it raised findings: handle
-      it under [Review on GitHub](#review-on-github), not here. `--fail-fast` exits at the first
-      failure, so first run `gh pr checks <n> --watch` (without it) until the remaining checks finish.
+      it under [Review on GitHub](#review-on-github), not here.
     - `all-green`: an aggregate of the other checks; classify its failure by the underlying checks.
     - Code-caused (test, lint, format, type check, Nix build or check): fix it, run the same check
       locally, push, and return to step 1.
@@ -85,7 +86,7 @@ After every push, wait for the PR's checks before handling review findings or re
       If a retry can help, run `gh run rerun <run-id> --failed` once and return to step 1; if the
       check fails again or a retry cannot help, stop and report the check name and reason.
     - Undetermined: do not guess a fix; stop and report the check name and reason.
-4. Stop and report when the same check still fails after three fix attempts.
+6. Stop and report when the same check still fails after three fix attempts.
 
 A lane ends such a report with `LANE-BLOCKED: <reason>`; other sessions report to the user.
 

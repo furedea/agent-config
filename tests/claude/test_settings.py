@@ -135,6 +135,11 @@ def test_govulncheck_downloads_the_go_vulnerability_database_inside_the_sandbox(
     assert "vuln.go.dev" in sandbox["network"]["allowedDomains"]
 
 
+def test_dprint_downloads_its_hash_pinned_plugins_inside_the_sandbox() -> None:
+    sandbox = json.loads((REPO_ROOT / "agents/claude/settings.json").read_text())["sandbox"]
+    assert "plugins.dprint.dev" in sandbox["network"]["allowedDomains"]
+
+
 def test_cargo_fetches_crates_from_the_sparse_crates_io_registry_inside_the_sandbox() -> None:
     sandbox = json.loads((REPO_ROOT / "agents/claude/settings.json").read_text())["sandbox"]
     domains = set(sandbox["network"]["allowedDomains"])

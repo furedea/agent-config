@@ -14,17 +14,17 @@ the request, evaluates the returned work, and reports the outcome to the user.
 ## Scope and Dependencies
 
 - Apply this workflow to requested cross-session work and to the lanes of an approved plan,
-  which `git-workflow` hands to task worktree sessions. Do not infer permission to delegate
-  from an ordinary coding request, a local review, or an opportunity to work in parallel.
+    which `git-workflow` hands to task worktree sessions. Do not infer permission to delegate
+    from an ordinary coding request, a local review, or an opportunity to work in parallel.
 - Read the `herdr` skill before operating another session. It owns prerequisites, CLI discovery,
-  agent identity, layout, prompting, waiting, approvals, and recovering complete output. Follow
-  its environment check; if Herdr is unavailable, report the limitation without silently
-  switching to another transport.
+    agent identity, layout, prompting, waiting, approvals, and recovering complete output. Follow
+    its environment check; if Herdr is unavailable, report the limitation without silently
+    switching to another transport.
 - Use `git-workflow` for branch and worktree choices and authorized Git delivery. Delegation
-  alone does not require a new worktree or authorize commits, pushes, or pull requests; an
-  approved plan authorizes them for its lanes, never merging.
+    alone does not require a new worktree or authorize commits, pushes, or pull requests; an
+    approved plan authorizes them for its lanes, never merging.
 - Use `tsdd` and the target repository's applicable conventions for implementation and
-  verification. Each session must follow its own repository instructions and permission rules.
+    verification. Each session must follow its own repository instructions and permission rules.
 
 ## Choose the Task and Recipient
 
@@ -67,20 +67,20 @@ complete. Supply:
 
 - **Task:** plan review or implementation, with the requested outcome.
 - **Requirements:** the user's relevant requirements, acceptance criteria, accepted decisions,
-  constraints, and links to authoritative repository material. Record the version of the
-  requirements being delegated, or their full text when no version exists. Distinguish
-  requirements from the author's assumptions.
+    constraints, and links to authoritative repository material. Record the version of the
+    requirements being delegated, or their full text when no version exists. Distinguish
+    requirements from the author's assumptions.
 - **Location:** the absolute repository or worktree path, branch, and relevant base and head
-  commits. Tell the recipient to read the applicable instructions in that location.
+    commits. Tell the recipient to read the applicable instructions in that location.
 - **Issue:** the Issue body itself, not only its number, so the recipient need not read it again.
 - **Input:** the exact plan text or plan file, or implementation scope. For
-  uncommitted code, identify whether staged, unstaged, and untracked files are included, and
-  provide a stable snapshot when the checkout may still change.
+    uncommitted code, identify whether staged, unstaged, and untracked files are included, and
+    provide a stable snapshot when the checkout may still change.
 - **Scope and focus:** the boundaries of the assignment and the review aspects that matter
-  (for example correctness, boundaries, verification, or a specific risk).
+    (for example correctness, boundaries, verification, or a specific risk).
 - **Authority:** permitted edits, excluded files or tasks, and any existing delivery authorization.
 - **Completion:** observable acceptance conditions, relevant verification, and the expected
-  response described below.
+    response described below.
 
 Resolve discoverable context before asking the user. Ask only when a missing requirement,
 location, or permission prevents a correct assignment. Reuse authorization already given.
@@ -143,7 +143,7 @@ recipient is waiting for CI in the background): treat it as incomplete and wait 
 `--until working --timeout 1800000`, then `--until done --timeout 1800000`. A review recipient
 carries no marker, so read its findings instead. Otherwise check the PR state and report to the
 user. Treat `LANE-BLOCKED` and its reason as incomplete work. When any wait returns on
-`--timeout`, check `herdr agent get <name>`: if it is blocked, wait again; otherwise report the
+`--timeout`, check the recipient's state with `herdr agent list`: if it is blocked, wait again; otherwise report the
 state to the user. This works for Claude and Codex recipients alike.
 Follow `herdr` for waiting, blocked sessions, and complete response retrieval.
 Successful submission or a settled agent state does not prove that the assigned task is complete;
@@ -182,20 +182,20 @@ or another review is still needed for the current assignment.
 Once the result is fully captured and no follow-up remains for that worker:
 
 - Use `herdr` to end the coding-agent session and close temporary panes or other terminal layout
-  created solely for this assignment. Recheck their identity, ownership, and live state first;
-  leave resources now used by the user or another task open.
+    created solely for this assignment. Recheck their identity, ownership, and live state first;
+    leave resources now used by the user or another task open.
 - Leave reused sessions and pre-existing panes, tabs, and workspaces open. Honor a request to
-  retain a newly created worker for continued work.
+    retain a newly created worker for continued work.
 - Keep branches and worktrees while their changes await integration or merge. Follow
-  `git-workflow` for their eventual removal; closing a worker must not discard pending changes.
-  After the user merges, the parent runs `cleanup_worktrees.py` by its absolute path with the home
-  directory expanded, as shown in the rendered `excludedCommands` entry.
-  It also closes an agent-created primary workspace once no linked worktrees or agents remain;
-  user-created primary workspaces stay open. Use `--dry-run` to preview the cleanup.
-  Do not remove lane worktrees by hand with `herdr worktree remove`.
+    `git-workflow` for their eventual removal; closing a worker must not discard pending changes.
+    After the user merges, the parent runs `cleanup_worktrees.py` by its absolute path with the home
+    directory expanded, as shown in the rendered `excludedCommands` entry.
+    It also closes an agent-created primary workspace once no linked worktrees or agents remain;
+    user-created primary workspaces stay open. Use `--dry-run` to preview the cleanup.
+    Do not remove lane worktrees by hand with `herdr worktree remove`.
 - Remove task-created temporary outputs only after their needed contents are captured in the
-  originating conversation or a requested artifact. Do not create a permanent report solely
-  to justify closing a worker.
+    originating conversation or a requested artifact. Do not create a permanent report solely
+    to justify closing a worker.
 
 If the assignment or cleanup is blocked, preserve the resources needed to resume it and report
 what remains open and why. A timeout or interrupted session does not establish completion.

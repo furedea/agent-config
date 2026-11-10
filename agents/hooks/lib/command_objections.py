@@ -7,6 +7,7 @@ from typing import Protocol
 
 import automation_paths
 import command_policy
+import executing_shell
 import herdr_grammar
 import hook_decision
 import literal_words
@@ -46,6 +47,15 @@ class Policy(Protocol):
 
 
 def objection(kind: str, item: shell_syntax.Command, policy: Policy) -> Verdict:
+    """Judge one segment, and again without each word zsh drops when its variable is empty.
+
+    Such a word is judged as the segment run both ways, so the call that remains must be safe too.
+    """
+    verdicts = (variant_objection(kind, variant, policy) for variant in executing_shell.vanishing_variants(item))
+    return next((verdict for verdict in verdicts if verdict.decision != "allow"), hook_decision.ALLOW)
+
+
+def variant_objection(kind: str, item: shell_syntax.Command, policy: Policy) -> Verdict:
     """Judge one segment by its own words and by its canonical program and subcommand.
 
     Rules see only the command's words: redirections stay inside the sandbox, and heredoc bodies

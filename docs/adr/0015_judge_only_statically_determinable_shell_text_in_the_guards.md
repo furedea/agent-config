@@ -25,4 +25,5 @@ Examples of rule 1: the precise allowlist rules for `gh` and similar programs ma
 the same way whichever quoting it uses (`-f body='Fixed.'`, `-f body="Fixed."`, `-f body=Fixed\.`).
 Known gap under the last paragraph: a variable assigned a fixed value in the same command
 (`sha=<hex>; gh run list --commit $sha`) is not tracked, so it asks; quote the expansion
-(`"$sha"`) to run it unprompted.
+(`"$sha"`) to run it unprompted, or, where the shell is known to be zsh, leave it unquoted
+([ADR-0022](0022_judge_unquoted_variables_as_the_executing_shell_runs_them.md)).

@@ -4,6 +4,7 @@
 - Date: 2026-10-17
 - Originally: furedea/dotfiles ADR-0036
 - Supersedes: ADR-0007
+- Related: [ADR-0022](0022_judge_unquoted_variables_as_the_executing_shell_runs_them.md) (the word-splitting premise depends on the executing shell)
 
 In the context of the sandbox tiers from
 [ADR-0007](0007_ask_only_for_effects_that_escape_the_sandbox.md) and agent git running inside the

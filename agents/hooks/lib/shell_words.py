@@ -14,7 +14,23 @@ SUBSTITUTIONS = frozenset({"CmdSubst", "ProcSubst", "ArithmExp"})
 WORD_PARTS = frozenset({None, "Lit", "SglQuoted", "DblQuoted", "ParamExp", "Word"}) | SUBSTITUTIONS
 QUOTED_PARTS = frozenset({"SglQuoted", "DblQuoted"})
 HOME_PARAMETER = "HOME"
-PARAMETER_MODIFIERS = ("Excl", "Length", "Width", "Index", "Slice", "Repl", "Exp")
+PARAMETER_MODIFIERS = ("Excl", "Length", "Width", "Index", "Slice", "Repl", "Names", "Exp")
+SIMPLE_PARAMETER_NAME = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
+# Parameters zsh keeps as arrays or associations, which an unquoted `$name` expands to several words
+# (listed from `${(k)parameters}` under zsh 5.9 with every standard module loaded).
+ZSH_ARRAY_PARAMETERS = frozenset(
+    (
+        "aliases argv builtins cdpath commands dirstack dis_aliases dis_builtins dis_functions dis_functions_source "
+        "dis_galiases dis_patchars dis_reswords dis_saliases epochtime errnos fignore fpath funcfiletrace "
+        "funcsourcetrace funcstack functions functions_source functrace galiases history historywords jobdirs "
+        "jobstates jobtexts keymaps langinfo mailpath manpath mapfile match mbegin mend modules nameddirs options "
+        "parameters patchars path pipestatus psvar region_highlight reply reswords saliases signals sysparams "
+        "termcap terminfo userdirs usergroups watch widgets zcurses_attrs zcurses_colors zcurses_keycodes "
+        "zcurses_windows zle_bracketed_paste zle_highlight zsh_eval_context zsh_scheduled_events"
+    ).split()
+)
+# A word made only of simple parameters becomes no word at all when zsh finds them all empty.
+WHOLLY_PARAMETERS = re.compile(r"(?:\$[A-Za-z_][A-Za-z0-9_]*|\$\{[A-Za-z_][A-Za-z0-9_]*\})+")
 # All positional parameters, any single one (a digit), and every array element ([@] or [*]) can
 # become any number of words, options included, even inside double quotes.
 SPREADING = frozenset({"@", "*"})
@@ -25,6 +41,7 @@ GLOB = re.compile(r"(?<!\\)[*?]|(?<!\\)\[.+\]")
 # Brace expansion can pair braces across quoted parts, so any unquoted brace counts.
 BRACES = frozenset("{}")
 LINE_CONTINUATION = "\\\n"
+UNESCAPED_DOLLAR = re.compile(r"(?<!\\)\$")
 # Inside double quotes the shell still expands or rewrites only these, `!` being history expansion.
 DOUBLE_QUOTE_SPECIAL = re.compile(r"[$`\\!]")
 
@@ -112,16 +129,22 @@ def _single_quote(value: str) -> str:
     return "'" + value.replace("'", "'\\''") + "'"
 
 
-def spreads(word: dict, source: bytes) -> bool:
+def spreads(word: dict, source: bytes, *, zsh: bool = False) -> bool:
     """Whether a word may become several words, or other words than the decoder sees.
 
     That is an unquoted expansion, substitution, glob, or brace, a line continuation, which the
-    shell removes, or a positional parameter or array expansion even in quotes.
+    shell removes, or a positional parameter or array expansion even in quotes. With `zsh`, a simple
+    unquoted `$name` or `${name}` is one word, as zsh does not split a value or glob its result; a
+    `$` left in a literal part, such as `$=name` or `$~name`, is a zsh expansion either way.
     """
     parts = word.get("Parts", [])
     unquoted = "".join(part.get("Value", "") for part in parts if part.get("Type") == "Lit")
-    if any(part.get("Type") in SPLIT_PARTS for part in parts) or GLOB.search(unquoted) or BRACES & set(unquoted):
+    if any(part.get("Type") in SPLIT_PARTS and not (zsh and is_simple_parameter(part)) for part in parts):
         return True
+    if GLOB.search(unquoted) or BRACES & set(unquoted) or UNESCAPED_DOLLAR.search(unquoted):
+        return True
+    if zsh and parts and parts[0].get("Type") == "Lit" and parts[0].get("Value", "").startswith("~"):
+        return any(part.get("Type") == "ParamExp" for part in parts)
     if LINE_CONTINUATION in source_text(word, source):
         return True
     for part in word_nodes(word):
@@ -151,6 +174,22 @@ def is_home_parameter(part: dict) -> bool:
     """Accept a plain $HOME or ${HOME}; any modifier would compute a value the hook cannot predict."""
     name = part.get("Param", {}).get("Value")
     return name == HOME_PARAMETER and not any(part.get(key) for key in PARAMETER_MODIFIERS)
+
+
+def is_simple_parameter(part: dict) -> bool:
+    """A plain `$name` or `${name}` of a scalar variable, with no modifier, subscript, flag, or array name."""
+    name = part.get("Param", {}).get("Value", "")
+    return (
+        part.get("Type") == "ParamExp"
+        and bool(SIMPLE_PARAMETER_NAME.fullmatch(name))
+        and name not in ZSH_ARRAY_PARAMETERS
+        and not any(part.get(key) for key in PARAMETER_MODIFIERS)
+    )
+
+
+def vanishes_when_empty(word: str) -> bool:
+    """Whether the source word is only simple parameters, so zsh drops it entirely when they are all empty."""
+    return bool(WHOLLY_PARAMETERS.fullmatch(word))
 
 
 def is_literal_text(value: str, *, first: bool) -> bool:

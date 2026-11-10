@@ -22,6 +22,7 @@ import automation_options
 import automation_paths
 import command_objections
 import command_policy
+import executing_shell
 import foreign_shell_policy
 import hook_decision
 import hook_input
@@ -145,6 +146,7 @@ def command_verdict(kind: str, payload: dict, policy: Policy) -> Verdict:
         return verdict
     if not literal_words.allows_literal_rules(command, commands):
         policy = replace(policy, literal_words=False)
+    commands = executing_shell.as_run_by_zsh(payload, command, commands)
     verdicts = (command_objections.objection(kind, item, policy) for item in commands)
     verdict = next((item for item in verdicts if item.decision != "allow"), hook_decision.ALLOW)
     if verdict.decision == "allow":

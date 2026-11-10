@@ -39,6 +39,9 @@ class Advice:
 
 def advise(record: SessionRecord, *, stop_hook_active: bool, budget_seconds: float = BUDGET_SECONDS) -> Advice:
     """Run or reuse the model rules for the session's current inputs; never raises for an unusable setup."""
+    if os.environ.get(KILL_SWITCH) == "off":
+        # First of all: a stored receipt must not make the rules speak after the user turned them off.
+        return _prevented(Prevented(f"{KILL_SWITCH}=off"))
     if budget_seconds <= 0:
         return _prevented(Prevented("the Stop hook has no time left for the model rules"))
     try:
@@ -86,8 +89,6 @@ def _save(record: SessionRecord, receipt: dict) -> None:
 
 def _preconditions(record: SessionRecord) -> Prevented | None:
     """The cheap reasons not to run, checked before anything is read from the Keychain or sent anywhere."""
-    if os.environ.get(KILL_SWITCH) == "off":
-        return Prevented(f"{KILL_SWITCH}=off")
     if not RULES_DIRECTORY.is_dir():
         return Prevented("no model rules are installed with the hooks")
     if not record.baseline.changed_paths(capture(record.root)):
@@ -111,9 +112,22 @@ def _reviews(record: SessionRecord) -> tuple[model_rules_run.Review, ...]:
     """
     cache = model_rules_run.cache_path(state_directory())
     start = record.head
-    committed = start is not None and head_commit(record.root) != start
-    bases = (start, None) if committed else (None,)
-    return tuple(model_rules_run.Review(record.root, base, RULES_DIRECTORY, cache) for base in bases)
+    reviews = []
+    if start is not None and head_commit(record.root) != start:
+        reviews.append(model_rules_run.Review(record.root, start, RULES_DIRECTORY, cache))
+    if changed := _changed_files(record):
+        reviews.append(model_rules_run.Review(record.root, None, RULES_DIRECTORY, cache, changed))
+    return tuple(reviews)
+
+
+def _changed_files(record: SessionRecord) -> tuple[str, ...]:
+    """The existing files whose content differs from the session's baseline.
+
+    The review of uncommitted changes is limited to these, so that edits and untracked files that were already there
+    when the session started, and that it never touched, are not sent to the model.
+    """
+    changed = record.baseline.changed_paths(capture(record.root))
+    return tuple(path for path in changed if not path.startswith("-") and (record.root / path).is_file())
 
 
 def _repository_gate(root: Path) -> Prevented | None:

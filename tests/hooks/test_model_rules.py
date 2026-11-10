@@ -47,6 +47,7 @@ def registered(git_project: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatc
     monkeypatch.setenv("AGENT_TRUSTED_OWNERS", str(trusted))
     monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path.parent / f"{tmp_path.name}-state"))
     (git_project / "notes.txt").write_text("before\n")
+    (git_project / "preexisting.txt").write_text("already here when the session starts\n")
     return session_store.register(git_project, "claude", "model-rules")
 
 
@@ -175,8 +176,9 @@ def test_the_model_is_asked_through_op_with_the_exact_argv(record: session_store
     rules = str(REPO_ROOT / "agents/hooks/lint/model-rules")
     cache = str(Path(session_store.state_directory()).parent / "model-rules/verdicts.json")
     common = ["--json", "--no-config", "--fail-on", "error", "-R", rules, "-c", cache]
-    assert launch["argv"] == ["run", "--environment", ENVIRONMENT_ID, "--", "jev-lint", "review", *common]
-    assert dry_run["argv"] == ["review", "--json", "--dry-run", *common[1:]]
+    # Only the file the session edited is named; `preexisting.txt` was already there and is left out.
+    assert launch["argv"] == ["run", "--environment", ENVIRONMENT_ID, "--", "jev-lint", "review", *common, "notes.txt"]
+    assert dry_run["argv"] == ["review", "--json", "--dry-run", *common[1:], "notes.txt"]
     assert dry_run["cwd"] == str(record.root.resolve())
 
 
@@ -248,6 +250,38 @@ def test_subjects_already_cached_do_not_count_against_the_cap(
 
     [launch] = tools.calls("op")
     assert "a.py" not in launch["argv"]
+
+
+def test_the_kill_switch_wins_over_a_stored_receipt_of_unseen_findings(
+    record: session_store.SessionRecord, tools: Tools, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    stop(record, active=True)
+    calls_before = len(tools.calls())
+    monkeypatch.setenv("AGENT_MODEL_RULES", "off")
+
+    result = stop(record)
+
+    assert "decision" not in result
+    assert "AGENT_MODEL_RULES=off" in result["systemMessage"]
+    assert len(tools.calls()) == calls_before
+
+
+def test_a_file_the_session_never_touched_is_not_sent_even_when_it_is_untracked(
+    record: session_store.SessionRecord, tools: Tools
+) -> None:
+    stop(record)
+
+    arguments = [argument for call in tools.calls("jev-lint") for argument in call["argv"]]
+    assert "preexisting.txt" not in arguments
+
+
+def test_a_new_file_created_by_the_session_is_sent(record: session_store.SessionRecord, tools: Tools) -> None:
+    (record.root / "created.txt").write_text("new\n")
+
+    stop(record)
+
+    [launch] = tools.calls("op")
+    assert launch["argv"][-2:] == ["created.txt", "notes.txt"]
 
 
 def test_the_kill_switch_runs_nothing(

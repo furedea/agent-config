@@ -111,7 +111,8 @@ promoted.
     a one-line notice and never blocks.
 - **What is judged.** `jev-lint review` has no single mode for "everything since the session started": with
     `--base <commit>` it judges the commits since that commit (`base...HEAD`), and without it the uncommitted changes
-    and the files git does not track yet. The hook runs both: the first with the commit `HEAD` named at session start
+    and the files git does not track yet (limited here to the files the session changed since registration, so
+    files that were already dirty and untouched are not sent). The hook runs both: the first with the commit `HEAD` named at session start
     (recorded in `baseline.json`; an older record has none and only the second runs), the second always. At most 20
     subjects are judged per Stop, whole files at a time; the rest is reported as skipped. Subjects already in the
     verdict cache are not counted. A repository whose owner `trusted_owners.json` does not trust is never sent to the

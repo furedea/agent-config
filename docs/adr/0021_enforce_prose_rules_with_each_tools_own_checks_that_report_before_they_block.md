@@ -47,8 +47,10 @@ own repositories get model judgement.
     cap and the verdict cache: one with `--base` set to the commit `HEAD` pointed to when the session started, which
     the hook records at session start, so that functions committed during the session are still judged (it is skipped
     when nothing was committed or the record has no start commit), and one without it for the changes not committed
-    yet. Edits that were already uncommitted when the session started are in the second review and are judged too;
-    that over-inclusion is accepted because the hook cannot tell them apart without a working-tree snapshot. A
+    yet, limited to the files whose content differs from the session's baseline snapshot, so that edits and untracked
+    files that were already there and that the session never touched are not sent. A file the session did touch is
+    judged by its whole diff against `HEAD`, so earlier uncommitted hunks in it are judged too; that over-inclusion
+    is accepted because the baseline records signatures per file, not per hunk. A
     function that was committed and then edited again can appear in both; its finding is reported once.
 - **Subjects and context.** `jev-lint` selects the subjects with each rule's ast-grep matcher and judges per function
     (the rule's `subject:`). Each subject is judged with the function plus the same file's imports and enclosing

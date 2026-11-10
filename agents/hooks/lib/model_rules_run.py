@@ -52,16 +52,18 @@ class Review:
 
     With a `base` it reviews the commits made since that commit; without one it reviews the uncommitted changes and
     the files git does not track yet. `jev-lint` has no single mode for both, so a session needs one review of each.
+    `paths` limits a review to those files; a review that applies the cap names its own subset instead.
     """
 
     root: Path
     base: str | None
     rules: Path
     cache: Path
+    paths: tuple[str, ...] = ()
 
     def plan(self, deadline: Deadline, cap: int) -> Plan | Prevented:
         """Count the subjects without asking the model, and keep the files whose subjects fit `cap`."""
-        output = _Child((REVIEWER, *self._arguments("--dry-run")), _environment(), self.root).run(
+        output = _Child((REVIEWER, *self._arguments("--dry-run"), *self.paths), _environment(), self.root).run(
             deadline.remaining(PLAN_TIMEOUT_SECONDS)
         )
         if isinstance(output, Prevented):
@@ -84,7 +86,7 @@ class Review:
                     "--",
                     REVIEWER,
                     *self._arguments(),
-                    *plan.paths,
+                    *(plan.paths or self.paths),
                 )
                 child = _Child(arguments, _environment({TOKEN_VARIABLE: credentials.token}), self.root)
                 output = child.run(deadline.remaining(JUDGE_TIMEOUT_SECONDS))

@@ -11,7 +11,7 @@ from pathlib import Path
 
 from check_evidence import first_error, summarize
 from check_selection import Invocation
-from dev_shell import Launch, MissingTool, ProcessEnd, plan_launch
+from dev_shell import EntryFailure, Launch, MissingTool, ProcessEnd, plan_launch
 
 OUTPUT_LIMIT_BYTES = 1024 * 1024
 
@@ -25,6 +25,7 @@ class Status(StrEnum):
     UNAVAILABLE = "unavailable"
     SKIPPED = "skipped"
     MISSING_TOOL = "missing_tool"
+    DEV_SHELL_FAILED = "dev_shell_failed"
 
     @property
     def failing(self) -> bool:
@@ -33,6 +34,15 @@ class Status(StrEnum):
         A missing tool is neither a pass nor a failure: nothing ran, so the code was not judged.
         """
         return self not in {Status.PASSED, Status.SKIPPED, Status.MISSING_TOOL}
+
+    @property
+    def retried(self) -> bool:
+        """Whether a saved receipt is rerun on every verification instead of reused.
+
+        The cause (a cold dev shell, a transient nix error, a tool installed since) may clear on its own, and nix
+        fails fast when the flake is really broken, so rerunning costs little and never freezes a stale outcome.
+        """
+        return self in {Status.MISSING_TOOL, Status.DEV_SHELL_FAILED}
 
 
 @dataclass(frozen=True, slots=True)
@@ -64,10 +74,13 @@ def execute(invocation: Invocation, root: Path, budget: float) -> Result:
         end = _run(_Process.prepare(invocation, launch, root), budget)
     except OSError as error:
         return Result(Status.UNAVAILABLE, f"{invocation.label}: unavailable · {error}", str(error))
-    if missing := launch.diagnose(end):
-        return _missing_tool(invocation, missing)
+    diagnosis = launch.diagnose(end)
+    if isinstance(diagnosis, MissingTool):
+        return _missing_tool(invocation, diagnosis)
     output = end.output
     status = Status.TIMEOUT if end.timed_out else Status.FAILED if end.returncode else Status.PASSED
+    if isinstance(diagnosis, EntryFailure):
+        status = Status.DEV_SHELL_FAILED
     evidence = summarize(invocation.label, output)
     if status == Status.PASSED and evidence.executed == 0:
         related_empty = invocation.label == "vitest" and invocation.scope.endswith(" changed files")

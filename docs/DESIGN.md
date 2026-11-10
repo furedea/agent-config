@@ -88,7 +88,10 @@ see [ADR-0003](adr/0003_register_verification_in_native_hooks.md).
   and a budget spent before the dev shell came up is reported the same way. A project that
   declares a dev shell is expected to enter it, so nix failing before the shell starts (for
   example an evaluation error in a `flake.nix` edited this session) is a failure that blocks
-  Stop, with nix's output in the log.
+  Stop, with nix's output in the log. That failure is recorded as `dev_shell_failed` and, like
+  `missing_tool`, is rerun on every verification instead of reused: a broken `flake.nix` blocks
+  every time because nix fails fast, while a transient nix problem clears on the next Stop
+  without `verify --force`.
 
 ## Hook Decisions
 

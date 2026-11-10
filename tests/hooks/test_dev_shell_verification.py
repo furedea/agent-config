@@ -126,7 +126,7 @@ def test_broken_flake_that_nix_cannot_enter_is_a_blocking_failure_with_nix_outpu
         "import sys\nprint('error: syntax error, unexpected end of file in flake.nix')\nsys.exit(1)\n",
     )
     result = execution.execute(GO_TEST, project, 30)
-    assert result.status == execution.Status.FAILED
+    assert result.status == execution.Status.DEV_SHELL_FAILED
     assert result.failed
     assert "syntax error" in result.output
     assert "syntax error" in result.summary

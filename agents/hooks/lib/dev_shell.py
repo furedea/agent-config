@@ -36,6 +36,11 @@ class MissingTool:
 
 
 @dataclass(frozen=True, slots=True)
+class EntryFailure:
+    """Nix exited before the dev shell started, so no test ran; nix's own output explains why."""
+
+
+@dataclass(frozen=True, slots=True)
 class Launch:
     """The tool a check needs, the argument vector that starts it, and whether that enters the flake dev shell."""
 
@@ -43,20 +48,23 @@ class Launch:
     arguments: tuple[str, ...]
     via_dev_shell: bool
 
-    def diagnose(self, end: ProcessEnd) -> MissingTool | None:
+    def diagnose(self, end: ProcessEnd) -> MissingTool | EntryFailure | None:
         """Tell an environment problem from a code result: None means the outcome stands and is judged as usual.
 
         A project that declares a dev shell is expected to enter it, so nix exiting before the shell starts
-        (evaluation or build error, for example in a flake.nix edited this session) is a failure with nix's output
-        as the log, not an environment problem. Only two endings are environment problems: the budget spent before
-        the shell started (retried on the next pass), and a working shell that lacks the tool.
+        (evaluation or build error, for example in a flake.nix edited this session) is an EntryFailure: a failure,
+        with nix's output as the log. Two endings are not judged on the code: the budget spent before the shell
+        started, and a working shell that lacks the tool (both MissingTool).
         """
         if not self.via_dev_shell:
             return None
         if _ENTERED_MARKER not in end.output:
             # A truncated tail may have dropped the marker, which proves the shell started.
-            started_late = end.timed_out and not end.truncated
-            return MissingTool("the flake dev shell did not start within the check budget") if started_late else None
+            if end.truncated:
+                return None
+            if end.timed_out:
+                return MissingTool("the flake dev shell did not start within the check budget")
+            return EntryFailure() if end.returncode else None
         if end.returncode == COMMAND_NOT_FOUND_EXIT and _NOT_FOUND_MARKER in end.output:
             return MissingTool(f"{self.tool} not found on PATH or in the flake dev shell")
         return None

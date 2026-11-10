@@ -244,6 +244,34 @@ def test_a_failure_next_to_a_missing_tool_still_blocks(
     assert gate.gate(record)["decision"] == "block"
 
 
+def test_dev_shell_entry_failure_blocks_then_is_rerun_and_passes_once_nix_succeeds(
+    record: session_store.SessionRecord, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    calls_made: list[int] = []
+    outcomes = iter(
+        [
+            check_execution.Result(check_execution.Status.DEV_SHELL_FAILED, "pytest: nix daemon unreachable"),
+            check_execution.Result(check_execution.Status.DEV_SHELL_FAILED, "pytest: nix daemon unreachable"),
+            check_execution.Result(check_execution.Status.PASSED, "pytest: 1 passed"),
+        ]
+    )
+
+    def fake_execute(*_: object) -> check_execution.Result:
+        calls_made.append(1)
+        return next(outcomes)
+
+    monkeypatch.setattr(gate, "execute", fake_execute)
+    (record.root / "source.py").write_text("task edit")
+    first = gate.gate(record)
+    assert first["decision"] == "block"
+    assert first["reason"].startswith("Verification failed")
+    second = gate.gate(record)
+    assert second["decision"] == "block"
+    assert "not rerun" not in second["reason"]
+    assert len(calls_made) == 2
+    assert gate.gate(record)["systemMessage"].startswith("Verification passed")
+
+
 def test_missing_tool_receipt_is_retried_on_the_next_pass_not_reused(
     record: session_store.SessionRecord, monkeypatch: pytest.MonkeyPatch
 ) -> None:

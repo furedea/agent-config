@@ -150,17 +150,10 @@ select = [
   "PLR1702",
 ]
 ignore = [
-  "ARG001",
-  "B007",
-  "C401",
-  "DTZ005",
-  "E402",
+  "E402", # Hooks import adjacent modules after the trusted sys.path setup, so imports cannot sit at the top.
   "E501",
   "F541",
-  "FURB110",
-  "FURB122",
   "FURB162",
-  "FURB171",
   "I001",
   "INP001",
   "PERF401",
@@ -168,8 +161,6 @@ ignore = [
   "PTH",
   "PLW2901",
   "RUF005",
-  "UP015",
-  "UP017",
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -186,6 +177,7 @@ max-nested-blocks = 2
 include = ["agents", "scripts", "tests"]
 
 [tool.ty.environment]
+# Hooks resolve their sibling modules through sys.path at runtime, so ty needs the same roots.
 extra-paths = ["agents/hooks", "agents/hooks/lib"]
 
 [tool.ty.analysis]

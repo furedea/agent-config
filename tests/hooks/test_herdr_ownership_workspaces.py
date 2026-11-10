@@ -38,7 +38,8 @@ def test_starting_a_lane_in_the_users_workspace_does_not_own_it(repository: Path
     "command",
     [f"{CLOSE} --group", "herdr workspace close --group w5", "herdr workspace close w5 --group --force"],
 )
-def test_a_group_close_always_asks(repository: Path, herdr: Path, tmp_path: Path, command: str) -> None:
+@pytest.mark.usefixtures("herdr")
+def test_a_group_close_always_asks(repository: Path, tmp_path: Path, command: str) -> None:
     open_primary(repository, tmp_path)
     assert decision(run(repository, command)) == "ask"
 
@@ -66,13 +67,15 @@ def test_a_group_close_always_asks(repository: Path, herdr: Path, tmp_path: Path
         f"{CLOSE} < /dev/null",
     ],
 )
-def test_a_close_that_is_not_one_plain_call_asks(repository: Path, herdr: Path, tmp_path: Path, command: str) -> None:
+@pytest.mark.usefixtures("herdr")
+def test_a_close_that_is_not_one_plain_call_asks(repository: Path, tmp_path: Path, command: str) -> None:
     open_primary(repository, tmp_path)
     assert decision(run(repository, command)) == "ask"
     assert decision(run(repository, CLOSE)) == "allow"
 
 
-def test_closing_a_primary_the_user_already_had_asks(repository: Path, herdr: Path, tmp_path: Path) -> None:
+@pytest.mark.usefixtures("herdr")
+def test_closing_a_primary_the_user_already_had_asks(repository: Path, tmp_path: Path) -> None:
     workspace_list(tmp_path, ("w5", PRIMARY, "site"))
     assert decision(run(repository, CLOSE)) == "ask"
 
@@ -80,7 +83,8 @@ def test_closing_a_primary_the_user_already_had_asks(repository: Path, herdr: Pa
 @pytest.mark.parametrize(
     "response", [{"stdout": "Error: failed"}, {"stdout": created(), "interrupted": True}, "", None]
 )
-def test_a_failed_create_owns_nothing(repository: Path, herdr: Path, tmp_path: Path, response: object) -> None:
+@pytest.mark.usefixtures("herdr")
+def test_a_failed_create_owns_nothing(repository: Path, tmp_path: Path, response: object) -> None:
     workspace_list(tmp_path, ("w5", PRIMARY, "site"))
     run(repository, CREATE)
     after(repository, CREATE, response)
@@ -108,23 +112,24 @@ def test_a_failed_create_owns_nothing(repository: Path, herdr: Path, tmp_path: P
         "an assignment",
     ],
 )
-def test_a_create_that_is_not_one_plain_call_owns_nothing(
-    repository: Path, herdr: Path, tmp_path: Path, command: str
-) -> None:
+@pytest.mark.usefixtures("herdr")
+def test_a_create_that_is_not_one_plain_call_owns_nothing(repository: Path, tmp_path: Path, command: str) -> None:
     workspace_list(tmp_path, ("w5", PRIMARY, "site"))
     run(repository, command)
     after(repository, command, {"stdout": created()})
     assert decision(run(repository, CLOSE)) == "ask"
 
 
-def test_a_record_from_another_session_is_not_honored(repository: Path, herdr: Path, tmp_path: Path) -> None:
+@pytest.mark.usefixtures("herdr")
+def test_a_record_from_another_session_is_not_honored(repository: Path, tmp_path: Path) -> None:
     store.register(repository, "codex", "other")
     open_primary(repository, tmp_path)
     assert decision(run(repository, CLOSE, session="other")) == "ask"
 
 
+@pytest.mark.usefixtures("herdr")
 def test_a_primary_workspace_from_another_session_post_step_is_not_recorded_here(
-    repository: Path, herdr: Path, tmp_path: Path
+    repository: Path, tmp_path: Path
 ) -> None:
     store.register(repository, "codex", "other")
     workspace_list(tmp_path, ("w5", PRIMARY, "site"))
@@ -133,8 +138,9 @@ def test_a_primary_workspace_from_another_session_post_step_is_not_recorded_here
 
 
 @pytest.mark.parametrize("terminals", [("term_other",), ()], ids=["another terminal", "no pane"])
+@pytest.mark.usefixtures("herdr")
 def test_the_same_id_label_and_path_with_another_root_terminal_asks(
-    repository: Path, herdr: Path, tmp_path: Path, terminals: tuple[str, ...]
+    repository: Path, tmp_path: Path, terminals: tuple[str, ...]
 ) -> None:
     """A reused workspace ID or a restarted server never repeats the terminal instance."""
     open_primary(repository, tmp_path)
@@ -143,16 +149,16 @@ def test_the_same_id_label_and_path_with_another_root_terminal_asks(
     assert decision(run(repository, CLOSE)) == "ask"
 
 
-def test_the_recorded_terminal_may_sit_among_other_panes(repository: Path, herdr: Path, tmp_path: Path) -> None:
+@pytest.mark.usefixtures("herdr")
+def test_the_recorded_terminal_may_sit_among_other_panes(repository: Path, tmp_path: Path) -> None:
     open_primary(repository, tmp_path)
     set_terminals(tmp_path, "term_extra", TERMINAL)
     assert decision(run(repository, CLOSE)) == "allow"
 
 
 @pytest.mark.parametrize("pane", [{"pane_id": "p1", "cwd": PRIMARY}, {"pane_id": "p1", "terminal_id": ""}])
-def test_a_result_without_a_root_terminal_is_not_owned(
-    repository: Path, herdr: Path, tmp_path: Path, pane: dict
-) -> None:
+@pytest.mark.usefixtures("herdr")
+def test_a_result_without_a_root_terminal_is_not_owned(repository: Path, tmp_path: Path, pane: dict) -> None:
     workspace_list(tmp_path, ("w5", PRIMARY, "site"))
     run(repository, CREATE)
     result = {
@@ -165,22 +171,23 @@ def test_a_result_without_a_root_terminal_is_not_owned(
 
 
 @pytest.mark.parametrize(("path", "label"), [("/repos/other", "site"), (PRIMARY, "renamed")])
-def test_a_reused_id_with_another_path_or_label_asks(
-    repository: Path, herdr: Path, tmp_path: Path, path: str, label: str
-) -> None:
+@pytest.mark.usefixtures("herdr")
+def test_a_reused_id_with_another_path_or_label_asks(repository: Path, tmp_path: Path, path: str, label: str) -> None:
     open_primary(repository, tmp_path)
     workspace_list(tmp_path, ("w5", path, label))
     assert decision(run(repository, CLOSE)) == "ask"
 
 
-def test_a_workspace_the_result_does_not_name_is_not_claimed(repository: Path, herdr: Path, tmp_path: Path) -> None:
+@pytest.mark.usefixtures("herdr")
+def test_a_workspace_the_result_does_not_name_is_not_claimed(repository: Path, tmp_path: Path) -> None:
     workspace_list(tmp_path, ("w5", PRIMARY, "site"), ("w9", PRIMARY, "site"))
     run(repository, CREATE)
     after(repository, CREATE, {"stdout": created("w5")})
     assert decision(run(repository, "herdr workspace close w9")) == "ask"
 
 
-def test_a_result_without_a_root_pane_directory_is_not_owned(repository: Path, herdr: Path, tmp_path: Path) -> None:
+@pytest.mark.usefixtures("herdr")
+def test_a_result_without_a_root_pane_directory_is_not_owned(repository: Path, tmp_path: Path) -> None:
     workspace_list(tmp_path, ("w5", PRIMARY, "site"))
     run(repository, CREATE)
     result = {
@@ -192,9 +199,8 @@ def test_a_result_without_a_root_pane_directory_is_not_owned(repository: Path, h
     assert decision(run(repository, CLOSE)) == "ask"
 
 
-def test_a_created_label_that_differs_from_the_asked_one_is_not_owned(
-    repository: Path, herdr: Path, tmp_path: Path
-) -> None:
+@pytest.mark.usefixtures("herdr")
+def test_a_created_label_that_differs_from_the_asked_one_is_not_owned(repository: Path, tmp_path: Path) -> None:
     workspace_list(tmp_path, ("w5", PRIMARY, "site"))
     run(repository, CREATE)
     after(repository, CREATE, {"stdout": created(label="other")})
@@ -311,9 +317,8 @@ def test_worktree_removal_expires_only_the_workspace_named_in_the_result(
     assert decision(run(repository, CLOSE)) == "allow"
 
 
-def test_a_workspace_without_an_attached_worktree_matches_its_root_directory(
-    repository: Path, herdr: Path, tmp_path: Path
-) -> None:
+@pytest.mark.usefixtures("herdr")
+def test_a_workspace_without_an_attached_worktree_matches_its_root_directory(repository: Path, tmp_path: Path) -> None:
     open_primary(repository, tmp_path)
     row = {"workspace_id": "w5", "label": "site", "root_pane": {"cwd": PRIMARY}}
     (tmp_path / "workspaces.json").write_text(json.dumps({"result": {"workspaces": [row]}}))
@@ -343,7 +348,8 @@ def test_ownership_hooks_cover_creation_and_cleanup_results() -> None:
     )
 
 
-def test_removing_a_workspace_group_asks(repository: Path, herdr: Path, tmp_path: Path) -> None:
+@pytest.mark.usefixtures("herdr")
+def test_removing_a_workspace_group_asks(repository: Path, tmp_path: Path) -> None:
     open_primary(repository, tmp_path)
     assert decision(run(repository, "herdr worktree remove --workspace w5 --group")) == "ask"
 
@@ -369,13 +375,15 @@ def test_failed_cleanup_preserves_prompts_and_retries_until_success(
     assert decision(run(repository, CLOSE)) == ("ask" if command == CLOSE else "allow")
 
 
-def test_the_primary_cannot_be_removed_as_a_worktree(repository: Path, herdr: Path, tmp_path: Path) -> None:
+@pytest.mark.usefixtures("herdr")
+def test_the_primary_cannot_be_removed_as_a_worktree(repository: Path, tmp_path: Path) -> None:
     open_primary(repository, tmp_path)
     assert decision(run(repository, "herdr worktree remove --workspace w5")) == "ask"
 
 
 @pytest.mark.parametrize("extra", ["--force", "--group", "extra", "--workspace w6"])
-def test_worktree_removal_with_extra_words_asks(repository: Path, herdr: Path, tmp_path: Path, extra: str) -> None:
+@pytest.mark.usefixtures("herdr")
+def test_worktree_removal_with_extra_words_asks(repository: Path, tmp_path: Path, extra: str) -> None:
     open_lane(repository, tmp_path)
     assert decision(run(repository, f"herdr worktree remove --workspace w6 {extra}")) == "ask"
     assert decision(run(repository, "herdr worktree remove --workspace w6")) == "allow"
@@ -383,8 +391,9 @@ def test_worktree_removal_with_extra_words_asks(repository: Path, herdr: Path, t
 
 @pytest.mark.parametrize("action", ["workspace", "worktree"])
 @pytest.mark.parametrize("result_type", [None, "agent_started", "workspace_created", "worktree_created"])
+@pytest.mark.usefixtures("herdr")
 def test_creation_requires_the_matching_result_type(
-    repository: Path, herdr: Path, tmp_path: Path, action: str, result_type: str | None
+    repository: Path, tmp_path: Path, action: str, result_type: str | None
 ) -> None:
     command = CREATE if action == "workspace" else "herdr worktree create --workspace w9 --branch feat/x"
     response = json.loads(created())
@@ -396,9 +405,8 @@ def test_creation_requires_the_matching_result_type(
     assert decision(run(repository, CLOSE)) == expected
 
 
-def test_a_lane_created_in_the_users_primary_does_not_own_the_primary(
-    repository: Path, herdr: Path, tmp_path: Path
-) -> None:
+@pytest.mark.usefixtures("herdr")
+def test_a_lane_created_in_the_users_primary_does_not_own_the_primary(repository: Path, tmp_path: Path) -> None:
     workspace_list(tmp_path, ("w5", PRIMARY, "site"))
     open_lane(repository, tmp_path)
     command = "herdr workspace close w6"

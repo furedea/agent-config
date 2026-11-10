@@ -58,8 +58,8 @@ def harness(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 
 
 @pytest.fixture
-def project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, isolated_project: Path, harness: Path) -> Path:
-    root = tmp_path / "repo"
+def project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, harness: Path) -> Path:
+    root = harness.parent / "repo"
     root.mkdir()
     subprocess.run(["git", "init", "--quiet", "-b", "main", str(root)], check=True)
     monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path / "state"))
@@ -148,15 +148,17 @@ def test_shell_git_guard_reads_hermes_args(run_cli: CliRunner, project: Path, co
         ("patch", {"tool_name": "write_file", "args": {"file_path": "~/.ssh/config"}}, "~/.ssh/config"),
     ],
 )
+@pytest.mark.usefixtures("harness")
 def test_secret_paths_block_with_hermes_fields(
-    run_cli: CliRunner, harness: Path, mode: str, payload: dict, blocked_path: str
+    run_cli: CliRunner, mode: str, payload: dict, blocked_path: str
 ) -> None:
     result = run_cli(SCRIPT, "paths", mode, payload=payload)
     assert result.returncode == 2
     assert blocked_path in result.stderr
 
 
-def test_content_prompt_blocks_secret_markers(run_cli: CliRunner, project: Path, harness: Path) -> None:
+@pytest.mark.usefixtures("harness")
+def test_content_prompt_blocks_secret_markers(run_cli: CliRunner, project: Path) -> None:
     payload = {"prompt": "use fixture-sensitive-marker here", "cwd": str(project)}
     result = run_cli(SCRIPT, "content", "prompt", payload=payload, cwd=project)
     assert result.returncode == 0

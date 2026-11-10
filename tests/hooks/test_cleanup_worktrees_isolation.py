@@ -15,8 +15,9 @@ import cleanup_worktrees
 
 
 @pytest.mark.parametrize("planted", ["commondir", "both"])
+@pytest.mark.usefixtures("merged")
 def test_lane_status_never_runs_a_filter_from_raced_admin_configuration(
-    primary: Path, merged: dict[str, str], tmp_path: Path, planted: str
+    primary: Path, tmp_path: Path, planted: str
 ) -> None:
     path = task_worktree(primary, "feat/race")
     (path / ".gitattributes").write_text("README.md filter=planted\n")
@@ -76,8 +77,9 @@ def test_git_index_file_is_not_inherited(
     assert branches(primary) == {"main"}
 
 
+@pytest.mark.usefixtures("merged")
 def test_lane_git_uses_the_primary_common_directory(
-    primary: Path, merged: dict[str, str], tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    primary: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     path = task_worktree(primary, "feat/lane")
     worktree = next(tree for tree in cleanup_worktrees.linked_worktrees(primary) if tree.path == path)

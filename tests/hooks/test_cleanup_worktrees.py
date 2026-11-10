@@ -77,7 +77,8 @@ def test_dry_run_reports_without_removing(primary: Path, merged: dict[str, str])
     assert path.exists()
 
 
-def test_the_session_start_hook_never_blocks_the_session(primary: Path, merged: dict[str, str]) -> None:
+@pytest.mark.usefixtures("merged")
+def test_the_session_start_hook_never_blocks_the_session(primary: Path) -> None:
     result = subprocess.run(
         [sys.executable, "-I", "-B", str(SCRIPT), "session-start"],
         input=json.dumps({"cwd": str(primary / "missing")}),
@@ -178,7 +179,8 @@ def test_main_stays_when_pulling_could_disturb_work_or_nothing_merged(
 
 
 @pytest.fixture
-def recorded_primary(primary: Path, merged: dict[str, str], tmp_path: Path) -> None:
+def recorded_primary(primary: Path, request: pytest.FixtureRequest, tmp_path: Path) -> None:
+    request.getfixturevalue("merged")  # Must run first: it writes the empty workspace listing replaced below.
     record = session_store.register(primary, "codex", "parent-session")
     response = {
         "result": {

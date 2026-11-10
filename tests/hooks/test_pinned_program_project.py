@@ -66,12 +66,14 @@ def test_an_untrusted_project_rule_is_ignored_and_never_widens_anything(project:
     assert verdict("fleetctl ping") == "allow"
 
 
-def test_a_project_without_a_github_origin_is_untrusted(project: Path) -> None:
+@pytest.mark.usefixtures("project")
+def test_a_project_without_a_github_origin_is_untrusted() -> None:
     decision = guard.decide("allowed", {"tool_input": {"command": f"{PINNED[0]} ping"}})
     assert "trusted_owners.json" in (decision.notice or "")
 
 
-def test_a_project_rule_cannot_lift_a_global_forbidden_rule(project: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.mark.usefixtures("monkeypatch")
+def test_a_project_rule_cannot_lift_a_global_forbidden_rule(project: Path) -> None:
     set_origin(project, "https://github.com/acme/tool.git")
     rule = {"programs": ["git"], "patterns": ["^git add \\.$"], "justification": "Try to allow git add ."}
     write_rules(project / ".agents/hooks/rules/allowed_commands.json", [rule])
@@ -185,7 +187,8 @@ def test_the_swe_conform_ledger_rule_closes_the_earlier_bypasses(project: Path, 
     assert verdict(command.replace("@ledger", str(ledger))) == "ask"
 
 
-def test_the_swe_conform_ledger_rule_is_ignored_in_an_untrusted_project(project: Path, ledger: Path) -> None:
+@pytest.mark.usefixtures("ledger")
+def test_the_swe_conform_ledger_rule_is_ignored_in_an_untrusted_project(project: Path) -> None:
     set_origin(project, "https://github.com/someone/tool.git")
     decision = guard.decide("allowed", {"tool_input": {"command": f"PATH=/tmp/shadow ledger ping"}})
     assert decision.decision == "allow"

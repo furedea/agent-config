@@ -124,8 +124,9 @@ def test_the_script_is_a_development_tool_that_no_hooks_directory_ships() -> Non
     assert not list((REPO_ROOT / "agents").rglob("replay_commands.py"))
 
 
+@pytest.mark.usefixtures("isolated_project")
 def test_the_repository_hooks_judge_the_commands_without_the_hooks_option(
-    home: Path, isolated_project: Path, run_cli: CliRunner, monkeypatch: pytest.MonkeyPatch
+    home: Path, run_cli: CliRunner, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     for name in ("AGENT_COMMAND_PERMISSIONS", "AGENT_ALLOWED_COMMAND_RULES", "AGENT_FORBIDDEN_COMMAND_RULES"):
         monkeypatch.delenv(name)

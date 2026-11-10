@@ -52,9 +52,9 @@ def test_missing_registration_denies_tools_mechanically(repository: Path) -> Non
     assert "SessionStart" in result.stdout
 
 
+@pytest.mark.usefixtures("monkeypatch")
 def test_registered_session_allows_tools_without_launch_environment(
     repository: Path,
-    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     record = store.register(repository, "codex", "session")
     result = invoke("pre-tool-use", {"cwd": str(repository), "session_id": "session", "tool_name": "Bash"})
@@ -89,9 +89,9 @@ def test_busy_verification_allows_tools_without_waiting(repository: Path) -> Non
         {"workdir": "..", "command": "echo changed"},
     ],
 )
+@pytest.mark.usefixtures("scratch")
 def test_explicit_mutation_outside_registered_root_asks_for_review(
     repository: Path,
-    scratch: Path,
     tool_input: dict,
 ) -> None:
     store.register(repository, "codex", "session")
@@ -107,10 +107,10 @@ def test_explicit_mutation_outside_registered_root_asks_for_review(
     assert json.loads(result.stdout)["hookSpecificOutput"]["permissionDecision"] == "ask"
 
 
+@pytest.mark.usefixtures("monkeypatch")
 def test_different_worktree_cannot_reuse_registration(
     repository: Path,
     tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     store.register(repository, "codex", "session")
     other = tmp_path / "other"
@@ -206,9 +206,9 @@ def test_generated_hooks_register_and_verify_without_a_launcher(
     assert json.loads(result.stdout)["hookSpecificOutput"]["permissionDecision"] == "deny"
 
 
+@pytest.mark.usefixtures("monkeypatch")
 def test_clear_preserves_pending_changes_with_a_new_session_id(
     repository: Path,
-    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     record = store.register(repository, "codex", "old-session")
     (repository / "source.py").write_text("pending edit")
@@ -220,9 +220,9 @@ def test_clear_preserves_pending_changes_with_a_new_session_id(
     assert cleared.results()["revalidate_all"] is True
 
 
+@pytest.mark.usefixtures("monkeypatch")
 def test_explicit_verify_uses_registered_context_without_reading_stdin(
     repository: Path,
-    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     record = store.register(repository, "codex", "session")
     result = subprocess.run(
@@ -308,7 +308,8 @@ def test_shell_directory_changes_are_left_to_the_sandbox(repository: Path, comma
     assert json.loads(result.stdout) == {}
 
 
-def test_writes_outside_the_worktree_ask_for_review(repository: Path, tmp_path: Path, scratch: Path) -> None:
+@pytest.mark.usefixtures("scratch")
+def test_writes_outside_the_worktree_ask_for_review(repository: Path, tmp_path: Path) -> None:
     store.register(repository, "codex", "session")
     result = invoke(
         "pre-tool-use",

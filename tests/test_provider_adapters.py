@@ -51,8 +51,9 @@ def audit_rows(state: Path) -> list[dict]:
     "case",
     [("command", {"command": "cat .env"}), ("patch", {"file_path": "~/.ssh/config"})],
 )
+@pytest.mark.usefixtures("harness")
 def test_secret_path_denial_is_audited_for_the_provider(
-    run_cli: CliRunner, harness: Path, state: Path, provider: str, case: tuple[str, dict]
+    run_cli: CliRunner, state: Path, provider: str, case: tuple[str, dict]
 ) -> None:
     mode, values = case
     payload = {"session_id": "adapter-session", "tool_input": values}
@@ -65,9 +66,8 @@ def test_secret_path_denial_is_audited_for_the_provider(
 
 
 @pytest.mark.parametrize("provider", ["devin", "pi"])
-def test_notebook_edits_are_checked_against_the_harness_boundary(
-    run_cli: CliRunner, harness: Path, provider: str
-) -> None:
+@pytest.mark.usefixtures("harness")
+def test_notebook_edits_are_checked_against_the_harness_boundary(run_cli: CliRunner, provider: str) -> None:
     values = {"notebook_path": f"~/.{provider}/hooks/hook_adapter.py", "new_source": "x = 1"}
     result = run_cli(script(provider), "harness", payload={"tool_name": "notebook_edit", "tool_input": values})
     assert result.returncode == 2
@@ -122,8 +122,9 @@ def test_normalization_leaves_the_provider_payload_untouched(provider: str) -> N
 
 @pytest.mark.parametrize("provider", PROVIDERS)
 @pytest.mark.parametrize("mode", ["allowed", "forbidden", "git"])
+@pytest.mark.usefixtures("harness")
 def test_escalations_are_denied_for_providers_whose_hooks_cannot_ask(
-    run_cli: CliRunner, harness: Path, provider: str, mode: str
+    run_cli: CliRunner, provider: str, mode: str
 ) -> None:
     command = "git push origin $'topic'"
     payload = {"session_id": "adapter-session", "tool_input": {"command": command}}
@@ -135,8 +136,9 @@ def test_escalations_are_denied_for_providers_whose_hooks_cannot_ask(
 
 @pytest.mark.parametrize("provider", PROVIDERS)
 @pytest.mark.parametrize("command", ["docker cp a web:/tmp/", "docker compose run web sh", "docker-compose up"])
+@pytest.mark.usefixtures("harness")
 def test_unlisted_docker_forms_are_held_for_review_in_every_provider(
-    run_cli: CliRunner, harness: Path, provider: str, command: str
+    run_cli: CliRunner, provider: str, command: str
 ) -> None:
     payload = {"session_id": "adapter-session", "tool_input": {"command": command}}
     result = run_cli(script(provider), "shell", "allowed", payload=payload)
@@ -148,8 +150,9 @@ def test_unlisted_docker_forms_are_held_for_review_in_every_provider(
 @pytest.mark.parametrize(
     "command", ["docker ps", "docker compose logs web", "docker run alpine", "docker build .", "docker compose up"]
 )
+@pytest.mark.usefixtures("harness")
 def test_docker_forms_the_provider_prompts_for_itself_or_allows_reach_it_in_every_provider(
-    run_cli: CliRunner, harness: Path, provider: str, command: str
+    run_cli: CliRunner, provider: str, command: str
 ) -> None:
     payload = {"session_id": "adapter-session", "tool_input": {"command": command}}
     assert run_cli(script(provider), "shell", "allowed", payload=payload).returncode == 0
@@ -157,16 +160,16 @@ def test_docker_forms_the_provider_prompts_for_itself_or_allows_reach_it_in_ever
 
 @pytest.mark.parametrize("provider", PROVIDERS)
 @pytest.mark.parametrize("raw", ["{", "null", "[]"])
-def test_non_object_payloads_are_rejected(run_cli: CliRunner, harness: Path, provider: str, raw: str) -> None:
+@pytest.mark.usefixtures("harness")
+def test_non_object_payloads_are_rejected(run_cli: CliRunner, provider: str, raw: str) -> None:
     result = run_cli(script(provider), "shell", "git", payload=raw)
     assert result.returncode == 2
     assert "BLOCKED" in result.stderr
 
 
 @pytest.mark.parametrize("provider", PROVIDERS)
-def test_commit_escalations_are_denied_for_providers_whose_hooks_cannot_ask(
-    run_cli: CliRunner, harness: Path, provider: str
-) -> None:
+@pytest.mark.usefixtures("harness")
+def test_commit_escalations_are_denied_for_providers_whose_hooks_cannot_ask(run_cli: CliRunner, provider: str) -> None:
     payload = {"session_id": "adapter-session", "tool_input": {"command": "git -C elsewhere commit -m $'x'"}}
     result = run_cli(script(provider), "shell", "commit", payload=payload)
     assert result.returncode == 2

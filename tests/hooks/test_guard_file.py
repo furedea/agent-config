@@ -48,7 +48,8 @@ def protected_policy(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
         ("", False),
     ],
 )
-def test_harness_paths(run_cli: CliRunner, protected_policy: Path, name: str, blocked: bool) -> None:
+@pytest.mark.usefixtures("protected_policy")
+def test_harness_paths(run_cli: CliRunner, name: str, blocked: bool) -> None:
     result = run_cli(SCRIPT, "harness", payload={"tool_name": "MultiEdit", "tool_input": {"file_path": name}})
     assert result.returncode == (2 if blocked else 0)
     if blocked:
@@ -65,7 +66,8 @@ def test_invalid_harness_policy_fails_closed(run_cli: CliRunner, protected_polic
     assert "invalid protected path policy" in result.stderr
 
 
-def test_harness_denial_records_metadata(run_cli: CliRunner, protected_policy: Path, isolated_project: Path) -> None:
+@pytest.mark.usefixtures("protected_policy")
+def test_harness_denial_records_metadata(run_cli: CliRunner, isolated_project: Path) -> None:
     result = run_cli(
         SCRIPT,
         "harness",
@@ -200,8 +202,9 @@ def test_commits_in_another_repository_check_its_staged_files(
     "command",
     ["(cd nested) && git commit", "cd nested || git commit", "(cd nested; git status); cd . && git commit"],
 )
+@pytest.mark.usefixtures("nested_project")
 def test_commits_that_may_run_in_the_starting_repository_check_it(
-    run_cli: CliRunner, git_project: Path, nested_project: Path, command: str
+    run_cli: CliRunner, git_project: Path, command: str
 ) -> None:
     stage(git_project, ".env")
     result = run_cli(SCRIPT, "commit", payload={"tool_input": {"command": command}})
@@ -244,7 +247,8 @@ def test_git_variables_inside_a_script_the_shell_reads_are_blocked(run_cli: CliR
     assert "repository" in result.stderr
 
 
-def test_run_time_configuration_values_do_not_hide_the_repository(run_cli: CliRunner, git_project: Path) -> None:
+@pytest.mark.usefixtures("git_project")
+def test_run_time_configuration_values_do_not_hide_the_repository(run_cli: CliRunner) -> None:
     command = 'git -c user.name="$NAME" commit -m fixture'
     result = run_cli(SCRIPT, "commit", payload={"tool_input": {"command": command}})
     assert result.returncode == 0
@@ -266,9 +270,8 @@ def test_run_time_configuration_values_do_not_hide_the_repository(run_cli: CliRu
         'export GIT_"DIR"=other; git commit',
     ],
 )
-def test_commits_in_a_repository_known_only_at_run_time_are_blocked(
-    run_cli: CliRunner, git_project: Path, command: str
-) -> None:
+@pytest.mark.usefixtures("git_project")
+def test_commits_in_a_repository_known_only_at_run_time_are_blocked(run_cli: CliRunner, command: str) -> None:
     result = run_cli(SCRIPT, "commit", payload={"tool_input": {"command": command}})
     assert result.returncode == 2
     assert "repository" in result.stderr

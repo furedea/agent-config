@@ -34,7 +34,7 @@ class Hook:
         self.capsys = capsys
 
     def formatter(self, rewrite: str | None = None) -> None:
-        def check(kind: str, path: Path, readonly: bool = False) -> tuple[str, ...]:
+        def check(_kind: str, path: Path, _readonly: bool = False) -> tuple[str, ...]:
             if rewrite is not None:
                 path.write_text(rewrite)
             return ()
@@ -129,8 +129,9 @@ def test_findings_are_returned_as_context_with_rule_file_line_and_message(
     ]
 
 
+@pytest.mark.usefixtures("lint_directory")
 def test_the_scanner_sees_the_file_after_formatting(
-    hook: Hook, executable: StubWriter, lint_directory: Path, scanner_calls: Path, source: Path
+    hook: Hook, executable: StubWriter, scanner_calls: Path, source: Path
 ) -> None:
     install_scanner(executable, [FINDING])
     hook.formatter(rewrite="\n\nprint('x')\n")
@@ -139,8 +140,9 @@ def test_the_scanner_sees_the_file_after_formatting(
 
 
 @pytest.mark.parametrize("status", [0, 1])
+@pytest.mark.usefixtures("lint_directory")
 def test_findings_are_never_blocking_whatever_the_scanner_exit_code(
-    hook: Hook, executable: StubWriter, lint_directory: Path, source: Path, status: int
+    hook: Hook, executable: StubWriter, source: Path, status: int
 ) -> None:
     install_scanner(executable, [FINDING], status)
     exit_status, output = hook.run(source)
@@ -149,13 +151,15 @@ def test_findings_are_never_blocking_whatever_the_scanner_exit_code(
     assert "decision" not in json.loads(output)
 
 
-def test_a_clean_file_stays_silent(hook: Hook, executable: StubWriter, lint_directory: Path, source: Path) -> None:
+@pytest.mark.usefixtures("lint_directory")
+def test_a_clean_file_stays_silent(hook: Hook, executable: StubWriter, source: Path) -> None:
     install_scanner(executable, [], 0)
     assert hook.run(source) == (0, "")
 
 
+@pytest.mark.usefixtures("source")
 def test_each_file_is_scanned_with_the_nearest_project_config(
-    hook: Hook, executable: StubWriter, lint_directory: Path, scanner_calls: Path, source: Path
+    hook: Hook, executable: StubWriter, lint_directory: Path, scanner_calls: Path
 ) -> None:
     nested = lint_directory / "nested"
     nested.mkdir()
@@ -204,8 +208,9 @@ def test_a_project_config_that_is_the_shared_config_is_scanned_once(
     assert scanned_configs(scanner_calls) == [str(lint_directory / "sgconfig.yml")]
 
 
+@pytest.mark.usefixtures("lint_directory")
 def test_a_failing_shared_scan_does_not_hide_project_findings_or_block(
-    hook: Hook, executable: StubWriter, lint_directory: Path, shared_config: Path, source: Path
+    hook: Hook, executable: StubWriter, shared_config: Path, source: Path
 ) -> None:
     deploy_shared_rules(shared_config)
     executable(
@@ -235,8 +240,9 @@ def test_project_without_scanner_config_does_nothing(
     assert not scanner_calls.exists()
 
 
+@pytest.mark.usefixtures("lint_directory")
 def test_missing_ast_grep_does_nothing(
-    hook: Hook, lint_directory: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, source: Path
+    hook: Hook, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, source: Path
 ) -> None:
     empty = tmp_path / "empty-bin"
     empty.mkdir()
@@ -244,9 +250,8 @@ def test_missing_ast_grep_does_nothing(
     assert hook.run(source) == (0, "")
 
 
-def test_a_failing_scanner_is_reported_without_blocking(
-    hook: Hook, executable: StubWriter, lint_directory: Path, source: Path
-) -> None:
+@pytest.mark.usefixtures("lint_directory")
+def test_a_failing_scanner_is_reported_without_blocking(hook: Hook, executable: StubWriter, source: Path) -> None:
     executable("ast-grep", 'import sys\nprint("Error: cannot read sgconfig.yml", file=sys.stderr)\nsys.exit(8)\n')
     status, output = hook.run(source)
     assert status == 0
@@ -254,8 +259,9 @@ def test_a_failing_scanner_is_reported_without_blocking(
     assert "cannot read sgconfig.yml" in context_of(output)
 
 
+@pytest.mark.usefixtures("lint_directory")
 def test_findings_before_an_abnormal_exit_are_kept_with_a_failure_notice(
-    hook: Hook, executable: StubWriter, lint_directory: Path, source: Path
+    hook: Hook, executable: StubWriter, source: Path
 ) -> None:
     install_scanner(executable, [FINDING], status=8)
     status, output = hook.run(source)
@@ -265,8 +271,9 @@ def test_findings_before_an_abnormal_exit_are_kept_with_a_failure_notice(
     assert failure.startswith("Static rules failed")
 
 
+@pytest.mark.usefixtures("lint_directory")
 def test_output_cut_at_the_limit_is_reported_instead_of_dropping_findings_silently(
-    hook: Hook, executable: StubWriter, lint_directory: Path, source: Path
+    hook: Hook, executable: StubWriter, source: Path
 ) -> None:
     executable(
         "ast-grep", 'import json, sys\nprint(json.dumps({"ruleId": "big", "text": "x" * 100000}))\nsys.exit(1)\n'
@@ -276,18 +283,18 @@ def test_output_cut_at_the_limit_is_reported_instead_of_dropping_findings_silent
     assert "Static rule output truncated" in context_of(output)
 
 
+@pytest.mark.usefixtures("lint_directory")
 def test_non_edit_tools_and_missing_files_are_not_scanned(
-    hook: Hook, executable: StubWriter, lint_directory: Path, scanner_calls: Path, source: Path
+    hook: Hook, executable: StubWriter, scanner_calls: Path, source: Path
 ) -> None:
     install_scanner(executable, [FINDING])
     assert hook.run(source, "Read") == (0, "")
     assert not scanner_calls.exists()
 
 
+@pytest.mark.usefixtures("hook", "lint_directory")
 def test_provider_adapters_report_static_findings_with_the_lint_diagnostics(
-    hook: Hook,
     executable: StubWriter,
-    lint_directory: Path,
     source: Path,
     capsys: pytest.CaptureFixture[str],
     monkeypatch: pytest.MonkeyPatch,

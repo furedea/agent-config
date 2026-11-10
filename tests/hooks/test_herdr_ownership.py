@@ -73,9 +73,8 @@ def test_renaming_asks_so_an_owned_name_cannot_move_to_another_pane(repository: 
 
 
 @pytest.mark.parametrize("command", ["herdr agent list", "herdr pane list", "echo herdr agent prompt reviewer"])
-def test_other_herdr_commands_are_not_the_ownership_checks_concern(
-    repository: Path, herdr: Path, command: str
-) -> None:
+@pytest.mark.usefixtures("herdr")
+def test_other_herdr_commands_are_not_the_ownership_checks_concern(repository: Path, command: str) -> None:
     assert decision(run(repository, command)) == "allow"
 
 

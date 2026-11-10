@@ -188,12 +188,14 @@ def test_a_shadow_earlier_on_path_cannot_change_what_the_absolute_path_runs(
     assert verdict("@fleetctl ping") == "allow"
 
 
-def test_a_program_without_a_pinned_rule_is_left_to_the_other_rules(tmp_path: Path) -> None:
+@pytest.mark.usefixtures("tmp_path")
+def test_a_program_without_a_pinned_rule_is_left_to_the_other_rules() -> None:
     assert verdict("fleetctl-other ping") == "allow"
     assert verdict("git status") == "allow"
 
 
-def test_the_pin_does_not_run_for_the_forbidden_guard(program: Path) -> None:
+@pytest.mark.usefixtures("program")
+def test_the_pin_does_not_run_for_the_forbidden_guard() -> None:
     assert verdict("@fleetctl ping", "forbidden") == "allow"
     assert verdict("@fleetctl ping && git add .", "forbidden") == "deny"
 
@@ -232,7 +234,8 @@ def test_removing_the_pin_changes_the_verdict(program: Path, tmp_path: Path, mon
         ({"programs": ["fleetctl", "other"]}, "two programs"),
     ],
 )
-def test_an_invalid_program_path_is_rejected(tmp_path: Path, change: dict, reason: str) -> None:
+@pytest.mark.usefixtures("reason")
+def test_an_invalid_program_path_is_rejected(tmp_path: Path, change: dict) -> None:
     rule = {**pinned_rule("/usr/local/bin/fleetctl"), **change}
     path = write_rules(tmp_path / "rules.json", [rule])
     with pytest.raises(ValueError, match="invalid command policy"):

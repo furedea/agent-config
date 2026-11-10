@@ -25,7 +25,6 @@ def verification_calls(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     state = tmp_path.parent / (tmp_path.name + "-state")
     monkeypatch.setenv("XDG_STATE_HOME", str(state))
     calls = state / "calls"
-    monkeypatch.setenv("VERIFICATION_TEST_CALLS", str(calls))
     return calls
 
 
@@ -39,11 +38,11 @@ def verification_record(
     (git_project / "tests/test_source.py").write_text("def test_source(): pass")
     executable(
         "uv",
-        """
+        f"""
         import os
         from pathlib import Path
         import sys
-        with Path(os.environ['VERIFICATION_TEST_CALLS']).open('a') as stream:
+        with Path({str(verification_calls)!r}).open('a') as stream:
             stream.write(str(Path.cwd()) + '\\n')
         failed = os.environ.get('VERIFICATION_TEST_FAIL') == '1'
         print('1 failed' if failed else '1 passed')

@@ -29,7 +29,7 @@ def test_overlapping_successful_results_keep_both_records(repository: Path, mock
         atomic_json(path, value)
 
     @contextmanager
-    def observe_lock(path: Path, *, timeout: float | None = None) -> Generator[None]:
+    def observe_lock(path: Path, **_options: float | None) -> Generator[None]:
         if first_writing.is_set():
             second_waiting.set()
         with lock(path, timeout=5):

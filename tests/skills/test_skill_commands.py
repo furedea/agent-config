@@ -111,10 +111,11 @@ class Hooks:
 
 
 @pytest.fixture
-def hooks(isolated_project: Path) -> Hooks:
+def hooks() -> Hooks:
     return Hooks()
 
 
+@pytest.mark.usefixtures("isolated_project")
 def test_every_skill_command_gets_the_verdict_its_expectation_names(hooks: Hooks) -> None:
     mismatches = [
         f"{command.path}: {command.text}  ->  {verdict}, expected {expectation(command)}"

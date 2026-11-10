@@ -158,13 +158,14 @@ ignore = [
   "INP001",
   "PERF401",
   "PLR2004",
+  "PLR0917", # PLR0913 (max-args = 3) already caps the total, which bounds the positional count.
   "PTH",
   "PLW2901",
   "RUF005",
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["PLR0913", "PLR0917"]
+"tests/**" = ["PLR0913"]
 
 [tool.ruff.lint.mccabe]
 max-complexity = 10

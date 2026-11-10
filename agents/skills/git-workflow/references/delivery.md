@@ -61,6 +61,37 @@ becomes the default branch commit body.
 For what the PR body owns relative to the Issue and plan, follow
 [Information Placement](../../source-of-truth/SKILL.md#information-placement).
 
+## Wait for CI
+
+After every push, wait for the PR's checks before handling review findings or reporting.
+A repository with no PR CI workflow or no required checks has nothing to wait for here; a missing
+run or an empty `--required` result in such a repository is not a failure.
+
+1. Find the CI run for the pushed commit (`git rev-parse HEAD`) with `gh run list --commit <sha>`;
+   the run exists from push time, possibly `queued`. If none is listed, wait briefly and look again, up to a fixed
+   bound (for example 2 minutes). If none appears within it, the workflow did not trigger: stop and
+   report instead of waiting forever.
+2. Wait for each relevant run with `gh run watch <run-id> --exit-status` as one blocking background
+   command and take its completion notification. Do not poll: one blocking command, or one bounded
+   wait for the run to appear, is fine; repeated manual checks across turns are not.
+3. When the runs have finished, confirm the repository's required check (`all-green` where it
+   exists) with `gh pr checks <n> --required`.
+4. On failure, identify the failing check with `gh pr checks <n>` and read its log with
+   `gh run view <run-id> --log-failed`.
+5. Classify the cause:
+    - Review check (`claude-review`, `codex-review`) that failed because it raised findings: handle
+      it under [Review on GitHub](#review-on-github), not here.
+    - `all-green`: an aggregate of the other checks; classify its failure by the underlying checks.
+    - Code-caused (test, lint, format, type check, Nix build or check): fix it, run the same check
+      locally, push, and return to step 1.
+    - External (AI review usage limit, GitHub or runner outage, network): do not change the work.
+      If a retry can help, run `gh run rerun <run-id> --failed` once and return to step 1; if the
+      check fails again or a retry cannot help, stop and report the check name and reason.
+    - Undetermined: do not guess a fix; stop and report the check name and reason.
+6. Stop and report when the same check still fails after three fix attempts.
+
+A lane ends such a report with `LANE-BLOCKED: <reason>`; other sessions report to the user.
+
 ## Review on GitHub
 
 In a repository that has them, as furedea/agent-config does, every PR is reviewed on GitHub by
@@ -69,7 +100,8 @@ Elsewhere, wait for that repository's required checks and follow its own review 
 mechanism is in the
 [reusable-workflows README](https://github.com/furedea/reusable-workflows#readme).
 
-1. After pushing, wait for `all-green`.
+1. After pushing, [wait for CI](#wait-for-ci) until every check has finished; failures that are review findings are
+   handled by the following steps.
 2. Read the findings: Claude's inline comments and summary comment, and Codex's inline comments and
    Codex Review Summary (`codex-review-state`), with
    `gh api repos/<owner>/<repo>/pulls/<n>/comments --paginate` (the path comes right after

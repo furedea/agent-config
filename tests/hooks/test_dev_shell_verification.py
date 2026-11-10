@@ -25,7 +25,9 @@ NIX_STUB = """\
     os.environ["PATH"] = os.pathsep.join([os.environ["DEV_SHELL_BIN"], "/usr/bin", "/bin"])
     os.execvp(arguments[2], arguments[2:])
 """
-GO_TEST = selection.Invocation("go", "1 packages", ("go", "test", "./a"))
+# A name no machine installs, so a real `go` on the CI runner cannot satisfy the PATH lookup.
+TOOL = "dev-shell-only-go"
+GO_TEST = selection.Invocation("go", "1 packages", (TOOL, "test", "./a"))
 
 
 @pytest.fixture
@@ -43,7 +45,7 @@ def project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, executable: StubWri
 
 
 def install_go_in_dev_shell(tmp_path: Path, source: str = GO_STUB) -> None:
-    go = tmp_path / "dev-shell-bin" / "go"
+    go = tmp_path / "dev-shell-bin" / TOOL
     go.write_text(f"#!{sys.executable} -I\n{source}")
     go.chmod(0o700)
 
@@ -60,14 +62,14 @@ def test_tool_missing_from_path_runs_through_the_flake_dev_shell(project: Path, 
     assert result.status == execution.Status.PASSED
     command = nix_calls(tmp_path)[0]
     assert command[:2] == ["develop", "--command"]
-    assert command[-3:] == ["go", "test", "./a"]
+    assert command[-3:] == [TOOL, "test", "./a"]
 
 
 def test_tool_on_path_runs_directly_even_when_a_dev_shell_exists(
     project: Path, tmp_path: Path, executable: StubWriter
 ) -> None:
     (project / "flake.nix").write_text(FLAKE_WITH_DEV_SHELL)
-    executable("go", GO_STUB)
+    executable(TOOL, GO_STUB)
     assert execution.execute(GO_TEST, project, 30).status == execution.Status.PASSED
     assert nix_calls(tmp_path) == []
 
@@ -95,7 +97,7 @@ def test_dev_shell_run_keeps_the_empty_run_rule(project: Path, tmp_path: Path) -
 def test_tool_missing_without_a_flake_is_a_missing_tool_not_a_failure(project: Path, tmp_path: Path) -> None:
     result = execution.execute(GO_TEST, project, 30)
     assert result.status == execution.Status.MISSING_TOOL
-    assert "go" in result.summary
+    assert TOOL in result.summary
     assert "not found" in result.summary
     assert nix_calls(tmp_path) == []
 

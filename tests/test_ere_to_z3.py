@@ -7,7 +7,7 @@ import pytest
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
-from tests.ere_to_z3 import UnsupportedPattern, matches, witness
+from tests.ere_to_z3 import UnsupportedPatternError, matches, witness
 from tests.runtime import REPO_ROOT, load_script_module
 
 command_policy = load_script_module("agents/hooks/lib/command_policy.py", "command_policy")
@@ -80,7 +80,7 @@ def test_ignoring_case_also_folds_what_a_negated_bracket_excludes() -> None:
     ],
 )
 def test_syntax_outside_the_rule_dialect_is_refused(pattern: str) -> None:
-    with pytest.raises(UnsupportedPattern):
+    with pytest.raises(UnsupportedPatternError):
         matches(pattern, "a")
 
 
@@ -149,7 +149,7 @@ def test_every_forbidden_pattern_agrees_with_grep_near_its_boundary(
 
 @pytest.mark.parametrize("pattern", ["^Ä$", "[ä-ö]", "ß", "^é"])
 def test_a_cased_non_ascii_character_is_refused_when_ignoring_case(pattern: str) -> None:
-    with pytest.raises(UnsupportedPattern, match="case"):
+    with pytest.raises(UnsupportedPatternError, match="case"):
         matches(pattern, "x", ignore_case=True)
     assert not matches(pattern, "x", ignore_case=False)
 

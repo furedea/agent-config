@@ -2,7 +2,7 @@
 
 import pytest
 
-from tests.ere_to_z3 import UnsupportedPattern
+from tests.ere_to_z3 import UnsupportedPatternError
 from tests.rule_overlap import Overlap, find_overlaps
 from tests.runtime import load_script_module
 
@@ -96,5 +96,5 @@ def test_a_witness_may_hold_start_of_heading() -> None:
 
 @pytest.mark.parametrize("pattern", [r"(a)\1", "(?=a)"])
 def test_a_pattern_outside_the_rule_dialect_is_refused_instead_of_skipped(pattern: str) -> None:
-    with pytest.raises(UnsupportedPattern):
+    with pytest.raises(UnsupportedPatternError):
         find_overlaps([("git", "add")], [{"patterns": [pattern], "justification": "test"}])

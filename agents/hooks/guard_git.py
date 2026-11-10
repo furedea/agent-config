@@ -22,10 +22,10 @@ RULE = "guard_dangerous_git.sh"
 def decide(payload: dict) -> Verdict:
     """Inspect parsed literal commands; hand uninspectable input to the user and deny destructive forms."""
     with hook_input.payload_directory(payload):
-        return judged(payload)
+        return _judged(payload)
 
 
-def judged(payload: dict) -> Verdict:
+def _judged(payload: dict) -> Verdict:
     command = ""
     try:
         if not isinstance(payload, dict):
@@ -33,12 +33,12 @@ def judged(payload: dict) -> Verdict:
         command = payload.get("tool_input", {}).get("command") or ""
         verdict = inspect(command)
         if verdict.decision == "ask":
-            audit_log.escalated(audit_log.Refusal("Bash", RULE, session(payload), payload=payload, detail="syntax"))
+            audit_log.escalated(audit_log.Refusal("Bash", RULE, _session(payload), payload=payload, detail="syntax"))
         return verdict
     except (ValueError, TypeError, AttributeError) as error:
         message = f"BLOCKED: {error}\n\nUse a non-destructive command or ask the user to review this operation."
         audit_log.blocked(
-            audit_log.Refusal("Bash", RULE, session(payload), payload=payload if isinstance(payload, dict) else None)
+            audit_log.Refusal("Bash", RULE, _session(payload), payload=payload if isinstance(payload, dict) else None)
         )
         return hook_decision.deny(message)
 
@@ -51,18 +51,18 @@ def inspect(command: str) -> Verdict:
         preview = shell_syntax.command_preview(command)
         return hook_decision.ask(f"Needs review: {error}.\n\nCommand: {preview}", "syntax")
     for item in commands:
-        if hides_verdict(item):
+        if _hides_verdict(item):
             preview = shell_syntax.command_preview(item.raw)
             return hook_decision.ask(
                 f"Needs review: a shell expansion decides what this Git command does.\n\nSegment: {preview}",
                 "syntax",
             )
-        if reason := segment_reason(item):
+        if reason := _segment_reason(item):
             raise ValueError(reason)
     return hook_decision.ALLOW
 
 
-def segment_reason(item: shell_syntax.Command) -> str:
+def _segment_reason(item: shell_syntax.Command) -> str:
     reason = git_safety.reason(item.arguments)
     if not reason:
         return ""
@@ -71,7 +71,7 @@ def segment_reason(item: shell_syntax.Command) -> str:
     return f"{reason}.\n\nSegment: {shell_syntax.command_preview(item.raw)}"
 
 
-def hides_verdict(item: shell_syntax.Command) -> bool:
+def _hides_verdict(item: shell_syntax.Command) -> bool:
     """Whether a run-time word could turn this command into one the guard would deny.
 
     A run-time word hides the verdict when it names the program or subcommand, sits among the
@@ -84,16 +84,16 @@ def hides_verdict(item: shell_syntax.Command) -> bool:
         return True
     name = Path(item.arguments[0]).name
     if name == "gh":
-        return gh_hides_verdict(item)
-    return name == "git" and git_hides_verdict(item)
+        return _gh_hides_verdict(item)
+    return name == "git" and _git_hides_verdict(item)
 
 
-def gh_hides_verdict(item: shell_syntax.Command) -> bool:
+def _gh_hides_verdict(item: shell_syntax.Command) -> bool:
     subcommand_end = 2 if item.arguments[1:2] == ("api",) else 3
     return any(item.dynamic[1:subcommand_end]) or item.arguments[1:3] == ("pr", "merge")
 
 
-def git_hides_verdict(item: shell_syntax.Command) -> bool:
+def _git_hides_verdict(item: shell_syntax.Command) -> bool:
     try:
         globals_, command = git_safety.git_arguments(item.arguments)
     except ValueError:
@@ -111,7 +111,7 @@ def git_hides_verdict(item: shell_syntax.Command) -> bool:
     return verb in git_safety.OPTION_VERBS and any(item.dynamic[start + 1 :])
 
 
-def session(payload: object) -> str:
+def _session(payload: object) -> str:
     return payload.get("session_id", "") if isinstance(payload, dict) else ""
 
 
@@ -121,6 +121,11 @@ def check(payload: dict) -> int:
 
 
 def main() -> int:
+    """Run the hook on a JSON payload from stdin and return the process exit status.
+
+    Returns 2 and records a denial when stdin is not JSON, 1 on unexpected arguments, and 0 for `-h`/`--help`.
+    Otherwise the exit status is the one `hook_decision.emit` reports for the verdict.
+    """
     if sys.argv[1:]:
         print("Usage: guard_git.py < hook-input.json", file=sys.stderr)
         return 0 if sys.argv[1:] in (["-h"], ["--help"]) else 1

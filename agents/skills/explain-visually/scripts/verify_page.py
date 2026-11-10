@@ -118,7 +118,7 @@ class _Browser:
         ]
 
 
-class _VerificationFailure(Exception):
+class _VerificationError(Exception):
     def __init__(self, errors: Sequence[str], exit_code: int) -> None:
         super().__init__(*errors)
         self.errors = tuple(errors)
@@ -370,20 +370,20 @@ def _arguments(argv: Sequence[str] | None) -> argparse.Namespace:
 
 def _read_html(html_path: Path) -> str:
     if not html_path.is_file():
-        raise _VerificationFailure([f"HTML file was not found: {html_path}"], 1)
+        raise _VerificationError([f"HTML file was not found: {html_path}"], 1)
     try:
         return html_path.read_text(encoding="utf-8")
     except UnicodeError as error:
-        raise _VerificationFailure([f"HTML file is not valid UTF-8: {error}"], 1) from error
+        raise _VerificationError([f"HTML file is not valid UTF-8: {error}"], 1) from error
 
 
 def _resolve_browser(requested: str | None) -> Path:
     try:
         browser = find_browser(requested)
     except FileNotFoundError as error:
-        raise _VerificationFailure([str(error)], 2) from error
+        raise _VerificationError([str(error)], 2) from error
     if browser is None:
-        raise _VerificationFailure(
+        raise _VerificationError(
             ["No supported browser executable was found. Use --browser or a provider rendering tool."], 2
         )
     return browser
@@ -406,13 +406,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         errors = validate_html(html)
         report["staticValid"] = not errors
         if errors:
-            raise _VerificationFailure(errors, 1)
+            raise _VerificationError(errors, 1)
         browser = _resolve_browser(args.browser)
         report["browser"] = str(browser)
         screenshot_path, warnings = _render_page(
             html_path, _Browser(browser, args.wait_ms, args.timeout_seconds), args.width
         )
-    except _VerificationFailure as failure:
+    except _VerificationError as failure:
         report["errors"] = list(failure.errors)
         print(json.dumps(report, indent=2))
         return failure.exit_code

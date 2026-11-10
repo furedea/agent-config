@@ -27,6 +27,7 @@ known_first_party = [
   "fish_script",
   "foreign_shell_policy",
   "powershell_options",
+  "primary_workspaces",
   "git_safety",
   "go_selection",
   "guard_command",

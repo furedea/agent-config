@@ -40,14 +40,18 @@ PATCH_FILE = re.compile(r"^\*\*\* (?:Add|Update) File: (.+)$")
 
 
 @dataclass(frozen=True, slots=True)
-class Change:
+class _Change:
     path: str
     added: str
     removed: str
 
 
 def decide(payload: dict) -> Verdict:
-    added = [(change.path, name) for change in changes(payload) for name in new_markers(change)]
+    """Ask when the edit adds more suppression markers to a code file than it removes, otherwise allow.
+
+    Handles Write, Edit, MultiEdit and apply_patch payloads; non-code files are never inspected.
+    """
+    added = [(change.path, name) for change in _changes(payload) for name in _new_markers(change)]
     if not added:
         return hook_decision.ALLOW
     listed = ", ".join(f"{name} in {path}" for path, name in added)
@@ -58,7 +62,7 @@ def decide(payload: dict) -> Verdict:
     )
 
 
-def new_markers(change: Change) -> list[str]:
+def _new_markers(change: _Change) -> list[str]:
     if Path(change.path).suffix not in CODE_SUFFIXES:
         return []
     found = []
@@ -68,27 +72,27 @@ def new_markers(change: Change) -> list[str]:
     return found
 
 
-def changes(payload: dict) -> list[Change]:
+def _changes(payload: dict) -> list[_Change]:
     tool = payload.get("tool_name") or ""
     values = payload.get("tool_input") or {}
     if tool == "apply_patch" or "patch" in values:
-        return patch_changes(hook_input.patch_body(values, tool or None))
+        return _patch_changes(hook_input.patch_body(values, tool or None))
     path = hook_input.file_path(values)
     if tool == "Write":
-        return [Change(path, values.get("content") or "", existing_text(path))]
+        return [_Change(path, values.get("content") or "", _existing_text(path))]
     if tool == "MultiEdit":
         edits = values.get("edits") or []
         return [
-            Change(
+            _Change(
                 path,
                 "".join(e.get("new_string") or "" for e in edits),
                 "".join(e.get("old_string") or "" for e in edits),
             )
         ]
-    return [Change(path, values.get("new_string") or "", values.get("old_string") or "")]
+    return [_Change(path, values.get("new_string") or "", values.get("old_string") or "")]
 
 
-def patch_changes(patch: str) -> list[Change]:
+def _patch_changes(patch: str) -> list[_Change]:
     """Split an apply_patch body into per-file added and removed text."""
     added: dict[str, list[str]] = {}
     removed: dict[str, list[str]] = {}
@@ -102,10 +106,10 @@ def patch_changes(patch: str) -> list[Change]:
             added[current].append(line[1:])
         elif current and line.startswith("-"):
             removed[current].append(line[1:])
-    return [Change(path, "\n".join(added[path]), "\n".join(removed[path])) for path in added]
+    return [_Change(path, "\n".join(added[path]), "\n".join(removed[path])) for path in added]
 
 
-def existing_text(path: str) -> str:
+def _existing_text(path: str) -> str:
     try:
         return Path(path).read_text(errors="replace")
     except OSError:
@@ -113,6 +117,10 @@ def existing_text(path: str) -> str:
 
 
 def main() -> int:
+    """Run the hook on a JSON payload from stdin and return the process exit status.
+
+    Returns 2 when stdin is not JSON. An asking verdict is recorded in the audit log before it is emitted.
+    """
     try:
         payload = json.load(sys.stdin)
     except ValueError, OSError:

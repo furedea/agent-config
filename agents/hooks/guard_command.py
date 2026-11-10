@@ -46,6 +46,7 @@ class Policy:
 
     @property
     def listing_rules(self) -> list[dict]:
+        """Rules that may list a command as allowed, excluding the literal_words ones when the command opts out."""
         return self.rules if self.literal_words else command_policy.literal_rules(self.rules, literal=False)
 
 
@@ -102,7 +103,7 @@ def decide(kind: str, payload: dict, directory: Path = ROOT) -> Verdict:
     except (ValueError, TypeError, AttributeError, OSError) as error:
         prefix = "forbidden command: " if kind == "forbidden" else ""
         verdict = hook_decision.deny(f"BLOCKED: {prefix}{error}\n\n{hook_decision.REVIEW_HINT}")
-    record(verdict, kind, payload)
+    _record(verdict, kind, payload)
     return verdict
 
 
@@ -157,7 +158,7 @@ def command_verdict(kind: str, payload: dict, policy: Policy) -> Verdict:
     return verdict
 
 
-def record(verdict: Verdict, kind: str, payload: object) -> None:
+def _record(verdict: Verdict, kind: str, payload: object) -> None:
     if verdict.decision == "allow":
         return
     context = payload if isinstance(payload, dict) else None
@@ -172,6 +173,11 @@ def check(kind: str, payload: dict, directory: Path = ROOT) -> int:
 
 
 def main(arguments: list[str]) -> int:
+    """Run the hook for `allowed` or `forbidden` on a JSON payload from stdin and return the exit status.
+
+    Returns 1 on any other arguments and 2, after recording a denial, when stdin is not JSON. Otherwise the status
+    is the one `hook_decision.emit` reports for the verdict.
+    """
     if len(arguments) != 1 or arguments[0] not in {"allowed", "forbidden"}:
         print("Usage: guard_command.py <allowed|forbidden>", file=sys.stderr)
         return 1

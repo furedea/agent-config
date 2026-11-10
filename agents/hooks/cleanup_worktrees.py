@@ -21,8 +21,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
 
-import herdr_ownership
-import session_store
+import primary_workspaces
 
 PROTECTED_BRANCHES = frozenset({"main", "master"})
 MERGED_PULL_REQUEST_LIMIT = "200"
@@ -36,12 +35,23 @@ HERDR_WORKTREES = Path(".herdr/worktrees")
 
 @dataclass(frozen=True, slots=True)
 class Worktree:
+    """A checkout listed by `git worktree list`, with its administrative directory under the primary's .git.
+
+    `admin_dir` is None when no `.git/worktrees/<name>` entry points back at `path`, which marks the checkout
+    as unverifiable; such a worktree is never treated as clean.
+    """
+
     path: Path
     branch: str
     admin_dir: Path | None
 
 
 def main(arguments: list[str]) -> int:
+    """Run the CLI or the session-start hook and return the process exit status.
+
+    The hook form never fails the session: any error is swallowed and the status is 0. The CLI form accepts only
+    no arguments or `--dry-run`, prints one line per action, and returns 1 on a usage error or a failed sweep.
+    """
     if arguments == ["session-start"]:
         try:
             payload = json.load(sys.stdin)
@@ -65,7 +75,7 @@ def sweep(cwd: Path, *, dry_run: bool) -> list[str]:
     """Clean the caller's repository and every repository with a Herdr task worktree."""
     current = toplevel(cwd)
     lanes = sorted(path for path in (Path.home() / HERDR_WORKTREES).glob("*/*") if path.is_dir())
-    primaries = {primary for path in [current, *lanes] if path and (primary := primary_checkout(path))}
+    primaries = {primary for path in [current, *lanes] if path and (primary := _primary_checkout(path))}
     report = []
     for primary in sorted(primaries):
         try:
@@ -76,18 +86,22 @@ def sweep(cwd: Path, *, dry_run: bool) -> list[str]:
 
 
 def toplevel(path: Path) -> Path | None:
+    """Return the registered worktree root that contains `path`, or None when there is none.
+
+    Only a checkout the trusted primary lists as a linked worktree qualifies, so a nested or forged `.git` is ignored.
+    """
     if not path.is_dir():
         return None
     roots = [root for root in (path.resolve(), *path.resolve().parents) if (root / ".git").exists()]
     for root in reversed(roots):
-        primary = primary_checkout(root)
+        primary = _primary_checkout(root)
         if primary:
             known = {worktree.path for worktree in linked_worktrees(primary)}
             return next((ancestor for ancestor in roots if ancestor in known), None)
     return None
 
 
-def primary_checkout(path: Path) -> Path | None:
+def _primary_checkout(path: Path) -> Path | None:
     root = (
         next((root for root in (path.resolve(), *path.resolve().parents) if (root / ".git").exists()), None)
         if path.is_dir()
@@ -95,19 +109,19 @@ def primary_checkout(path: Path) -> Path | None:
     )
     if root is None:
         return None
-    if real_primary(root):
+    if _real_primary(root):
         writable = sandbox_writable_paths()
         return root if writable is None or not any(root.is_relative_to(path) for path in writable) else None
-    return lane_primary(root)
+    return _lane_primary(root)
 
 
-def lane_primary(root: Path) -> Path | None:
-    admin = git_file_target(root)
+def _lane_primary(root: Path) -> Path | None:
+    admin = _git_file_target(root)
     if admin is None or admin.parent.name != "worktrees" or admin.parent.parent.name != ".git":
         return None
     primary = admin.parent.parent.parent
     writable = sandbox_writable_paths()
-    if not real_primary(primary) or writable is None or any(primary.is_relative_to(path) for path in writable):
+    if not _real_primary(primary) or writable is None or any(primary.is_relative_to(path) for path in writable):
         return None
     try:
         if (
@@ -125,7 +139,7 @@ def lane_primary(root: Path) -> Path | None:
     return None
 
 
-def real_primary(path: Path) -> bool:
+def _real_primary(path: Path) -> bool:
     return (
         (path / ".git").is_dir()
         and not (path / ".git").is_symlink()
@@ -167,7 +181,7 @@ def cleanup(primary: Path, current: Path | None, *, dry_run: bool) -> list[str]:
     """Remove what is merged in one repository and return one line per removal."""
     merged = merged_heads(primary)
     worktrees = linked_worktrees(primary)
-    checked_out = {worktree.branch for worktree in worktrees} | {current_branch(primary)}
+    checked_out = {worktree.branch for worktree in worktrees} | {_current_branch(primary)}
     workspaces = herdr_workspaces(primary)
     report = []
     kept = []
@@ -175,7 +189,7 @@ def cleanup(primary: Path, current: Path | None, *, dry_run: bool) -> list[str]:
     for worktree in worktrees:
         if (
             worktree.path in {primary, current}
-            or not is_merged(primary, worktree.branch, merged)
+            or not _is_merged(primary, worktree.branch, merged)
             or not worktree_is_clean(primary, worktree)
         ):
             continue
@@ -187,8 +201,8 @@ def cleanup(primary: Path, current: Path | None, *, dry_run: bool) -> list[str]:
         if not dry_run:
             remove_worktree(primary, worktree, workspaces.get(worktree.path))
             run("git", "branch", "-D", "--", worktree.branch, cwd=primary)
-    for branch in local_branches(primary) - checked_out:
-        if not is_merged(primary, branch, merged):
+    for branch in _local_branches(primary) - checked_out:
+        if not _is_merged(primary, branch, merged):
             continue
         report.append(f"remove branch {branch}")
         if not dry_run:
@@ -204,7 +218,12 @@ def cleanup(primary: Path, current: Path | None, *, dry_run: bool) -> list[str]:
 
 
 def worktree_is_clean(primary: Path, worktree: Worktree) -> bool:
-    if not worktree.admin_dir or git_file_target(worktree.path) != worktree.admin_dir:
+    """Return whether the worktree is verifiably registered to `primary` and has no change to lose.
+
+    Any mismatch between the worktree's `.git` file, its admin directory, and the primary, any per-worktree
+    config, any submodule, or any status entry makes it not clean; the check fails closed.
+    """
+    if not worktree.admin_dir or _git_file_target(worktree.path) != worktree.admin_dir:
         return False
     try:
         if (
@@ -266,26 +285,10 @@ def is_regenerable(primary: Path, command: tuple[str, ...], path: str) -> bool:
     )
 
 
-def recorded_primary_workspaces(primary: Path) -> dict[str, dict]:
-    """Find primary workspaces created by any registered agent session."""
-    base = session_store.state_directory()
-    if not base.is_dir():
-        return {}
-    workspaces = {}
-    for directory in session_store.record_directories(base):
-        try:
-            record = session_store.load(directory)
-            owned = herdr_ownership.entries(record, "workspaces")
-        except OSError, ValueError, KeyError, TypeError:
-            continue
-        workspaces.update({key: entry for key, entry in owned.items() if Path(entry["path"]).resolve() == primary})
-    return workspaces
-
-
 def close_primary_workspaces(primary: Path, *, dry_run: bool) -> list[str]:
     """Close an agent-created primary only while its identity matches and no agent occupies it."""
     try:
-        identities = idle_primary_workspaces(primary)
+        identities = primary_workspaces.idle_primary_workspaces(primary)
     except OSError, subprocess.SubprocessError, ValueError, TypeError:
         return []
     if dry_run:
@@ -301,59 +304,16 @@ def close_primary_workspaces(primary: Path, *, dry_run: bool) -> list[str]:
     return report
 
 
-def idle_primary_workspaces(primary: Path) -> list[str]:
-    owned = recorded_primary_workspaces(primary)
-    if not owned:
-        return []
-    identities = []
-    for workspace in herdr_items("workspace"):
-        identity = workspace.get("workspace_id")
-        if not isinstance(identity, str) or not identity:
-            continue
-        entry = owned.get(identity)
-        if (
-            not entry
-            or workspace.get("label") != entry["label"]
-            or herdr_ownership.live_path(workspace) != str(primary)
-        ):
-            continue
-        if primary_workspace_idle(identity, entry):
-            identities.append(identity)
-    return identities
-
-
-def primary_workspace_idle(identity: str, entry: dict) -> bool:
-    panes = herdr_items("pane", "--workspace", identity)
-    if not any(pane.get("terminal_id") == entry["terminal_id"] for pane in panes):
-        return False
-    terminals = {pane["terminal_id"] for pane in panes if pane.get("terminal_id")}
-    pane_ids = {pane["pane_id"] for pane in panes if pane.get("pane_id")}
-    return not any(
-        agent.get("workspace_id") == identity
-        or agent.get("terminal_id") in terminals
-        or (not agent.get("workspace_id") and agent.get("pane_id") in pane_ids)
-        for agent in herdr_items("agent")
-    )
-
-
-def herdr_items(kind: str, *arguments: str) -> list[dict]:
-    """Require an explicit listing; missing or malformed live state cannot prove a workspace idle."""
-    items = herdr_ownership.herdr_result(kind, "list", *arguments).get(kind + "s")
-    if not isinstance(items, list) or any(not isinstance(item, dict) for item in items):
-        raise ValueError(f"Invalid Herdr {kind} listing")
-    return items
-
-
 def fast_forward_default_branch(primary: Path, *, dry_run: bool) -> list[str]:
     """Bring the default branch up to the merges just cleaned up, without touching other work.
 
     A checked-out default branch is pulled only when its tree is clean; otherwise only its ref
     moves, through a fetch that refuses anything but a fast-forward.
     """
-    branch = next((name for name in sorted(PROTECTED_BRANCHES) if has_branch(primary, name)), "")
+    branch = next((name for name in sorted(PROTECTED_BRANCHES) if _has_branch(primary, name)), "")
     if not branch:
         return []
-    checked_out = current_branch(primary) == branch
+    checked_out = _current_branch(primary) == branch
     if checked_out and run("git", "status", "--porcelain", cwd=primary):
         return []
     pull = ("git", "pull", "--quiet", "--ff-only")
@@ -366,11 +326,11 @@ def fast_forward_default_branch(primary: Path, *, dry_run: bool) -> list[str]:
     return [f"fast-forward {branch}"]
 
 
-def has_branch(primary: Path, branch: str) -> bool:
+def _has_branch(primary: Path, branch: str) -> bool:
     return bool(run("git", "for-each-ref", "--format=%(refname)", f"refs/heads/{branch}", cwd=primary))
 
 
-def is_merged(primary: Path, branch: str, merged: dict[str, set[str]]) -> bool:
+def _is_merged(primary: Path, branch: str, merged: dict[str, set[str]]) -> bool:
     if not branch or branch in PROTECTED_BRANCHES:
         return False
     return run("git", "rev-parse", "--verify", "--end-of-options", f"refs/heads/{branch}", cwd=primary) in merged.get(
@@ -399,6 +359,10 @@ def merged_heads(primary: Path) -> dict[str, set[str]]:
 
 
 def linked_worktrees(primary: Path) -> list[Worktree]:
+    """List every worktree of `primary`, the primary checkout included, with resolved paths.
+
+    Raises OSError or subprocess.SubprocessError when git or the admin directories cannot be read.
+    """
     admin_dirs = {
         Path((admin / "gitdir").read_text().strip()).parent.resolve(): admin.resolve()
         for admin in (primary / ".git/worktrees").glob("*")
@@ -414,7 +378,7 @@ def linked_worktrees(primary: Path) -> list[Worktree]:
     return worktrees
 
 
-def git_file_target(path: Path) -> Path | None:
+def _git_file_target(path: Path) -> Path | None:
     try:
         if (path / ".git").is_symlink():
             return None
@@ -426,11 +390,11 @@ def git_file_target(path: Path) -> Path | None:
     return None
 
 
-def local_branches(primary: Path) -> set[str]:
+def _local_branches(primary: Path) -> set[str]:
     return set(run("git", "for-each-ref", "--format=%(refname:short)", "refs/heads", cwd=primary).splitlines())
 
 
-def current_branch(primary: Path) -> str:
+def _current_branch(primary: Path) -> str:
     return run("git", "branch", "--show-current", cwd=primary)
 
 
@@ -456,6 +420,12 @@ def remove_worktree(primary: Path, worktree: Worktree, workspace: str | None) ->
 
 
 def run(*command: str, cwd: Path) -> str:
+    """Run a command in `cwd` with a scrubbed environment and return its stripped stdout.
+
+    A `git` command is pinned to `cwd`'s repository and runs with hooks, fsmonitor, LFS filters, system config and
+    inherited GIT_* variables disabled, so repository-controlled configuration cannot execute code. A non-zero exit
+    raises subprocess.CalledProcessError and a run past TIMEOUT_SECONDS raises subprocess.TimeoutExpired.
+    """
     environment = {key: value for key, value in os.environ.items() if not key.startswith("GIT_")}
     if command[0] == "git":
         environment.update(GIT_COMMON_DIR=str(cwd / ".git"), GIT_CONFIG_NOSYSTEM="1")

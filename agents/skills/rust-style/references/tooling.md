@@ -61,8 +61,8 @@ cargo test
 ```
 
 - Forbid `unsafe` by default.
-- Enable `clippy::pedantic` as `warn`.
-- Allow an individual lint only with a reason: `#[expect(..., reason = "...")]` at the site, or a `Cargo.toml` allow with a comment.
+- Enable `clippy::pedantic` as `warn`, with `priority = -1` so that per-lint entries in the same table override the group.
+- Allow an individual lint only with a reason: `#[expect(..., reason = "...")]` at the site, or a `Cargo.toml` allow with a comment. A crate-wide `Cargo.toml` allow needs the user's approval, the same as a per-site suppression.
 
 Recommended package-level guard:
 
@@ -71,6 +71,7 @@ Recommended package-level guard:
 unsafe_code = "forbid"
 
 [lints.clippy]
+pedantic = { level = "warn", priority = -1 }
 dbg_macro = "deny"
 todo = "deny"
 unimplemented = "deny"

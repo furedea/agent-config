@@ -6,6 +6,7 @@ from tests.runtime import load_script_module
 
 
 guard = load_script_module("agents/hooks/guard_command.py", "guard_command")
+literal_words = load_script_module("agents/hooks/lib/literal_words.py", "literal_words")
 pytestmark = pytest.mark.usefixtures("isolated_project")
 
 
@@ -479,7 +480,7 @@ def test_unlisted_forms_of_commands_that_reach_github_or_the_network_ask(
     ],
 )
 def test_literal_rules_treat_double_quoted_globs_as_literal(command: str, expected: bool) -> None:
-    assert guard.allows_literal_rules(command, guard.shell_syntax.parse(command)) is expected
+    assert literal_words.allows_literal_rules(command, guard.shell_syntax.parse(command)) is expected
 
 
 def test_commit_messages_inline_through_a_quoted_heredoc_pass() -> None:

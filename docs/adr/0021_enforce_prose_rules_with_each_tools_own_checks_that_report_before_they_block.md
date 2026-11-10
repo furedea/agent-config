@@ -7,12 +7,12 @@ In the context of turning the prose rules of `AGENTS.md` and the style skills in
 that differ in how they can be judged (existing linter, ast-grep, model, prose only) and a model judge whose cutoffs
 are not yet fitted (ADR-0020), we decided for making each tool's own configuration the single source of truth (linter
 config, ast-grep rule YAML with its native tests, jev-lint rule files), deleting a prose rule in the same change that
-replaces it with a check, returning findings to the agent without blocking, promoting a rule to blocking only after
+replaces it with a check (a model-judged rule keeps its prose until it is promoted), returning findings to the agent without blocking, promoting a rule to blocking only after
 its example tests show no false positive, running model-judged rules once at Stop as a single `jev-lint review` over the changed functions of trusted
 repositories, reusing `jev-lint`'s own verdict cache stored outside the repository, and pinning `jev-lint` with its dependencies through Nix behind the backend
 abstraction, and against a separate rule registry, blocking on edit, judging per edit, and running without a cache,
 to achieve one place per rule and no prose that can drift from its check, accepting that an unpromoted rule can be
-ignored by the agent, that a Stop-time verdict arrives after the edits it judges, that there is no single inventory
+ignored by the agent, that an unpromoted model-judged rule exists both as prose and as a check until its promotion, that a Stop-time verdict arrives after the edits it judges, that there is no single inventory
 of rules across tools, that the hook depends on `jev-lint`'s cache and batching behaviour, and that only the owner's
 own repositories get model judgement.
 

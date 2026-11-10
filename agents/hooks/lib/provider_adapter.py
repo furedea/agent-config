@@ -63,6 +63,7 @@ def system_message_output(message: str) -> dict:
 
 
 def no_cwd() -> str:
+    """Stand in for a working directory when the provider payload carries none, so the process directory is kept."""
     return ""
 
 
@@ -94,6 +95,11 @@ class Adapter:
         self.profile = profile
 
     def main(self, arguments: list[str]) -> int:
+        """Run the hook command named by `arguments` and return its exit status.
+
+        Return 1 after printing usage for an unknown command or argument, and 2 when the payload or a guard
+        blocks the call.
+        """
         kind, rest = (arguments[0], arguments[1:]) if arguments else ("", [])
         if not self._accepts(kind, rest):
             print(f"Usage: hook_adapter.py <{self._usage()}>", file=sys.stderr)
@@ -105,17 +111,18 @@ class Adapter:
             return 2
 
     def dispatch(self, kind: str, arguments: list[str], payload: dict) -> int:
+        """Run one already-validated command against `payload`; `arguments` are the choices `kind` takes."""
         if kind == "lint":
             return self.lint(payload)
         if kind == "harness":
-            return self.harness(payload)
+            return self._harness(payload)
         commands = {
-            "native": self.native,
-            "audit": self.audit,
-            "dispatch": self.fan_out,
-            "shell": self.shell,
-            "paths": self.check_paths,
-            "content": self.content,
+            "native": self._native,
+            "audit": self._audit,
+            "dispatch": self._fan_out,
+            "shell": self._shell,
+            "paths": self._check_paths,
+            "content": self._content,
         }
         return commands[kind](arguments[0], payload)
 
@@ -140,7 +147,7 @@ class Adapter:
             "provider": self.profile.name,
         }
 
-    def native(self, event: str, payload: dict) -> int:
+    def _native(self, event: str, payload: dict) -> int:
         context = self.normalized(payload)
         try:
             result = verification_session.dispatch(self.profile.name, event, context)
@@ -150,7 +157,7 @@ class Adapter:
         print(json.dumps(output, ensure_ascii=True, separators=(",", ":")))
         return 0
 
-    def audit(self, kind: str, payload: dict) -> int:
+    def _audit(self, kind: str, payload: dict) -> int:
         context = self.normalized(payload)
         if kind == "compaction":
             context = self._compaction_context(context)
@@ -160,18 +167,18 @@ class Adapter:
             )
         return 0
 
-    def fan_out(self, event: str, payload: dict) -> int:
+    def _fan_out(self, event: str, payload: dict) -> int:
         return hook_dispatch.run(self._manifest(), event, payload)
 
-    def shell(self, mode: str, payload: dict) -> int:
-        values = {"command": command_text(self.normalized(payload)["tool_input"])}
+    def _shell(self, mode: str, payload: dict) -> int:
+        values = {"command": _command_text(self.normalized(payload)["tool_input"])}
         command = self.translated(payload, "Bash", values)
         if mode == "commit":
-            verdict = guard_file.commit_verdict(command, shared_directory())
+            verdict = guard_file.commit_verdict(command, _shared_directory())
         elif mode == "git":
             verdict = guard_git.decide(command)
         else:
-            verdict = guard_command.decide(mode, command, shared_directory())
+            verdict = guard_command.decide(mode, command, _shared_directory())
         return hook_decision.emit(verdict.hardened())
 
     def lint(self, payload: dict) -> int:
@@ -181,43 +188,43 @@ class Adapter:
             lint_format.emit(lint_format.diagnostics(context), self.profile.lint_output)
         return 0
 
-    def harness(self, payload: dict) -> int:
+    def _harness(self, payload: dict) -> int:
         context = self.normalized(payload)
-        for name in () if views_only(context) else edit_targets(context):
+        for name in () if views_only(context) else _edit_targets(context):
             absolute = name if name.startswith(("/", "~/")) else str(Path.cwd() / name)
             values = {"file_path": absolute}
             if status := guard_file.check(
-                "harness", self.translated(payload, "apply_patch", values), shared_directory()
+                "harness", self.translated(payload, "apply_patch", values), _shared_directory()
             ):
                 return status
         return 0
 
-    def check_paths(self, mode: str, payload: dict) -> int:
-        rules = secret_path_policy.load(secret_policy_path())
+    def _check_paths(self, mode: str, payload: dict) -> int:
+        rules = secret_path_policy.load(_secret_policy_path())
         context = self.normalized(payload)
         try:
             with hook_input.payload_directory(context):
                 candidates = (
-                    edit_targets(context) if mode == "patch" else command_paths(command_text(context["tool_input"]))
+                    _edit_targets(context) if mode == "patch" else _command_paths(_command_text(context["tool_input"]))
                 )
         except shell_paths.UnexpandableGlob as error:
-            audit_log.blocked(secret_path_refusal(mode, "", context))
+            audit_log.blocked(_secret_path_refusal(mode, "", context))
             return hook_decision.emit(hook_decision.ask(f"Needs review: {error}.").hardened())
         for value in candidates:
             if rule := secret_path_policy.blocked_rule(value, rules):
-                audit_log.blocked(secret_path_refusal(mode, value, context))
-                raise ValueError(secret_path_reason(value, rule))
+                audit_log.blocked(_secret_path_refusal(mode, value, context))
+                raise ValueError(_secret_path_reason(value, rule))
         return 0
 
-    def content(self, mode: str, payload: dict) -> int:
+    def _content(self, mode: str, payload: dict) -> int:
         context = self.normalized(payload)
         if mode == "suppression":
             return hook_decision.emit(guard_suppression.decide(context).hardened())
         if mode != "apply-patch":
-            return guard_file.check(mode, context, shared_directory())
+            return guard_file.check(mode, context, _shared_directory())
         body = hook_input.patch_body(context["tool_input"], context.get("tool_name") or "apply_patch")
         values = {"content": patch_input.added_text(body)}
-        return guard_file.check("write", self.translated(payload, "Edit", values), shared_directory())
+        return guard_file.check("write", self.translated(payload, "Edit", values), _shared_directory())
 
     def _compaction_context(self, context: dict) -> dict | None:
         """Name a native compaction event as shared audit expects, or drop an unknown event."""
@@ -277,15 +284,15 @@ class Adapter:
         }
 
     def _usage(self) -> str:
-        return "|".join(usage_entry(kind, choices) for kind, choices in self._commands().items())
+        return "|".join(_usage_entry(kind, choices) for kind, choices in self._commands().items())
 
 
-def shared_directory() -> Path:
+def _shared_directory() -> Path:
     return Path(os.environ.get("AGENT_HARNESS_ROOT", str(Path.home()))) / ".claude/hooks"
 
 
-def secret_policy_path() -> Path:
-    default = shared_directory() / "rules/secret_path_policy.json"
+def _secret_policy_path() -> Path:
+    default = _shared_directory() / "rules/secret_path_policy.json"
     return Path(os.environ.get("AGENT_SECRET_PATH_POLICY", str(default)))
 
 
@@ -315,24 +322,24 @@ def failed(context: dict) -> bool:
     return isinstance(response, dict) and response.get("isError") is True
 
 
-def command_text(values: dict) -> str:
+def _command_text(values: dict) -> str:
     return values.get("command") or values.get("cmd") or ""
 
 
-def edit_targets(context: dict) -> list[str]:
+def _edit_targets(context: dict) -> list[str]:
     values = context["tool_input"]
     body = hook_input.patch_body(values, context.get("tool_name"))
     return [name for name in (hook_input.file_path(values), *patch_input.paths(body)) if name]
 
 
-def command_paths(command: str) -> list[str]:
+def _command_paths(command: str) -> list[str]:
     try:
         return shell_paths.command_paths(command)
     except shell_syntax.UnsupportedSyntax as error:
         raise ValueError(f"{error}\n\nCommand: {shell_syntax.command_preview(command)}") from error
 
 
-def secret_path_refusal(mode: str, value: str, context: dict) -> audit_log.Refusal:
+def _secret_path_refusal(mode: str, value: str, context: dict) -> audit_log.Refusal:
     command = mode == "command"
     return audit_log.Refusal(
         "Bash" if command else "apply_patch",
@@ -343,11 +350,11 @@ def secret_path_refusal(mode: str, value: str, context: dict) -> audit_log.Refus
     )
 
 
-def secret_path_reason(value: str, rule: dict) -> str:
+def _secret_path_reason(value: str, rule: dict) -> str:
     return f"secret path policy matched.\n\nPath: {value}\nPattern: {rule['pattern']}\n\nWhy:\n  {rule['reason']}"
 
 
-def usage_entry(kind: str, choices: tuple[str, ...] | None) -> str:
+def _usage_entry(kind: str, choices: tuple[str, ...] | None) -> str:
     if choices is ANY_ARGUMENT:
         return f"{kind} <event>"
     return f"{kind} {'/'.join(choices)}" if choices else kind

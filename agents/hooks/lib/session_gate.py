@@ -32,12 +32,12 @@ class VerificationRun:
         check_id, identity, previous, reusable = receipt_state(self.state, inputs, invocation)
         if not self.force and reusable:
             return check_id, previous, None
-        budget = min(check_budget(), max(0.01, GATE_BUDGET_SECONDS - (time.monotonic() - self.started)))
+        budget = min(_check_budget(), max(0.01, GATE_BUDGET_SECONDS - (time.monotonic() - self.started)))
         result = execute(invocation, self.record.root, budget)
         receipt = {
             "input": identity,
             "status": str(result.status),
-            "summary": bounded_summary(result.summary),
+            "summary": _bounded_summary(result.summary),
             "scope": invocation.scope,
         }
         if result.failed:
@@ -46,23 +46,24 @@ class VerificationRun:
         return check_id, receipt, result.failed
 
     def configuration_failure(self, identity: str, error: str) -> dict[str, str]:
+        """Record an invalid test configuration; only its first occurrence blocks, repeats just notify."""
         failure = hashlib.sha256((identity + error).encode()).hexdigest()
         repeated = self.state.get("configuration_failure") == failure
         self.state["configuration_failure"] = failure
         self.record.save_results(self.state)
-        return notification(f"Verification unresolved · invalid test configuration\n{error}", block=not repeated)
+        return _notification(f"Verification unresolved · invalid test configuration\n{error}", block=not repeated)
 
 
 def gate(record: SessionRecord, *, force: bool = False) -> dict[str, str]:
     """Serialize Stop and verify calls so concurrent delivery cannot run a check twice."""
     with record.lock(unbounded=True):
         record.touch()
-        result = verify(record, force=force)
+        result = _verify(record, force=force)
     prune()
     return result
 
 
-def verify(record: SessionRecord, *, force: bool) -> dict[str, str]:
+def _verify(record: SessionRecord, *, force: bool) -> dict[str, str]:
     started = time.monotonic()
     current = capture(record.root)
     state = record.results()
@@ -72,7 +73,7 @@ def verify(record: SessionRecord, *, force: bool) -> dict[str, str]:
     except (OSError, ValueError, TypeError) as error:
         return run.configuration_failure(current.digest, str(error))
     if not invocations:
-        return save_skip(record, state, skip_reason)
+        return _save_skip(record, state, skip_reason)
     receipts: dict[str, dict] = {}
     lines: list[str] = []
     failed = new_failure = executed = passed = False
@@ -100,7 +101,7 @@ def verify(record: SessionRecord, *, force: bool) -> dict[str, str]:
     record.save_results(state)
     if failed:
         message = "Verification failed" if new_failure else "Verification unresolved · unchanged; not rerun"
-        return notification("\n".join([message, *lines]), block=new_failure)
+        return _notification("\n".join([message, *lines]), block=new_failure)
     outcome = "passed" if passed else "skipped"
     message = (
         f"Verification {outcome} · total {time.monotonic() - started:.1f}s"
@@ -128,9 +129,9 @@ def selected_checks(
 def receipt_state(state: dict, inputs: str, invocation: check_selection.Invocation) -> tuple[str, str, dict, bool]:
     """Use one fingerprint and receipt validation contract for status and verify."""
     check_id = hashlib.sha256(json.dumps(invocation.arguments).encode()).hexdigest()
-    identity = check_identity(inputs, invocation)
+    identity = _check_identity(inputs, invocation)
     previous = state["checks"].get(check_id)
-    reusable = valid_receipt(previous, identity)
+    reusable = _valid_receipt(previous, identity)
     return check_id, identity, previous or {}, reusable
 
 
@@ -138,13 +139,13 @@ def status(record: SessionRecord) -> dict:
     """Observe receipts and applicability without writes, expiry renewal, or check execution."""
     state = record.results()
     for receipt in state["checks"].values():
-        valid_receipt(receipt, "")
+        _valid_receipt(receipt, "")
     rows = {
         key: {
             "id": key,
             "status": receipt["status"],
             "scope": receipt.get("scope"),
-            "summary": bounded_summary(receipt["summary"]),
+            "summary": _bounded_summary(receipt["summary"]),
             "applicability": "unknown",
         }
         for key, receipt in state["checks"].items()
@@ -163,12 +164,12 @@ def status(record: SessionRecord) -> dict:
                 "id": check_id,
                 "status": previous.get("status", "not_run"),
                 "scope": invocation.scope,
-                "summary": bounded_summary(previous.get("summary", "")),
+                "summary": _bounded_summary(previous.get("summary", "")),
                 "applicability": "current" if reusable else "stale" if previous else "not_run",
             }
             rows[check_id] = row
             selected.append(row)
-        result["state"] = current_status(selected)
+        result["state"] = _current_status(selected)
         if skip_reason:
             result["reason"] = skip_reason
         if capture(record.root).digest != current.digest or verification_inputs(current) != inputs:
@@ -183,7 +184,7 @@ def status(record: SessionRecord) -> dict:
     return result
 
 
-def current_status(rows: list[dict]) -> str:
+def _current_status(rows: list[dict]) -> str:
     if not rows:
         return "not_applicable"
     for applicability in ("stale", "not_run"):
@@ -194,20 +195,20 @@ def current_status(rows: list[dict]) -> str:
     return "passed" if any(row["status"] == Status.PASSED for row in rows) else "skipped"
 
 
-def save_skip(record: SessionRecord, state: dict, reason: str) -> dict[str, str]:
+def _save_skip(record: SessionRecord, state: dict, reason: str) -> dict[str, str]:
     state.update(checks={}, revalidate_all=False)
     state.pop("configuration_failure", None)
     record.save_results(state)
     return {"systemMessage": f"Verification skipped · {reason}"}
 
 
-def bounded_summary(summary: str) -> str:
+def _bounded_summary(summary: str) -> str:
     if len(summary) <= 2048:
         return summary
     return summary[:1000] + "\n[summary truncated]\n" + summary[-1000:]
 
 
-def valid_receipt(value: object, identity: str) -> bool:
+def _valid_receipt(value: object, identity: str) -> bool:
     if value is None:
         return False
     if (
@@ -220,6 +221,10 @@ def valid_receipt(value: object, identity: str) -> bool:
 
 
 def unresolved(record: SessionRecord) -> bool:
+    """Tell whether the session still owes verification.
+
+    That holds after a configuration failure, while revalidation is pending, or with any non-passing receipt.
+    """
     state = record.results()
     return bool(state.get("configuration_failure") or state.get("revalidate_all")) or any(
         receipt.get("status") not in {Status.PASSED, Status.SKIPPED} for receipt in state["checks"].values()
@@ -252,7 +257,7 @@ def verification_inputs(snapshot: Snapshot) -> str:
     return digest.hexdigest()
 
 
-def check_identity(inputs: str, invocation: check_selection.Invocation) -> str:
+def _check_identity(inputs: str, invocation: check_selection.Invocation) -> str:
     executable = shutil.which(invocation.arguments[0])
     metadata = None
     if executable:
@@ -262,12 +267,12 @@ def check_identity(inputs: str, invocation: check_selection.Invocation) -> str:
     return hashlib.sha256(json.dumps((inputs, invocation.arguments, metadata)).encode()).hexdigest()
 
 
-def check_budget() -> float:
+def _check_budget() -> float:
     value = float(os.environ.get("RUN_RELATED_TESTS_TIMEOUT_SECONDS", "300"))
     if not 0 < value <= GATE_BUDGET_SECONDS:
         raise StateError(f"Test timeout must be between 0 and {GATE_BUDGET_SECONDS} seconds")
     return value
 
 
-def notification(message: str, *, block: bool) -> dict[str, str]:
+def _notification(message: str, *, block: bool) -> dict[str, str]:
     return {"decision": "block", "reason": message} if block else {"systemMessage": message}

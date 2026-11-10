@@ -130,12 +130,20 @@ worktree of another repository fetches and rebases there itself, since the origi
 cannot write that repository's `.git`.
 
 Right after prompting, wait in the background for the recipient to finish: first
-`herdr agent wait <name> --until working`, then `herdr agent wait <name> --until done --until blocked`,
-each as its own single `herdr` call. Waiting only for done or blocked can return at once while
-the agent still shows done from an earlier turn. Then read the reply with `herdr agent read`
-and, for an implementation, check for `LANE-READY`, check the PR state, and report to the user.
-Treat `LANE-BLOCKED` and its reason as incomplete work. This works for Claude and Codex
-recipients alike.
+`herdr agent wait <name> --until working`, then
+`herdr agent wait <name> --until done --timeout 1800000` (30 minutes), each as its own single
+`herdr` call. Waiting only for done can return at once while the agent still shows done from an
+earlier turn. Do not wait for `blocked` and do not relay approval prompts: the user notices them
+through Herdr's sound, toast, and sidebar status (or the provider's notification hook) and
+approves in the recipient's own pane, while the parent keeps waiting.
+
+When the wait returns done, read the reply with `herdr agent read`. A reply without `LANE-READY`
+or `LANE-BLOCKED` means the turn ended while work continues (for example the recipient is
+waiting for CI in the background): treat it as incomplete and wait again from
+`--until working`. Otherwise, for an implementation, check the PR state and report to the user.
+Treat `LANE-BLOCKED` and its reason as incomplete work. When the wait returns on `--timeout`,
+check `herdr agent get <name>`: if it is blocked, wait again; otherwise report the state to the
+user. This works for Claude and Codex recipients alike.
 Follow `herdr` for waiting, blocked sessions, and complete response retrieval.
 Successful submission or a settled agent state does not prove that the assigned task is complete;
 read the response and compare it with the requested outcome.

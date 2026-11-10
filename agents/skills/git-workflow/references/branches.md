@@ -27,7 +27,7 @@ herdr worktree create --workspace <primary-id> --branch <branch> --base origin/<
 herdr agent start <lane-name> --kind claude --pane <root-pane-id> -- --model sonnet --effort medium
 herdr agent prompt <lane-name> "Read your brief at <scratchpad>/briefs/<lane-name>.md and carry it out."
 herdr agent wait <lane-name> --until working                 # in the background
-herdr agent wait <lane-name> --until done --until blocked    # in the background, after the first returns
+herdr agent wait <lane-name> --until done --timeout 1800000  # in the background, after the first returns
 herdr agent read <lane-name>
 ```
 
@@ -41,12 +41,10 @@ Rules:
 - Keep the prompt text literal. A substitution such as `"$(cat brief.md)"` also makes the call
   more than one `herdr` command. Write the brief to a file in this session's scratchpad and
   prompt the lane to read that file.
-- Learn that the lane finished by waiting in the background right after the prompt: first
-  `--until working`, then `--until done --until blocked`, each as its own `herdr` call. Waiting
-  only for done or blocked can return at once while the agent still shows done from an earlier
-  turn. Then read the lane's reply with `herdr agent read`, check for `LANE-READY`, check the PR
-  state, and report to the user. Treat `LANE-BLOCKED` and its reason as incomplete work. This
-  works for Claude and Codex lanes alike.
+- Learn that the lane finished by waiting in the background right after the prompt, as the
+  command block shows. The parent does not relay approval prompts, and handles a done without
+  `LANE-READY` / `LANE-BLOCKED` and a timeout as [herdr-delegation](../../herdr-delegation/SKILL.md)
+  describes.
 - The lane runs the whole loop: asks Codex to implement when requested, verifies, commits, pushes,
   and opens the PR. The brief carries the complete Codex command. Code review follows
   [Review on GitHub](delivery.md#review-on-github); workflow-file pushes and `LANE-READY` follow

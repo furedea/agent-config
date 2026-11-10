@@ -36,8 +36,18 @@ def command_paths(command: str) -> list[str]:
         static = [argument for argument, dynamic in zip(item.arguments, item.dynamic, strict=True) if not dynamic]
         paths += with_variants(static)
         for word in with_variants(shell_patterns(item)):
-            paths += expanded_paths(word, directories) if GLOB.search(word) else [word]
+            paths += expanded_paths(word, directories) if GLOB.search(word) else [checked_home(word)]
     return paths
+
+
+def checked_home(word: str) -> str:
+    """Return the word as written, after refusing a leading `~user` whose home the system does not know.
+
+    The policy matches `~user/...` by the same rules as the own home, so the word needs no expansion.
+    """
+    if word.startswith("~"):
+        known_home(word)
+    return word
 
 
 def shell_patterns(item: shell_syntax.Command) -> list[str]:
@@ -66,16 +76,22 @@ def expanded_paths(pattern: str, directories: tuple[Path | None, ...]) -> list[s
     walk = GlobWalk()
     if pattern.startswith("~"):
         head, separator, tail = pattern.partition("/")
-        try:
-            home_head = Path(head).expanduser()
-        except RuntimeError as error:
-            raise UnexpandableGlob(f"cannot expand {pattern}, whose home directory is unknown") from error
-        return walk.expand(f"{home_head}{separator}{tail}", Path.home())
+        home_head = str(known_home(pattern))
+        matches = walk.expand(f"{home_head}{separator}{tail}", Path.home())
+        return [head + match.removeprefix(home_head) for match in matches]
     if Path(pattern).is_absolute():
         return walk.expand(pattern, Path("/"))
     if None in directories:
         raise UnexpandableGlob(f"cannot expand {pattern} in a directory known only at run time")
     return [path for directory in directories if directory for path in walk.expand(pattern, directory)]
+
+
+def known_home(word: str) -> Path:
+    """The home directory a leading `~` or `~user` names; a user the system does not know needs review."""
+    try:
+        return Path(word.partition("/")[0]).expanduser()
+    except RuntimeError as error:
+        raise UnexpandableGlob(f"cannot expand {word}, whose home directory is unknown") from error
 
 
 class GlobWalk:

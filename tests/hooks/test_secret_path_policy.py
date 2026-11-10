@@ -49,6 +49,15 @@ def test_1password_data_and_sockets_are_denied_for_reading(path: str) -> None:
     assert "read" in rule["access"]
 
 
+@pytest.mark.parametrize("path", ["~root/.aws/credentials", "~no-such-user/.ssh/id_rsa", "~root/.config/gh/hosts.yml"])
+def test_another_users_home_is_judged_by_the_rules_written_for_the_own_home(path: str) -> None:
+    assert policy.blocked_rule(path, RULES) is not None
+
+
+def test_a_harmless_file_in_another_users_home_is_not_denied() -> None:
+    assert policy.blocked_rule("~root/notes.txt", RULES) is None
+
+
 @pytest.mark.parametrize(
     "path",
     [

@@ -1,6 +1,7 @@
 """Match the shared secret-path policy against parsed literal path candidates."""
 
 import json
+import re
 from fnmatch import fnmatchcase
 from pathlib import Path
 
@@ -24,9 +25,18 @@ def load(path: Path) -> list[dict]:
         raise ValueError(f"secret path policy was not found or is invalid: {path}") from error
 
 
+OTHER_USER_HOME = re.compile(r"^~[^/]+(?=/)")
+
+
 def normalize(value: str) -> str:
+    """Name a path from the own home as `~/...`, and from another user's home as that user's `~/...`.
+
+    The rules guard names such as `~/.aws/**`, which hold the same secrets in any user's home.
+    """
     if value.startswith("$HOME/"):
         return "~/" + value[6:]
+    if OTHER_USER_HOME.match(value):
+        return OTHER_USER_HOME.sub("~", value)
     home = str(Path.home()) + "/"
     return "~/" + value[len(home) :] if value.startswith(home) else value
 

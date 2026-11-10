@@ -11,6 +11,8 @@ import pytest
 from tests.runtime import CliRunner, REPO_ROOT
 
 
+pytestmark = pytest.mark.usefixtures("harness")
+
 SCRIPT = "agents/pi/hooks/hook_adapter.py"
 sys.path.insert(0, str(REPO_ROOT / "agents/hooks/lib"))
 import session_store as store
@@ -147,14 +149,12 @@ def test_shell_git_guard(run_cli: CliRunner, project: Path, command: str, blocke
         ("patch", {"tool_name": "write", "tool_input": {"path": "~/.ssh/config"}}, "~/.ssh/config"),
     ],
 )
-@pytest.mark.usefixtures("harness")
 def test_secret_paths_block_with_pi_fields(run_cli: CliRunner, mode: str, payload: dict, blocked_path: str) -> None:
     result = run_cli(SCRIPT, "paths", mode, payload=payload)
     assert result.returncode == 2
     assert blocked_path in result.stderr
 
 
-@pytest.mark.usefixtures("harness")
 def test_input_event_blocks_secret_markers_via_text_field(run_cli: CliRunner, project: Path) -> None:
     payload = {
         "hook_event_name": "input",

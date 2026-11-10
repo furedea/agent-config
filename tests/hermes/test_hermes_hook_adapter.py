@@ -11,6 +11,8 @@ import pytest
 from tests.runtime import CliRunner, REPO_ROOT
 
 
+pytestmark = pytest.mark.usefixtures("harness")
+
 SCRIPT = "agents/hermes/hooks/hook_adapter.py"
 VERIFY = REPO_ROOT / "agents/hooks/verification_session.py"
 sys.path.insert(0, str(REPO_ROOT / "agents/hooks/lib"))
@@ -148,7 +150,6 @@ def test_shell_git_guard_reads_hermes_args(run_cli: CliRunner, project: Path, co
         ("patch", {"tool_name": "write_file", "args": {"file_path": "~/.ssh/config"}}, "~/.ssh/config"),
     ],
 )
-@pytest.mark.usefixtures("harness")
 def test_secret_paths_block_with_hermes_fields(
     run_cli: CliRunner, mode: str, payload: dict, blocked_path: str
 ) -> None:
@@ -157,7 +158,6 @@ def test_secret_paths_block_with_hermes_fields(
     assert blocked_path in result.stderr
 
 
-@pytest.mark.usefixtures("harness")
 def test_content_prompt_blocks_secret_markers(run_cli: CliRunner, project: Path) -> None:
     payload = {"prompt": "use fixture-sensitive-marker here", "cwd": str(project)}
     result = run_cli(SCRIPT, "content", "prompt", payload=payload, cwd=project)

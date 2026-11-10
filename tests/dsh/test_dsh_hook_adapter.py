@@ -11,6 +11,8 @@ import pytest
 from tests.runtime import CliRunner, REPO_ROOT, StubWriter
 
 
+pytestmark = pytest.mark.usefixtures("harness")
+
 SCRIPT = "agents/dsh/hooks/hook_adapter.py"
 PRE = "tools/pre-execute"
 POST = "tools/post-execute"
@@ -90,7 +92,6 @@ def test_shell_git_guard_reads_the_bash_tool(run_cli: CliRunner, project: Path, 
         assert "BLOCKED" in result.stderr
 
 
-@pytest.mark.usefixtures("harness")
 @pytest.mark.parametrize("relative", [False, True])
 def test_commit_guard_checks_the_repository_of_the_bash_workdir(
     run_cli: CliRunner, project: Path, relative: bool
@@ -107,7 +108,6 @@ def test_commit_guard_checks_the_repository_of_the_bash_workdir(
     assert ".env" in result.stderr
 
 
-@pytest.mark.usefixtures("harness")
 def test_dispatch_applies_a_relative_workdir_only_once(run_cli: CliRunner, project: Path, manifest: Path) -> None:
     (project / "packages").mkdir()
     adapter = REPO_ROOT / SCRIPT
@@ -121,7 +121,6 @@ def test_dispatch_applies_a_relative_workdir_only_once(run_cli: CliRunner, proje
     assert result.stderr == ""
 
 
-@pytest.mark.usefixtures("harness")
 def test_commit_guard_uses_the_payload_cwd_without_a_workdir(run_cli: CliRunner, project: Path) -> None:
     payload = {"tool_name": "bash", "tool_input": {"command": "git commit -m x"}, "cwd": str(project)}
     result = run_cli(SCRIPT, "shell", "commit", payload=payload, cwd=project)
@@ -149,7 +148,6 @@ def test_forbidden_command_is_blocked(run_cli: CliRunner, project: Path) -> None
         ),
     ],
 )
-@pytest.mark.usefixtures("harness")
 def test_secret_paths_block_with_dsh_fields(run_cli: CliRunner, mode: str, payload: dict, blocked_path: str) -> None:
     result = run_cli(SCRIPT, "paths", mode, payload=payload)
     assert result.returncode == 2
@@ -160,7 +158,6 @@ def patch_input(*lines: str) -> str:
     return "\n".join(["*** Begin Patch", *lines, "*** End Patch"]) + "\n"
 
 
-@pytest.mark.usefixtures("harness")
 def test_str_replace_editor_view_is_scanned_like_read(run_cli: CliRunner, project: Path) -> None:
     (project / "notes.txt").write_text("use fixture-sensitive-marker here\n")
     values = {"command": "view", "path": "notes.txt"}
@@ -170,7 +167,6 @@ def test_str_replace_editor_view_is_scanned_like_read(run_cli: CliRunner, projec
     assert json.loads(result.stdout)["decision"] == "block"
 
 
-@pytest.mark.usefixtures("harness")
 def test_str_replace_editor_view_is_not_held_to_the_harness_write_boundary(run_cli: CliRunner) -> None:
     values = {"command": "view", "path": "~/.dsh/hooks/hook_adapter.py"}
     result = run_cli(SCRIPT, "harness", payload={"tool_name": "str_replace_editor", "tool_input": values})
@@ -179,7 +175,6 @@ def test_str_replace_editor_view_is_not_held_to_the_harness_write_boundary(run_c
 
 
 @pytest.mark.parametrize("command", ["create", "str_replace", "insert"])
-@pytest.mark.usefixtures("harness")
 def test_str_replace_editor_mutations_stay_inside_the_harness_boundary(run_cli: CliRunner, command: str) -> None:
     values = {"command": command, "path": "~/.dsh/hooks/hook_adapter.py"}
     result = run_cli(SCRIPT, "harness", payload={"tool_name": "str_replace_editor", "tool_input": values})
@@ -243,7 +238,6 @@ def test_str_replace_editor_mutations_are_not_read_scanned(run_cli: CliRunner, p
 
 
 @pytest.mark.parametrize("field", ["input", "patch", "command"])
-@pytest.mark.usefixtures("harness")
 def test_apply_patch_secret_paths_are_blocked(run_cli: CliRunner, field: str) -> None:
     body = patch_input("*** Update File: ~/.ssh/config", "@@", "-a", "+b")
     payload = {"tool_name": "apply_patch", "tool_input": {field: body}}
@@ -252,7 +246,6 @@ def test_apply_patch_secret_paths_are_blocked(run_cli: CliRunner, field: str) ->
     assert ".ssh" in result.stderr
 
 
-@pytest.mark.usefixtures("harness")
 def test_apply_patch_harness_boundary_protects_the_adapter(run_cli: CliRunner) -> None:
     body = patch_input("*** Update File: ~/.dsh/hooks/hook_adapter.py", "@@", "-a", "+b")
     payload = {"tool_name": "apply_patch", "tool_input": {"input": body}}
@@ -261,7 +254,6 @@ def test_apply_patch_harness_boundary_protects_the_adapter(run_cli: CliRunner) -
     assert "agent harness boundary" in result.stderr
 
 
-@pytest.mark.usefixtures("harness")
 def test_apply_patch_added_text_is_scanned_for_secret_markers(run_cli: CliRunner, project: Path) -> None:
     body = patch_input("*** Add File: notes.txt", "+fixture-sensitive-marker")
     payload = {"tool_name": "apply_patch", "tool_input": {"input": body}, "cwd": str(project)}
@@ -291,7 +283,6 @@ def test_lint_covers_apply_patch_targets(run_cli: CliRunner, tmp_path: Path, exe
 
 
 @pytest.mark.parametrize("tool", ["write", "edit", "str_replace_editor"])
-@pytest.mark.usefixtures("harness")
 def test_harness_boundary_protects_the_adapter_for_every_edit_tool(run_cli: CliRunner, tool: str) -> None:
     payload = {"tool_name": tool, "tool_input": {"file_path": "~/.dsh/hooks/hook_adapter.py"}}
     result = run_cli(SCRIPT, "harness", payload=payload)
@@ -300,7 +291,6 @@ def test_harness_boundary_protects_the_adapter_for_every_edit_tool(run_cli: CliR
 
 
 @pytest.mark.parametrize("tool", ["read", "read_image"])
-@pytest.mark.usefixtures("harness")
 def test_content_read_guards_secret_markers_in_read_targets(run_cli: CliRunner, project: Path, tool: str) -> None:
     (project / "notes.txt").write_text("use fixture-sensitive-marker here\n")
     payload = {"tool_name": tool, "tool_input": {"file_path": "notes.txt"}, "cwd": str(project)}
@@ -321,7 +311,6 @@ def test_content_read_guards_secret_markers_in_read_targets(run_cli: CliRunner, 
         {"command": "insert", "path": "/x", "insert_line": 0, "new_str": "fixture-sensitive-marker", "old_str": None},
     ],
 )
-@pytest.mark.usefixtures("harness")
 def test_content_write_guards_secret_markers_in_every_dsh_edit_field(
     run_cli: CliRunner, project: Path, values: dict
 ) -> None:

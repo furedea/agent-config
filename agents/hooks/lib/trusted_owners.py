@@ -43,11 +43,14 @@ FIX_OWNER = (
 
 @dataclass(frozen=True, slots=True)
 class TrustedOwners:
+    """The validated trusted owner list: lowercase owners, whether forks are excluded, and declared non-forks."""
+
     owners: frozenset[str]
     exclude_forks: bool
     repositories: frozenset[str] = frozenset()
 
     def declares(self, owner: str, name: str) -> bool:
+        """Whether the repository is listed as not a fork, compared without regard to case."""
         return f"{owner}/{name}".lower() in self.repositories
 
 
@@ -126,7 +129,7 @@ def announce_once(ignored: Ignored) -> bool:
 
 def distrust_reason(root: Path, trusted: TrustedOwners) -> Distrust | None:
     """None when the origin's owner is listed and, if forks are excluded, the repository is not one."""
-    repository = origin_repository(root)
+    repository = _origin_repository(root)
     if repository is None:
         return Distrust("no GitHub origin to take an owner from", FIX_OWNER)
     owner, name = repository
@@ -144,7 +147,7 @@ def distrust_reason(root: Path, trusted: TrustedOwners) -> Distrust | None:
     return Distrust(f"{owner}/{name} is a fork", FIX_FORK) if fork else None
 
 
-def origin_repository(root: Path) -> tuple[str, str] | None:
+def _origin_repository(root: Path) -> tuple[str, str] | None:
     try:
         url = subprocess.check_output(
             ["git", "-C", str(root), "remote", "get-url", "origin"],
@@ -162,7 +165,7 @@ def is_fork(owner: str, name: str, trusted: TrustedOwners) -> bool | NoAnswer:
     if trusted.declares(owner, name):
         return False
     cache = state_directory() / "forks" / f"{owner.lower()}__{name.lower()}"
-    answer = cached_answer(cache)
+    answer = _cached_answer(cache)
     failures: list[str] = []
     for failure, ask in (
         ("gh is unavailable or gave no answer", github_answer),
@@ -174,12 +177,12 @@ def is_fork(owner: str, name: str, trusted: TrustedOwners) -> bool | NoAnswer:
         if answer is None:
             failures.append(failure)
     if answer is not None:
-        remember(cache, answer)
+        _remember(cache, answer)
         return answer == "true"
     return NoAnswer((*failures, f"{owner}/{name} is not in the repositories list of trusted_owners.json"))
 
 
-def cached_answer(cache: Path) -> str | None:
+def _cached_answer(cache: Path) -> str | None:
     try:
         answer = cache.read_text().strip()
     except OSError:
@@ -188,6 +191,7 @@ def cached_answer(cache: Path) -> str | None:
 
 
 def github_answer(owner: str, name: str) -> str | None:
+    """The fork flag as "true" or "false" from the signed-in gh, or None when gh is missing, fails, or times out."""
     try:
         result = subprocess.run(
             ["gh", "api", f"repos/{owner}/{name}", "--jq", ".fork"],
@@ -244,7 +248,7 @@ def read_within_limits(response: IO[bytes]) -> bytes:
     return bytes(body)
 
 
-def remember(cache: Path, answer: str) -> None:
+def _remember(cache: Path, answer: str) -> None:
     try:
         cache.parent.mkdir(parents=True, exist_ok=True)
         cache.write_text(answer)

@@ -175,7 +175,7 @@ def js_dependency_names(data: dict) -> set[str]:
     return names
 
 
-def js_config_tool(name: str) -> str:
+def _js_config_tool(name: str) -> str:
     if name.startswith("biome"):
         return "biome"
     if name.startswith(".oxfmtrc"):
@@ -195,7 +195,7 @@ def javascript_formatters(start: Path, root: Path | None) -> tuple[frozenset[str
         if data.get("prettier") is not None:
             formatters.add("prettier")
     for config in project_files(start, OTHER_FORMATTER_CONFIG_NAMES + OXFMT_CONFIG_NAMES):
-        formatters.add(js_config_tool(config.name))
+        formatters.add(_js_config_tool(config.name))
     return frozenset(formatters), None
 
 

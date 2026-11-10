@@ -24,17 +24,25 @@ class Snapshot:
 
     @property
     def digest(self) -> str:
+        """A SHA-256 over every entry, so two snapshots with equal digests saw the same files."""
         return hashlib.sha256(json.dumps(self.entries, ensure_ascii=True).encode()).hexdigest()
 
     def changed_paths(self, current: Snapshot) -> tuple[str, ...]:
+        """The sorted paths added, removed, or re-signed between this snapshot and `current`."""
         before, after = dict(self.entries), dict(current.entries)
         return tuple(sorted(path for path in before.keys() | after.keys() if before.get(path) != after.get(path)))
 
     def to_json(self) -> dict[str, str]:
+        """The path-to-signature mapping stored in a baseline; it holds no file content."""
         return dict(self.entries)
 
     @classmethod
     def from_json(cls, value: object) -> Snapshot:
+        """Rebuild a snapshot from stored baseline data.
+
+        Raises SnapshotError unless every key is a relative path inside the worktree and every
+        signature a nonempty string.
+        """
         if not isinstance(value, dict) or not all(
             isinstance(path, str)
             and path
@@ -91,7 +99,7 @@ def capture(root: Path, *, hash_content: bool = True) -> Snapshot:
     confined: dict[Path, bool] = {}
     for name in sorted(tracked):
         path = root / name
-        if not confined.setdefault(path.parent, is_confined(root, path.parent)):
+        if not confined.setdefault(path.parent, _is_confined(root, path.parent)):
             # A parent directory replaced by a link must not lead the snapshot outside the worktree.
             entries.append((name, f"escaped:{path.parent.resolve()}"))
             continue
@@ -101,7 +109,7 @@ def capture(root: Path, *, hash_content: bool = True) -> Snapshot:
     return Snapshot(tuple(entries))
 
 
-def is_confined(root: Path, directory: Path) -> bool:
+def _is_confined(root: Path, directory: Path) -> bool:
     try:
         return directory.resolve().is_relative_to(root)
     except OSError, RuntimeError:
@@ -161,7 +169,7 @@ def content_signature(path: Path, metadata: os.stat_result) -> str:
 
 
 def stat_signature(metadata: os.stat_result) -> str:
-    """ctime cannot be set by a user, so restoring size and mtime after an edit is still detected."""
+    """The ctime cannot be set by a user, so restoring size and mtime after an edit is still detected."""
     mode = stat.S_IMODE(metadata.st_mode)
     file_type = stat.S_IFMT(metadata.st_mode)
     return f"stat:{file_type:o}:{mode:o}:{metadata.st_size}:{metadata.st_mtime_ns}:{metadata.st_ctime_ns}"

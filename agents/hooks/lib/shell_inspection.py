@@ -7,7 +7,7 @@ import shell_syntax
 
 def text_outside_single_quotes(source: str) -> str:
     """The source without its single-quoted strings, which no shell expands; $'...' stays, as it decodes escapes."""
-    return text_without_nodes(source, lambda node: node.get("Type") == "SglQuoted" and not node.get("Dollar"))
+    return _text_without_nodes(source, lambda node: node.get("Type") == "SglQuoted" and not node.get("Dollar"))
 
 
 def text_outside_quotes(source: str) -> str:
@@ -15,33 +15,33 @@ def text_outside_quotes(source: str) -> str:
 
     $'...' and $"..." keep their leading dollar sign, which marks them for review.
     """
-    return text_without_nodes(source, is_plain_quoted)
+    return _text_without_nodes(source, _is_plain_quoted)
 
 
 def double_quoted_text(source: str) -> str:
-    """The text of each double-quoted string, where only `$`, a backtick, `\\`, and `!` stay special."""
+    r"""The text of each double-quoted string, where only `$`, a backtick, `\`, and `!` stay special."""
     data = source.encode()
     return "".join(
         data[begin:end].decode()
-        for begin, end in outermost_spans(source, lambda node: node.get("Type") == "DblQuoted")
+        for begin, end in _outermost_spans(source, lambda node: node.get("Type") == "DblQuoted")
     )
 
 
-def is_plain_quoted(node: dict) -> bool:
+def _is_plain_quoted(node: dict) -> bool:
     return node.get("Type") in {"SglQuoted", "DblQuoted"} and not node.get("Dollar")
 
 
-def text_without_nodes(source: str, selects: Callable[[dict], bool]) -> str:
+def _text_without_nodes(source: str, selects: Callable[[dict], bool]) -> str:
     data = source.encode()
     kept, start = [], 0
-    for begin, end in outermost_spans(source, selects):
+    for begin, end in _outermost_spans(source, selects):
         kept.append(data[start:begin])
         start = end
     kept.append(data[start:])
     return b"".join(kept).decode()
 
 
-def outermost_spans(source: str, selects: Callable[[dict], bool]) -> list[tuple[int, int]]:
+def _outermost_spans(source: str, selects: Callable[[dict], bool]) -> list[tuple[int, int]]:
     spans = sorted(
         (node["Pos"]["Offset"], node["End"]["Offset"])
         for node in shell_syntax.nodes(shell_syntax.syntax_tree(source))
@@ -61,10 +61,10 @@ def is_plain_pipeline(source: str) -> bool:
     statements = shell_syntax.syntax_tree(source).get("Stmts", [])
     if len(statements) != 1:
         return False
-    return plain_pipeline_statement(statements[0], source.encode())
+    return _plain_pipeline_statement(statements[0], source.encode())
 
 
-def plain_pipeline_statement(statement: dict, data: bytes) -> bool:
+def _plain_pipeline_statement(statement: dict, data: bytes) -> bool:
     flags = ("Background", "Coprocess", "Negated", "Disown", "Redirs")
     if any(statement.get(flag) for flag in flags):
         return False
@@ -76,4 +76,4 @@ def plain_pipeline_statement(statement: dict, data: bytes) -> bool:
     offset = command["OpPos"]["Offset"]
     if data[offset : offset + 1] != b"|" or data[offset + 1 : offset + 2] in {b"|", b"&"}:
         return False
-    return all(plain_pipeline_statement(command[side], data) for side in ("X", "Y"))
+    return all(_plain_pipeline_statement(command[side], data) for side in ("X", "Y"))

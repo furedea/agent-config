@@ -31,10 +31,12 @@ ALLOW = Verdict("allow")
 
 
 def ask(reason: str, detail: str = "") -> Verdict:
+    """A verdict that makes the user review the command; `reason` is shown to them."""
     return Verdict("ask", reason, detail)
 
 
 def deny(reason: str, detail: str = "") -> Verdict:
+    """A verdict that blocks the command; `reason` goes to the model, so it names an approved alternative."""
     return Verdict("deny", reason, detail)
 
 

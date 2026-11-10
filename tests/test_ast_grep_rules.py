@@ -11,7 +11,7 @@ import pytest
 from tests.runtime import REPO_ROOT
 
 
-LINT_ROOT = REPO_ROOT / "agents/lint"
+LINT_ROOT = REPO_ROOT / "agents/hooks/lint"
 SG_CONFIG = LINT_ROOT / "sgconfig.yml"
 RULE_FILES = sorted((LINT_ROOT / "rules").glob("*/*.yml"))
 CASE_DIRECTORY = LINT_ROOT / "rule-tests"

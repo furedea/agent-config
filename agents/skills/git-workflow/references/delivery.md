@@ -66,8 +66,12 @@ For what the PR body owns relative to the Issue and plan, follow
 After every push, wait for the PR's checks before handling review findings or reporting.
 
 1. Run `gh pr checks <n> --watch --fail-fast` in the background and wait for its completion
-   notification; do not poll. If it exits at once because no checks are registered yet for the new
-   commit, that is not a failure; start it again once checks appear.
+   notification; do not poll. Right after a push only some checks may be registered while the main
+   workflow run is still queued, so an early successful exit is not completion. The wait is complete
+   only when the repository's required aggregate check (`all-green` where it exists) appears in
+   `gh pr checks <n>` and is no longer pending; elsewhere, when the required checks are present and
+   finished. If `--watch` returns earlier, start it again, or follow the queued or in-progress run
+   with `gh run watch <run-id>`.
 2. On failure, identify the failing check with `gh pr checks <n>` and read its log with
    `gh run view <run-id> --log-failed`.
 3. Classify the cause:

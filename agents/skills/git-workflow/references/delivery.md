@@ -64,6 +64,8 @@ For what the PR body owns relative to the Issue and plan, follow
 ## Wait for CI
 
 After every push, wait for the PR's checks before handling review findings or reporting.
+A repository with no PR CI workflow or no required checks has nothing to wait for here; a missing
+run or an empty `--required` result in such a repository is not a failure.
 
 1. Print the pushed commit with `git rev-parse HEAD`, then find its CI run with
    `gh run list --commit <sha>`, writing the literal SHA (a shell variable triggers a confirmation

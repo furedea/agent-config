@@ -44,6 +44,19 @@ def test_personal_configs_behind_a_symlinked_home_are_not_project_declarations(
     assert [step.label for step in steps] == ["dprint format", "dprint lint"]
 
 
+@pytest.mark.parametrize("kind", ["json_toml", "md"])
+def test_leftover_personal_prettierrc_does_not_shadow_dprint(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, kind: str
+) -> None:
+    home = tmp_path / "home"
+    home.mkdir()
+    (home / ".prettierrc").write_text("{}")
+    monkeypatch.setenv("HOME", str(home))
+    steps = formatter_policy.plan(kind, home / "project" / "file.md")
+    assert all(step.policy_error is None for step in steps)
+    assert "dprint format" in [step.label for step in steps]
+
+
 def test_project_declarations_in_the_home_directory_still_apply(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

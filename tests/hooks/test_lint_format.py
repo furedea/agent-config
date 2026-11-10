@@ -249,6 +249,13 @@ def test_markdown_project_prettier_config_yields_the_policy_step(tmp_path: Path)
     assert "prettier" in steps[1].policy_error
 
 
+def test_markdown_ignores_biome_which_does_not_format_it(tmp_path: Path) -> None:
+    (tmp_path / "biome.json").write_text("{}")
+    steps = formatter_policy.plan("md", tmp_path / "file.md")
+    assert [step.label for step in steps] == ["autocorrect format", "dprint format", "dprint lint"]
+    assert all(step.policy_error is None for step in steps)
+
+
 def test_conflicting_project_formatters_are_not_guessed(tmp_path: Path) -> None:
     project = tmp_path / "project"
     project.mkdir()

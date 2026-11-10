@@ -9,21 +9,21 @@ from pathlib import Path
 PYTHON_FORMATTER_NAMES = frozenset({"black", "autopep8", "blue", "yapf"})
 HOOK_MANIFEST_NAMES = ("lefthook.yml", "lefthook.yaml", ".pre-commit-config.yaml")
 DPRINT_CONFIG_NAMES = ("dprint.json", "dprint.jsonc", ".dprint.json", ".dprint.jsonc")
-OTHER_FORMATTER_CONFIG_NAMES = (
+PRETTIER_CONFIG_NAMES = (
     ".prettierrc",
     ".prettierrc.json",
     ".prettierrc.yml",
     ".prettierrc.yaml",
     "prettier.config.js",
     "prettier.config.cjs",
-    "biome.json",
-    "biome.jsonc",
 )
+OTHER_FORMATTER_CONFIG_NAMES = (*PRETTIER_CONFIG_NAMES, "biome.json", "biome.jsonc")
 GOLANGCI_CONFIG_NAMES = (".golangci.yml", ".golangci.yaml", ".golangci.toml")
 OXFMT_CONFIG_NAMES = (".oxfmtrc", ".oxfmtrc.json", ".oxfmtrc.jsonc")
 JS_FORMATTER_PACKAGES = {"prettier": "prettier", "@biomejs/biome": "biome", "oxfmt": "oxfmt"}
 PERSONAL_DPRINT_CONFIG_NAME = "dprint.json"
-PERSONAL_CONFIG_NAMES = frozenset({PERSONAL_DPRINT_CONFIG_NAME})
+# A leftover personal ~/.prettierrc from the retired prettierd setup must not shadow dprint under $HOME.
+PERSONAL_CONFIG_NAMES = frozenset({PERSONAL_DPRINT_CONFIG_NAME, ".prettierrc"})
 BUNDLED_CONFIG_DIRECTORY = Path(__file__).resolve().parent.parent / "defaults"
 
 
@@ -328,11 +328,11 @@ def _plan(kind: str, path: Path) -> tuple[Step, ...]:
     )
 
 
-def dprint_plan(path: Path) -> tuple[Step, ...]:
-    """Format JSON, TOML, and Markdown with dprint unless the project declares another formatter."""
-    declarations = project_files(path.parent, DPRINT_CONFIG_NAMES + OTHER_FORMATTER_CONFIG_NAMES)
+def dprint_plan(path: Path, rivals: tuple[str, ...] = OTHER_FORMATTER_CONFIG_NAMES) -> tuple[Step, ...]:
+    """Format with dprint unless the project declares a formatter in `rivals` for the same files."""
+    declarations = project_files(path.parent, DPRINT_CONFIG_NAMES + rivals)
     dprint = tuple(item for item in declarations if item.name in DPRINT_CONFIG_NAMES)
-    alternatives = tuple(item for item in declarations if item.name in OTHER_FORMATTER_CONFIG_NAMES)
+    alternatives = tuple(item for item in declarations if item.name in rivals)
     if alternatives:
         names = ", ".join(item.name for item in alternatives)
         reason = (
@@ -372,8 +372,11 @@ def tex_plan(path: Path) -> tuple[Step, ...]:
 
 
 def markdown_plan(path: Path) -> tuple[Step, ...]:
-    """Fix spacing with autocorrect, then format with dprint under the JSON/TOML policy."""
-    return (Step("autocorrect format", ("autocorrect", "--fix", str(path)), mutates=True), *dprint_plan(path))
+    """Fix spacing with autocorrect, then format with dprint unless the project uses prettier."""
+    return (
+        Step("autocorrect format", ("autocorrect", "--fix", str(path)), mutates=True),
+        *dprint_plan(path, PRETTIER_CONFIG_NAMES),
+    )
 
 
 def workflow_plan(path: Path) -> tuple[Step, ...]:

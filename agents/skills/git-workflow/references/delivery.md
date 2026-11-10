@@ -72,7 +72,9 @@ After every push, wait for the PR's checks before handling review findings or re
    `gh run view <run-id> --log-failed`.
 3. Classify the cause:
     - Review check (`claude-review`, `codex-review`) that failed because it raised findings: handle
-      it under [Review on GitHub](#review-on-github), not here.
+      it under [Review on GitHub](#review-on-github), not here. `--fail-fast` exits at the first
+      failure, so first run `gh pr checks <n> --watch` (without it) until the remaining checks finish.
+    - `all-green`: an aggregate of the other checks; classify its failure by the underlying checks.
     - Code-caused (test, lint, format, type check, Nix build or check): fix it, run the same check
       locally, push, and return to step 1.
     - External (AI review usage limit, GitHub or runner outage, network): do not change the work.

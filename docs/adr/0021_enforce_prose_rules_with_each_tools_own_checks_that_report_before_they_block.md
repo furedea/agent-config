@@ -9,8 +9,8 @@ are not yet fitted (ADR-0020), we decided for making each tool's own configurati
 config, ast-grep rule YAML with its native tests, jev-lint rule files), deleting a prose rule in the same change that
 replaces it with a check (a model-judged rule keeps its prose until it is promoted), returning findings to the agent without blocking, promoting a rule to blocking only after
 its example tests show no false positive, running model-judged rules once at Stop as a single `jev-lint review` over the changed functions of trusted
-repositories, reusing `jev-lint`'s own verdict cache stored outside the repository, and pinning `jev-lint` with its dependencies through Nix behind the backend
-abstraction, and against a separate rule registry, blocking on edit, judging per edit, and running without a cache,
+repositories, reusing `jev-lint`'s own verdict cache stored outside the repository, and building and pinning `jev-lint` with its dependencies through Nix as `packages.<system>.jev-lint` in this
+repository (agent-config), and against a separate rule registry, blocking on edit, judging per edit, and running without a cache,
 to achieve one place per rule and no prose that can drift from its check, accepting that an unpromoted rule can be
 ignored by the agent, that an unpromoted model-judged rule exists both as prose and as a check until its promotion, that a Stop-time verdict arrives after the edits it judges, that there is no single inventory
 of rules across tools, that the hook depends on `jev-lint`'s cache and batching behaviour, and that only the owner's
@@ -50,7 +50,7 @@ own repositories get model judgement.
     test; until then the cache is only "not committed", and the findings stay advisory. The file is shared by every
     repository, worktree, and session, and `jev-lint`'s write atomicity is not verified, so the hook serializes runs
     with a lock file next to the cache and gives up with a one-line notice if it cannot take the lock within the run's
-    time limit. A backend or model change is
+    time limit. A `jev-lint` or model change is
     handled by `jev-lint`'s own cache keying.
 - **Where it runs.** The Stop-time run is an agent-config hook (Python) wired next to the existing Stop entry
     (`agents/hooks.json` to `verification_session`) and reusing `trusted_owners`. agent-harness holds no
@@ -60,11 +60,15 @@ own repositories get model judgement.
     owner's own repositories). For any other repository the hook skips model rules and says so in one line. An
     environment variable (`AGENT_MODEL_RULES=off`) switches model rules off entirely.
 - **Key handling.** The hook runs `op run --environment <id> -- jev-lint review --json -R <rules dir> -c <state
-    dir>/agent-harness/model-rules/verdicts.json`. The key comes from a 1Password Environment, is injected only into
-    the `jev-lint` child process, and is never read, printed, or logged by the hook. The environment id comes from
-    `AGENT_MODEL_RULES_OP_ENVIRONMENT`.
+    dir>/agent-harness/model-rules/verdicts.json`. The key comes from the "jev" 1Password Environment, is injected
+    only into the `jev-lint` child process, and is never read, printed, or logged by the hook. The environment id
+    comes from `AGENT_MODEL_RULES_OP_ENVIRONMENT`. `op` runs with a 1Password service account, so that no interactive
+    approval is needed at every Stop. The account's token is read-only and limited to the "jev" Environment and a
+    dedicated automation vault, and is stored in the macOS Keychain. The hook reads the token from the Keychain and
+    passes it as `OP_SERVICE_ACCOUNT_TOKEN` only to the `op` child process, never to the agent, and to `jev-lint`
+    only through what `op` injects.
 - **Failure behaviour.** The run times out at 60 seconds and never blocks Stop. When it is skipped (untrusted
-    repository, kill switch, missing environment id) or fails (timeout, non-zero exit, unparsable output), the hook
+    repository, kill switch, missing environment id, missing Keychain token) or fails (timeout, non-zero exit, unparsable output), the hook
     returns a one-line notice instead of staying silent.
 - **First rules.** Each is a `jev-lint` rule file (an ast-grep rule plus `ask:`): command/query naming of functions
     (M-05), error messages that name the operation and subject (M-21), and known-defect markers (`xfail`,
@@ -72,8 +76,8 @@ own repositories get model judgement.
     promoted, as stated in the prose decision above.
 - **Backend.** `jev-lint` is built and pinned with all its dependencies through Nix as `packages.<system>.jev-lint`
     in this repository's flake, and dotfiles installs it from agent-config. It is never fetched with `npx` at run
-    time, and the hook calls it only through one small module, so that ADR-0020's replacement stays possible. This
-    replaces only the run mode of ADR-0020 (`npx` over a Nix-provided Node, whose transitive dependencies were not
+    time, and the hook runs the `jev-lint` command directly, so replacing it later, as ADR-0020's conditions allow,
+    means changing this hook. This replaces only the run mode of ADR-0020 (`npx` over a Nix-provided Node, whose transitive dependencies were not
     pinned); ADR-0020's choice of `jev-lint` stands, and both ADRs are still Proposed. Model-judged rules are never
     skipped silently: a skip or failure is reported as in Failure behaviour.
 
@@ -88,10 +92,12 @@ own repositories get model judgement.
     before they matter.
 - **No cache.** Rejected: Stop fires more than once in a session, and each firing would
     re-judge units that did not change since the previous one.
-- **A harness-side cache keyed by rule, backend, model, and unit hash.** Rejected: `jev-lint` already caches verdicts
+- **A harness-side cache keyed by rule, `jev-lint` version, model, and unit hash.** Rejected: `jev-lint` already caches verdicts
     and batches subjects per file, so a second cache would duplicate it and could disagree with it.
 - **One `jev-lint run` call per rule and file.** Rejected: it forgoes `jev-lint`'s batching of up to 256 subjects per
     file and its subject selection, and multiplies process starts and model calls.
+- **Running `op` as the signed-in user.** Rejected: 1Password asks for approval at every Stop after a period of
+    inactivity, which interrupts the user for an advisory check; a read-only service account avoids the prompt.
 - **Keeping the cache inside the repository.** Rejected: `jev-lint` treats the cache as trusted input that can silence
     rules, so it must not live where a commit can alter it. Protecting it from agent writes is the guard rule of the Cache decision, which applies to the chosen location as well.
 

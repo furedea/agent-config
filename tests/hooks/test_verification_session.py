@@ -52,7 +52,6 @@ def test_missing_registration_denies_tools_mechanically(repository: Path) -> Non
     assert "SessionStart" in result.stdout
 
 
-@pytest.mark.usefixtures("monkeypatch")
 def test_registered_session_allows_tools_without_launch_environment(
     repository: Path,
 ) -> None:
@@ -107,7 +106,6 @@ def test_explicit_mutation_outside_registered_root_asks_for_review(
     assert json.loads(result.stdout)["hookSpecificOutput"]["permissionDecision"] == "ask"
 
 
-@pytest.mark.usefixtures("monkeypatch")
 def test_different_worktree_cannot_reuse_registration(
     repository: Path,
     tmp_path: Path,
@@ -206,7 +204,6 @@ def test_generated_hooks_register_and_verify_without_a_launcher(
     assert json.loads(result.stdout)["hookSpecificOutput"]["permissionDecision"] == "deny"
 
 
-@pytest.mark.usefixtures("monkeypatch")
 def test_clear_preserves_pending_changes_with_a_new_session_id(
     repository: Path,
 ) -> None:
@@ -220,7 +217,6 @@ def test_clear_preserves_pending_changes_with_a_new_session_id(
     assert cleared.results()["revalidate_all"] is True
 
 
-@pytest.mark.usefixtures("monkeypatch")
 def test_explicit_verify_uses_registered_context_without_reading_stdin(
     repository: Path,
 ) -> None:

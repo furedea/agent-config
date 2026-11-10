@@ -112,7 +112,6 @@ def test_real_guard_denials_reach_external_audit_log_without_command_body(
     assert "secret-value" not in paths[0].read_text()
 
 
-@pytest.mark.usefixtures("monkeypatch")
 def test_audit_write_failure_is_fail_open_and_does_not_change_hook_status(run_cli: CliRunner, tmp_path: Path) -> None:
     state = tmp_path / "state"
     state.write_text("not-a-directory")

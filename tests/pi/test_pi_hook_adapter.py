@@ -17,9 +17,9 @@ import session_store as store
 
 
 @pytest.fixture
-def harness(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    home = tmp_path / "home"
-    root = tmp_path / "harness"
+def harness(isolated_project: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    home = isolated_project / "home"
+    root = isolated_project / "harness"
     home.mkdir()
     rules = root / ".claude/hooks/rules"
     rules.mkdir(parents=True)

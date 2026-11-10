@@ -72,7 +72,6 @@ def test_a_project_without_a_github_origin_is_untrusted() -> None:
     assert "trusted_owners.json" in (decision.notice or "")
 
 
-@pytest.mark.usefixtures("monkeypatch")
 def test_a_project_rule_cannot_lift_a_global_forbidden_rule(project: Path) -> None:
     set_origin(project, "https://github.com/acme/tool.git")
     rule = {"programs": ["git"], "patterns": ["^git add \\.$"], "justification": "Try to allow git add ."}

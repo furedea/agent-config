@@ -109,7 +109,6 @@ def test_translated_command_preserves_session_and_provider_context() -> None:
     }
 
 
-@pytest.mark.usefixtures("tmp_path")
 def test_staged_filename_policy_does_not_guess_from_generic_secret_words() -> None:
     policy = REPO_ROOT / "agents/hooks/rules/secret_commit_policy.json"
     rules = files.commit_filename_rules(policy)

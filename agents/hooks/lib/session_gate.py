@@ -28,9 +28,13 @@ class VerificationRun:
     started: float
 
     def current_receipt(self, inputs: str, invocation: check_selection.Invocation) -> tuple[str, dict, bool | None]:
-        """Reuse a valid receipt or execute the check; the flag is None when nothing ran."""
+        """Reuse a valid receipt or execute the check; the flag is None when nothing ran.
+
+        A missing-tool receipt is never reused: the cause (a cold dev shell, an earlier check that spent the gate
+        budget, a tool installed since) is temporary and says nothing about the code, so each pass tries again.
+        """
         check_id, identity, previous, reusable = receipt_state(self.state, inputs, invocation)
-        if not self.force and reusable:
+        if not self.force and reusable and previous.get("status") != Status.MISSING_TOOL:
             return check_id, previous, None
         budget = min(_check_budget(), max(0.01, GATE_BUDGET_SECONDS - (time.monotonic() - self.started)))
         result = execute(invocation, self.record.root, budget)

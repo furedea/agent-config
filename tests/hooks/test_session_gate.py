@@ -244,6 +244,21 @@ def test_a_failure_next_to_a_missing_tool_still_blocks(
     assert gate.gate(record)["decision"] == "block"
 
 
+def test_missing_tool_receipt_is_retried_on_the_next_pass_not_reused(
+    record: session_store.SessionRecord, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    outcomes = iter(
+        [
+            check_execution.Result(check_execution.Status.MISSING_TOOL, "pytest: dev shell did not start"),
+            check_execution.Result(check_execution.Status.PASSED, "pytest: 1 passed"),
+        ]
+    )
+    monkeypatch.setattr(gate, "execute", lambda *_: next(outcomes))
+    (record.root / "source.py").write_text("task edit")
+    assert gate.gate(record)["systemMessage"].startswith("Verification unavailable")
+    assert gate.gate(record)["systemMessage"].startswith("Verification passed")
+
+
 @pytest.mark.parametrize(
     ("statuses", "expected"),
     [

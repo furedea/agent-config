@@ -84,7 +84,9 @@ see [ADR-0003](adr/0003_register_verification_in_native_hooks.md).
   `flake.nix` declares a dev shell, the check runs as `nix develop --command ...` under the same
   timeout and logs. A tool that neither `PATH` nor a dev shell provides is reported as
   `Verification unavailable`; it is not a failure and does not block Stop, but it is not a pass
-  and `verify` still exits non-zero.
+  and `verify` still exits non-zero. Such a result is retried on every pass instead of reused,
+  and a dev shell that does not start (a nix error, or the budget spent before it came up) is
+  reported the same way.
 
 ## Hook Decisions
 

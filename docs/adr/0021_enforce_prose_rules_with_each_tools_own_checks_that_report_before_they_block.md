@@ -77,8 +77,10 @@ own repositories get model judgement.
 - **Backend.** `jev-lint` is built and pinned with all its dependencies through Nix as `packages.<system>.jev-lint`
     in this repository's flake, and dotfiles installs it from agent-config. It is never fetched with `npx` at run
     time, and the hook runs the `jev-lint` command directly, so replacing it later, as ADR-0020's conditions allow,
-    means changing this hook. This replaces only the run mode of ADR-0020 (`npx` over a Nix-provided Node, whose transitive dependencies were not
-    pinned); ADR-0020's choice of `jev-lint` stands, and both ADRs are still Proposed. Model-judged rules are never
+    means changing this hook. This replaces two parts of ADR-0020: its run mode (`npx` over a Nix-provided Node,
+    whose transitive dependencies were not pinned) and its judgement backend abstraction, which is dropped because
+    nothing else implements it and the hook is the only caller. ADR-0020's choice of `jev-lint` stands, and both ADRs
+    are still Proposed. Model-judged rules are never
     skipped silently: a skip or failure is reported as in Failure behaviour.
 
 ## Alternatives considered

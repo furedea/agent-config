@@ -31,8 +31,11 @@ own repositories get model judgement.
     the promotion is a reviewed change to the tool's config. Model-judged rules are not promoted until their cutoff has
     been fitted on a larger corpus, as ADR-0020 requires.
 - **Judging time.** Static rules run on the files changed by each edit. Model-judged rules run once at Stop, as a
-    single `jev-lint review --json` over the session's uncommitted changes with all model rules (`-R <rules dir>`), not
-    per edit and not once per rule and file.
+    single `jev-lint review --json` with all model rules (`-R <rules dir>`) over the changes made in the session, not
+    per edit and not once per rule and file. The session's changes are the diff of the working tree against the commit
+    `HEAD` pointed to when the session started, which the hook records at session start; so functions committed during
+    the session are still judged. Edits that were already uncommitted when it started are in the same diff and are
+    judged too; that over-inclusion is accepted because the hook cannot tell them apart without a working-tree snapshot.
 - **Subjects and context.** `jev-lint` selects the subjects with each rule's ast-grep matcher and judges per function
     (the rule's `subject:`). Each subject is judged with the function plus the same file's imports and enclosing
     declarations (state arm `local`); no other file is sent. Only functions changed in the session are judged, at most

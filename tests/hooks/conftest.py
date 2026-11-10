@@ -95,6 +95,14 @@ def primary(tmp_path: Path) -> Path:
     return root
 
 
+@pytest.fixture(autouse=True)
+def state_home(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """Keep session records out of the developer's real state home."""
+    path = tmp_path / "state"
+    monkeypatch.setenv("XDG_STATE_HOME", str(path))
+    return path
+
+
 @pytest.fixture
 def workspace_listing(tmp_path: Path) -> Path:
     """The file the fake Herdr prints for `workspace list`; it starts with no workspaces."""
@@ -114,7 +122,6 @@ def merged(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, workspace_listing: Path, sandbox_tmp: Path
 ) -> dict[str, str]:
     """Fake gh and Herdr: merged PR heads come from this dict; Herdr records removals."""
-    monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path / "state"))
     home = tmp_path / "home"
     (home / ".claude").mkdir(parents=True)
     (home / ".claude/settings.json").write_text('{"sandbox":{"filesystem":{"allowWrite":[]}}}')

@@ -180,7 +180,6 @@ def test_main_stays_when_pulling_could_disturb_work_or_nothing_merged(
 
 @pytest.fixture
 def recorded_primary(primary: Path, workspace_listing: Path) -> None:
-    """Registers under the state home that `merged` sets, so tests request it as ("merged", "recorded_primary")."""
     record = session_store.register(primary, "codex", "parent-session")
     response = {
         "result": {
@@ -196,7 +195,7 @@ def recorded_primary(primary: Path, workspace_listing: Path) -> None:
     workspace_listing.write_text(json.dumps({"result": {"workspaces": [row]}}))
 
 
-@pytest.mark.usefixtures("merged", "recorded_primary")
+@pytest.mark.usefixtures("recorded_primary")
 @pytest.mark.parametrize("dry_run", [False, True])
 def test_an_idle_primary_stays_open_when_no_merged_worktrees_are_removed(
     primary: Path, tmp_path: Path, dry_run: bool
@@ -207,7 +206,7 @@ def test_an_idle_primary_stays_open_when_no_merged_worktrees_are_removed(
     assert not (tmp_path / "herdr_removed.txt").exists()
 
 
-@pytest.mark.usefixtures("merged", "recorded_primary")
+@pytest.mark.usefixtures("recorded_primary")
 def test_a_failed_primary_close_preserves_completed_removal_reports(
     primary: Path, merged: dict[str, str], tmp_path: Path
 ) -> None:
@@ -224,7 +223,7 @@ def test_a_failed_primary_close_preserves_completed_removal_reports(
     assert not any(line.startswith("close primary workspace") for line in result.stdout.splitlines())
 
 
-@pytest.mark.usefixtures("merged", "recorded_primary")
+@pytest.mark.usefixtures("recorded_primary")
 @pytest.mark.parametrize("dry_run", [False, True])
 def test_an_agent_created_primary_closes_after_its_last_lane_is_removed(
     primary: Path, merged: dict[str, str], tmp_path: Path, dry_run: bool
@@ -242,7 +241,7 @@ def test_an_agent_created_primary_closes_after_its_last_lane_is_removed(
         assert (tmp_path / "herdr_removed.txt").read_text().splitlines() == ["workspace close w3"]
 
 
-@pytest.mark.usefixtures("merged", "recorded_primary")
+@pytest.mark.usefixtures("recorded_primary")
 @pytest.mark.parametrize("remaining", ["unmerged", "dirty", "current", "detached"])
 def test_a_primary_stays_open_while_any_linked_checkout_remains(
     primary: Path, merged: dict[str, str], tmp_path: Path, remaining: str
@@ -260,7 +259,7 @@ def test_a_primary_stays_open_while_any_linked_checkout_remains(
         assert not (tmp_path / "herdr_removed.txt").exists()
 
 
-@pytest.mark.usefixtures("merged", "recorded_primary")
+@pytest.mark.usefixtures("recorded_primary")
 @pytest.mark.parametrize("location", ["workspace", "terminal", "pane"])
 def test_a_primary_with_an_agent_in_any_pane_stays_open(
     primary: Path, merged: dict[str, str], tmp_path: Path, location: str
@@ -280,7 +279,7 @@ def test_a_primary_with_an_agent_in_any_pane_stays_open(
     assert not (tmp_path / "herdr_removed.txt").exists()
 
 
-@pytest.mark.usefixtures("merged", "recorded_primary")
+@pytest.mark.usefixtures("recorded_primary")
 @pytest.mark.parametrize("mismatch", ["unrecorded", "label", "path", "terminal", "invalid record"])
 def test_user_owned_or_replaced_primary_workspaces_stay_open(
     primary: Path, merged: dict[str, str], tmp_path: Path, mismatch: str
@@ -304,7 +303,7 @@ def test_user_owned_or_replaced_primary_workspaces_stay_open(
     assert not (tmp_path / "herdr_removed.txt").exists()
 
 
-@pytest.mark.usefixtures("merged", "recorded_primary")
+@pytest.mark.usefixtures("recorded_primary")
 @pytest.mark.parametrize("listing", ["agents", "workspaces", "panes"])
 @pytest.mark.parametrize("content", ["unavailable", '{"result":{}}', '{"result":{"agents":null}}'])
 def test_a_primary_stays_open_when_live_state_cannot_be_verified(
@@ -317,7 +316,7 @@ def test_a_primary_stays_open_when_live_state_cannot_be_verified(
     assert not (tmp_path / "herdr_removed.txt").exists()
 
 
-@pytest.mark.usefixtures("merged", "recorded_primary")
+@pytest.mark.usefixtures("recorded_primary")
 @pytest.mark.parametrize("listing", ["panes", "agents"])
 @pytest.mark.parametrize("field", ["terminal_id", "pane_id"])
 @pytest.mark.parametrize("value", [["invalid"], {"invalid": "value"}])

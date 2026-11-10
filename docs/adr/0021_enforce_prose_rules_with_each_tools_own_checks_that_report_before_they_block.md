@@ -47,7 +47,10 @@ own repositories get model judgement.
     that can silence rules, and a file inside the repository could be committed. Keeping it under the state directory
     means it is not committed; it does not by itself stop the agent from writing there, because no current guard covers
     that path. The hook change must therefore add a guard rule that denies agent writes to the verdict cache, with a
-    test; until then the cache is only "not committed", and the findings stay advisory. A backend or model change is
+    test; until then the cache is only "not committed", and the findings stay advisory. The file is shared by every
+    repository, worktree, and session, and `jev-lint`'s write atomicity is not verified, so the hook serializes runs
+    with a lock file next to the cache and gives up with a one-line notice if it cannot take the lock within the run's
+    time limit. A backend or model change is
     handled by `jev-lint`'s own cache keying.
 - **Where it runs.** The Stop-time run is an agent-config hook (Python) wired next to the existing Stop entry
     (`agents/hooks.json` to `verification_session`) and reusing `trusted_owners`. agent-harness holds no
@@ -90,7 +93,7 @@ own repositories get model judgement.
 - **One `jev-lint run` call per rule and file.** Rejected: it forgoes `jev-lint`'s batching of up to 256 subjects per
     file and its subject selection, and multiplies process starts and model calls.
 - **Keeping the cache inside the repository.** Rejected: `jev-lint` treats the cache as trusted input that can silence
-    rules, so it must not live where the agent or a commit can alter it.
+    rules, so it must not live where a commit can alter it. Protecting it from agent writes is the guard rule of the Cache decision, which applies to the chosen location as well.
 
 Revisit when false-positive reports after promotion show that the example tests are not a sufficient criterion, when
 the lack of a cross-tool inventory hides rules that are still prose or duplicated, when Stop-time findings are mostly

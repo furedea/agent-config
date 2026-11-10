@@ -81,7 +81,7 @@ see [ADR-0003](adr/0003_register_verification_in_native_hooks.md).
 - Each check may run for 300 seconds. `RUN_RELATED_TESTS_TIMEOUT_SECONDS` overrides that budget
   when it is set explicitly.
 - A check's tool is looked up on the agent's `PATH` first. When it is absent and the project's
-  `flake.nix` declares a dev shell, the check runs as `nix develop --command ...` under the same
+  `flake.nix` declares a dev shell, the check runs as `nix develop --no-write-lock-file --command ...` (it never writes `flake.lock`) under the same
   timeout and logs. A tool that neither `PATH` nor a dev shell provides is reported as
   `Verification unavailable`; it is not a failure and does not block Stop, but it is not a pass
   and `verify` still exits non-zero. Such a result is retried on every pass instead of reused,

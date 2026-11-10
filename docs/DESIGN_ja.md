@@ -68,7 +68,7 @@ flowchart LR
 - 記録済みのセッションを再び検証するには，`~/.claude/hooks/verification_session.py verify <session-directory>` を実行する．レシートがまだ有効なチェックも再実行するには `--force` を付ける．`status <session-directory>` は記録を表示する．
 - 終了または非アクティブになった記録は 7 日で失効する．失敗ログは 1 件あたり 1 MiB，合計 100 MiB までに制限される．
 - 各チェックは 300 秒まで実行できる．`RUN_RELATED_TESTS_TIMEOUT_SECONDS` を明示的に設定すると，その上限を上書きする．
-- チェックのツールはまずエージェントの `PATH` から探す．見つからず，プロジェクトの `flake.nix` が dev shell を宣言していれば，同じタイムアウトとログのまま `nix develop --command ...` で実行する．`PATH` にも dev shell にも無いツールは `Verification unavailable` と報告する．これは失敗ではなく Stop をブロックしないが，成功でもないため，`verify` は 0 以外で終了する．この結果は再利用せず毎回再試行する．dev shell が起動しない場合（nix のエラー，または起動前に予算を使い切った場合）も同じ扱いにする．
+- チェックのツールはまずエージェントの `PATH` から探す．見つからず，プロジェクトの `flake.nix` が dev shell を宣言していれば，同じタイムアウトとログのまま `nix develop --no-write-lock-file --command ...` で実行する（`flake.lock` は書き込まない）．`PATH` にも dev shell にも無いツールは `Verification unavailable` と報告する．これは失敗ではなく Stop をブロックしないが，成功でもないため，`verify` は 0 以外で終了する．この結果は再利用せず毎回再試行する．dev shell が起動しない場合（nix のエラー，または起動前に予算を使い切った場合）も同じ扱いにする．
 
 ## フックの判断
 

@@ -21,9 +21,9 @@ NIX_STUB = """\
     with Path(os.environ["NIX_CALLS"]).open("a") as stream:
         stream.write(json.dumps(sys.argv[1:]) + "\\n")
     arguments = sys.argv[1:]
-    assert arguments[:2] == ["develop", "--command"], arguments
+    assert arguments[:3] == ["develop", "--no-write-lock-file", "--command"], arguments
     os.environ["PATH"] = os.pathsep.join([os.environ["DEV_SHELL_BIN"], "/usr/bin", "/bin"])
-    os.execvp(arguments[2], arguments[2:])
+    os.execvp(arguments[3], arguments[3:])
 """
 # A name no machine installs, so a real `go` on the CI runner cannot satisfy the PATH lookup.
 TOOL = "dev-shell-only-go"
@@ -61,7 +61,7 @@ def test_tool_missing_from_path_runs_through_the_flake_dev_shell(project: Path, 
     result = execution.execute(GO_TEST, project, 30)
     assert result.status == execution.Status.PASSED
     command = nix_calls(tmp_path)[0]
-    assert command[:2] == ["develop", "--command"]
+    assert command[:3] == ["develop", "--no-write-lock-file", "--command"]
     assert command[-3:] == [TOOL, "test", "./a"]
 
 

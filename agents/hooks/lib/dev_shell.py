@@ -81,7 +81,8 @@ def plan_launch(arguments: tuple[str, ...], root: Path, search_path: str | None)
         return MissingTool(f"{tool} not found on PATH and the project has no flake dev shell")
     if not shutil.which("nix", path=search_path):
         return MissingTool(f"{tool} not found on PATH; the project has a flake dev shell but nix is not on PATH")
-    entered = ("nix", "develop", "--command", "sh", "-c", _PROBE, "sh", *arguments)
+    # --no-write-lock-file keeps the verified worktree read-only: nix would otherwise create or refresh flake.lock.
+    entered = ("nix", "develop", "--no-write-lock-file", "--command", "sh", "-c", _PROBE, "sh", *arguments)
     return Launch(tool, entered, via_dev_shell=True)
 
 

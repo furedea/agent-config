@@ -1,6 +1,7 @@
 """Formatter configs resolve from the project, then the home directory, then the hook defaults."""
 
 import json
+import re
 import shutil
 from pathlib import Path
 
@@ -84,6 +85,16 @@ def test_bundled_dprint_config_formats_markdown_with_four_space_lists_and_kept_w
     assert config["markdown"] == {"listIndentKind": "pythonMarkdown", "textWrap": "maintain"}
     assert "md" in config["includes"][0]
     assert any("markdown" in plugin for plugin in config["plugins"])
+
+
+def test_every_bundled_dprint_plugin_is_pinned_to_its_content_hash() -> None:
+    plugins = json.loads((formatter_policy.BUNDLED_CONFIG_DIRECTORY / "dprint.json").read_text())["plugins"]
+    unpinned = [
+        plugin
+        for plugin in plugins
+        if not re.fullmatch(r"https://plugins\.dprint\.dev/\S+\.wasm@[0-9a-f]{64}", plugin)
+    ]
+    assert unpinned == []
 
 
 @pytest.mark.integration

@@ -93,6 +93,7 @@
         "channels.nixos.org",
         "files.pythonhosted.org",
         "index.crates.io",
+        "plugins.dprint.dev",
         "proxy.golang.org",
         "pypi.org",
         "registry.npmjs.org",

@@ -63,6 +63,9 @@
           source = self.packages.${system}.default;
         in
         {
+          # Building it in CI catches lockfile or npmDepsHash drift, and covers the Linux autoPatchelf path.
+          jev-lint = self.packages.${system}.jev-lint;
+
           # A derivation here would force consumers to build the source before reading it.
           source-tree =
             pkgs.runCommand "agent-source-tree"

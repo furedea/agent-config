@@ -10,6 +10,7 @@ from collections.abc import Iterator
 import pytest
 
 from tests.hooks.cleanup_worktrees_runtime import (
+    MergedHeads,
     branches,
     cleanup,
     cleanup_with_real_policy,
@@ -22,14 +23,12 @@ import cleanup_worktrees
 
 
 @pytest.fixture
-def temporary(tmp_path: Path, request: pytest.FixtureRequest, location: str) -> Iterator[Path]:
-    request.getfixturevalue("merged")  # Points TMPDIR at the disposable sandbox directory created below.
+def temporary(tmp_path: Path, merged: MergedHeads, location: str) -> Iterator[Path]:
     if location not in {"tmp", "private-tmp"}:
         yield tmp_path
         return
 
-    sandbox_tmp = tmp_path / "sandbox-tmp"
-    sandbox_tmp.mkdir()
+    merged.sandbox_tmp.mkdir()
     candidates = [Path("/tmp"), Path("/private/tmp"), Path("/tmp/claude"), Path("/private/tmp/claude")]
     candidates.append(Path(os.environ["TMPDIR"]))
     failures = []

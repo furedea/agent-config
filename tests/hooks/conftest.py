@@ -14,7 +14,7 @@ from tests.hooks.herdr_runtime import TERMINAL, set_agents
 
 sys.path.insert(0, str(REPO_ROOT / "agents/hooks"))
 sys.path.insert(0, str(REPO_ROOT / "agents/hooks/lib"))
-from tests.hooks.cleanup_worktrees_runtime import git
+from tests.hooks.cleanup_worktrees_runtime import MergedHeads, git
 
 import cleanup_worktrees
 import session_store
@@ -96,7 +96,7 @@ def primary(tmp_path: Path) -> Path:
 
 
 @pytest.fixture
-def merged(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> dict[str, str]:
+def merged(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> MergedHeads:
     """Fake gh and Herdr: merged PR heads come from this dict; Herdr records removals."""
     monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path / "state"))
     home = tmp_path / "home"
@@ -135,11 +135,6 @@ def merged(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> dict[str, str]:
         (directory / name).chmod(0o755)
     monkeypatch.setenv("PATH", f"{directory}{os.pathsep}{os.environ['PATH']}")
 
-    class Heads(dict):
-        def __setitem__(self, branch: str, oid: str) -> None:
-            super().__setitem__(branch, oid)
-            state.write_text(json.dumps([{"headRefName": b, "headRefOid": o} for b, o in self.items()]))
-
-    heads = Heads()
+    heads = MergedHeads(state, tmp_path / "herdr_workspaces.json", Path(os.environ["TMPDIR"]))
     state.write_text("[]")
     return heads

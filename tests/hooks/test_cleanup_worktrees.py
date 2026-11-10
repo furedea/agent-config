@@ -8,7 +8,7 @@ import sys
 
 import pytest
 
-from tests.hooks.cleanup_worktrees_runtime import SCRIPT, branches, cleanup, git, task_worktree
+from tests.hooks.cleanup_worktrees_runtime import SCRIPT, MergedHeads, branches, cleanup, git, task_worktree
 from tests.runtime import real_git
 
 import herdr_ownership
@@ -179,8 +179,7 @@ def test_main_stays_when_pulling_could_disturb_work_or_nothing_merged(
 
 
 @pytest.fixture
-def recorded_primary(primary: Path, request: pytest.FixtureRequest, tmp_path: Path) -> None:
-    request.getfixturevalue("merged")  # Must run first: it writes the empty workspace listing replaced below.
+def recorded_primary(primary: Path, merged: MergedHeads) -> None:
     record = session_store.register(primary, "codex", "parent-session")
     response = {
         "result": {
@@ -193,7 +192,7 @@ def recorded_primary(primary: Path, request: pytest.FixtureRequest, tmp_path: Pa
         record, f"herdr workspace create --cwd {primary} --label repo --no-focus", json.dumps(response)
     )
     row = {"workspace_id": "w3", "label": "repo", "worktree": {"checkout_path": str(primary)}}
-    (tmp_path / "herdr_workspaces.json").write_text(json.dumps({"result": {"workspaces": [row]}}))
+    merged.workspace_listing.write_text(json.dumps({"result": {"workspaces": [row]}}))
 
 
 @pytest.mark.usefixtures("recorded_primary")

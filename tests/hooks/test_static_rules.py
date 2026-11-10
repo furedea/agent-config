@@ -34,7 +34,7 @@ class Hook:
         self.capsys = capsys
 
     def formatter(self, rewrite: str | None = None) -> None:
-        def check(_kind: str, path: Path, _readonly: bool = False) -> tuple[str, ...]:
+        def check(_kind: str, path: Path) -> tuple[str, ...]:
             if rewrite is not None:
                 path.write_text(rewrite)
             return ()

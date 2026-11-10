@@ -23,7 +23,9 @@ own repositories get model judgement.
     tests (`sgconfig.yml`, rule tests) for structural rules; jev-lint's own rule files for model-judged rules. A rule
     that no tool can judge stays as prose.
 - **Prose is deleted, not kept.** The change that replaces a prose rule with a check deletes that rule from
-    `AGENTS.md` or the style skill in the same PR, so no second statement of the rule remains to drift. The
+    `AGENTS.md` or the style skill in the same PR, so no second statement of the rule remains to drift. The one
+    exception is a model-judged rule that has not been promoted: its check is advisory and unfitted, so its prose stays
+    until the promotion change, which then deletes it. The
     prose-to-check mapping (original text, location, tool, tests) is recorded in that PR's body only, not in the
     repository.
 - **Hook behaviour.** Findings are returned to the agent as feedback and never block. A rule becomes blocking only
@@ -42,8 +44,11 @@ own repositories get model judgement.
     20 per Stop at first, and the hook reports how many were skipped.
 - **Cache.** The hook does not keep a cache of its own. It passes `jev-lint` its verdict cache (`-c <path>`) stored
     outside the repository, under the agent state directory, because `jev-lint` documents the cache as trusted input
-    that can silence rules and a file inside the repository could be committed or edited by the agent. A backend
-    or model change is handled by `jev-lint`'s own cache keying.
+    that can silence rules, and a file inside the repository could be committed. Keeping it under the state directory
+    means it is not committed; it does not by itself stop the agent from writing there, because no current guard covers
+    that path. The hook change must therefore add a guard rule that denies agent writes to the verdict cache, with a
+    test; until then the cache is only "not committed", and the findings stay advisory. A backend or model change is
+    handled by `jev-lint`'s own cache keying.
 - **Where it runs.** The Stop-time run is an agent-config hook (Python) wired next to the existing Stop entry
     (`agents/hooks.json` to `verification_session`) and reusing `trusted_owners`. agent-harness holds no
     model-rule logic: it only distributes configuration, while `jev-lint` is a tool that this hook runs, like
@@ -60,8 +65,8 @@ own repositories get model judgement.
     returns a one-line notice instead of staying silent.
 - **First rules.** Each is a `jev-lint` rule file (an ast-grep rule plus `ask:`): command/query naming of functions
     (M-05), error messages that name the operation and subject (M-21), and known-defect markers (`xfail`,
-    `test.fails`) that carry a comment naming the removal condition (M-60). Their prose is deleted when the rule is
-    promoted, not before.
+    `test.fails`) that carry a comment naming the removal condition (M-60). Their prose is kept until the rule is
+    promoted, as stated in the prose decision above.
 - **Backend.** `jev-lint` is built and pinned with all its dependencies through Nix as `packages.<system>.jev-lint`
     in this repository's flake, and dotfiles installs it from agent-config. It is never fetched with `npx` at run
     time, and the hook calls it only through one small module, so that ADR-0020's replacement stays possible. This

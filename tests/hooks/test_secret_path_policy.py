@@ -49,6 +49,24 @@ def test_1password_data_and_sockets_are_denied_for_reading(path: str) -> None:
     assert "read" in rule["access"]
 
 
+@pytest.mark.parametrize(
+    "path",
+    [
+        "~/.local/state/agent-harness/model-rules/verdicts.json",
+        "/Users/someone/.local/state/agent-harness/model-rules/verdicts.json",
+        "$HOME/.local/state/agent-harness/model-rules/.lock",
+    ],
+)
+def test_the_model_rule_verdict_cache_is_denied_to_agents(path: str) -> None:
+    rule = policy.blocked_rule(path, RULES)
+    assert rule is not None
+    assert "write" in rule["access"]
+
+
+def test_the_other_agent_harness_state_is_not_denied() -> None:
+    assert policy.blocked_rule("~/.local/state/agent-harness/verification/results.json", RULES) is None
+
+
 @pytest.mark.parametrize("path", ["~root/.aws/credentials", "~no-such-user/.ssh/id_rsa", "~root/.config/gh/hosts.yml"])
 def test_another_users_home_is_judged_by_the_rules_written_for_the_own_home(path: str) -> None:
     assert policy.blocked_rule(path, RULES) is not None

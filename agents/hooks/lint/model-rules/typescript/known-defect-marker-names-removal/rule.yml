@@ -1,0 +1,27 @@
+# M-60 a known-defect marker (test.fails, it.fails) carries a comment naming the condition for removing it;
+# see python/known-defect-marker-names-removal.
+id: known-defect-marker-names-removal
+languages: [ TypeScript, Tsx ]
+kind: noul
+subject: node
+# The comment sits above the call statement, outside the call, so the arm that sends the file is used.
+state: located
+threshold: 0.5
+axis: file
+severity: warning
+rule:
+  all:
+    - kind: call_expression
+    - has:
+        field: function
+        kind: member_expression
+        regex: ^(test|it)\.fails$
+ask: >-
+  This test is marked as an expected failure without a comment that names the condition under which the marker is
+  removed.
+criteria:
+  "true": >-
+    No comment sits next to the marker, or the comment only says that the test is broken or to fix it later, without
+    naming a condition such as a fixed defect, a released dependency version, or a finished feature.
+  "false": >-
+    A comment next to the marker names the condition for removing it.

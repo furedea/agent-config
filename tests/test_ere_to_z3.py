@@ -10,7 +10,7 @@ from tests.ere_to_z3 import UnsupportedPattern, matches, witness
 from tests.runtime import REPO_ROOT, load_script_module
 
 
-command_policy = load_script_module("agents/hooks/guard_command.py", "guard_command").command_policy
+command_policy = load_script_module("agents/hooks/lib/command_policy.py", "command_policy")
 FORBIDDEN = json.loads((REPO_ROOT / "agents/hooks/rules/forbidden_commands.json").read_text())["rules"]
 REAL_PATTERNS = [pattern for rule in FORBIDDEN for pattern in rule["patterns"]]
 

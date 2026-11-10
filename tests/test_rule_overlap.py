@@ -7,7 +7,7 @@ from tests.rule_overlap import Overlap, find_overlaps
 from tests.runtime import load_script_module
 
 
-command_policy = load_script_module("agents/hooks/guard_command.py", "guard_command").command_policy
+command_policy = load_script_module("agents/hooks/lib/command_policy.py", "command_policy")
 
 GIT_ADD = {"patterns": [r"^git[[:space:]]+add[[:space:]]+\.([[:space:]]|$)"], "justification": "test"}
 NO_VERIFY = {"patterns": ["^git commit .*--no-verify"], "justification": "test"}

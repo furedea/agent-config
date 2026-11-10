@@ -12,8 +12,7 @@ from pytest_mock import MockerFixture
 from tests.runtime import REPO_ROOT, load_script_module
 
 
-guard = load_script_module("agents/hooks/guard_command.py", "guard_command")
-policy = guard.command_policy
+policy = load_script_module("agents/hooks/lib/command_policy.py", "command_policy")
 ALLOWED_RULES = REPO_ROOT / "agents/hooks/rules/allowed_commands.json"
 
 

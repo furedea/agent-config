@@ -61,8 +61,8 @@ cargo test
 ```
 
 - Forbid `unsafe` by default.
-- Do not enable broad lint sets such as `clippy::pedantic` at project start.
-- Add targeted lint configuration only when it catches mistakes the project actually cares about.
+- Enable `clippy::pedantic` as `warn`, with `priority = -1` so that per-lint entries in the same table override the group. Under the `-D warnings` gate above, a pedantic warning fails the build; fix it or allow that lint with a reason.
+- Allow an individual lint only with a reason: `#[expect(..., reason = "...")]` at the site, or a `Cargo.toml` allow with a comment. A crate-wide `Cargo.toml` allow needs the user's approval, the same as a per-site suppression.
 
 Recommended package-level guard:
 
@@ -71,6 +71,7 @@ Recommended package-level guard:
 unsafe_code = "forbid"
 
 [lints.clippy]
+pedantic = { level = "warn", priority = -1 }
 dbg_macro = "deny"
 todo = "deny"
 unimplemented = "deny"

@@ -53,14 +53,16 @@ def patch_payload(*paths: str) -> dict:
 
 
 @pytest.mark.parametrize("field", ["patch", "input", "command"])
-def test_patch_carrier_fields_resolve_the_same_targets(run_cli: CliRunner, harness: Path, field: str) -> None:
+@pytest.mark.usefixtures("harness")
+def test_patch_carrier_fields_resolve_the_same_targets(run_cli: CliRunner, field: str) -> None:
     body = "*** Begin Patch\n*** Update File: .env.local\n@@\n-old\n+new\n*** End Patch\n"
     result = run_cli(SCRIPT, "paths", "patch", payload={"tool_input": {field: body}})
     assert result.returncode == 2
     assert ".env.local" in result.stderr
 
 
-def test_conflicting_patch_fields_are_rejected(run_cli: CliRunner, harness: Path) -> None:
+@pytest.mark.usefixtures("harness")
+def test_conflicting_patch_fields_are_rejected(run_cli: CliRunner) -> None:
     payload = {
         "tool_input": {
             "patch": "*** Begin Patch\n*** Update File: a.py\n*** End Patch\n",
@@ -72,7 +74,8 @@ def test_conflicting_patch_fields_are_rejected(run_cli: CliRunner, harness: Path
     assert "conflict" in result.stderr.lower()
 
 
-def test_shell_commands_are_not_patch_paths(run_cli: CliRunner, harness: Path) -> None:
+@pytest.mark.usefixtures("harness")
+def test_shell_commands_are_not_patch_paths(run_cli: CliRunner) -> None:
     result = run_cli(SCRIPT, "paths", "patch", payload={"tool_input": {"command": "cat .env.local"}})
     assert result.returncode == 0
     assert result.stdout == result.stderr == ""
@@ -96,7 +99,8 @@ def test_usage(run_cli: CliRunner, arguments: tuple[str, ...]) -> None:
         (("src/main.py", "~/.codex/hooks/adapt_shell_command.sh"), True),
     ],
 )
-def test_harness_patch_paths(run_cli: CliRunner, harness: Path, paths: tuple[str, ...], blocked: bool) -> None:
+@pytest.mark.usefixtures("harness")
+def test_harness_patch_paths(run_cli: CliRunner, paths: tuple[str, ...], blocked: bool) -> None:
     result = run_cli(SCRIPT, "harness", payload=patch_payload(*paths))
     assert result.returncode == (2 if blocked else 0)
     if blocked:
@@ -144,7 +148,8 @@ def test_missing_policy_fails_closed(
         ("patch", {"tool_input": {"file_path": "~/.ssh/config"}}, "~/.ssh/config"),
     ],
 )
-def test_secret_paths(run_cli: CliRunner, harness: Path, mode: str, payload: dict, blocked_path: str) -> None:
+@pytest.mark.usefixtures("harness")
+def test_secret_paths(run_cli: CliRunner, mode: str, payload: dict, blocked_path: str) -> None:
     result = run_cli(SCRIPT, "paths", mode, payload=payload)
     assert result.returncode == (2 if blocked_path else 0)
     if blocked_path:
@@ -175,8 +180,9 @@ def test_secret_paths(run_cli: CliRunner, harness: Path, mode: str, payload: dic
         ("cat < .en*", ".env", ".env"),
     ],
 )
+@pytest.mark.usefixtures("harness")
 def test_globs_are_judged_by_the_files_they_expand_to(
-    run_cli: CliRunner, harness: Path, isolated_project: Path, command: str, secret: str, blocked_path: str
+    run_cli: CliRunner, isolated_project: Path, command: str, secret: str, blocked_path: str
 ) -> None:
     (isolated_project / "config").mkdir()
     for name in ("package.json", "config/app.json", "README.md", ".gitignore"):
@@ -193,7 +199,8 @@ def test_globs_are_judged_by_the_files_they_expand_to(
 
 
 @pytest.mark.parametrize("present", [True, False])
-def test_home_globs_expand_against_the_home_directory(run_cli: CliRunner, harness: Path, present: bool) -> None:
+@pytest.mark.usefixtures("harness")
+def test_home_globs_expand_against_the_home_directory(run_cli: CliRunner, present: bool) -> None:
     ssh = Path.home() / ".ssh"
     ssh.mkdir()
     (ssh / ("id_rsa" if present else "known_hosts")).write_text("fixture")
@@ -207,9 +214,8 @@ def fill(directory: Path, count: int) -> None:
         (directory / f"file{index}.txt").touch()
 
 
-def test_a_glob_walking_too_many_entries_needs_review(
-    run_cli: CliRunner, harness: Path, isolated_project: Path
-) -> None:
+@pytest.mark.usefixtures("harness")
+def test_a_glob_walking_too_many_entries_needs_review(run_cli: CliRunner, isolated_project: Path) -> None:
     fill(isolated_project / "data", 10001)
     result = run_cli(SCRIPT, "paths", "command", payload={"tool_input": {"command": "cat **/*.json"}})
     assert result.returncode == 2
@@ -217,8 +223,9 @@ def test_a_glob_walking_too_many_entries_needs_review(
 
 
 @pytest.mark.parametrize("directory", ["node_modules/package", "target", "venv"])
+@pytest.mark.usefixtures("harness")
 def test_a_recursive_glob_reads_dependency_directories(
-    run_cli: CliRunner, harness: Path, isolated_project: Path, directory: str
+    run_cli: CliRunner, isolated_project: Path, directory: str
 ) -> None:
     (isolated_project / directory).mkdir(parents=True)
     (isolated_project / directory / "private.key").write_text("fixture")
@@ -228,9 +235,8 @@ def test_a_recursive_glob_reads_dependency_directories(
 
 
 @pytest.mark.parametrize("variable", ["$HOME", "${HOME}"])
-def test_home_variable_globs_expand_against_the_home_directory(
-    run_cli: CliRunner, harness: Path, variable: str
-) -> None:
+@pytest.mark.usefixtures("harness")
+def test_home_variable_globs_expand_against_the_home_directory(run_cli: CliRunner, variable: str) -> None:
     ssh = Path.home() / ".ssh"
     ssh.mkdir()
     (ssh / "id_rsa").write_text("fixture")
@@ -239,7 +245,8 @@ def test_home_variable_globs_expand_against_the_home_directory(
     assert result.returncode == 2
 
 
-def test_brace_expansions_beyond_the_limit_need_review(run_cli: CliRunner, harness: Path) -> None:
+@pytest.mark.usefixtures("harness")
+def test_brace_expansions_beyond_the_limit_need_review(run_cli: CliRunner) -> None:
     command = "cat {" + ",".join(f"safe{index}" for index in range(256)) + ",.env}"
     result = run_cli(SCRIPT, "paths", "command", payload={"tool_input": {"command": command}})
     assert result.returncode == 2
@@ -247,19 +254,22 @@ def test_brace_expansions_beyond_the_limit_need_review(run_cli: CliRunner, harne
 
 
 @pytest.mark.parametrize("command", ['cd "$DIR" && cat *.json', "cd - && cat .*", "cat $DIR/*.json"])
-def test_globs_in_an_unknown_directory_need_review(run_cli: CliRunner, harness: Path, command: str) -> None:
+@pytest.mark.usefixtures("harness")
+def test_globs_in_an_unknown_directory_need_review(run_cli: CliRunner, command: str) -> None:
     result = run_cli(SCRIPT, "paths", "command", payload={"tool_input": {"command": command}})
     assert result.returncode == 2
     assert "review" in result.stderr.lower()
 
 
-def test_an_unknown_directory_does_not_matter_without_a_glob(run_cli: CliRunner, harness: Path) -> None:
+@pytest.mark.usefixtures("harness")
+def test_an_unknown_directory_does_not_matter_without_a_glob(run_cli: CliRunner) -> None:
     result = run_cli(SCRIPT, "paths", "command", payload={"tool_input": {"command": 'cd "$DIR" && cat README.md'}})
     assert result.returncode == 0
 
 
 @pytest.mark.parametrize("field", ["command", "cmd"])
-def test_heredoc_denial_omits_the_body(run_cli: CliRunner, harness: Path, field: str) -> None:
+@pytest.mark.usefixtures("harness")
+def test_heredoc_denial_omits_the_body(run_cli: CliRunner, field: str) -> None:
     command = "bash <<SH\n" + "echo body_must_not_be_repeated $X\n" * 100 + "SH\n"
     result = run_cli(SCRIPT, "paths", "command", payload={"tool_input": {field: command}})
     assert result.returncode == 2
@@ -270,7 +280,8 @@ def test_heredoc_denial_omits_the_body(run_cli: CliRunner, harness: Path, field:
     assert len(result.stderr) < 500
 
 
-def test_long_command_denial_has_a_bounded_preview(run_cli: CliRunner, harness: Path) -> None:
+@pytest.mark.usefixtures("harness")
+def test_long_command_denial_has_a_bounded_preview(run_cli: CliRunner) -> None:
     command = "echo " + "x" * 1000 + " $'uninspectable'"
     result = run_cli(SCRIPT, "paths", "command", payload={"tool_input": {"cmd": command}})
     assert result.returncode == 2
@@ -340,7 +351,8 @@ def test_lint_resolves_payload_cwd_and_suppresses_noise(
         ),
     ],
 )
-def test_content_translation(run_cli: CliRunner, harness: Path, mode: str, text: str, blocked: bool) -> None:
+@pytest.mark.usefixtures("harness")
+def test_content_translation(run_cli: CliRunner, mode: str, text: str, blocked: bool) -> None:
     payload = {"prompt": text} if mode == "prompt" else {"tool_input": {"command": text}}
     result = run_cli(SCRIPT, "content", mode, payload=payload)
     assert result.returncode == 0
@@ -356,7 +368,8 @@ def test_content_translation(run_cli: CliRunner, harness: Path, mode: str, text:
         assert result.stdout == ""
 
 
-def test_a_new_suppression_is_denied_in_codex_since_its_hooks_cannot_ask(run_cli: CliRunner, harness: Path) -> None:
+@pytest.mark.usefixtures("harness")
+def test_a_new_suppression_is_denied_in_codex_since_its_hooks_cannot_ask(run_cli: CliRunner) -> None:
     body = "*** Begin Patch\n*** Update File: src/app.py\n@@\n-x = 1\n+x = 1  # noqa: E501\n*** End Patch\n"
     result = run_cli(
         SCRIPT, "content", "suppression", payload={"tool_name": "apply_patch", "tool_input": {"input": body}}

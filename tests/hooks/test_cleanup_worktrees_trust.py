@@ -1,7 +1,6 @@
 """Lane metadata never authorizes commands in a sandbox-writable primary."""
 
 import json
-import os
 from pathlib import Path
 import shlex
 import tempfile
@@ -22,16 +21,14 @@ import cleanup_worktrees
 
 
 @pytest.fixture
-def temporary(tmp_path: Path, merged: dict[str, str], location: str) -> Iterator[Path]:
+def temporary(tmp_path: Path, sandbox_tmp: Path, location: str) -> Iterator[Path]:
     if location not in {"tmp", "private-tmp"}:
         yield tmp_path
         return
 
-    # The merged fixture points TMPDIR at this disposable sandbox directory.
-    sandbox_tmp = tmp_path / "sandbox-tmp"
     sandbox_tmp.mkdir()
     candidates = [Path("/tmp"), Path("/private/tmp"), Path("/tmp/claude"), Path("/private/tmp/claude")]
-    candidates.append(Path(os.environ["TMPDIR"]))
+    candidates.append(sandbox_tmp)
     failures = []
     for candidate in dict.fromkeys(candidates):
         try:
@@ -167,9 +164,8 @@ def test_unknown_writable_paths_skip_lane_primaries_but_clean_the_callers_reposi
 
 
 @pytest.mark.parametrize("entry", ["file", "symlink"])
-def test_a_primary_without_a_real_git_directory_is_never_used(
-    primary: Path, merged: dict[str, str], tmp_path: Path, entry: str
-) -> None:
+@pytest.mark.usefixtures("merged")
+def test_a_primary_without_a_real_git_directory_is_never_used(primary: Path, tmp_path: Path, entry: str) -> None:
     lane = herdr_lane(primary)
     admin = primary / ".git"
     relocated = primary / "relocated"
@@ -202,9 +198,8 @@ def test_primary_worktree_records_must_point_both_ways_before_any_lane_command(
     assert "feat/done" in branches(primary)
 
 
-def test_git_removal_is_isolated_and_herdr_only_closes_the_workspace(
-    primary: Path, merged: dict[str, str], tmp_path: Path
-) -> None:
+@pytest.mark.usefixtures("merged")
+def test_git_removal_is_isolated_and_herdr_only_closes_the_workspace(primary: Path, tmp_path: Path) -> None:
     lane = task_worktree(primary, "feat/done")
     worktree = next(tree for tree in cleanup_worktrees.linked_worktrees(primary) if tree.path == lane)
     # The process wrapper rejects any invocation missing the required isolation.

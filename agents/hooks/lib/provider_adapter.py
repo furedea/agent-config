@@ -45,7 +45,7 @@ def denial(result: dict) -> dict | None:
     return {"decision": "block", "reason": specific.get("permissionDecisionReason") or "Blocked by hook policy"}
 
 
-def system_message(event: str, result: dict) -> dict:
+def system_message(_event: str, result: dict) -> dict:
     """Format a shared result for providers that surface a top-level systemMessage."""
     message = result.get("systemMessage")
     return denial(result) or ({"systemMessage": message} if message else result)

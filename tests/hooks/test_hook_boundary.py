@@ -109,7 +109,7 @@ def test_translated_command_preserves_session_and_provider_context() -> None:
     }
 
 
-def test_staged_filename_policy_does_not_guess_from_generic_secret_words(tmp_path: Path) -> None:
+def test_staged_filename_policy_does_not_guess_from_generic_secret_words() -> None:
     policy = REPO_ROOT / "agents/hooks/rules/secret_commit_policy.json"
     rules = files.commit_filename_rules(policy)
     assert any(files.regex_matches(rule["pattern"], ".env.local", True) for rule in rules)

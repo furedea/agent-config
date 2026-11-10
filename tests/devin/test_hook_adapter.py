@@ -18,9 +18,9 @@ import session_store as store
 
 
 @pytest.fixture
-def harness(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    home = tmp_path / "home"
-    root = tmp_path / "harness"
+def harness(isolated_project: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    home = isolated_project / "home"
+    root = isolated_project / "harness"
     home.mkdir()
     rules = root / ".claude/hooks/rules"
     rules.mkdir(parents=True)
@@ -58,7 +58,7 @@ def harness(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 
 
 @pytest.fixture
-def project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, isolated_project: Path) -> Path:
+def project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     root = tmp_path / "repo"
     root.mkdir()
     subprocess.run(["git", "init", "--quiet", "-b", "main", str(root)], check=True)
@@ -140,21 +140,24 @@ def test_shell_git_guard(run_cli: CliRunner, project: Path, command: str, blocke
         ("patch", {"tool_name": "write", "tool_input": {"file_path": "~/.ssh/config"}}, "~/.ssh/config"),
     ],
 )
-def test_secret_paths(run_cli: CliRunner, harness: Path, mode: str, payload: dict, blocked_path: str) -> None:
+@pytest.mark.usefixtures("harness")
+def test_secret_paths(run_cli: CliRunner, mode: str, payload: dict, blocked_path: str) -> None:
     result = run_cli(SCRIPT, "paths", mode, payload=payload)
     assert result.returncode == (2 if blocked_path else 0)
     if blocked_path:
         assert "BLOCKED" in result.stderr and blocked_path in result.stderr
 
 
-def test_prompt_content_block_uses_devin_decision(run_cli: CliRunner, harness: Path, project: Path) -> None:
+@pytest.mark.usefixtures("harness")
+def test_prompt_content_block_uses_devin_decision(run_cli: CliRunner, project: Path) -> None:
     payload = {"hook_event_name": "UserPromptSubmit", "prompt": "fixture-sensitive-marker"}
     result = run_cli(SCRIPT, "content", "prompt", payload=payload, cwd=project)
     assert result.returncode == 0
     assert json.loads(result.stdout)["decision"] == "block"
 
 
-def test_write_content_block_uses_devin_decision(run_cli: CliRunner, harness: Path, project: Path) -> None:
+@pytest.mark.usefixtures("harness")
+def test_write_content_block_uses_devin_decision(run_cli: CliRunner, project: Path) -> None:
     payload = {
         "hook_event_name": "PreToolUse",
         "session_id": "devin-session",
@@ -215,7 +218,8 @@ def patch_payload(field: str, *paths: str) -> dict:
 
 
 @pytest.mark.parametrize("field", ["patch", "input", "command"])
-def test_patch_carrier_fields_resolve_the_same_targets(run_cli: CliRunner, harness: Path, field: str) -> None:
+@pytest.mark.usefixtures("harness")
+def test_patch_carrier_fields_resolve_the_same_targets(run_cli: CliRunner, field: str) -> None:
     result = run_cli(SCRIPT, "paths", "patch", payload=patch_payload(field, ".env.local"))
     assert result.returncode == 2
     assert ".env.local" in result.stderr
@@ -228,14 +232,16 @@ def test_patch_carrier_fields_resolve_the_same_targets(run_cli: CliRunner, harne
         "*** Begin Patch\n*** Update File: a.py\n*** Move to: ~/.ssh/config\n*** End Patch\n",
     ],
 )
-def test_patch_delete_and_move_targets_are_guarded(run_cli: CliRunner, harness: Path, body: str) -> None:
+@pytest.mark.usefixtures("harness")
+def test_patch_delete_and_move_targets_are_guarded(run_cli: CliRunner, body: str) -> None:
     payload = {"tool_name": "apply_patch", "tool_input": {"patch": body}}
     result = run_cli(SCRIPT, "paths", "patch", payload=payload)
     assert result.returncode == 2
     assert ".ssh" in result.stderr
 
 
-def test_conflicting_patch_fields_are_rejected(run_cli: CliRunner, harness: Path) -> None:
+@pytest.mark.usefixtures("harness")
+def test_conflicting_patch_fields_are_rejected(run_cli: CliRunner) -> None:
     payload = {
         "tool_name": "apply_patch",
         "tool_input": {
@@ -274,7 +280,8 @@ def test_lint_routes_apply_patch_targets_to_shared_diagnostics(
     assert str(project / "x.py") in context
 
 
-def test_malformed_tool_input_is_rejected(run_cli: CliRunner, harness: Path) -> None:
+@pytest.mark.usefixtures("harness")
+def test_malformed_tool_input_is_rejected(run_cli: CliRunner) -> None:
     result = run_cli(SCRIPT, "lint", payload={"tool_name": "write", "tool_input": "oops"})
     assert result.returncode == 2
     assert "BLOCKED" in result.stderr

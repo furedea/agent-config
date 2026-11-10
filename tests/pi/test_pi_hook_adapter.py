@@ -11,15 +11,17 @@ import pytest
 from tests.runtime import CliRunner, REPO_ROOT
 
 
+pytestmark = pytest.mark.usefixtures("harness")
+
 SCRIPT = "agents/pi/hooks/hook_adapter.py"
 sys.path.insert(0, str(REPO_ROOT / "agents/hooks/lib"))
 import session_store as store
 
 
 @pytest.fixture
-def harness(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    home = tmp_path / "home"
-    root = tmp_path / "harness"
+def harness(isolated_project: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    home = isolated_project / "home"
+    root = isolated_project / "harness"
     home.mkdir()
     rules = root / ".claude/hooks/rules"
     rules.mkdir(parents=True)
@@ -57,8 +59,8 @@ def harness(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 
 
 @pytest.fixture
-def project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, isolated_project: Path, harness: Path) -> Path:
-    root = tmp_path / "repo"
+def project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, isolated_project: Path) -> Path:
+    root = isolated_project / "repo"
     root.mkdir()
     subprocess.run(["git", "init", "--quiet", "-b", "main", str(root)], check=True)
     monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path / "state"))
@@ -147,15 +149,13 @@ def test_shell_git_guard(run_cli: CliRunner, project: Path, command: str, blocke
         ("patch", {"tool_name": "write", "tool_input": {"path": "~/.ssh/config"}}, "~/.ssh/config"),
     ],
 )
-def test_secret_paths_block_with_pi_fields(
-    run_cli: CliRunner, harness: Path, mode: str, payload: dict, blocked_path: str
-) -> None:
+def test_secret_paths_block_with_pi_fields(run_cli: CliRunner, mode: str, payload: dict, blocked_path: str) -> None:
     result = run_cli(SCRIPT, "paths", mode, payload=payload)
     assert result.returncode == 2
     assert blocked_path in result.stderr
 
 
-def test_input_event_blocks_secret_markers_via_text_field(run_cli: CliRunner, project: Path, harness: Path) -> None:
+def test_input_event_blocks_secret_markers_via_text_field(run_cli: CliRunner, project: Path) -> None:
     payload = {
         "hook_event_name": "input",
         "text": "use fixture-sensitive-marker here",

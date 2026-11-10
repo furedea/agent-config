@@ -188,12 +188,13 @@ def test_a_shadow_earlier_on_path_cannot_change_what_the_absolute_path_runs(
     assert verdict("@fleetctl ping") == "allow"
 
 
-def test_a_program_without_a_pinned_rule_is_left_to_the_other_rules(tmp_path: Path) -> None:
+def test_a_program_without_a_pinned_rule_is_left_to_the_other_rules() -> None:
     assert verdict("fleetctl-other ping") == "allow"
     assert verdict("git status") == "allow"
 
 
-def test_the_pin_does_not_run_for_the_forbidden_guard(program: Path) -> None:
+@pytest.mark.usefixtures("program")
+def test_the_pin_does_not_run_for_the_forbidden_guard() -> None:
     assert verdict("@fleetctl ping", "forbidden") == "allow"
     assert verdict("@fleetctl ping && git add .", "forbidden") == "deny"
 
@@ -216,23 +217,23 @@ def test_removing_the_pin_changes_the_verdict(program: Path, tmp_path: Path, mon
 
 
 @pytest.mark.parametrize(
-    ("change", "reason"),
+    "change",
     [
-        ({"program_path": "fleetctl"}, "relative"),
-        ({"program_path": "./fleetctl"}, "dot"),
-        ({"program_path": "/usr/local/../bin/fleetctl"}, "parent"),
-        ({"program_path": "/usr//local/bin/fleetctl"}, "double slash"),
-        ({"program_path": "/usr/local/bin/fleetctl/"}, "trailing slash"),
-        ({"program_path": "/usr/local/bin/*"}, "glob"),
-        ({"program_path": "~/bin/fleetctl"}, "tilde"),
-        ({"program_path": "/usr/local/bin/flee tctl", "programs": ["flee tctl"]}, "space"),
-        ({"program_path": "/"}, "root"),
-        ({"program_path": 5}, "type"),
-        ({"program_path": "/usr/local/bin/other"}, "program name mismatch"),
-        ({"programs": ["fleetctl", "other"]}, "two programs"),
+        pytest.param({"program_path": "fleetctl"}, id="relative"),
+        pytest.param({"program_path": "./fleetctl"}, id="dot"),
+        pytest.param({"program_path": "/usr/local/../bin/fleetctl"}, id="parent"),
+        pytest.param({"program_path": "/usr//local/bin/fleetctl"}, id="double slash"),
+        pytest.param({"program_path": "/usr/local/bin/fleetctl/"}, id="trailing slash"),
+        pytest.param({"program_path": "/usr/local/bin/*"}, id="glob"),
+        pytest.param({"program_path": "~/bin/fleetctl"}, id="tilde"),
+        pytest.param({"program_path": "/usr/local/bin/flee tctl", "programs": ["flee tctl"]}, id="space"),
+        pytest.param({"program_path": "/"}, id="root"),
+        pytest.param({"program_path": 5}, id="type"),
+        pytest.param({"program_path": "/usr/local/bin/other"}, id="program name mismatch"),
+        pytest.param({"programs": ["fleetctl", "other"]}, id="two programs"),
     ],
 )
-def test_an_invalid_program_path_is_rejected(tmp_path: Path, change: dict, reason: str) -> None:
+def test_an_invalid_program_path_is_rejected(tmp_path: Path, change: dict) -> None:
     rule = {**pinned_rule("/usr/local/bin/fleetctl"), **change}
     path = write_rules(tmp_path / "rules.json", [rule])
     with pytest.raises(ValueError, match="invalid command policy"):

@@ -282,12 +282,14 @@ def test_an_output_in_the_session_temporary_directory_runs(git_project: Path, se
     assert decision(session_temporary, "agent-desktop screenshot --app Finder page.png") == "allow"
 
 
-def test_an_output_without_a_known_working_directory_asks(git_project: Path) -> None:
+@pytest.mark.usefixtures("git_project")
+def test_an_output_without_a_known_working_directory_asks() -> None:
     payload = {"session_id": "session-a", "tool_name": "Bash", "tool_input": {"command": "agent-browser snapshot"}}
     assert guard.decide("allowed", payload).decision == "ask"
 
 
-def test_a_working_directory_outside_any_worktree_asks(git_project: Path, outside: Path) -> None:
+@pytest.mark.usefixtures("git_project")
+def test_a_working_directory_outside_any_worktree_asks(outside: Path) -> None:
     assert decision(outside, "agent-desktop screenshot --app Finder page.png") == "ask"
 
 

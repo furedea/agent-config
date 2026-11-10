@@ -11,15 +11,17 @@ import pytest
 from tests.runtime import CliRunner, REPO_ROOT, StubWriter
 
 
+pytestmark = pytest.mark.usefixtures("harness")
+
 SCRIPT = "agents/dsh/hooks/hook_adapter.py"
 PRE = "tools/pre-execute"
 POST = "tools/post-execute"
 
 
 @pytest.fixture
-def harness(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    home = tmp_path / "home"
-    root = tmp_path / "harness"
+def harness(isolated_project: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    home = isolated_project / "home"
+    root = isolated_project / "harness"
     home.mkdir()
     rules = root / ".claude/hooks/rules"
     rules.mkdir(parents=True)
@@ -47,8 +49,8 @@ def harness(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 
 
 @pytest.fixture
-def project(tmp_path: Path, isolated_project: Path, harness: Path) -> Path:
-    root = tmp_path / "repo"
+def project(isolated_project: Path) -> Path:
+    root = isolated_project / "repo"
     root.mkdir()
     subprocess.run(["git", "init", "--quiet", "-b", "main", str(root)], check=True)
     return root
@@ -146,9 +148,7 @@ def test_forbidden_command_is_blocked(run_cli: CliRunner, project: Path) -> None
         ),
     ],
 )
-def test_secret_paths_block_with_dsh_fields(
-    run_cli: CliRunner, harness: Path, mode: str, payload: dict, blocked_path: str
-) -> None:
+def test_secret_paths_block_with_dsh_fields(run_cli: CliRunner, mode: str, payload: dict, blocked_path: str) -> None:
     result = run_cli(SCRIPT, "paths", mode, payload=payload)
     assert result.returncode == 2
     assert blocked_path in result.stderr
@@ -167,7 +167,7 @@ def test_str_replace_editor_view_is_scanned_like_read(run_cli: CliRunner, projec
     assert json.loads(result.stdout)["decision"] == "block"
 
 
-def test_str_replace_editor_view_is_not_held_to_the_harness_write_boundary(run_cli: CliRunner, harness: Path) -> None:
+def test_str_replace_editor_view_is_not_held_to_the_harness_write_boundary(run_cli: CliRunner) -> None:
     values = {"command": "view", "path": "~/.dsh/hooks/hook_adapter.py"}
     result = run_cli(SCRIPT, "harness", payload={"tool_name": "str_replace_editor", "tool_input": values})
     assert result.returncode == 0
@@ -175,9 +175,7 @@ def test_str_replace_editor_view_is_not_held_to_the_harness_write_boundary(run_c
 
 
 @pytest.mark.parametrize("command", ["create", "str_replace", "insert"])
-def test_str_replace_editor_mutations_stay_inside_the_harness_boundary(
-    run_cli: CliRunner, harness: Path, command: str
-) -> None:
+def test_str_replace_editor_mutations_stay_inside_the_harness_boundary(run_cli: CliRunner, command: str) -> None:
     values = {"command": command, "path": "~/.dsh/hooks/hook_adapter.py"}
     result = run_cli(SCRIPT, "harness", payload={"tool_name": "str_replace_editor", "tool_input": values})
     assert result.returncode == 2
@@ -240,7 +238,7 @@ def test_str_replace_editor_mutations_are_not_read_scanned(run_cli: CliRunner, p
 
 
 @pytest.mark.parametrize("field", ["input", "patch", "command"])
-def test_apply_patch_secret_paths_are_blocked(run_cli: CliRunner, harness: Path, field: str) -> None:
+def test_apply_patch_secret_paths_are_blocked(run_cli: CliRunner, field: str) -> None:
     body = patch_input("*** Update File: ~/.ssh/config", "@@", "-a", "+b")
     payload = {"tool_name": "apply_patch", "tool_input": {field: body}}
     result = run_cli(SCRIPT, "paths", "patch", payload=payload)
@@ -248,7 +246,7 @@ def test_apply_patch_secret_paths_are_blocked(run_cli: CliRunner, harness: Path,
     assert ".ssh" in result.stderr
 
 
-def test_apply_patch_harness_boundary_protects_the_adapter(run_cli: CliRunner, harness: Path) -> None:
+def test_apply_patch_harness_boundary_protects_the_adapter(run_cli: CliRunner) -> None:
     body = patch_input("*** Update File: ~/.dsh/hooks/hook_adapter.py", "@@", "-a", "+b")
     payload = {"tool_name": "apply_patch", "tool_input": {"input": body}}
     result = run_cli(SCRIPT, "harness", payload=payload)
@@ -285,9 +283,7 @@ def test_lint_covers_apply_patch_targets(run_cli: CliRunner, tmp_path: Path, exe
 
 
 @pytest.mark.parametrize("tool", ["write", "edit", "str_replace_editor"])
-def test_harness_boundary_protects_the_adapter_for_every_edit_tool(
-    run_cli: CliRunner, harness: Path, tool: str
-) -> None:
+def test_harness_boundary_protects_the_adapter_for_every_edit_tool(run_cli: CliRunner, tool: str) -> None:
     payload = {"tool_name": tool, "tool_input": {"file_path": "~/.dsh/hooks/hook_adapter.py"}}
     result = run_cli(SCRIPT, "harness", payload=payload)
     assert result.returncode == 2

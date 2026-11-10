@@ -154,7 +154,8 @@ def test_a_fork_of_a_listed_owner_loses_its_project_rules(run_cli: CliRunner, or
     assert '"permissionDecision":"ask"' in decide(run_cli).stdout
 
 
-def test_a_missing_origin_loses_the_project_rules(run_cli: CliRunner, project: Path, gh: AnswerGh) -> None:
+@pytest.mark.usefixtures("project")
+def test_a_missing_origin_loses_the_project_rules(run_cli: CliRunner, gh: AnswerGh) -> None:
     calls = gh("false")
     assert '"permissionDecision":"ask"' in decide(run_cli).stdout
     assert not calls.exists()
@@ -199,8 +200,9 @@ def test_the_ignored_rules_are_announced_once_with_the_way_to_fix_it(
     assert "trusted_owners.json" not in second
 
 
+@pytest.mark.usefixtures("project")
 def test_a_prompt_that_a_provider_turns_into_a_denial_still_carries_the_announcement(
-    project: Path, origin: SetOrigin, gh: AnswerGh
+    origin: SetOrigin, gh: AnswerGh
 ) -> None:
     origin("https://github.com/someone/agent-config.git")
     gh("false")

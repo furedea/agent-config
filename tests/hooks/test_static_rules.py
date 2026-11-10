@@ -1,4 +1,4 @@
-"""Static registry rules report findings after formatting and never block, whatever the scanner does."""
+"""ast-grep rules from the project's own sgconfig.yml report findings after formatting and never block."""
 
 import io
 import json

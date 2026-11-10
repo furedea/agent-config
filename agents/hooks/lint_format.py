@@ -46,7 +46,7 @@ def context(message: str) -> dict[str, object]:
 
 
 def diagnostics(payload: dict, kind: str | None = None) -> tuple[str, ...]:
-    """Normalize a provider payload, run the shared lint engine, then report the registry's static rule findings.
+    """Normalize a provider payload, run the shared lint engine, then report ast-grep rule findings.
 
     The rules scan the files after formatting, so their line numbers match what the agent now sees.
     """

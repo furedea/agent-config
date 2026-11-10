@@ -15,7 +15,7 @@ from model_rules_outcome import Prevented
 
 TOKEN_SERVICE = "agent-model-rules-op-token"
 ENVIRONMENT_SERVICE = "agent-model-rules-op-environment"
-LOOKUP_TIMEOUT_SECONDS = 10
+LOOKUP_TIMEOUT_SECONDS = 5
 # The Environment ID is not a UUID (for example 26 lowercase base32 characters), so it is checked loosely.
 ENVIRONMENT_ID = re.compile(r"[a-z0-9]+")
 

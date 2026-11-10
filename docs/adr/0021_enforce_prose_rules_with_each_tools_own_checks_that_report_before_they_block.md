@@ -34,7 +34,7 @@ own repositories get model judgement.
     Stop once (`decision: block` with the findings as the reason), so that the agent sees them, because the only
     non-blocking Stop output, `systemMessage`, reaches the user and not the agent. The same findings on unchanged
     inputs are only a message (`unchanged; not rerun`) and never block again, so a finding the agent declines to
-    fix cannot trap it; nothing blocks while `stop_hook_active` is set; and anything that prevents a run is only a
+    fix cannot trap it; nothing blocks while `stop_hook_active` is set, and findings that it kept from blocking are recorded as not yet shown, so that they block once at the next Stop on the same inputs; and anything that prevents a run is only a
     message. A rule becomes a gate that blocks every time only when its example tests pass with no false positive on
     the conforming examples and on the repository's own files; the promotion is a reviewed change to the tool's
     config. Model-judged rules are not promoted until their cutoff has been fitted on a larger corpus, as ADR-0020

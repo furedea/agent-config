@@ -104,7 +104,9 @@ promoted.
 
 - **Delivery.** It follows the verification receipts in `results.json`. Findings on inputs not judged before block
     Stop once, so the agent sees them. The same inputs only notify (`findings unchanged; not rerun`) and never block
-    again, and nothing blocks when `stop_hook_active` is set. Anything that prevents a run (the kill switch, an untrusted
+    again. Nothing blocks when `stop_hook_active` is set; findings kept from blocking that way are recorded as not
+    yet shown and block once at the next Stop on the same inputs. The model rules get only the time the Stop hook has
+    left after the verification (at most 90 seconds), and do not run when too little remains. Anything that prevents a run (the kill switch, an untrusted
     repository, a missing Keychain item, a missing `op` or `jev-lint`, a timeout, a non-zero exit, unreadable output) is
     a one-line notice and never blocks.
 - **What is judged.** `jev-lint review` has no single mode for "everything since the session started": with

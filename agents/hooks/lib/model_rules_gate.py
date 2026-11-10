@@ -23,6 +23,9 @@ RULES_DIRECTORY = HOOK_ROOT / "lint" / "model-rules"
 TRUSTED_OWNERS_FILE = HOOK_ROOT / "rules" / "trusted_owners.json"
 KILL_SWITCH = "AGENT_MODEL_RULES"
 RECEIPT_KEY = "model_rules"
+# Receipt outcomes: no findings; findings the agent has been shown by a block; findings it has not been shown yet
+# because `stop_hook_active` kept them from blocking, which block once at the next Stop on the same inputs.
+CLEAN, SHOWN, UNSHOWN = "clean", "findings", "findings-unshown"
 BUDGET_SECONDS = 90.0
 
 
@@ -36,6 +39,8 @@ class Advice:
 
 def advise(record: SessionRecord, *, stop_hook_active: bool, budget_seconds: float = BUDGET_SECONDS) -> Advice:
     """Run or reuse the model rules for the session's current inputs; never raises for an unusable setup."""
+    if budget_seconds <= 0:
+        return _prevented(Prevented("the Stop hook has no time left for the model rules"))
     try:
         return _advise(record, stop_hook_active, model_rules_run.Deadline.after(budget_seconds))
     except (OSError, ValueError, TypeError, KeyError) as error:
@@ -43,26 +48,31 @@ def advise(record: SessionRecord, *, stop_hook_active: bool, budget_seconds: flo
 
 
 def _advise(record: SessionRecord, stop_hook_active: bool, deadline: model_rules_run.Deadline) -> Advice:
-    state = record.results()
     inputs = _inputs(record)
-    receipt = state.get(RECEIPT_KEY)
+    receipt = record.results().get(RECEIPT_KEY)
     if isinstance(receipt, dict) and receipt.get("input") == inputs and isinstance(receipt.get("summary"), str):
-        return _reused(receipt)
+        return _reused(record, receipt, stop_hook_active)
     outcome = _judge(record, deadline)
     if isinstance(outcome, Prevented):
         return _prevented(outcome)
     if not outcome.findings:
         message = model_rules_report.describe_clean(outcome)
-        _save(record, state, {"input": inputs, "outcome": "clean", "summary": message})
+        _save(record, {"input": inputs, "outcome": CLEAN, "summary": message})
         return Advice(message)
     message = model_rules_report.describe(outcome)
-    _save(record, state, {"input": inputs, "outcome": "findings", "summary": message})
-    return Advice(message, blocking=not stop_hook_active)
+    blocking = not stop_hook_active
+    _save(record, {"input": inputs, "outcome": SHOWN if blocking else UNSHOWN, "summary": message})
+    return Advice(message, blocking)
 
 
-def _reused(receipt: dict) -> Advice:
-    if receipt.get("outcome") == "findings":
-        return Advice(f"Model rules · findings unchanged; not rerun\n{receipt['summary']}")
+def _reused(record: SessionRecord, receipt: dict, stop_hook_active: bool) -> Advice:
+    """Answer from a receipt for the same inputs; findings the agent has not seen yet still block, once."""
+    summary = receipt["summary"]
+    if receipt.get("outcome") == UNSHOWN and not stop_hook_active:
+        _save(record, {**receipt, "outcome": SHOWN})
+        return Advice(summary, blocking=True)
+    if receipt.get("outcome") in {SHOWN, UNSHOWN}:
+        return Advice(f"Model rules · findings unchanged; not rerun\n{summary}")
     return Advice("Model rules · reused · unchanged since the last review")
 
 
@@ -70,9 +80,8 @@ def _prevented(prevented: Prevented) -> Advice:
     return Advice(f"Model rules skipped · {prevented.reason}")
 
 
-def _save(record: SessionRecord, state: dict, receipt: dict) -> None:
-    state[RECEIPT_KEY] = receipt
-    record.save_results(state)
+def _save(record: SessionRecord, receipt: dict) -> None:
+    record.save_results({**record.results(), RECEIPT_KEY: receipt})
 
 
 def _preconditions(record: SessionRecord) -> Prevented | None:

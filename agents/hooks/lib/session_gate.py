@@ -17,6 +17,9 @@ from session_store import SessionRecord, StateError, prune
 
 HOOK_ROOT = Path(__file__).resolve().parent.parent
 GATE_BUDGET_SECONDS = 540
+# The Stop timeout in agents/hooks.json, and what is kept back from it for lock waits and output.
+STOP_TIMEOUT_SECONDS = 600
+STOP_MARGIN_SECONDS = 20
 
 
 @dataclass(frozen=True, slots=True)
@@ -64,13 +67,18 @@ def stop(record: SessionRecord, *, stop_hook_active: bool = False) -> dict[str, 
 
     The model rules share the verification's one rule: findings on inputs not judged before block once, and the same
     inputs never block again. `stop_hook_active` means the agent already continued because of a Stop block, so
-    findings are reported without blocking again.
+    findings are reported without blocking again. The model rules get only the time the hook has left, so that
+    verification and model rules together stay inside the provider's Stop timeout.
     """
+    started = time.monotonic()
     result = gate(record)
     if result.get("decision") == "block":
         return result
+    left = STOP_TIMEOUT_SECONDS - STOP_MARGIN_SECONDS - (time.monotonic() - started)
     with record.lock(unbounded=True):
-        advice = model_rules_gate.advise(record, stop_hook_active=stop_hook_active)
+        advice = model_rules_gate.advise(
+            record, stop_hook_active=stop_hook_active, budget_seconds=min(model_rules_gate.BUDGET_SECONDS, left)
+        )
     if advice.blocking:
         return {"decision": "block", "reason": advice.message}
     messages = [text for text in (result.get("systemMessage"), advice.message) if text]

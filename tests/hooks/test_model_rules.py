@@ -97,6 +97,58 @@ def test_findings_never_block_again_after_the_agent_continued_because_of_a_stop_
     assert "command-query-naming" in result["systemMessage"]
 
 
+def test_findings_that_could_not_block_because_the_stop_hook_was_active_block_once_at_the_next_stop(
+    record: session_store.SessionRecord, tools: Tools
+) -> None:
+    unseen = stop(record, active=True)
+    next_stop = stop(record)
+    after_that = stop(record)
+
+    assert "decision" not in unseen
+    assert next_stop["decision"] == "block"
+    assert "command-query-naming" in next_stop["reason"]
+    assert "decision" not in after_that
+    assert "unchanged; not rerun" in after_that["systemMessage"]
+    assert len(tools.calls("op")) == 1
+
+
+def test_unseen_findings_still_do_not_block_while_the_stop_hook_stays_active(
+    record: session_store.SessionRecord,
+) -> None:
+    stop(record, active=True)
+
+    assert "decision" not in stop(record, active=True)
+
+
+def test_the_model_rules_get_only_the_time_the_stop_hook_has_left(
+    record: session_store.SessionRecord, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    budgets: list[float] = []
+
+    def spy(_record: session_store.SessionRecord, **arguments: float) -> object:
+        budgets.append(arguments["budget_seconds"])
+        return model_rules_gate.Advice("spied")
+
+    monkeypatch.setattr(model_rules_gate, "advise", spy)
+    monkeypatch.setattr(session_gate, "STOP_TIMEOUT_SECONDS", 100)
+
+    stop(record)
+
+    assert 70 < budgets[0] <= 100 - session_gate.STOP_MARGIN_SECONDS
+
+
+def test_no_model_rules_run_when_the_stop_hook_has_no_time_left(
+    record: session_store.SessionRecord, tools: Tools, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(session_gate, "STOP_TIMEOUT_SECONDS", session_gate.STOP_MARGIN_SECONDS)
+
+    result = stop(record)
+
+    assert "decision" not in result
+    assert "no time left" in result["systemMessage"]
+    assert tools.calls() == []
+
+
 def test_a_review_without_findings_only_notifies(record: session_store.SessionRecord, tools: Tools) -> None:
     tools.report([])
 

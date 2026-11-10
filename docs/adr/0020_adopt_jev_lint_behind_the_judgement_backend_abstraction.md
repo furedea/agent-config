@@ -2,6 +2,15 @@
 
 - Status: Proposed
 - Date: 2026-11-07
+- Partly superseded by: ADR-0021
+
+> **Note (ADR-0021).** ADR-0021 replaces two parts of this decision: the run mode (`npx` over a Nix-provided Node;
+> `jev-lint` is now built and pinned through Nix as `packages.<system>.jev-lint` in agent-config) and the judgement
+> backend abstraction (the Stop hook runs the `jev-lint` command directly, and the `JudgementBackend` of #74 is
+> removed). The title and the "behind the backend abstraction" clause below record the original decision and no
+> longer apply. Still in force: the choice of `jev-lint` over `jevlint` and over building our own, the evidence, the
+> accepted costs, the rule that cutoffs are fitted per rule on a larger corpus before any finding gates a hook or CI,
+> and the revisit conditions, except the one about a second provider behind the abstraction.
 
 In the context of enforcing rules that only a model can judge (the prose rules of `AGENTS.md` and the
 style skills), where Jev-family tools are all under two months old and none is the standard, facing a

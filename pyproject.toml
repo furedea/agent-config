@@ -24,6 +24,7 @@ known_first_party = [
   "cleanup_worktrees",
   "command_objections",
   "command_policy",
+  "dev_shell",
   "fish_script",
   "foreign_shell_policy",
   "powershell_options",

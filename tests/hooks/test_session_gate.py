@@ -9,6 +9,7 @@ from tests.runtime import REPO_ROOT, load_script_module
 
 sys.path.insert(0, str(REPO_ROOT / "agents/hooks/lib"))
 gate = load_script_module("agents/hooks/lib/session_gate.py", "session_gate")
+import check_execution
 import session_store
 
 
@@ -216,3 +217,28 @@ def test_invalid_test_configuration_blocks_once_then_only_notifies(record: sessi
     assert first["reason"].startswith("Verification unresolved · invalid test configuration\n")
     assert second == {"systemMessage": first["reason"]}
     assert calls() == []
+
+
+def test_missing_tool_is_reported_as_unavailable_without_blocking_stop(
+    record: session_store.SessionRecord, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    unavailable = check_execution.Result(
+        check_execution.Status.MISSING_TOOL, "pytest: uv not found on PATH or in a flake dev shell"
+    )
+    monkeypatch.setattr(gate, "execute", lambda *_: unavailable)
+    (record.root / "source.py").write_text("task edit")
+    first = gate.gate(record)
+    assert "decision" not in first
+    assert first["systemMessage"].startswith("Verification unavailable")
+    assert "failed" not in first["systemMessage"]
+    assert "uv not found" in first["systemMessage"]
+    assert gate.unresolved(record)
+
+
+def test_a_failure_next_to_a_missing_tool_still_blocks(
+    record: session_store.SessionRecord, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    failed = check_execution.Result(check_execution.Status.FAILED, "pytest: 1 failed")
+    monkeypatch.setattr(gate, "execute", lambda *_: failed)
+    (record.root / "source.py").write_text("task edit")
+    assert gate.gate(record)["decision"] == "block"

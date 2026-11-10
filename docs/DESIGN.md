@@ -44,8 +44,8 @@ flowchart LR
 | --------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------- |
 | User                  | approves plans, merges, pushes workflow files, deletes or archives repositories | —                                                       |
 | Parent session (Opus) | Issues, plans, lanes, final check, cleanup                                      | edits files, merges                                     |
-| Lane (Sonnet)         | runs Codex, verifies, commits, opens PRs, fixes review findings                | writes the implementation, types into the parent's pane |
-| Codex                 | implements                                                                     | commits or pushes (it cannot write `.git`)              |
+| Lane (Sonnet)         | runs Codex, verifies, commits, opens PRs, fixes review findings                 | writes the implementation, types into the parent's pane |
+| Codex                 | implements                                                                      | commits or pushes (it cannot write `.git`)              |
 
 The lane reports by ending its last message with `LANE-READY`, and the parent reads it. The lane
 never types into the parent's pane, because the parent cannot tell that text from the user's.
@@ -80,6 +80,11 @@ see [ADR-0003](adr/0003_register_verification_in_native_hooks.md).
   100 MiB in total.
 - Each check may run for 300 seconds. `RUN_RELATED_TESTS_TIMEOUT_SECONDS` overrides that budget
   when it is set explicitly.
+- A check's tool is looked up on the agent's `PATH` first. When it is absent and the project's
+  `flake.nix` declares a dev shell, the check runs as `nix develop --command ...` under the same
+  timeout and logs. A tool that neither `PATH` nor a dev shell provides is reported as
+  `Verification unavailable`; it is not a failure and does not block Stop, but it is not a pass
+  and `verify` still exits non-zero.
 
 ## Hook Decisions
 

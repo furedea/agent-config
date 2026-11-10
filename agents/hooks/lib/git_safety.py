@@ -158,10 +158,10 @@ def reason(arguments: tuple[str, ...]) -> str:
     executable = Path(arguments[0]).name
     if executable == "gh" and arguments[1:3] == ("pr", "merge") and "--admin" in arguments[3:]:
         return "gh pr merge --admin bypasses branch protection"
-    return git_reason(arguments) if executable == "git" else ""
+    return _git_reason(arguments) if executable == "git" else ""
 
 
-def git_reason(arguments: tuple[str, ...]) -> str:
+def _git_reason(arguments: tuple[str, ...]) -> str:
     globals_, command = git_arguments(arguments)
     if not command:
         return ""
@@ -232,7 +232,7 @@ def spelled_out(verb: str, arguments: tuple[str, ...]) -> tuple[str, ...]:
             spelled.append(argument)
             takes_value = False
             continue
-        full = full_option(argument, names)
+        full = _full_option(argument, names)
         spelled.append(full)
         takes_value = reads_next_value(full, argument, valued)
     return tuple(spelled) + arguments[end:]
@@ -248,7 +248,7 @@ def reads_next_value(full: str, argument: str, valued: frozenset[str]) -> bool:
     return False
 
 
-def full_option(argument: str, names: frozenset[str]) -> str:
+def _full_option(argument: str, names: frozenset[str]) -> str:
     key, separator, value = argument.partition("=")
     if not key.startswith("--") or key in names:
         return argument

@@ -55,25 +55,25 @@ def load_rules(path: Path, prefixes: bool = False) -> list[dict]:
         if not isinstance(rules, list) or (not prefixes and not rules):
             raise ValueError("invalid rules")
         for rule in rules:
-            validate_rule(rule, prefixes)
+            _validate_rule(rule, prefixes)
         if not prefixes:
-            any_regex_matches(all_patterns(rules), "")
+            any_regex_matches(_all_patterns(rules), "")
         return rules
     except (OSError, ValueError, TypeError) as error:
         raise ValueError(f"invalid command policy: {path}") from error
 
 
-def validate_rule(rule: object, prefixes: bool) -> None:
+def _validate_rule(rule: object, prefixes: bool) -> None:
     if not isinstance(rule, dict) or not isinstance(rule.get("justification"), str) or not rule["justification"]:
         raise ValueError("missing justification")
     values = rule.get("prefix" if prefixes else "patterns")
-    if not is_name_list(values):
+    if not _is_name_list(values):
         raise ValueError("invalid command rule")
     if prefixes and rule.get("decision") not in {"allow", "ask", "deny"}:
         raise ValueError("invalid decision")
-    if not prefixes and "programs" in rule and not is_name_list(rule["programs"]):
+    if not prefixes and "programs" in rule and not _is_name_list(rule["programs"]):
         raise ValueError("invalid governed program list")
-    if not prefixes and "exceptions" in rule and not is_name_list(rule["exceptions"]):
+    if not prefixes and "exceptions" in rule and not _is_name_list(rule["exceptions"]):
         raise ValueError("invalid exception list")
     if not prefixes and not isinstance(rule.get("literal_words", False), bool):
         raise ValueError("invalid literal word flag")
@@ -98,7 +98,7 @@ def validate_program_path(rule: dict) -> None:
         raise ValueError("program path must pin the one program the rule governs")
 
 
-def is_name_list(value: object) -> bool:
+def _is_name_list(value: object) -> bool:
     return isinstance(value, list) and bool(value) and all(isinstance(item, str) and item for item in value)
 
 
@@ -254,6 +254,7 @@ def prefix_rule(arguments: tuple[str, ...], rules: list[dict], decision: str) ->
 
 
 def prefix_reason(arguments: tuple[str, ...], rules: list[dict], decision: str) -> str:
+    """The justification of the first prefix rule with this decision that begins the arguments, or empty."""
     rule = prefix_rule(arguments, rules, decision)
     return rule["justification"] if rule else ""
 
@@ -261,7 +262,7 @@ def prefix_reason(arguments: tuple[str, ...], rules: list[dict], decision: str) 
 def regex_reason(raw: str, rules: list[dict]) -> str:
     """Return the first applicable rule's stated rationale, asking grep once before locating that rule."""
     raw = re.sub(r"\s+(?:2>&1|2>/dev/null|>&2)\s*$", "", raw.strip())
-    if not any_regex_matches(all_patterns(rules), raw):
+    if not any_regex_matches(_all_patterns(rules), raw):
         return ""
     return next((rule["justification"] for rule in rules if rule_matches(rule, raw)), "")
 
@@ -271,7 +272,7 @@ def rule_matches(rule: dict, raw: str) -> bool:
     return any_regex_matches(rule.get("patterns", ()), raw) and not any_regex_matches(rule.get("exceptions", ()), raw)
 
 
-def all_patterns(rules: list[dict]) -> list[str]:
+def _all_patterns(rules: list[dict]) -> list[str]:
     return [pattern for rule in rules for pattern in rule.get("patterns", ())]
 
 

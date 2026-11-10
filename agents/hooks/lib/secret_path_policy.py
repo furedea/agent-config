@@ -7,6 +7,7 @@ from pathlib import Path
 
 
 def load(path: Path) -> list[dict]:
+    """Read the versioned rule list at its boundary; raise ValueError for a missing or malformed file."""
     try:
         data = json.loads(path.read_text())
         if not isinstance(data, dict) or type(data.get("version")) is not int or data["version"] != 1:
@@ -28,7 +29,7 @@ def load(path: Path) -> list[dict]:
 OTHER_USER_HOME = re.compile(r"^~[^/]+(?=/)")
 
 
-def normalize(value: str) -> str:
+def _normalize(value: str) -> str:
     """Name a path from the own home as `~/...`, and from another user's home as that user's `~/...`.
 
     The rules guard names such as `~/.aws/**`, which hold the same secrets in any user's home.
@@ -41,14 +42,18 @@ def normalize(value: str) -> str:
     return "~/" + value[len(home) :] if value.startswith(home) else value
 
 
-def candidate(value: str) -> bool:
+def _is_candidate(value: str) -> bool:
     return "/" in value or "." in value or value in {"id_rsa", "id_ed25519"}
 
 
 def blocked_rule(value: str, rules: list[dict]) -> dict | None:
-    if not candidate(value):
+    """The first rule whose pattern matches a word that looks like a path, or None.
+
+    `$HOME/`, the home directory, and another user's `~name/` are matched as `~/`; symlinks are not resolved.
+    """
+    if not _is_candidate(value):
         return None
-    path = normalize(value)
+    path = _normalize(value)
     # Do not resolve symlinks: this policy concerns named paths, not a sandbox.
     for rule in rules:
         pattern = rule["pattern"]

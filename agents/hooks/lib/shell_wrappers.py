@@ -114,11 +114,11 @@ class OptionScan:
     dynamic: tuple[bool, ...] = ()
 
     @property
-    def flags(self) -> frozenset[str]:
+    def _flags(self) -> frozenset[str]:
         return WRAPPERS[self.name][0]
 
     @property
-    def valued(self) -> frozenset[str]:
+    def _valued(self) -> frozenset[str]:
         return WRAPPERS[self.name][1]
 
     @property
@@ -137,6 +137,7 @@ class OptionScan:
         return int(self.index < len(self.arguments) and PRIORITY.fullmatch(self.arguments[self.index]) is not None)
 
     def run(self) -> Self:
+        """Scan the leading options, then any trailing script options, and return the finished scan."""
         while self.index < len(self.arguments) and self.take_option():
             pass
         self.take_trailing_script()
@@ -151,10 +152,10 @@ class OptionScan:
         if self.name == "command" and token in COMMAND_LOOKUP:
             self.index = len(self.arguments)
             return False
-        if token in self.valued:
-            self.record(token, self.value_at(self.index + 1))
+        if token in self._valued:
+            self.record(token, self._value_at(self.index + 1))
             self.index += 2
-        elif token in self.flags or (self.name in ASSIGNING_WRAPPERS and ASSIGNMENT.match(token)):
+        elif token in self._flags or (self.name in ASSIGNING_WRAPPERS and ASSIGNMENT.match(token)):
             self.record(token, None)
             self.index += 1
         elif token.startswith("-"):
@@ -171,27 +172,27 @@ class OptionScan:
         token = self.arguments[self.index]
         if token.startswith("--"):
             key, _, value = token.partition("=")
-            if not value or key not in self.valued:
-                self.refuse(token)
+            if not value or key not in self._valued:
+                self._refuse(token)
             self.record(key, value)
             return 1
         if self.name == "nice" and token[1:].isdigit():
             return 1
         if token == "-":
-            self.refuse(token)
+            self._refuse(token)
         for position, letter in enumerate(token[1:], 1):
             option = f"-{letter}"
             if option in OPTIONAL_ATTACHED.get(self.name, ()):
                 self.record(option, token[position + 1 :] or None)
                 return 1
-            if option in self.valued:
-                return self.take_value(option, token[position + 1 :])
-            if option not in self.flags:
-                self.refuse(token)
+            if option in self._valued:
+                return self._take_value(option, token[position + 1 :])
+            if option not in self._flags:
+                self._refuse(token)
             self.record(option, None)
         return 1
 
-    def take_value(self, option: str, attached: str) -> int:
+    def _take_value(self, option: str, attached: str) -> int:
         if attached or self.index + 1 >= len(self.arguments):
             self.record(option, attached or None)
             return 1
@@ -218,10 +219,10 @@ class OptionScan:
             pass
         self.index = resume
 
-    def value_at(self, position: int) -> str | None:
+    def _value_at(self, position: int) -> str | None:
         return self.arguments[position] if position < len(self.arguments) else None
 
-    def refuse(self, token: str) -> None:
+    def _refuse(self, token: str) -> None:
         raise UnsupportedSyntax(f"{self.name} option requires explicit review: {token}", "wrapper")
 
 

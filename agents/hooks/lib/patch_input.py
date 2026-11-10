@@ -11,10 +11,12 @@ def is_patch(text: str) -> bool:
 
 
 def paths(patch: str) -> tuple[str, ...]:
+    """The distinct files a patch adds, updates, deletes, or moves to, sorted."""
     return tuple(
         sorted(set(re.findall(r"^\*\*\* (?:(?:Add|Update|Delete) File|Move to): (.+)$", patch, re.MULTILINE)))
     )
 
 
 def added_text(patch: str) -> str:
+    """The inserted lines of a patch joined by newlines, without their `+` marker or the `+++` header."""
     return "\n".join(line[1:] for line in patch.splitlines() if line.startswith("+") and not line.startswith("+++"))

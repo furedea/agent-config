@@ -30,13 +30,19 @@ class Policy(Protocol):
     """The part of the guard's loaded policy the objections read; the guard owns the concrete type."""
 
     @property
-    def prefixes(self) -> list[dict]: ...
+    def prefixes(self) -> list[dict]:
+        """Generated permission prefixes, each carrying its decision."""
+        ...
 
     @property
-    def rules(self) -> list[dict]: ...
+    def rules(self) -> list[dict]:
+        """Regex rules of the guard kind being evaluated."""
+        ...
 
     @property
-    def listing_rules(self) -> list[dict]: ...
+    def listing_rules(self) -> list[dict]:
+        """Rules that list the exact forms a governed or pinned program may run unprompted."""
+        ...
 
 
 def objection(kind: str, item: shell_syntax.Command, policy: Policy) -> Verdict:
@@ -198,13 +204,13 @@ def is_listed_pinned_call(item: shell_syntax.Command, pinned: dict[str, str], po
     name = pinned_name(item)
     candidate = item.rebased(1, (name,))
     return (
-        is_pinned_call(item, pinned[name])
+        _is_pinned_call(item, pinned[name])
         and not candidate.hides_options
         and is_listed(candidate, policy.listing_rules)
     )
 
 
-def is_pinned_call(item: shell_syntax.Command, path: str) -> bool:
+def _is_pinned_call(item: shell_syntax.Command, path: str) -> bool:
     program = Path(path)
     return (
         item.arguments[0] == path

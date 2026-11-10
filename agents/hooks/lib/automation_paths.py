@@ -52,7 +52,7 @@ def objection(payload: dict, commands: tuple[shell_syntax.Command, ...]) -> Verd
 def escaping_word(candidate: shell_syntax.Command, directory: Path | None, roots: tuple[Path, ...]) -> str:
     """The first word that may reach outside the roots, or an empty string when every word stays inside."""
     words = (word for argument in candidate.arguments[1:] for word in (argument, argument.partition("=")[2]))
-    return next((word or "''" for word in words if directory is None or not stays_inside(directory, word, roots)), "")
+    return next((word or "''" for word in words if directory is None or not _stays_inside(directory, word, roots)), "")
 
 
 def working_directory(payload: dict) -> Path | None:
@@ -73,7 +73,7 @@ def writable_roots(directory: Path) -> tuple[Path, ...]:
     return worktree + hook_input.temporary_roots()
 
 
-def stays_inside(directory: Path, word: str, roots: tuple[Path, ...]) -> bool:
+def _stays_inside(directory: Path, word: str, roots: tuple[Path, ...]) -> bool:
     target = resolved_target(directory, word)
     return target is not None and any(target.is_relative_to(root) for root in roots)
 

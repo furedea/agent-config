@@ -152,10 +152,12 @@ class Command:
 
     @property
     def has_dynamic_words(self) -> bool:
+        """Whether any argument, the program included, is only known at run time."""
         return any(self.dynamic)
 
     @property
     def program_is_dynamic(self) -> bool:
+        """Whether the program to run is only known at run time, so no rule can judge it by name."""
         return bool(self.dynamic) and self.dynamic[0]
 
     def rebased(self, index: int, head: tuple[str, ...] = (), depth: int | None = None) -> Self:
@@ -215,7 +217,7 @@ def parse(source: str, depth: int = 0, directories: tuple[Path | None, ...] = ()
         name = shell_name(Path(innermost.arguments[0]).name)
         scripts = [(script, layer.wrapper_depth + 1) for layer in layers for script in shell_scripts(layer)]
         unreviewed = name in FOREIGN_SHELLS or any(takes_foreign_option(layer) for layer in layers)
-        if (name in SHELLS and not scripts) or is_foreign_shell(name):
+        if (name in SHELLS and not scripts) or _is_foreign_shell(name):
             inputs = input_scripts(partial(sources.scripts, owner, directories), tolerant=bool(scripts))
             scripts += [(script, innermost.wrapper_depth + 1) for script in inputs]
             unreviewed = unreviewed or (name not in SHELLS and bool(inputs))
@@ -296,7 +298,7 @@ def changed_directory(directory: Path | None, item: Command) -> Path | None:
     return None if item.dynamic[index] else directory / arguments[index]
 
 
-def statement_writes(statement: dict, data: bytes) -> tuple[str, ...]:
+def _statement_writes(statement: dict, data: bytes) -> tuple[str, ...]:
     redirects = [redirect for redirect in statement.get("Redirs", []) if redirect.get("Word")]
     targets = [literal_word(redirect["Word"], data)[0] for redirect in redirects]
     return tuple(
@@ -351,13 +353,13 @@ def literal_command(node: dict, owner: dict, data: bytes) -> Command:
         trailer=" ".join(source_text(redirect, data) for redirect in redirects),
         dynamic=tuple(flag for _, flag in decoded),
         spreading=tuple(spreads(word, data) for word in node["Args"]),
-        writes=statement_writes(owner, data),
+        writes=_statement_writes(owner, data),
     )
 
 
 def writes_file(redirect: dict, target: str, data: bytes) -> bool:
     """Whether a redirection creates or overwrites a file, judged by its operator text, not by parser codes."""
-    symbol = redirect_operator(redirect, data)
+    symbol = _redirect_operator(redirect, data)
     if not symbol:
         return True
     if symbol in {">&", "<&"}:
@@ -365,7 +367,7 @@ def writes_file(redirect: dict, target: str, data: bytes) -> bool:
     return symbol in {">", ">>", ">|", "&>", "&>>", "<>"}
 
 
-def redirect_operator(redirect: dict, data: bytes) -> str:
+def _redirect_operator(redirect: dict, data: bytes) -> str:
     operator = re.match(r"\d*(&>>|&>|>>|>\||>&|<&|<<<|<>|<|>)", source_text(redirect, data))
     return operator.group(1) if operator else ""
 
@@ -390,7 +392,7 @@ def shell_scripts(command: Command) -> list[str]:
         return [" ".join(arguments[1:])]
     if executable in WRAPPERS:
         return wrapper_scripts(command, executable)
-    if is_foreign_shell(executable):
+    if _is_foreign_shell(executable):
         return foreign_scripts(command)
     if shell_name(executable) not in SHELLS:
         return []
@@ -410,12 +412,12 @@ def shell_scripts(command: Command) -> list[str]:
     return [arguments[script]]
 
 
-def is_foreign_shell(executable: str) -> bool:
+def _is_foreign_shell(executable: str) -> bool:
     shell = shell_name(executable)
     return shell in FOREIGN_SHELLS or (shell not in SHELLS and SHELL_LOOKALIKE.fullmatch(shell) is not None)
 
 
-def foreign_option_indexes(arguments: tuple[str, ...]) -> list[int]:
+def _foreign_option_indexes(arguments: tuple[str, ...]) -> list[int]:
     shell = shell_name(Path(arguments[0]).name)
     return [
         index
@@ -427,7 +429,7 @@ def foreign_option_indexes(arguments: tuple[str, ...]) -> list[int]:
 
 def takes_foreign_option(command: Command) -> bool:
     """Whether a shell of foreign syntax is handed a script by an option, readable or encoded."""
-    return is_foreign_shell(Path(command.arguments[0]).name) and bool(foreign_option_indexes(command.arguments))
+    return _is_foreign_shell(Path(command.arguments[0]).name) and bool(_foreign_option_indexes(command.arguments))
 
 
 def foreign_scripts(command: Command) -> list[str]:
@@ -439,7 +441,7 @@ def foreign_scripts(command: Command) -> list[str]:
     arguments = command.arguments
     shell = shell_name(Path(arguments[0]).name)
     scripts = []
-    for index in foreign_option_indexes(arguments):
+    for index in _foreign_option_indexes(arguments):
         argument = arguments[index]
         if powershell_options.is_encoded(shell, argument):
             continue

@@ -1,0 +1,13 @@
+id: py_no_unittest_mock
+language: python
+severity: warning
+message: "Use the `mocker` fixture from pytest-mock instead of importing `unittest.mock`."
+rule:
+  any:
+    - pattern: from unittest.mock import $$$NAMES
+    - pattern: from unittest import mock
+    - pattern: from unittest import mock as $ALIAS
+    - kind: import_from_statement
+      regex: (?s)^from\s+unittest\s+import\b.*\bmock\b
+    - pattern: import unittest.mock
+    - pattern: import unittest.mock as $ALIAS

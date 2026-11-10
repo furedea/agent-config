@@ -1,0 +1,27 @@
+id: go_error_no_failed_to_prefix
+valid:
+  - |
+    func load(path string) error {
+        return fmt.Errorf("read config %s: %w", path, err)
+    }
+  - |
+    func load() error {
+        return errors.New("config missing")
+    }
+  - |
+    func load() error {
+        return fmt.Errorf("the load failed to finish: %w", err)
+    }
+invalid:
+  - |
+    func load() error {
+        return fmt.Errorf("failed to load")
+    }
+  - |
+    func load(path string) error {
+        return fmt.Errorf("failed to read config %s: %w", path, err)
+    }
+  - |
+    func load() error {
+        return errors.New("Failed to load")
+    }

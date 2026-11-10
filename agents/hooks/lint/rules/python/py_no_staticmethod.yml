@@ -1,0 +1,7 @@
+id: py_no_staticmethod
+language: python
+severity: warning
+message: "Avoid `@staticmethod`; move the function to module level or make it a method that uses the instance."
+rule:
+  kind: decorator
+  pattern: "@staticmethod"

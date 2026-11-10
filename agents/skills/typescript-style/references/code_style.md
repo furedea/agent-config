@@ -9,7 +9,6 @@
 ## Imports
 
 - Use `import type` for type-only imports, as `verbatimModuleSyntax` requires.
-- Prefer explicit named imports over namespace imports.
 - Do not create import cycles; `import/no-cycle` enforces this.
 
 ## Formatting

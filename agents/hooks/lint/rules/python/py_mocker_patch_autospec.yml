@@ -1,0 +1,34 @@
+id: py_mocker_patch_autospec
+language: python
+severity: warning
+message: "Pass `autospec=True` so the mock enforces the real signature."
+note: "Calls that pass `new` positionally (`mocker.patch(target, fake)`) are skipped because `autospec` cannot be combined with `new`."
+rule:
+  any:
+    - pattern: mocker.patch($$$ARGS)
+    - pattern: mocker.patch.object($$$ARGS)
+  all:
+    - not:
+        has:
+          kind: argument_list
+          has:
+            kind: keyword_argument
+            regex: ^((new|new_callable|spec|spec_set|wraps)\s*=|create\s*=\s*True|autospec\s*=\s*[^F\s])
+    - not:
+        all:
+          - pattern: mocker.patch($$$ARGS)
+          - has:
+              kind: argument_list
+              has:
+                nthChild: 2
+                not:
+                  kind: keyword_argument
+    - not:
+        all:
+          - pattern: mocker.patch.object($$$ARGS)
+          - has:
+              kind: argument_list
+              has:
+                nthChild: 3
+                not:
+                  kind: keyword_argument

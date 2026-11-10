@@ -1,0 +1,20 @@
+id: py_xfail_requires_strict
+language: python
+severity: warning
+message: "Add `strict=True` so the run fails when the test unexpectedly passes."
+rule:
+  any:
+    - all:
+        - pattern: pytest.mark.xfail($$$ARGS)
+        - not:
+            has:
+              kind: argument_list
+              has:
+                kind: keyword_argument
+                regex: ^strict\s*=\s*True$
+    # The bare form (`@pytest.mark.xfail`, `pytestmark = pytest.mark.xfail`) is never strict.
+    - all:
+        - pattern: pytest.mark.xfail
+        - not:
+            inside:
+              kind: call

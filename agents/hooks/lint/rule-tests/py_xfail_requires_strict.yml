@@ -1,0 +1,25 @@
+id: py_xfail_requires_strict
+valid:
+  - |
+    @pytest.mark.xfail(strict=True, reason="defect 1")
+    def test_known_defect() -> None:
+        assert False
+  - |
+    @pytest.mark.skip(reason="not needed")
+    def test_skipped() -> None:
+        assert False
+invalid:
+  - |
+    @pytest.mark.xfail
+    def test_known_defect() -> None:
+        assert False
+  - |
+    pytestmark = pytest.mark.xfail
+  - |
+    @pytest.mark.xfail(reason="defect 1")
+    def test_known_defect() -> None:
+        assert False
+  - |
+    @pytest.mark.xfail(strict=False, reason="defect 1")
+    def test_known_defect() -> None:
+        assert False

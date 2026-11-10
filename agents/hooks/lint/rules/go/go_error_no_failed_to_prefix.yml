@@ -1,0 +1,16 @@
+id: go_error_no_failed_to_prefix
+language: go
+severity: warning
+message: "Start the error message with the operation, not with \"failed to\"."
+rule:
+  any:
+    - pattern: fmt.Errorf($MSG, $$$ARGS)
+    - pattern:
+        context: "func f() { fmt.Errorf($MSG) }"
+        selector: call_expression
+    - pattern:
+        context: "func f() { errors.New($MSG) }"
+        selector: call_expression
+constraints:
+  MSG:
+    regex: ^["`][Ff]ailed to\b

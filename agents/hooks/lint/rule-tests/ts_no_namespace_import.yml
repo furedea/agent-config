@@ -1,0 +1,11 @@
+id: ts_no_namespace_import
+valid:
+  - |
+    import { readFile } from "node:fs/promises";
+  - |
+    import type { Config } from "./config";
+  - |
+    import fs from "node:fs";
+invalid:
+  - |
+    import * as fs from "node:fs/promises";

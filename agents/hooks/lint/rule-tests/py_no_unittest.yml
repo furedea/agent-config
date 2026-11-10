@@ -1,0 +1,21 @@
+id: py_no_unittest
+valid:
+  - |
+    import pytest
+  - |
+    from unittest.mock import patch
+  - |
+    from unittest import mock
+  - |
+    from unittest import mock as m
+invalid:
+  - |
+    from unittest import IsolatedAsyncioTestCase
+  - |
+    from unittest import TestCase, main
+  - |
+    import unittest as ut
+  - |
+    import unittest
+  - |
+    from unittest import TestCase

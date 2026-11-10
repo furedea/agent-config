@@ -1,0 +1,17 @@
+id: go_error_no_string_matching
+language: go
+severity: warning
+message: "Compare with `errors.Is` or `errors.As` instead of matching the message text."
+note: "Test files are skipped because tests may assert the exact message of an error they create."
+ignores:
+  - "**/*_test.go"
+rule:
+  any:
+    - pattern: $ERR.Error() == $TEXT
+    - pattern: $ERR.Error() != $TEXT
+    - pattern: strings.Contains($ERR.Error(), $TEXT)
+    - pattern: strings.HasPrefix($ERR.Error(), $TEXT)
+    - pattern: strings.HasSuffix($ERR.Error(), $TEXT)
+    - pattern: strings.EqualFold($ERR.Error(), $TEXT)
+    - pattern: $TEXT == $ERR.Error()
+    - pattern: $TEXT != $ERR.Error()

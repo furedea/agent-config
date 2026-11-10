@@ -1,0 +1,6 @@
+id: ts_no_namespace_import
+language: typescript
+severity: warning
+message: "Import the names you use instead of a namespace import."
+rule:
+  kind: namespace_import

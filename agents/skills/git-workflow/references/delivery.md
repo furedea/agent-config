@@ -66,17 +66,20 @@ For what the PR body owns relative to the Issue and plan, follow
 After every push, wait for the PR's checks before handling review findings or reporting.
 
 1. Run `gh pr checks <n> --watch --fail-fast` in the background and wait for its completion
-   notification; do not poll.
+   notification; do not poll. If it exits at once because no checks are registered yet for the new
+   commit, that is not a failure; start it again once checks appear.
 2. On failure, identify the failing check with `gh pr checks <n>` and read its log with
    `gh run view <run-id> --log-failed`.
 3. Classify the cause:
     - Code-caused (test, lint, format, type check, Nix build or check): fix it, run the same check
       locally, push, and return to step 1.
     - External (AI review usage limit, GitHub or runner outage, network): do not change the work.
-      If a retry can help, run `gh run rerun <run-id> --failed` once; otherwise stop with
-      `LANE-BLOCKED: <check name and reason>`.
-    - Undetermined: do not guess a fix; stop with `LANE-BLOCKED: <check name and reason>`.
+      If a retry can help, run `gh run rerun <run-id> --failed` once and return to step 1; if the
+      check fails again or a retry cannot help, stop and report the check name and reason.
+    - Undetermined: do not guess a fix; stop and report the check name and reason.
 4. Stop and report when the same check still fails after three fix attempts.
+
+A lane ends such a report with `LANE-BLOCKED: <reason>`; other sessions report to the user.
 
 ## Review on GitHub
 

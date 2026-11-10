@@ -25,6 +25,8 @@ GLOB = re.compile(r"(?<!\\)[*?]|(?<!\\)\[.+\]")
 # Brace expansion can pair braces across quoted parts, so any unquoted brace counts.
 BRACES = frozenset("{}")
 LINE_CONTINUATION = "\\\n"
+# Inside double quotes the shell still expands or rewrites only these, `!` being history expansion.
+DOUBLE_QUOTE_SPECIAL = re.compile(r"[$`\\!]")
 
 
 class UnsupportedSyntaxError(ValueError):
@@ -68,6 +70,46 @@ def literal_word(word: dict, source: bytes) -> tuple[str, bool]:
     if dynamic:
         return source_text(word, source), True
     return "".join(literal_part(index, part, source) for index, part in enumerate(parts)), False
+
+
+def single_quoted_source(word: dict, source: bytes) -> str:
+    r"""The word's source with each static quoted or escaped part rewritten in single quotes.
+
+    A part holding an expansion, and any word that is dynamic or may spread, keeps its source text, so
+    only text the shell passes through unchanged is respelled, so `-f body="x"` and `-f body=x\y`
+    read as `-f body='x'` and `-f body='xy'`, which a rule can match whichever way the word was written.
+    """
+    text = source_text(word, source)
+    parts = word.get("Parts", [])
+    if literal_word(word, source)[1] or spreads(word, source):
+        return text
+    respelled = [_respelled_part(part, source) for part in parts]
+    return text if any(part is None for part in respelled) else "".join(part or "" for part in respelled)
+
+
+def _respelled_part(part: dict, source: bytes) -> str | None:
+    text = source_text(part, source)
+    kind = part.get("Type")
+    if kind == "SglQuoted" and not part.get("Dollar"):
+        return text
+    if kind == "DblQuoted" and not part.get("Dollar"):
+        body = text[1:-1]
+        return None if DOUBLE_QUOTE_SPECIAL.search(body) else _single_quote(body)
+    if kind == "Lit":
+        return text if "\\" not in text else _respelled_escapes(text)
+    return None
+
+
+def _respelled_escapes(text: str) -> str:
+    """Quote what an escaped unquoted text decodes to, keeping a plain `name=` prefix outside the quotes."""
+    name, equals, rest = text.partition("=")
+    if equals and "\\" not in name:
+        return name + equals + _single_quote(unquoted(rest))
+    return _single_quote(unquoted(text))
+
+
+def _single_quote(value: str) -> str:
+    return "'" + value.replace("'", "'\\''") + "'"
 
 
 def spreads(word: dict, source: bytes) -> bool:

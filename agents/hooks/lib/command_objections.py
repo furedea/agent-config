@@ -83,7 +83,10 @@ def is_listed(candidate: shell_syntax.Command, rules: list[dict]) -> bool:
     An automation program's form must also be listed with its quotes removed, so a quoted word can
     hide neither a subcommand nor an option from the rule's exceptions.
     """
-    if not command_policy.regex_reason(candidate.static_words_text, rules):
+    if not (
+        command_policy.regex_reason(candidate.static_words_text, rules)
+        or command_policy.regex_reason(static_quoted_text(candidate), rules)
+    ):
         return False
     if candidate.arguments[0] in automation_paths.PROGRAMS and not command_policy.regex_reason(
         " ".join(candidate.arguments), rules
@@ -96,6 +99,14 @@ def is_listed(candidate: shell_syntax.Command, rules: list[dict]) -> bool:
     ):
         return False
     return not herdr_grammar.is_watch_command(candidate.arguments) or herdr_grammar.is_documented(candidate.arguments)
+
+
+def static_quoted_text(candidate: shell_syntax.Command) -> str:
+    """The static form with static quoted or escaped parts respelled in single quotes and run-time words as `_`."""
+    return " ".join(
+        shell_syntax.RUN_TIME_PLACEHOLDER if dynamic else word
+        for word, dynamic in zip(candidate.quoted_words, candidate.dynamic, strict=True)
+    )
 
 
 def forbidden_objection(item: shell_syntax.Command, candidate: shell_syntax.Command, policy: Policy) -> Verdict:

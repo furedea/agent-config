@@ -20,3 +20,9 @@ treating the guards as a complete boundary:
 A spelling outside both rules is recorded as a known gap rather than fixed under review pressure.
 This keeps the guards predictable and reviews finite, accepting that a determined spelling can
 still pass the supplementary guards, and that the sandbox, not the guards, remains the boundary.
+
+Examples of rule 1: the precise allowlist rules for `gh` and similar programs match a static word
+the same way whichever quoting it uses (`-f body='Fixed.'`, `-f body="Fixed."`, `-f body=Fixed\.`).
+Known gap under the last paragraph: a variable assigned a fixed value in the same command
+(`sha=<hex>; gh run list --commit $sha`) is not tracked, so it asks; quote the expansion
+(`"$sha"`) to run it unprompted.

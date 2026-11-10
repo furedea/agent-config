@@ -19,8 +19,8 @@ buildNpmPackage {
 
   nodejs = nodejs_24;
   npmDepsHash = "sha256-y0lRDs4zK1klllbtKyeAOcuiJPdllnMCk8gh9WoMHYQ=";
-  # The platform ast-grep binary comes from the locked optional dependency; no install script may
-  # download anything.
+  # No install script may download anything. Without the postinstall step the locked @ast-grep/cli
+  # is only a shim that warns on every run, so the wrapper points jev-lint at the nixpkgs ast-grep.
   npmFlags = [ "--ignore-scripts" ];
   dontNpmBuild = true;
 
@@ -37,6 +37,7 @@ buildNpmPackage {
     cp -R node_modules package.json $out/lib/jev-lint/
     makeWrapper ${lib.getExe nodejs_24} $out/bin/jev-lint \
       --add-flags $out/lib/jev-lint/node_modules/jev-lint/dist/cli.js \
+      --set JEV_LINT_AST_GREP ${lib.getExe ast-grep} \
       --prefix PATH : ${lib.makeBinPath [ ast-grep ]}:$out/lib/jev-lint/node_modules/.bin
 
     runHook postInstall

@@ -61,6 +61,23 @@ becomes the default branch commit body.
 For what the PR body owns relative to the Issue and plan, follow
 [Information Placement](../../source-of-truth/SKILL.md#information-placement).
 
+## Wait for CI
+
+After every push, wait for the PR's checks before handling review findings or reporting.
+
+1. Run `gh pr checks <n> --watch --fail-fast` in the background and wait for its completion
+   notification; do not poll.
+2. On failure, identify the failing check with `gh pr checks <n>` and read its log with
+   `gh run view <run-id> --log-failed`.
+3. Classify the cause:
+    - Code-caused (test, lint, format, type check, Nix build or check): fix it, run the same check
+      locally, push, and return to step 1.
+    - External (AI review usage limit, GitHub or runner outage, network): do not change the work.
+      If a retry can help, run `gh run rerun <run-id> --failed` once; otherwise stop with
+      `LANE-BLOCKED: <check name and reason>`.
+    - Undetermined: do not guess a fix; stop with `LANE-BLOCKED: <check name and reason>`.
+4. Stop and report when the same check still fails after three fix attempts.
+
 ## Review on GitHub
 
 In a repository that has them, as furedea/agent-config does, every PR is reviewed on GitHub by
@@ -69,7 +86,7 @@ Elsewhere, wait for that repository's required checks and follow its own review 
 mechanism is in the
 [reusable-workflows README](https://github.com/furedea/reusable-workflows#readme).
 
-1. After pushing, wait for `all-green`.
+1. After pushing, [wait for CI](#wait-for-ci) until `all-green` passes.
 2. Read the findings: Claude's inline comments and summary comment, and Codex's inline comments and
    Codex Review Summary (`codex-review-state`), with
    `gh api repos/<owner>/<repo>/pulls/<n>/comments --paginate` (the path comes right after

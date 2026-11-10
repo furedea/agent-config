@@ -104,6 +104,7 @@
           default = pkgs.mkShell {
             packages =
               (with pkgs; [
+                ast-grep
                 bats
                 commitlint
                 deadnix

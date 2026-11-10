@@ -11,7 +11,7 @@ SCRIPT = Path(__file__).resolve()
 sys.path.insert(0, str(SCRIPT.parent))
 sys.path.insert(0, str(SCRIPT.parent / "lib"))
 
-from lib import formatter_policy, hook_input, lint_engine, process_runner
+from lib import formatter_policy, hook_input, lint_engine, process_runner, static_rule_scan
 
 
 EXTENSIONS = hook_input.EXTENSIONS
@@ -46,10 +46,16 @@ def context(message: str) -> dict[str, object]:
 
 
 def diagnostics(payload: dict, kind: str | None = None) -> tuple[str, ...]:
-    """Normalize a provider payload before passing it to the shared lint engine."""
+    """Normalize a provider payload, run the shared lint engine, then report ast-grep rule findings.
+
+    The rules scan the files after formatting, so their line numbers match what the agent now sees.
+    """
     if not isinstance(payload, dict):
         raise TypeError("hook payload must be an object")
-    return lint_engine.diagnostics(lint_engine.supported_targets(target_paths(payload), EXTENSIONS, kind), check_file)
+    targets = lint_engine.supported_targets(target_paths(payload), EXTENSIONS, kind)
+    return lint_engine.diagnostics(targets, check_file) + static_rule_scan.diagnostics(
+        target.path for target in targets
+    )
 
 
 def emit(messages: tuple[str, ...], encode: Callable[[str], dict[str, object]] = context) -> None:

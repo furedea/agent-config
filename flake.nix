@@ -50,6 +50,9 @@
                 chmod -R u+w "$out"
                 patchShebangs --host "$out"
               '';
+
+          # The Stop hook runs this linter, as it runs ast-grep.
+          jev-lint = pkgs.callPackage ./nix/jev_lint.nix { };
         }
       );
 

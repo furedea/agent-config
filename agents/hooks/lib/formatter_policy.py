@@ -23,8 +23,7 @@ GOLANGCI_CONFIG_NAMES = (".golangci.yml", ".golangci.yaml", ".golangci.toml")
 OXFMT_CONFIG_NAMES = (".oxfmtrc", ".oxfmtrc.json", ".oxfmtrc.jsonc")
 JS_FORMATTER_PACKAGES = {"prettier": "prettier", "@biomejs/biome": "biome", "oxfmt": "oxfmt"}
 PERSONAL_DPRINT_CONFIG_NAME = "dprint.json"
-PERSONAL_PRETTIER_CONFIG_NAME = ".prettierrc"
-PERSONAL_CONFIG_NAMES = frozenset({PERSONAL_DPRINT_CONFIG_NAME, PERSONAL_PRETTIER_CONFIG_NAME})
+PERSONAL_CONFIG_NAMES = frozenset({PERSONAL_DPRINT_CONFIG_NAME})
 BUNDLED_CONFIG_DIRECTORY = Path(__file__).resolve().parent.parent / "defaults"
 
 
@@ -330,7 +329,7 @@ def _plan(kind: str, path: Path) -> tuple[Step, ...]:
 
 
 def dprint_plan(path: Path) -> tuple[Step, ...]:
-    """Format JSON and TOML with dprint unless the project declares another formatter."""
+    """Format JSON, TOML, and Markdown with dprint unless the project declares another formatter."""
     declarations = project_files(path.parent, DPRINT_CONFIG_NAMES + OTHER_FORMATTER_CONFIG_NAMES)
     dprint = tuple(item for item in declarations if item.name in DPRINT_CONFIG_NAMES)
     alternatives = tuple(item for item in declarations if item.name in OTHER_FORMATTER_CONFIG_NAMES)
@@ -346,13 +345,7 @@ def dprint_plan(path: Path) -> tuple[Step, ...]:
     config = project_config or personal_config(PERSONAL_DPRINT_CONFIG_NAME, "dprint.json")
     root = project_config.parent if project_config else path.parent
     relative = str(path.relative_to(root)) if project_config else path.name
-    arguments = (
-        "--config",
-        str(config),
-        "--includes-override",
-        relative,
-        "--allow-no-files",
-    )
+    arguments = ("--config", str(config), "--allow-no-files", relative)
     return (
         Step("dprint format", ("dprint", "fmt", *arguments), root, mutates=True),
         Step("dprint lint", ("dprint", "check", *arguments), root),
@@ -379,12 +372,8 @@ def tex_plan(path: Path) -> tuple[Step, ...]:
 
 
 def markdown_plan(path: Path) -> tuple[Step, ...]:
-    """Fix spacing with autocorrect, then format with prettierd."""
-    filename = str(path)
-    return (
-        Step("autocorrect format", ("autocorrect", "--fix", filename), mutates=True),
-        Step("prettierd format", ("prettierd", filename), writes_stdout=True, mutates=True),
-    )
+    """Fix spacing with autocorrect, then format with dprint under the JSON/TOML policy."""
+    return (Step("autocorrect format", ("autocorrect", "--fix", str(path)), mutates=True), *dprint_plan(path))
 
 
 def workflow_plan(path: Path) -> tuple[Step, ...]:

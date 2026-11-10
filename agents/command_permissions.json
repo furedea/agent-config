@@ -1168,13 +1168,6 @@
     {
       "decision": "allow",
       "prefix": [
-        "prettierd"
-      ],
-      "justification": "Allow explicit formatting because it changes files instead of duplicating verification."
-    },
-    {
-      "decision": "allow",
-      "prefix": [
         "selene"
       ],
       "justification": "Allow local verification needed for the requested work; reuse successful hook results."

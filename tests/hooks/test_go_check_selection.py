@@ -101,6 +101,30 @@ def test_a_package_that_keeps_other_go_files_is_still_selected(tmp_path: Path) -
     assert [item.arguments for item in commands] == [("go", "test", "./pkg/live")]
 
 
+@pytest.mark.parametrize(
+    "fixture",
+    [
+        "agents/hooks/lint/model-rules/go/m-05/fixtures/bad.go",
+        "agents/hooks/lint/model-rules/rust/m-60/fixtures/bad.rs",
+        "agents/hooks/lint/model-rules/typescript/m-21/fixtures/bad.ts",
+        "agents/hooks/lint/model-rules/python/m-05/fixtures/bad.py",
+    ],
+)
+def test_model_rule_fixtures_are_eval_inputs_not_project_sources(tmp_path: Path, fixture: str) -> None:
+    rules = project(tmp_path, {})
+    touch_all(tmp_path, [fixture])
+    commands, errors = selection.language_plan(tmp_path, rules, (fixture,))
+    assert not errors
+    assert commands == []
+
+
+def test_model_rule_files_next_to_fixtures_still_count_as_sources(tmp_path: Path) -> None:
+    rules = project(tmp_path, {})
+    touch_all(tmp_path, ["agents/hooks/lint/model-rules/go/m-05/helper.go"])
+    _, errors = selection.language_plan(tmp_path, rules, ("agents/hooks/lint/model-rules/go/m-05/helper.go",))
+    assert errors and "go.mod" in errors[0]
+
+
 def test_nested_go_files_do_not_make_their_parent_directory_a_package(tmp_path: Path) -> None:
     rules = go_project(tmp_path, ["pkg/deep/inner/inner.go"])
     commands, _ = selection.language_plan(tmp_path, rules, ("pkg/deep/old.go",))

@@ -8,26 +8,13 @@ from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
 
+from explicit_targets import TARGET_LANGUAGES, project_targets, strings
 from go_selection import GO_FULL_SUITE, go_files, go_package_exists, go_test_arguments
 from javascript_runner import javascript_runner, package_manager, runner_arguments
 from rust_targets import rust_test_target
 from source_listing import remaining_sources
 
 LANGUAGES = ("bats", "python", "javascript_typescript", "rust", "go")
-TARGET_LANGUAGES = {
-    ".bats": "bats",
-    ".py": "python",
-    ".rs": "rust",
-    ".go": "go",
-    ".js": "javascript_typescript",
-    ".jsx": "javascript_typescript",
-    ".ts": "javascript_typescript",
-    ".tsx": "javascript_typescript",
-    ".mts": "javascript_typescript",
-    ".cts": "javascript_typescript",
-    ".mjs": "javascript_typescript",
-    ".cjs": "javascript_typescript",
-}
 
 
 class UnknownTestCommandError(ValueError):
@@ -80,6 +67,7 @@ RULE_ARRAYS = {
     "source_dirs",
     "full_suite_triggers",
 }
+MODEL_RULE_FIXTURES = "agents/hooks/lint/model-rules/*/fixtures/*"
 PYTEST = ("uv", "run", "--frozen", "pytest", "--no-header", "-q")
 RUST_FULL_SUITE = Invocation("rust", "full suite", ("cargo", "test", "--quiet"))
 
@@ -103,61 +91,6 @@ def validate_rule(entry: object) -> None:
         raise ValueError("missing extensions")
     if any(not strings(value) for key, value in entry.items() if key in RULE_ARRAYS):
         raise ValueError("invalid rule array")
-
-
-def strings(value: object) -> bool:
-    """Recognize arrays of nonempty strings at configuration boundaries."""
-    return isinstance(value, list) and all(isinstance(item, str) and item for item in value)
-
-
-def project_targets(
-    root: Path, changed: tuple[str, ...]
-) -> tuple[dict[str, set[str]], dict[str, set[str]], list[str]]:
-    """Resolve explicit mappings and track the changed files each language covers."""
-    targets: dict[str, set[str]] = {language: set() for language in LANGUAGES}
-    covered: dict[str, set[str]] = {language: set() for language in LANGUAGES}
-    path = root / ".agents/hooks/rules/related_test_extensions.json"
-    if not path.exists():
-        return targets, covered, []
-    try:
-        mappings = json.loads(path.read_text())
-        if not isinstance(mappings, dict) or not all(key and strings(value) for key, value in mappings.items()):
-            raise ValueError("Expected an object mapping patterns to arrays of nonempty test paths.")
-    except (OSError, ValueError) as error:
-        raise ValueError(
-            f"Invalid configuration: {path}. Expected an object mapping patterns to arrays of nonempty test paths."
-        ) from error
-    errors: list[str] = []
-    for target, matched_files in mapped_targets(mappings, changed):
-        language, error = target_language(root, target)
-        if error:
-            errors.append(error)
-            continue
-        targets[language].add(target)
-        covered[language] |= matched_files
-    return targets, covered, errors
-
-
-def mapped_targets(mappings: dict, changed: tuple[str, ...]) -> Iterator[tuple[str, set[str]]]:
-    """Yield each configured test path with the changed files its pattern matches."""
-    for pattern, paths in mappings.items():
-        matched_files = {filename for filename in changed if fnmatch.fnmatchcase(filename, pattern)}
-        if not matched_files:
-            continue
-        for target in paths:
-            yield str(Path(target)), matched_files
-
-
-def target_language(root: Path, target: str) -> tuple[str, str]:
-    """Classify a configured test path as its runner language, or explain why it cannot run."""
-    absolute = root / target
-    if not absolute.exists():
-        return "", f"Configured test target does not exist: {target}"
-    if absolute.is_dir():
-        return "bats", ""
-    if language := TARGET_LANGUAGES.get(absolute.suffix):
-        return language, ""
-    return "", f"Unsupported configured test target: {target}"
 
 
 def changed_language(rule: dict, changed: tuple[str, ...]) -> bool:
@@ -247,7 +180,11 @@ def suite_triggered(rule: dict, changed: tuple[str, ...]) -> bool:
 
 
 def language_plan(root: Path, rules: dict, changed: tuple[str, ...]) -> tuple[list[Invocation], list[str]]:
-    """Build runner invocations without executing external commands."""
+    """Build runner invocations without executing external commands.
+
+    Model-rule eval fixtures are inputs for jev-lint and are never part of any language project, so they are dropped.
+    """
+    changed = tuple(path for path in changed if not fnmatch.fnmatchcase(path, MODEL_RULE_FIXTURES))
     explicit, covered, errors = project_targets(root, changed)
     invocations: list[Invocation] = []
     for language in LANGUAGES:

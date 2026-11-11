@@ -209,6 +209,9 @@
   "agents/hooks/lib/go_selection.py": [
     "tests/hooks/test_go_check_selection.py"
   ],
+  "agents/hooks/lib/explicit_targets.py": [
+    "tests/hooks/test_check_selection.py"
+  ],
   "agents/hooks/lib/rust_targets.py": [
     "tests/hooks/test_check_selection.py"
   ],

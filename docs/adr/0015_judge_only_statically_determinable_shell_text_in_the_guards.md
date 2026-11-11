@@ -12,10 +12,10 @@ had to be closed, we decided for a two-part contract and against chasing each ne
 treating the guards as a complete boundary:
 
 1. An operation written literally, or determinable from the text alone, is judged as the shell
-   would run it: blocked or asked as the policy says. A static form that slips through is a bug.
+    would run it: blocked or asked as the policy says. A static form that slips through is a bug.
 2. Anything whose meaning is known only at run time is asked, uniformly rather than case by case:
-   variables or command substitution in the program or path position, `eval`, a shell fed input
-   the hook cannot read, functions or aliases defined in the same command, and similar forms.
+    variables or command substitution in the program or path position, `eval`, a shell fed input
+    the hook cannot read, functions or aliases defined in the same command, and similar forms.
 
 A spelling outside both rules is recorded as a known gap rather than fixed under review pressure.
 This keeps the guards predictable and reviews finite, accepting that a determined spelling can
@@ -26,3 +26,8 @@ the same way whichever quoting it uses (`-f body='Fixed.'`, `-f body="Fixed."`, 
 Known gap under the last paragraph: a variable assigned a fixed value in the same command
 (`sha=<hex>; gh run list --commit $sha`) is not tracked, so it asks; quote the expansion
 (`"$sha"`) to run it unprompted.
+
+Unquoted run-time variables ask in every shell. A zsh one-word reading (zsh does not split an unquoted scalar) was
+tried in furedea/agent-config#148 and #149 and dropped: closing it needed a chase through the name's spellings
+(`TMP''DIR`, `$'TMPDIR'`) and zsh's semantics (arrays, tied parameters, options set in the same command), the spelling
+chase this ADR rejects. Quote the expansion to run it unprompted.

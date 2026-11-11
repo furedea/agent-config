@@ -25,6 +25,9 @@ GLOB = re.compile(r"(?<!\\)[*?]|(?<!\\)\[.+\]")
 # Brace expansion can pair braces across quoted parts, so any unquoted brace counts.
 BRACES = frozenset("{}")
 LINE_CONTINUATION = "\\\n"
+# shfmt reads `$=name` and `$~name` as a `$` and literal text, but zsh splits or globs the value; a dollar
+# sign after an even run of backslashes (each pair is one literal backslash) is not escaped.
+ZSH_EXPANSION_FLAG = re.compile(r"(?<!\\)(?:\\\\)*\$[=~]")
 # Inside double quotes the shell still expands or rewrites only these, `!` being history expansion.
 DOUBLE_QUOTE_SPECIAL = re.compile(r"[$`\\!]")
 
@@ -116,11 +119,14 @@ def spreads(word: dict, source: bytes) -> bool:
     """Whether a word may become several words, or other words than the decoder sees.
 
     That is an unquoted expansion, substitution, glob, or brace, a line continuation, which the
-    shell removes, or a positional parameter or array expansion even in quotes.
+    shell removes, or a positional parameter or array expansion even in quotes, or zsh's `$=name`
+    and `$~name`.
     """
     parts = word.get("Parts", [])
     unquoted = "".join(part.get("Value", "") for part in parts if part.get("Type") == "Lit")
     if any(part.get("Type") in SPLIT_PARTS for part in parts) or GLOB.search(unquoted) or BRACES & set(unquoted):
+        return True
+    if ZSH_EXPANSION_FLAG.search(unquoted):
         return True
     if LINE_CONTINUATION in source_text(word, source):
         return True

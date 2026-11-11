@@ -17,7 +17,7 @@ import model_rules_report
 import model_rules_run
 import trusted_owners
 from model_rules_files import Selection, committed_paths, select
-from model_rules_outcome import Finding, Judgement, Prevented
+from model_rules_outcome import Finding, Judgement, Prevented, Resumable
 from model_rules_programs import Programs
 from session_snapshot import capture, head_commit
 from session_store import SessionRecord, state_directory
@@ -100,7 +100,10 @@ class _Stop:
         """Answer from a receipt for the same inputs; findings the agent has not seen yet still block, once."""
         summary = receipt["summary"]
         if receipt.get("outcome") == UNSHOWN and not self.stop_hook_active:
-            self.record.save_results({**self.record.results(), RECEIPT_KEY: {**receipt, "outcome": SHOWN}})
+            shown = sorted(_keys(receipt, "shown") | _keys(receipt, "found"))
+            self.record.save_results(
+                {**self.record.results(), RECEIPT_KEY: {**receipt, "outcome": SHOWN, "shown": shown}}
+            )
             return Advice(summary, blocking=True)
         if receipt.get("outcome") in {SHOWN, UNSHOWN}:
             return Advice(f"Model rules · findings unchanged; not rerun\n{summary}")
@@ -113,25 +116,29 @@ class _Stop:
         reused = self._reused(self.receipt)
         return Advice(f"{_prevented(prevented).message}\n{reused.message}", reused.blocking)
 
-    def _pending(self) -> frozenset[str]:
-        return frozenset(self.receipt.get("resumable", ())) if self.receipt is not None else frozenset()
+    def _pending(self) -> frozenset[Resumable]:
+        if self.receipt is None:
+            return frozenset()
+        return frozenset(Resumable(review, file) for review, file in self.receipt.get("resumable", ()))
 
     def _shown(self) -> frozenset[tuple[str, str, int]]:
         """The findings an earlier Stop on these inputs has put in front of the agent."""
-        return (
-            frozenset(tuple(key) for key in self.receipt.get("shown", ())) if self.receipt is not None else frozenset()
-        )
+        return _keys(self.receipt, "shown") if self.receipt is not None else frozenset()
 
     def _save(self, outcome: str, summary: str, judgement: Judgement) -> None:
-        """Keep the receipt; `shown` grows by this run's findings only when the agent is shown them."""
-        shown = self._shown()
-        if outcome == SHOWN:
-            shown |= {_key(finding) for finding in judgement.findings}
+        """Keep the receipt; `shown` grows by this run's findings only when the agent is shown them.
+
+        `found` keeps the keys of the findings in `summary`, so a receipt that was not shown yet can become shown
+        later without running again.
+        """
+        found = {_key(finding) for finding in judgement.findings}
+        shown = self._shown() | (found if outcome == SHOWN else set())
         receipt = {
             "input": self.inputs,
             "outcome": outcome,
             "summary": summary,
-            "resumable": list(judgement.resumable),
+            "resumable": [[item.review, item.file] for item in judgement.resumable],
+            "found": sorted(found),
             "shown": sorted(shown),
         }
         self.record.save_results({**self.record.results(), RECEIPT_KEY: receipt})
@@ -139,6 +146,10 @@ class _Stop:
 
 def _key(finding: Finding) -> tuple[str, str, int]:
     return finding.rule, finding.file, finding.line
+
+
+def _keys(receipt: dict, field: str) -> frozenset[tuple[str, str, int]]:
+    return frozenset((rule, file, line) for rule, file, line in receipt.get(field, ()))
 
 
 def _prevented(prevented: Prevented) -> Advice:
@@ -155,7 +166,7 @@ def _preconditions(record: SessionRecord) -> Prevented | None:
 
 
 def _judge(
-    record: SessionRecord, deadline: model_rules_run.Deadline, pending: frozenset[str]
+    record: SessionRecord, deadline: model_rules_run.Deadline, pending: frozenset[Resumable]
 ) -> Judgement | Prevented:
     if (stop := _preconditions(record)) is not None:
         return stop
@@ -199,28 +210,34 @@ class _Changes:
         return self.committed.withheld | self.uncommitted.withheld
 
     def reviews(
-        self, record: SessionRecord, programs: Programs, pending: frozenset[str]
+        self, record: SessionRecord, programs: Programs, pending: frozenset[Resumable]
     ) -> tuple[model_rules_run.Review, ...]:
         """The commits made since the session started, then the changes not committed yet.
 
         `jev-lint review` judges `base...HEAD` or, without a base, the working tree against HEAD; neither covers both.
-        `pending` are the files an earlier Stop on the same inputs skipped.
+        Each review gets only the files of `pending` that an earlier Stop on the same inputs skipped in that review.
         """
         cache = model_rules_run.cache_path(state_directory())
         reviews = []
         if self.committed.sendable:
+            skipped = _skipped_in(pending, model_rules_run.COMMITTED)
             reviews.append(
                 model_rules_run.Review(
-                    record.root, record.head, RULES_DIRECTORY, cache, programs, self.committed.sendable, pending
+                    record.root, record.head, RULES_DIRECTORY, cache, programs, self.committed.sendable, skipped
                 )
             )
         if self.uncommitted.sendable:
+            skipped = _skipped_in(pending, model_rules_run.UNCOMMITTED)
             reviews.append(
                 model_rules_run.Review(
-                    record.root, None, RULES_DIRECTORY, cache, programs, self.uncommitted.sendable, pending
+                    record.root, None, RULES_DIRECTORY, cache, programs, self.uncommitted.sendable, skipped
                 )
             )
         return tuple(reviews)
+
+
+def _skipped_in(pending: frozenset[Resumable], review: str) -> frozenset[str]:
+    return frozenset(item.file for item in pending if item.review == review)
 
 
 def _repository_gate(root: Path) -> Prevented | None:

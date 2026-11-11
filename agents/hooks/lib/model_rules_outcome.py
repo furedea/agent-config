@@ -23,6 +23,18 @@ class Finding:
 
 
 @dataclass(frozen=True, slots=True)
+class Resumable:
+    """A file that one kind of review skipped for the cap and that a later Stop on the same inputs can still judge.
+
+    The commits and the uncommitted changes are separate reviews, each with its own subjects in a file, so the
+    skipped file is remembered per review.
+    """
+
+    review: str
+    file: str
+
+
+@dataclass(frozen=True, slots=True)
 class Plan:
     """What one review will judge: the files to pass (empty means the whole diff) and what the cap left out.
 
@@ -58,7 +70,7 @@ class Judgement:
     requests: int = 0
     cached: int = 0
     withheld_files: int = 0
-    resumable: tuple[str, ...] = ()
+    resumable: tuple[Resumable, ...] = ()
     seconds: float = 0.0
 
     @property

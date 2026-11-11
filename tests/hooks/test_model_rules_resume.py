@@ -1,6 +1,7 @@
 """Stop-time model rules: the time a review took, and how a Stop resumes the subjects the cap skipped."""
 
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -12,7 +13,9 @@ from tests.runtime import REPO_ROOT, StubWriter
 sys.path.insert(0, str(REPO_ROOT / "agents/hooks/lib"))
 import session_store
 
-THREE_FILES = [("a.py", 12), ("b.py", 15), ("c.py", 8)]
+# 50 subjects: the cap of 20 admits a.py and c.py, which leaves b.py and d.py (30 subjects) for later Stops.
+FOUR_FILES = [("a.py", 12), ("b.py", 15), ("c.py", 8), ("d.py", 15)]
+CAP = 20
 
 
 @pytest.fixture(autouse=True)
@@ -28,14 +31,22 @@ def record(git_project: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -
     return registered
 
 
+@pytest.fixture
+def first_run_skipped_b_and_d(record: session_store.SessionRecord, tools: Tools) -> None:
+    """The first Stop on the inputs: it judged a.py and c.py and skipped b.py and d.py; the agent was not shown."""
+    tools.plan(50, FOUR_FILES)
+    stop(record, active=True)
+    tools.plan(50, FOUR_FILES, cached=CAP)
+
+
 def test_the_message_tells_the_seconds_spent_and_the_subjects_judged(
     record: session_store.SessionRecord, tools: Tools
 ) -> None:
-    tools.plan(35, THREE_FILES)
+    tools.plan(50, FOUR_FILES)
 
     reason = stop(record)["reason"]
 
-    assert "judged 20 of 35 subject(s) in " in reason
+    assert "judged 20 of 50 subject(s) in " in reason
     assert re.search(r"in \d+\.\ds", reason)
 
 
@@ -45,39 +56,60 @@ def test_a_clean_review_also_tells_the_seconds_spent(record: session_store.Sessi
     assert re.search(r"judged 1 of 1 subject\(s\) in \d+\.\ds", stop(record)["systemMessage"])
 
 
-def test_the_next_stop_on_the_same_inputs_judges_the_files_the_cap_skipped_first(
+def test_the_message_says_the_skipped_subjects_are_judged_at_the_next_stop(
     record: session_store.SessionRecord, tools: Tools
 ) -> None:
-    tools.plan(35, THREE_FILES)
-    first = stop(record)
+    tools.plan(50, FOUR_FILES)
+
+    assert "judged at the next Stop" in stop(record)["reason"]
+
+
+@pytest.mark.usefixtures("first_run_skipped_b_and_d")
+def test_the_next_stop_judges_the_files_the_cap_skipped_before_it_sends_the_files_judged_before(
+    record: session_store.SessionRecord, tools: Tools
+) -> None:
+    stop(record, active=True)
+
+    first, resumed = tools.calls("op")
+    assert first["argv"][-2:] == ["a.py", "c.py"]
+    assert resumed["argv"][-3:] == ["a.py", "c.py", "b.py"]
+
+
+@pytest.mark.usefixtures("first_run_skipped_b_and_d")
+def test_the_stop_after_that_judges_what_is_left_and_then_the_receipt_is_final(
+    record: session_store.SessionRecord, tools: Tools
+) -> None:
+    stop(record, active=True)
+    tools.plan(50, FOUR_FILES, cached=35)
+
+    last = stop(record, active=True)
+    again = stop(record, active=True)
+
+    assert "skipped by the cap" not in last["systemMessage"]
+    assert "unchanged; not rerun" in again["systemMessage"]
+    assert len(tools.calls("op")) == 3
+
+
+def test_when_what_is_left_fits_the_cap_the_resume_judges_the_whole_diff_from_the_cache(
+    record: session_store.SessionRecord, tools: Tools
+) -> None:
+    tools.plan(35, [("a.py", 12), ("b.py", 15), ("c.py", 8)])
+    stop(record, active=True)
+    tools.plan(35, [("a.py", 12), ("b.py", 15), ("c.py", 8)], cached=20)
 
     second = stop(record, active=True)
 
-    first_launch, second_launch = tools.calls("op")
-    assert first_launch["argv"][-2:] == ["a.py", "c.py"]
-    assert second_launch["argv"][-3:] == ["a.py", "c.py", "b.py"]
-    assert "judged at the next Stop" in first["reason"]
     assert "skipped by the cap" not in second["systemMessage"]
-
-
-def test_the_resumed_stop_keeps_the_files_judged_before_so_their_findings_are_not_lost(
-    record: session_store.SessionRecord, tools: Tools
-) -> None:
-    tools.plan(35, THREE_FILES)
-    stop(record, active=True)
-
-    stop(record, active=True)
-
-    _, resumed = tools.calls("op")
-    assert set(resumed["argv"][-3:]) == {"a.py", "b.py", "c.py"}
+    assert "judged 35 of 35" in second["systemMessage"]
 
 
 def test_a_resumed_stop_blocks_only_for_findings_the_agent_has_not_seen(
     record: session_store.SessionRecord, tools: Tools
 ) -> None:
-    tools.plan(35, THREE_FILES)
+    tools.plan(50, FOUR_FILES)
     tools.report([finding(file="a.py")])
     first = stop(record)
+    tools.plan(50, FOUR_FILES, cached=CAP)
     tools.report([finding(file="a.py"), finding(file="b.py", line=7)])
 
     second = stop(record)
@@ -90,25 +122,14 @@ def test_a_resumed_stop_blocks_only_for_findings_the_agent_has_not_seen(
 def test_a_resumed_stop_with_only_known_findings_only_notifies(
     record: session_store.SessionRecord, tools: Tools
 ) -> None:
-    tools.plan(35, THREE_FILES)
+    tools.plan(50, FOUR_FILES)
     stop(record)
+    tools.plan(50, FOUR_FILES, cached=CAP)
 
     second = stop(record)
 
     assert "decision" not in second
     assert "command-query-naming" in second["systemMessage"]
-
-
-def test_once_nothing_is_skipped_the_receipt_is_reused(record: session_store.SessionRecord, tools: Tools) -> None:
-    tools.plan(35, THREE_FILES)
-    stop(record)
-    tools.plan(1, [("a.py", 1)])
-    stop(record)
-
-    again = stop(record)
-
-    assert "unchanged; not rerun" in again["systemMessage"]
-    assert len(tools.calls("op")) == 2
 
 
 def test_a_file_larger_than_the_cap_is_reported_but_never_makes_the_stop_resume(
@@ -126,8 +147,9 @@ def test_a_file_larger_than_the_cap_is_reported_but_never_makes_the_stop_resume(
 def test_a_resumed_stop_never_sends_a_file_larger_than_the_cap_that_was_not_judged_before(
     record: session_store.SessionRecord, tools: Tools
 ) -> None:
-    tools.plan(75, [("huge.py", 40), *THREE_FILES])
+    tools.plan(90, [("huge.py", 40), *FOUR_FILES])
     stop(record, active=True)
+    tools.plan(90, [("huge.py", 40), *FOUR_FILES], cached=CAP)
 
     stop(record, active=True)
 
@@ -137,11 +159,53 @@ def test_a_resumed_stop_never_sends_a_file_larger_than_the_cap_that_was_not_judg
     assert resumed["argv"][-3:] == ["a.py", "c.py", "b.py"]
 
 
+@pytest.mark.usefixtures("first_run_skipped_b_and_d")
+def test_a_resumed_stop_does_not_resend_the_files_judged_before_when_the_verdict_cache_no_longer_has_them(
+    record: session_store.SessionRecord, tools: Tools
+) -> None:
+    tools.plan(50, FOUR_FILES)
+
+    stop(record, active=True)
+
+    _, resumed = tools.calls("op")
+    assert resumed["argv"][-1] == "b.py"
+    assert "a.py" not in resumed["argv"]
+    assert "c.py" not in resumed["argv"]
+
+
+def test_each_review_resumes_only_its_own_skipped_files(record: session_store.SessionRecord, tools: Tools) -> None:
+    commit_file(record, "committed.txt")
+    tools.plan(38, [("a.py", 20), ("b.py", 18)], for_commits=True)
+    tools.plan(5, [("n.py", 5)])
+    stop(record, active=True)
+    tools.plan(38, [("a.py", 20), ("b.py", 18)], cached=20, for_commits=True)
+    tools.plan(8, [("n.py", 5), ("b.py", 3)], cached=3)
+
+    stop(record, active=True)
+
+    resumed_uncommitted = tools.calls("op")[-1]
+    assert "--base" not in resumed_uncommitted["argv"]
+    assert resumed_uncommitted["argv"][-1] == "b.py"
+
+
+@pytest.mark.usefixtures("first_run_skipped_b_and_d")
+def test_findings_shown_by_a_block_after_a_failed_resume_do_not_block_again_when_the_resume_succeeds(
+    record: session_store.SessionRecord, tools: Tools
+) -> None:
+    tools.behave(exit=3)
+    shown = stop(record)
+    tools.behave()
+
+    resumed = stop(record)
+
+    assert shown["decision"] == "block"
+    assert "decision" not in resumed
+
+
+@pytest.mark.usefixtures("first_run_skipped_b_and_d")
 def test_a_stop_that_cannot_resume_keeps_the_unseen_findings_for_the_agent(
     record: session_store.SessionRecord, tools: Tools
 ) -> None:
-    tools.plan(35, THREE_FILES)
-    stop(record, active=True)
     tools.behave(exit=3)
 
     result = stop(record)
@@ -149,3 +213,9 @@ def test_a_stop_that_cannot_resume_keeps_the_unseen_findings_for_the_agent(
     assert result["decision"] == "block"
     assert "command-query-naming" in result["reason"]
     assert "exited with status 3" in result["reason"]
+
+
+def commit_file(record: session_store.SessionRecord, name: str) -> None:
+    (record.root / name).write_text("committed\n")
+    subprocess.run(["git", "add", name], cwd=record.root, check=True)
+    subprocess.run(["git", "commit", "--quiet", "-m", "later"], cwd=record.root, check=True)

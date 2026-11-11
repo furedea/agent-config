@@ -11,16 +11,17 @@ import signal
 import subprocess
 import time
 from contextlib import suppress
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 import model_rules_programs
 from model_rules_credentials import Credentials
-from model_rules_outcome import Finding, Judgement, Plan, Prevented
+from model_rules_outcome import Finding, Judgement, Plan, Prevented, Resumable
 from model_rules_programs import Programs
 from session_store import LockTimeoutError, StateError, file_lock, private_directory
 
 REVIEWER = "jev-lint"
+COMMITTED, UNCOMMITTED = "committed", "uncommitted"
 SUBJECT_CAP = 20
 PLAN_TIMEOUT_SECONDS = 20.0
 JUDGE_TIMEOUT_SECONDS = 60.0
@@ -113,6 +114,11 @@ class Review:
             return output
         return _judgement(output, plan)
 
+    @property
+    def kind(self) -> str:
+        """Which of the two reviews of a session this is: the commits since `base`, or the uncommitted changes."""
+        return COMMITTED if self.base else UNCOMMITTED
+
     def _arguments(self, *extra: str) -> tuple[str, ...]:
         base = ("--base", self.base) if self.base else ()
         return (
@@ -142,7 +148,8 @@ def review_all(reviews: tuple[Review, ...], credentials: Credentials, deadline: 
         outcome = review.judge(plan, credentials, deadline) if plan.judged else _unjudged(plan)
         if isinstance(outcome, Prevented):
             return outcome
-        combined = combined.combined(outcome)
+        resumable = tuple(Resumable(review.kind, file) for file in plan.resumable)
+        combined = combined.combined(replace(outcome, resumable=resumable))
     return combined
 
 
@@ -217,7 +224,7 @@ def _deadline_wrapper(timeout: float) -> tuple[str, ...]:
 
 
 def _unjudged(plan: Plan) -> Judgement:
-    return Judgement((), plan.subjects, plan.skipped_files, plan.skipped_subjects, resumable=plan.resumable)
+    return Judgement((), plan.subjects, plan.skipped_files, plan.skipped_subjects)
 
 
 def _capped_plan(report: dict, cap: int, pending: frozenset[str]) -> Plan:
@@ -227,9 +234,8 @@ def _capped_plan(report: dict, cap: int, pending: frozenset[str]) -> Plan:
     per_file: dict[str, int] = {}
     for batch in report["batches"]:
         per_file[batch["file"]] = per_file.get(batch["file"], 0) + _count(batch, "subjects")
-    # The report does not say which subjects are cached, so a resumed run takes the files it judged before for free.
-    # A file over the whole cap was never judged, so it is not one of them.
-    chosen = [file for file, count in per_file.items() if pending and file not in pending and _admissible(file, count)]
+    pending = frozenset(file for file in pending if file in per_file)
+    chosen = _judged_before(per_file, pending, subjects - cached)
     total = 0
     for file, count in per_file.items():
         if (not pending or file in pending) and _passable(file) and total + count <= cap:
@@ -239,6 +245,21 @@ def _capped_plan(report: dict, cap: int, pending: frozenset[str]) -> Plan:
     # A file over the whole cap would be skipped on every run, so naming it would make each Stop resume for nothing.
     resumable = tuple(file for file in skipped if _admissible(file, per_file[file]))
     return Plan(tuple(chosen), subjects, total, len(skipped), sum(per_file[file] for file in skipped), resumable)
+
+
+def _judged_before(per_file: dict[str, int], pending: frozenset[str], uncached: int) -> list[str]:
+    """The files an earlier run of the same inputs judged, for the verdict cache to answer at no cost.
+
+    The report does not say which subjects are cached. Files that were never judged are the pending ones and those
+    over the whole cap, so any uncached subject beyond theirs means the cache no longer answers for the rest. Then
+    none are sent: the pending files compete for the cap alone, and the cost stays within it.
+    """
+    if not pending:
+        return []
+    never_judged = sum(count for file, count in per_file.items() if file in pending or not _admissible(file, count))
+    if uncached > never_judged:
+        return []
+    return [file for file, count in per_file.items() if file not in pending and _admissible(file, count)]
 
 
 def _admissible(file: str, subjects: int) -> bool:
@@ -265,7 +286,6 @@ def _judgement(output: bytes, plan: Plan) -> Judgement | Prevented:
             plan.skipped_subjects,
             _count(spent, "calls"),
             _count(report, "cachedCount"),
-            resumable=plan.resumable,
         )
     except ValueError, KeyError, TypeError, AttributeError:
         return Prevented(f"{REVIEWER} printed a report that cannot be read")

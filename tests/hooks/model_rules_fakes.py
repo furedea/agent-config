@@ -52,7 +52,10 @@ with open(@CALLS@, "a") as stream:
     }) + "\\n")
 behavior = json.load(open(@BEHAVIOR@))
 if dry_run:
-    print(open(@PLAN@).read())
+    plan = @PLAN@
+    if "--base" in sys.argv and os.path.exists(@PLAN_COMMITS@):
+        plan = @PLAN_COMMITS@
+    print(open(plan).read())
     sys.exit(0)
 print(@TOKEN@, file=sys.stderr)
 time.sleep(behavior.get("sleep", 0))
@@ -109,15 +112,23 @@ class Tools:
         """Replace the Keychain contents; a missing service makes the fake `security` fail."""
         (self.directory / "keychain.json").write_text(json.dumps(items))
 
-    def plan(self, subjects: int, batches: list[tuple[str, int]] | None = None, cached: int = 0) -> None:
-        """What `jev-lint review --dry-run --json` prints."""
+    def plan(
+        self,
+        subjects: int,
+        batches: list[tuple[str, int]] | None = None,
+        cached: int = 0,
+        *,
+        for_commits: bool = False,
+    ) -> None:
+        """What `jev-lint review --dry-run --json` prints; `for_commits` is what it prints with `--base`."""
         report = {
             "dryRun": True,
             "subjects": subjects,
             "cached": cached,
             "batches": [{"file": file, "subjects": count, "arm": "local"} for file, count in batches or []],
         }
-        (self.directory / "plan.json").write_text(json.dumps(report))
+        name = "plan-commits.json" if for_commits else "plan.json"
+        (self.directory / name).write_text(json.dumps(report))
 
     def report(self, findings: list[dict] | None = None, **extra: object) -> None:
         """What `jev-lint review --json` prints."""
@@ -157,6 +168,7 @@ def install_tools(executable: StubWriter, directory: Path) -> Tools:
         "@CALLS@": repr(str(directory / "calls.jsonl")),
         "@KEYCHAIN@": repr(str(directory / "keychain.json")),
         "@PLAN@": repr(str(directory / "plan.json")),
+        "@PLAN_COMMITS@": repr(str(directory / "plan-commits.json")),
         "@REPORT@": repr(str(directory / "report.json")),
         "@BEHAVIOR@": repr(str(directory / "behavior.json")),
         "@TOKEN@": repr(FAKE_TOKEN),

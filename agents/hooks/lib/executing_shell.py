@@ -18,10 +18,11 @@ CONFIRMED_PROVIDERS = frozenset({"", "claude"})
 # another emulation, or code and definitions the hook does not read.
 EXPANSION_CHANGING_PROGRAMS = frozenset(
     {
-        *"alias autoload builtin emulate eval exec float functions getopts integer let mapfile noglob nocorrect"
-        " print printf private read readarray set setopt shopt source trap unalias unset unsetopt vared zformat"
-        " zmodload zparseopts zstyle".split(),
+        *"alias autoload builtin command emulate eval exec float functions getopts integer let mapfile noglob"
+        " nocorrect print printf private read readarray set setopt shopt source trap unalias unset unsetopt"
+        " vared zformat zmodload zparseopts zstyle".split(),
         ".",
+        "-",
     }
 )
 # The parser reads these as declarations, not calls. `export` and `readonly` share typeset's flags, so

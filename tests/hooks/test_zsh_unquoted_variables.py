@@ -138,6 +138,8 @@ def test_forms_zsh_does_not_run_as_one_word_still_ask(command: str) -> None:
         pytest.param("gh run view 1 --job $j --log --repo j", id="a name that appears again as a word"),
         pytest.param("gh run view 1 --job $module_path --log", id="the module_path array"),
         pytest.param("trap 'setopt sh_word_split' DEBUG; J='1 --web'; gh run view 1 --job $J --log", id="a trap"),
+        pytest.param("- setopt sh_word_split; gh run view 1 --job $J --log", id="a dash prefix before setopt"),
+        pytest.param("command setopt sh_word_split; gh run view 1 --job $J --log", id="command before setopt"),
         pytest.param("setopt sh_word_split; gh run view 1 --job $J --log", id="a changed option"),
         pytest.param("setopt glob_subst && gh run view 1 --job $J --log", id="a glob_subst option"),
         pytest.param("unsetopt nomatch; gh run view 1 --job $J --log", id="an unset option"),

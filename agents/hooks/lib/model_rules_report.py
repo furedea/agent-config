@@ -35,11 +35,16 @@ def _line(finding: Finding) -> str:
 
 
 def _footer(judgement: Judgement) -> str:
-    parts = [f"{judgement.requests} request(s)", f"{judgement.cached} cached"]
+    parts = [
+        f"judged {judgement.judged} of {judgement.subjects} subject(s) in {judgement.seconds:.1f}s",
+        f"{judgement.requests} request(s)",
+        f"{judgement.cached} cached",
+    ]
     if judgement.skipped_subjects:
-        parts.append(
+        skipped = (
             f"{judgement.skipped_subjects} subject(s) in {judgement.skipped_files} file(s) skipped by the cap of 20"
         )
+        parts.append(f"{skipped}, judged at the next Stop" if judgement.resumable else skipped)
     if judgement.withheld_files:
         parts.append(f"{judgement.withheld_files} file(s) withheld: links or outside the repository")
     return ", ".join(parts)

@@ -35,6 +35,7 @@ class Plan:
     cost: int
     skipped_files: int = 0
     skipped_subjects: int = 0
+    resumable: tuple[str, ...] = ()
 
     @property
     def judged(self) -> int:
@@ -44,7 +45,11 @@ class Plan:
 
 @dataclass(frozen=True, slots=True)
 class Judgement:
-    """The findings of the reviews of one Stop with the work they took."""
+    """The findings of the reviews of one Stop with the work they took.
+
+    `resumable` names the skipped files a later Stop on the same inputs can still judge; a file the cap can never
+    admit, or that cannot be passed as an argument, is counted as skipped but is not named.
+    """
 
     findings: tuple[Finding, ...]
     subjects: int = 0
@@ -53,6 +58,13 @@ class Judgement:
     requests: int = 0
     cached: int = 0
     withheld_files: int = 0
+    resumable: tuple[str, ...] = ()
+    seconds: float = 0.0
+
+    @property
+    def judged(self) -> int:
+        """How many subjects were passed to the model, cached ones included."""
+        return self.subjects - self.skipped_subjects
 
     def combined(self, other: Judgement) -> Judgement:
         """Add another review's result; a finding at the same rule, file and line is kept once."""
@@ -66,4 +78,6 @@ class Judgement:
             self.requests + other.requests,
             self.cached + other.cached,
             self.withheld_files + other.withheld_files,
+            tuple(dict.fromkeys(self.resumable + other.resumable)),
+            self.seconds + other.seconds,
         )

@@ -7,7 +7,8 @@ the verification so that one rule, "unchanged inputs never trap the agent", cove
 
 import hashlib
 import os
-from dataclasses import dataclass
+import time
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 import model_rules_credentials
@@ -16,7 +17,7 @@ import model_rules_report
 import model_rules_run
 import trusted_owners
 from model_rules_files import Selection, committed_paths, select
-from model_rules_outcome import Judgement, Prevented
+from model_rules_outcome import Finding, Judgement, Prevented
 from model_rules_programs import Programs
 from session_snapshot import capture, head_commit
 from session_store import SessionRecord, state_directory
@@ -55,39 +56,93 @@ def advise(record: SessionRecord, *, stop_hook_active: bool, budget_seconds: flo
 
 def _advise(record: SessionRecord, stop_hook_active: bool, deadline: model_rules_run.Deadline) -> Advice:
     inputs = _inputs(record)
-    receipt = record.results().get(RECEIPT_KEY)
-    if isinstance(receipt, dict) and receipt.get("input") == inputs and isinstance(receipt.get("summary"), str):
-        return _reused(record, receipt, stop_hook_active)
-    outcome = _judge(record, deadline)
-    if isinstance(outcome, Prevented):
-        return _prevented(outcome)
-    if not outcome.findings:
-        message = model_rules_report.describe_clean(outcome)
-        _save(record, {"input": inputs, "outcome": CLEAN, "summary": message})
-        return Advice(message)
-    message = model_rules_report.describe(outcome)
-    blocking = not stop_hook_active
-    _save(record, {"input": inputs, "outcome": SHOWN if blocking else UNSHOWN, "summary": message})
-    return Advice(message, blocking)
+    stored = record.results().get(RECEIPT_KEY)
+    known = isinstance(stored, dict) and stored.get("input") == inputs and isinstance(stored.get("summary"), str)
+    return _Stop(record, inputs, stop_hook_active, stored if known else None).advise(deadline)
 
 
-def _reused(record: SessionRecord, receipt: dict, stop_hook_active: bool) -> Advice:
-    """Answer from a receipt for the same inputs; findings the agent has not seen yet still block, once."""
-    summary = receipt["summary"]
-    if receipt.get("outcome") == UNSHOWN and not stop_hook_active:
-        _save(record, {**receipt, "outcome": SHOWN})
-        return Advice(summary, blocking=True)
-    if receipt.get("outcome") in {SHOWN, UNSHOWN}:
-        return Advice(f"Model rules · findings unchanged; not rerun\n{summary}")
-    return Advice("Model rules · reused · unchanged since the last review")
+@dataclass(frozen=True, slots=True)
+class _Stop:
+    """One Stop's decision about the model rules, given the receipt of an earlier Stop on the same inputs, if any.
+
+    A receipt whose last run skipped files because of the cap is not final: the next Stop on the same inputs judges
+    the skipped files, and only a receipt that skipped nothing is reused.
+    """
+
+    record: SessionRecord
+    inputs: str
+    stop_hook_active: bool
+    receipt: dict | None
+
+    def advise(self, deadline: model_rules_run.Deadline) -> Advice:
+        """Reuse a final receipt, otherwise judge, resuming from what an unfinished receipt skipped."""
+        if self.receipt is not None and not self.receipt.get("resumable"):
+            return self._reused(self.receipt)
+        started = time.monotonic()
+        outcome = _judge(self.record, deadline, self._pending())
+        if isinstance(outcome, Prevented):
+            return self._unfinished(outcome)
+        return self._conclude(replace(outcome, seconds=time.monotonic() - started))
+
+    def _conclude(self, outcome: Judgement) -> Advice:
+        if not outcome.findings:
+            message = model_rules_report.describe_clean(outcome)
+            self._save(CLEAN, message, outcome)
+            return Advice(message)
+        message = model_rules_report.describe(outcome)
+        fresh = bool({_key(finding) for finding in outcome.findings} - self._shown())
+        blocking = fresh and not self.stop_hook_active
+        # Findings the agent already saw only notify; new ones that could not block yet wait for the next Stop.
+        self._save(UNSHOWN if fresh and not blocking else SHOWN, message, outcome)
+        return Advice(message, blocking)
+
+    def _reused(self, receipt: dict) -> Advice:
+        """Answer from a receipt for the same inputs; findings the agent has not seen yet still block, once."""
+        summary = receipt["summary"]
+        if receipt.get("outcome") == UNSHOWN and not self.stop_hook_active:
+            self.record.save_results({**self.record.results(), RECEIPT_KEY: {**receipt, "outcome": SHOWN}})
+            return Advice(summary, blocking=True)
+        if receipt.get("outcome") in {SHOWN, UNSHOWN}:
+            return Advice(f"Model rules · findings unchanged; not rerun\n{summary}")
+        return Advice("Model rules · reused · unchanged since the last review")
+
+    def _unfinished(self, prevented: Prevented) -> Advice:
+        """A resume that could not run: say why, and still answer from the receipt so unseen findings are not lost."""
+        if self.receipt is None:
+            return _prevented(prevented)
+        reused = self._reused(self.receipt)
+        return Advice(f"{_prevented(prevented).message}\n{reused.message}", reused.blocking)
+
+    def _pending(self) -> frozenset[str]:
+        return frozenset(self.receipt.get("resumable", ())) if self.receipt is not None else frozenset()
+
+    def _shown(self) -> frozenset[tuple[str, str, int]]:
+        """The findings an earlier Stop on these inputs has put in front of the agent."""
+        return (
+            frozenset(tuple(key) for key in self.receipt.get("shown", ())) if self.receipt is not None else frozenset()
+        )
+
+    def _save(self, outcome: str, summary: str, judgement: Judgement) -> None:
+        """Keep the receipt; `shown` grows by this run's findings only when the agent is shown them."""
+        shown = self._shown()
+        if outcome == SHOWN:
+            shown |= {_key(finding) for finding in judgement.findings}
+        receipt = {
+            "input": self.inputs,
+            "outcome": outcome,
+            "summary": summary,
+            "resumable": list(judgement.resumable),
+            "shown": sorted(shown),
+        }
+        self.record.save_results({**self.record.results(), RECEIPT_KEY: receipt})
+
+
+def _key(finding: Finding) -> tuple[str, str, int]:
+    return finding.rule, finding.file, finding.line
 
 
 def _prevented(prevented: Prevented) -> Advice:
     return Advice(f"Model rules skipped · {prevented.reason}")
-
-
-def _save(record: SessionRecord, receipt: dict) -> None:
-    record.save_results({**record.results(), RECEIPT_KEY: receipt})
 
 
 def _preconditions(record: SessionRecord) -> Prevented | None:
@@ -99,14 +154,16 @@ def _preconditions(record: SessionRecord) -> Prevented | None:
     return _repository_gate(record.root)
 
 
-def _judge(record: SessionRecord, deadline: model_rules_run.Deadline) -> Judgement | Prevented:
+def _judge(
+    record: SessionRecord, deadline: model_rules_run.Deadline, pending: frozenset[str]
+) -> Judgement | Prevented:
     if (stop := _preconditions(record)) is not None:
         return stop
     programs = model_rules_programs.locate()
     if isinstance(programs, Prevented):
         return programs
     changes = _Changes.of(record)
-    reviews = changes.reviews(record, programs)
+    reviews = changes.reviews(record, programs, pending)
     withheld = Judgement((), withheld_files=len(changes.withheld))
     if not reviews:
         return withheld
@@ -141,22 +198,27 @@ class _Changes:
         """Every withheld path once, however many reviews it would have been part of."""
         return self.committed.withheld | self.uncommitted.withheld
 
-    def reviews(self, record: SessionRecord, programs: Programs) -> tuple[model_rules_run.Review, ...]:
+    def reviews(
+        self, record: SessionRecord, programs: Programs, pending: frozenset[str]
+    ) -> tuple[model_rules_run.Review, ...]:
         """The commits made since the session started, then the changes not committed yet.
 
         `jev-lint review` judges `base...HEAD` or, without a base, the working tree against HEAD; neither covers both.
+        `pending` are the files an earlier Stop on the same inputs skipped.
         """
         cache = model_rules_run.cache_path(state_directory())
         reviews = []
         if self.committed.sendable:
             reviews.append(
                 model_rules_run.Review(
-                    record.root, record.head, RULES_DIRECTORY, cache, programs, self.committed.sendable
+                    record.root, record.head, RULES_DIRECTORY, cache, programs, self.committed.sendable, pending
                 )
             )
         if self.uncommitted.sendable:
             reviews.append(
-                model_rules_run.Review(record.root, None, RULES_DIRECTORY, cache, programs, self.uncommitted.sendable)
+                model_rules_run.Review(
+                    record.root, None, RULES_DIRECTORY, cache, programs, self.uncommitted.sendable, pending
+                )
             )
         return tuple(reviews)
 

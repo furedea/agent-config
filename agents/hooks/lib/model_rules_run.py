@@ -59,8 +59,9 @@ class Review:
 
     With a `base` it reviews the commits made since that commit; without one it reviews the uncommitted changes and
     the files git does not track yet. `jev-lint` has no single mode for both, so a session needs one review of each.
-    `paths` limits a review to those files; a review that applies the cap names its own subset instead. `programs`
-    are the trusted `op` and `jev-lint` it starts.
+    `paths` limits a review to those files; a review that applies the cap names its own subset instead. `pending`
+    names the files an earlier run of the same inputs skipped. `programs` are the trusted `op` and `jev-lint` it
+    starts.
     """
 
     root: Path
@@ -69,16 +70,21 @@ class Review:
     cache: Path
     programs: Programs
     paths: tuple[str, ...] = ()
+    pending: frozenset[str] = frozenset()
 
     def plan(self, deadline: Deadline, cap: int) -> Plan | Prevented:
-        """Count the subjects without asking the model, and keep the files whose subjects fit `cap`."""
+        """Count the subjects without asking the model, and keep the files whose subjects fit `cap`.
+
+        When the review has `pending` files, the other files were judged by an earlier run and sit in the verdict
+        cache, so they are passed again at no cost and only the `pending` files compete for `cap`.
+        """
         arguments = (str(self.programs.reviewer), *self._arguments("--dry-run"), *self.paths)
         child = _Child(arguments, _environment(), self.root)
         output = child.run(deadline.remaining(PLAN_TIMEOUT_SECONDS))
         if isinstance(output, Prevented):
             return output
         try:
-            return _capped_plan(json.loads(output), cap)
+            return _capped_plan(json.loads(output), cap, self.pending)
         except ValueError, KeyError, TypeError, AttributeError:
             return Prevented(f"{REVIEWER} printed a plan that cannot be read")
 
@@ -211,24 +217,32 @@ def _deadline_wrapper(timeout: float) -> tuple[str, ...]:
 
 
 def _unjudged(plan: Plan) -> Judgement:
-    return Judgement((), plan.subjects, plan.skipped_files, plan.skipped_subjects)
+    return Judgement((), plan.subjects, plan.skipped_files, plan.skipped_subjects, resumable=plan.resumable)
 
 
-def _capped_plan(report: dict, cap: int) -> Plan:
+def _capped_plan(report: dict, cap: int, pending: frozenset[str]) -> Plan:
     subjects, cached = _count(report, "subjects"), _count(report, "cached")
     if subjects - cached <= cap:
         return Plan((), subjects, subjects - cached)
     per_file: dict[str, int] = {}
     for batch in report["batches"]:
         per_file[batch["file"]] = per_file.get(batch["file"], 0) + _count(batch, "subjects")
-    chosen: list[str] = []
+    # The report does not say which subjects are cached, so a resumed run takes the files it judged before for free.
+    chosen = [file for file in per_file if pending and file not in pending and _passable(file)]
     total = 0
     for file, count in per_file.items():
-        if not file.startswith("-") and total + count <= cap:
+        if (not pending or file in pending) and _passable(file) and total + count <= cap:
             chosen.append(file)
             total += count
-    skipped = {file for file in per_file if file not in chosen}
-    return Plan(tuple(chosen), subjects, total, len(skipped), sum(per_file[file] for file in skipped))
+    skipped = [file for file in per_file if file not in chosen]
+    # A file over the whole cap would be skipped on every run, so naming it would make each Stop resume for nothing.
+    resumable = tuple(file for file in skipped if _passable(file) and per_file[file] <= SUBJECT_CAP)
+    return Plan(tuple(chosen), subjects, total, len(skipped), sum(per_file[file] for file in skipped), resumable)
+
+
+def _passable(file: str) -> bool:
+    """Whether the file can be given to `jev-lint` as a path argument; one that starts with `-` would be an option."""
+    return not file.startswith("-")
 
 
 def _judgement(output: bytes, plan: Plan) -> Judgement | Prevented:
@@ -245,6 +259,7 @@ def _judgement(output: bytes, plan: Plan) -> Judgement | Prevented:
             plan.skipped_subjects,
             _count(spent, "calls"),
             _count(report, "cachedCount"),
+            resumable=plan.resumable,
         )
     except ValueError, KeyError, TypeError, AttributeError:
         return Prevented(f"{REVIEWER} printed a report that cannot be read")

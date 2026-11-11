@@ -117,7 +117,11 @@ promoted.
 
 - **Delivery.** It follows the verification receipts in `results.json`. Findings on inputs not judged before block
     Stop once, so the agent sees them. The same inputs only notify (`findings unchanged; not rerun`) and never block
-    again. Nothing blocks when `stop_hook_active` is set; findings kept from blocking that way are recorded as not
+    again. The Stop message tells the seconds the review took and how many subjects were judged or skipped by the
+    cap. When the cap skipped files, the receipt is not final: the next Stop on the same inputs judges the skipped
+    files first (the files judged before are passed again and come from the verdict cache), and blocks only for
+    findings the agent has not been shown; the receipt is reused only once nothing is skipped. A file with more
+    subjects than the whole cap is reported but never resumed. Nothing blocks when `stop_hook_active` is set; findings kept from blocking that way are recorded as not
     yet shown and block once at the next Stop on the same inputs. The model rules get only the time the Stop hook has
     left after the verification (at most 90 seconds), and do not run when too little remains. Anything that prevents a run (the kill switch, an untrusted
     repository, a missing Keychain item, a missing `op` or `jev-lint`, a timeout, a non-zero exit, unreadable output) is

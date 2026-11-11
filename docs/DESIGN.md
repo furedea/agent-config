@@ -112,8 +112,8 @@ After the verification passes, the same Stop hook judges the session's changes w
 `agents/hooks/lint/model-rules/` (Python, TypeScript, Go and Rust: command/query naming M-05, error messages that name the
 operation and subject M-21, known-defect markers with a removal condition M-60); see
 [ADR-0021](adr/0021_enforce_prose_rules_with_each_tools_own_checks_that_report_before_they_block.md). The rules are
-advisory. Four cutoffs are fitted on the rule's own fixtures (M-05 for Python, TypeScript and Rust, and M-21 for
-TypeScript); the others stay at the 0.5 starting value, which those fixtures separate with a wide margin. A fit on so
+advisory. Five cutoffs are fitted on the rule's own fixtures (M-05 for Python, TypeScript and Rust, M-21 for
+TypeScript, and M-60 for Rust); the others stay at the 0.5 starting value, which those fixtures separate with a wide margin. A fit on so
 few cases is not a calibration, so the prose stays in `AGENTS.md` and the style skills until a rule is promoted.
 
 - **Delivery.** It follows the verification receipts in `results.json`. Findings on inputs not judged before block

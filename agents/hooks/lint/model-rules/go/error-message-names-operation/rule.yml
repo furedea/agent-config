@@ -12,6 +12,7 @@ state: located
 threshold: 0.5
 axis: file
 severity: warning
+inconclusive: Every fixture sits far from the 0.5 cutoff (highest conforming 0.26, lowest violation well above 0.5), so this corpus cannot see the rule drift; a fixture at the boundary is the follow-up (#164).
 # Only functions that build an error are asked about; a function that merely returns a received error is not a subject.
 # An aliased import of fmt or errors is not followed: a syntactic matcher cannot resolve the alias, and widening the
 # regex to any `.New(` or `.Errorf(` would select every constructor and logger call.

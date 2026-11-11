@@ -80,6 +80,8 @@ def test_a_variable_the_text_does_not_prove_to_be_one_word_still_asks(command: s
     [
         pytest.param("J=(x y); gh run view 1 --job $J --log", id="an array assignment"),
         pytest.param("J=1; J=(x y); gh run view 1 --job $J --log", id="a later array assignment"),
+        pytest.param("path+=x; gh run view 1 --job $path --log", id="an append to an array name"),
+        pytest.param("J+=2; gh run view 1 --job $J --log", id="an append with no plain assignment before"),
         pytest.param("J=1; J[2]=x; gh run view 1 --job $J --log", id="an element assignment"),
         pytest.param("J=1; typeset -a J; gh run view 1 --job $J --log", id="a typeset"),
         pytest.param("J=1; declare -A J; gh run view 1 --job $J --log", id="a declare"),
@@ -180,6 +182,15 @@ def test_a_claude_payload_may_name_its_provider() -> None:
     assert decision("J=1; gh run view 1 --job $J --log", provider="claude") == "allow"
 
 
-@pytest.mark.parametrize("command", ["gh run view 1 --job $=J --log", "gh run view 1 --job $~J --log"])
+@pytest.mark.parametrize(
+    "command",
+    [
+        "gh run view 1 --job $=J --log",
+        "gh run view 1 --job $~J --log",
+        "gh run view 1 --job \\\\$=J --log",
+        'set -- a --admin; gh run view 1 --job ~"$@" --log',
+        'gh run view 1 --job ~/x"${A[@]}" --log',
+    ],
+)
 def test_a_dollar_before_a_zsh_modifier_asks_whatever_the_shell(command: str) -> None:
     assert decision(command) == "ask"

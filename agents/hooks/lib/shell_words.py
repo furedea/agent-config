@@ -27,7 +27,8 @@ GLOB = re.compile(r"(?<!\\)[*?]|(?<!\\)\[.+\]")
 # Brace expansion can pair braces across quoted parts, so any unquoted brace counts.
 BRACES = frozenset("{}")
 LINE_CONTINUATION = "\\\n"
-UNESCAPED_DOLLAR = re.compile(r"(?<!\\)\$")
+# A dollar sign after an even run of backslashes (each pair is one literal backslash) is not escaped.
+UNESCAPED_DOLLAR = re.compile(r"(?<!\\)(?:\\\\)*\$")
 # Inside double quotes the shell still expands or rewrites only these, `!` being history expansion.
 DOUBLE_QUOTE_SPECIAL = re.compile(r"[$`\\!]")
 
@@ -129,8 +130,8 @@ def spreads(word: dict, source: bytes, *, one_word_names: frozenset[str] = froze
         return True
     if GLOB.search(unquoted) or BRACES & set(unquoted) or UNESCAPED_DOLLAR.search(unquoted):
         return True
-    if parts and parts[0].get("Type") == "Lit" and parts[0].get("Value", "").startswith("~"):
-        return any(part.get("Type") == "ParamExp" for part in parts)
+    if _starts_with_tilde(parts) and any(part.get("Type") == "ParamExp" for part in parts):
+        return True
     if LINE_CONTINUATION in source_text(word, source):
         return True
     for part in word_nodes(word):
@@ -160,6 +161,10 @@ def is_home_parameter(part: dict) -> bool:
     """Accept a plain $HOME or ${HOME}; any modifier would compute a value the hook cannot predict."""
     name = part.get("Param", {}).get("Value")
     return name == HOME_PARAMETER and not any(part.get(key) for key in PARAMETER_MODIFIERS)
+
+
+def _starts_with_tilde(parts: list[dict]) -> bool:
+    return bool(parts) and parts[0].get("Type") == "Lit" and parts[0].get("Value", "").startswith("~")
 
 
 def is_one_word_parameter(part: dict, names: frozenset[str]) -> bool:

@@ -18,7 +18,7 @@ def one_word_names(tree: dict, data: bytes) -> dict[int, frozenset[str]]:
     for statement in tree.get("Stmts", []):
         for call in _reached_calls(statement, data):
             names[id(call)] = frozenset(assigned) | ENVIRONMENT_NAMES
-        plain = _assigned_names(statement)
+        plain = _assigned_names(statement, assigned)
         if plain is None:
             break
         assigned |= plain
@@ -44,8 +44,11 @@ def _operator(command: dict, data: bytes) -> str:
     return data[offset : offset + 2].decode().rstrip(" \t\n\\")
 
 
-def _assigned_names(statement: dict) -> set[str] | None:
-    """The names assigned, or None unless every part is a plain `name=value` (or `export name=value`)."""
+def _assigned_names(statement: dict, earlier: set[str]) -> set[str] | None:
+    """The names assigned, or None unless every part is a plain `name=value` (or `export name=value`).
+
+    A `name+=value` counts only after a plain assignment of the name, as appending to an array adds an element.
+    """
     if statement.get("Background") or statement.get("Coprocess") or statement.get("Negated"):
         return None
     command = statement.get("Cmd") or {}
@@ -55,9 +58,15 @@ def _assigned_names(statement: dict) -> set[str] | None:
         assigns = command.get("Args") or []
     else:
         return None
-    if not assigns or not all(_is_scalar_assignment(assign) for assign in assigns):
-        return None
-    return {assign["Name"]["Value"] for assign in assigns if not assign.get("Naked")}
+    names: set[str] = set()
+    for assign in assigns:
+        if not _is_scalar_assignment(assign) or (
+            assign.get("Append") and assign["Name"]["Value"] not in earlier | names
+        ):
+            return None
+        if not assign.get("Naked"):
+            names.add(assign["Name"]["Value"])
+    return names if assigns else None
 
 
 def _is_scalar_assignment(assign: dict) -> bool:

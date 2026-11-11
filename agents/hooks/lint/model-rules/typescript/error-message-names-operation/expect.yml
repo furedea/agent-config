@@ -1,0 +1,13 @@
+default: clean
+note: >-
+  TypeScript mirror of the Python suite. The first clean case is a message built by another function in the same
+  file. Defects are errors with no message, a generic one, or one naming only the operation or only the subject.
+fixtures/subjects.ts:
+  - { line: 8, label: clean, window: 1, why: "the message comes from a helper that names both" }
+  - { line: 17, label: clean, window: 1, why: "names the operation and the subject" }
+  - { line: 28, label: clean, window: 1, why: "wraps a cause and names the operation and the subject" }
+  - { line: 37, label: clean, window: 1, why: "rethrows a caught error unchanged" }
+  - { line: 46, label: bad, window: 1, why: "generic message" }
+  - { line: 54, label: bad, window: 1, why: "no message" }
+  - { line: 63, label: bad, window: 1, why: "names only the subject" }
+  - { line: 71, label: bad, window: 1, why: "names only the operation" }

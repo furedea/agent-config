@@ -75,7 +75,7 @@ known_first_party = [
 paths = ["agents", "scripts", "tests"]
 min_confidence = 100
 sort_by_size = true
-exclude = [".venv", "build", "dist"]
+exclude = [".venv", "build", "dist", "agents/hooks/lint/model-rules/*/*/fixtures"]
 
 [tool.uv]
 managed = true
@@ -107,6 +107,9 @@ audit = [
 target-version = "py315"
 src = ["agents", "scripts", "tests"]
 line-length = 119
+# Eval fixtures of the model rules plant the defects a rule must find and the code it must leave alone; they are
+# read by the model, never imported, so linting them would only report the planted code.
+extend-exclude = ["agents/hooks/lint/model-rules/*/*/fixtures"]
 
 [tool.ruff.format]
 quote-style = "double"
@@ -191,6 +194,8 @@ max-nested-blocks = 2
 
 [tool.ty.src]
 include = ["agents", "scripts", "tests"]
+# Model-rule eval fixtures are planted code the model reads, not modules; see tool.ruff.extend-exclude.
+exclude = ["agents/hooks/lint/model-rules/*/*/fixtures"]
 
 [tool.ty.environment]
 # Hooks resolve their sibling modules through sys.path at runtime, so ty needs the same roots.

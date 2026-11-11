@@ -154,6 +154,12 @@ pub fn get_connection(pool: &mut Vec<u8>) -> usize {
 fn known_defect() {
     assert_eq!(1, 2);
 }
+
+#[test]
+#[cfg_attr(target_os = "windows", ignore = "broken")]
+fn conditional_defect() {
+    assert_eq!(1, 2);
+}
 """
 
 
@@ -271,7 +277,7 @@ def test_rust_rules_select_the_functions_they_ask_about(repository: Path) -> Non
     assert counts == {
         "command-query-naming": 6,
         "error-message-names-operation": 3,
-        "known-defect-marker-names-removal": 1,
+        "known-defect-marker-names-removal": 2,
     }
 
 

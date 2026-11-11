@@ -22,3 +22,9 @@ fn fix_later() {
 fn comment_without_condition() {
     assert_eq!(1, 2);
 }
+
+#[test]
+#[cfg_attr(target_os = "windows", ignore = "broken")]
+fn conditional() {
+    assert_eq!(1, 2);
+}

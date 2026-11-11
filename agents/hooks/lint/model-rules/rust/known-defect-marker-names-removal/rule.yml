@@ -14,7 +14,10 @@ severity: warning
 rule:
   all:
     - kind: attribute_item
-    - regex: ^#\[ignore\b
+    # Also an ignore attached conditionally: `#[cfg_attr(target_os = "windows", ignore = "...")]`.
+    - any:
+        - regex: ^#\[ignore\b
+        - regex: ^#\[cfg_attr\(.*\bignore\b
 ask: >-
   This test is ignored because of a known defect, without a reason or comment that names the condition under which
   the marker is removed.

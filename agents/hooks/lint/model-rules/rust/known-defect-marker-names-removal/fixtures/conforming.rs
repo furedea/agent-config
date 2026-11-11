@@ -22,3 +22,12 @@ fn needs_database() {
 fn slow() {
     assert_eq!(1, 1);
 }
+
+#[test]
+#[cfg_attr(
+    target_os = "windows",
+    ignore = "known defect: remove once upstream 1.4 ships the fix"
+)]
+fn conditional() {
+    assert_eq!(1, 1);
+}

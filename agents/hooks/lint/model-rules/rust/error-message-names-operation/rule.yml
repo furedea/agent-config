@@ -6,7 +6,9 @@ language: Rust
 divergent: Rust builds an error with Err, bail! or anyhow! where Python raises and TypeScript throws.
 kind: noul
 subject: node
-state: local
+# The file is sent whole: an `Err(ConcreteError::Variant)` takes its message from the error type, defined elsewhere in
+# the file, and `located` measured no false positive for the same cause in the Python rule.
+state: located
 threshold: 0.5
 axis: file
 severity: warning

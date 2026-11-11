@@ -5,7 +5,9 @@ language: Go
 divergent: Go builds an error with errors.New or fmt.Errorf where Python raises and TypeScript throws.
 kind: noul
 subject: node
-state: local
+# The file is sent whole: a message built by a helper or a sentinel error is defined elsewhere in the file, and
+# `located` measured no false positive for the same cause in the Python rule.
+state: located
 threshold: 0.5
 axis: file
 severity: warning

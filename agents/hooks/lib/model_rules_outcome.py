@@ -23,11 +23,11 @@ class Finding:
 
 
 @dataclass(frozen=True, slots=True)
-class Resumable:
-    """A file that one kind of review skipped for the cap and that a later Stop on the same inputs can still judge.
+class ReviewedFile:
+    """A file as one kind of review dealt with it: judged by the model, or skipped for the cap.
 
     The commits and the uncommitted changes are separate reviews, each with its own subjects in a file, so the
-    skipped file is remembered per review.
+    same path is remembered per review.
     """
 
     review: str
@@ -60,7 +60,8 @@ class Judgement:
     """The findings of the reviews of one Stop with the work they took.
 
     `resumable` names the skipped files a later Stop on the same inputs can still judge; a file the cap can never
-    admit, or that cannot be passed as an argument, is counted as skipped but is not named.
+    admit, or that cannot be passed as an argument, is counted as skipped but is not named. `reviewed` names the
+    files passed to the model, which the verdict cache answers at no cost at a later Stop on the same inputs.
     """
 
     findings: tuple[Finding, ...]
@@ -70,7 +71,8 @@ class Judgement:
     requests: int = 0
     cached: int = 0
     withheld_files: int = 0
-    resumable: tuple[Resumable, ...] = ()
+    resumable: tuple[ReviewedFile, ...] = ()
+    reviewed: tuple[ReviewedFile, ...] = ()
     seconds: float = 0.0
 
     @property
@@ -91,5 +93,6 @@ class Judgement:
             self.cached + other.cached,
             self.withheld_files + other.withheld_files,
             tuple(dict.fromkeys(self.resumable + other.resumable)),
+            tuple(dict.fromkeys(self.reviewed + other.reviewed)),
             self.seconds + other.seconds,
         )

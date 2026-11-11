@@ -17,7 +17,7 @@ import model_rules_report
 import model_rules_run
 import trusted_owners
 from model_rules_files import Selection, committed_paths, select
-from model_rules_outcome import Finding, Judgement, Prevented, Resumable
+from model_rules_outcome import Finding, Judgement, Prevented, ReviewedFile
 from model_rules_programs import Programs
 from session_snapshot import capture, head_commit
 from session_store import SessionRecord, state_directory
@@ -79,7 +79,7 @@ class _Stop:
         if self.receipt is not None and not self.receipt.get("resumable"):
             return self._reused(self.receipt)
         started = time.monotonic()
-        outcome = _judge(self.record, deadline, self._pending())
+        outcome = _judge(self.record, deadline, self._reviewed())
         if isinstance(outcome, Prevented):
             return self._unfinished(outcome)
         return self._conclude(replace(outcome, seconds=time.monotonic() - started))
@@ -116,10 +116,11 @@ class _Stop:
         reused = self._reused(self.receipt)
         return Advice(f"{_prevented(prevented).message}\n{reused.message}", reused.blocking)
 
-    def _pending(self) -> frozenset[Resumable]:
+    def _reviewed(self) -> frozenset[ReviewedFile]:
+        """The files an earlier Stop on these inputs passed to the model, per review."""
         if self.receipt is None:
             return frozenset()
-        return frozenset(Resumable(review, file) for review, file in self.receipt.get("resumable", ()))
+        return frozenset(ReviewedFile(review, file) for review, file in self.receipt.get("reviewed", ()))
 
     def _shown(self) -> frozenset[tuple[str, str, int]]:
         """The findings an earlier Stop on these inputs has put in front of the agent."""
@@ -138,6 +139,7 @@ class _Stop:
             "outcome": outcome,
             "summary": summary,
             "resumable": [[item.review, item.file] for item in judgement.resumable],
+            "reviewed": [[item.review, item.file] for item in judgement.reviewed],
             "found": sorted(found),
             "shown": sorted(shown),
         }
@@ -166,7 +168,7 @@ def _preconditions(record: SessionRecord) -> Prevented | None:
 
 
 def _judge(
-    record: SessionRecord, deadline: model_rules_run.Deadline, pending: frozenset[Resumable]
+    record: SessionRecord, deadline: model_rules_run.Deadline, reviewed: frozenset[ReviewedFile]
 ) -> Judgement | Prevented:
     if (stop := _preconditions(record)) is not None:
         return stop
@@ -174,7 +176,7 @@ def _judge(
     if isinstance(programs, Prevented):
         return programs
     changes = _Changes.of(record)
-    reviews = changes.reviews(record, programs, pending)
+    reviews = changes.reviews(record, programs, reviewed)
     withheld = Judgement((), withheld_files=len(changes.withheld))
     if not reviews:
         return withheld
@@ -210,34 +212,35 @@ class _Changes:
         return self.committed.withheld | self.uncommitted.withheld
 
     def reviews(
-        self, record: SessionRecord, programs: Programs, pending: frozenset[Resumable]
+        self, record: SessionRecord, programs: Programs, reviewed: frozenset[ReviewedFile]
     ) -> tuple[model_rules_run.Review, ...]:
         """The commits made since the session started, then the changes not committed yet.
 
         `jev-lint review` judges `base...HEAD` or, without a base, the working tree against HEAD; neither covers both.
-        Each review gets only the files of `pending` that an earlier Stop on the same inputs skipped in that review.
+        Each review gets only the files of `reviewed` that an earlier Stop on the same inputs passed to the model in
+        that review.
         """
         cache = model_rules_run.cache_path(state_directory())
         reviews = []
         if self.committed.sendable:
-            skipped = _skipped_in(pending, model_rules_run.COMMITTED)
+            done = _reviewed_in(reviewed, model_rules_run.COMMITTED)
             reviews.append(
                 model_rules_run.Review(
-                    record.root, record.head, RULES_DIRECTORY, cache, programs, self.committed.sendable, skipped
+                    record.root, record.head, RULES_DIRECTORY, cache, programs, self.committed.sendable, done
                 )
             )
         if self.uncommitted.sendable:
-            skipped = _skipped_in(pending, model_rules_run.UNCOMMITTED)
+            done = _reviewed_in(reviewed, model_rules_run.UNCOMMITTED)
             reviews.append(
                 model_rules_run.Review(
-                    record.root, None, RULES_DIRECTORY, cache, programs, self.uncommitted.sendable, skipped
+                    record.root, None, RULES_DIRECTORY, cache, programs, self.uncommitted.sendable, done
                 )
             )
         return tuple(reviews)
 
 
-def _skipped_in(pending: frozenset[Resumable], review: str) -> frozenset[str]:
-    return frozenset(item.file for item in pending if item.review == review)
+def _reviewed_in(reviewed: frozenset[ReviewedFile], review: str) -> frozenset[str]:
+    return frozenset(item.file for item in reviewed if item.review == review)
 
 
 def _repository_gate(root: Path) -> Prevented | None:

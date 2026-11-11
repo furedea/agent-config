@@ -120,11 +120,11 @@ promoted.
     again. The Stop message tells the seconds the review took and how many subjects were judged or skipped by the
     cap. When the cap skipped files, the receipt is not final: the next Stop on the same inputs judges the skipped
     files first (the files judged before are passed again and come from the verdict cache), and blocks only for
-    findings the agent has not been shown; the receipt is reused only once nothing is skipped. Skipped files are
-    remembered per review (the commits and the uncommitted changes). If the dry run reports more uncached subjects
-    than the skipped files and the files over the cap account for, the verdict cache no longer holds the files judged
-    before, so they are not resent and the skipped files compete for the cap alone. A file with more subjects than
-    the whole cap is reported but never resumed. Nothing blocks when `stop_hook_active` is set; findings kept from blocking that way are recorded as not
+    findings the agent has not been shown; the receipt is reused only once nothing is skipped. The receipt remembers,
+    per review (the commits and the uncommitted changes), the files it passed to the model. They are resent at no
+    cost against the cap only while the dry run's uncached count equals the subjects of the other files exactly; any
+    other count means the verdict cache changed, so nothing is resent for free and the files not judged yet compete
+    for the cap alone. A file with more subjects than the whole cap is reported but never resumed. Nothing blocks when `stop_hook_active` is set; findings kept from blocking that way are recorded as not
     yet shown and block once at the next Stop on the same inputs. The model rules get only the time the Stop hook has
     left after the verification (at most 90 seconds), and do not run when too little remains. Anything that prevents a run (the kill switch, an untrusted
     repository, a missing Keychain item, a missing `op` or `jev-lint`, a timeout, a non-zero exit, unreadable output) is

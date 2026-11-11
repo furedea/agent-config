@@ -173,19 +173,34 @@ def test_a_resumed_stop_does_not_resend_the_files_judged_before_when_the_verdict
     assert "c.py" not in resumed["argv"]
 
 
-def test_each_review_resumes_only_its_own_skipped_files(record: session_store.SessionRecord, tools: Tools) -> None:
+@pytest.mark.usefixtures("first_run_skipped_b_and_d")
+def test_a_resumed_stop_trusts_the_cache_only_when_the_dry_run_matches_what_it_judged(
+    record: session_store.SessionRecord, tools: Tools
+) -> None:
+    tools.plan(50, FOUR_FILES, cached=25)
+
+    stop(record, active=True)
+
+    _, resumed = tools.calls("op")
+    assert "a.py" not in resumed["argv"]
+    assert "c.py" not in resumed["argv"]
+
+
+def test_files_judged_before_do_not_use_up_the_cap_the_other_review_needs(
+    record: session_store.SessionRecord, tools: Tools
+) -> None:
     commit_file(record, "committed.txt")
-    tools.plan(38, [("a.py", 20), ("b.py", 18)], for_commits=True)
-    tools.plan(5, [("n.py", 5)])
-    stop(record, active=True)
-    tools.plan(38, [("a.py", 20), ("b.py", 18)], cached=20, for_commits=True)
-    tools.plan(8, [("n.py", 5), ("b.py", 3)], cached=3)
+    tools.plan(45, [("x.py", 25), ("a.py", 20)], for_commits=True)
+    tools.plan(5, [("d.py", 5)])
+    first = stop(record, active=True)
+    tools.plan(45, [("x.py", 25), ("a.py", 20)], cached=20, for_commits=True)
 
-    stop(record, active=True)
+    second = stop(record, active=True)
 
-    resumed_uncommitted = tools.calls("op")[-1]
-    assert "--base" not in resumed_uncommitted["argv"]
-    assert resumed_uncommitted["argv"][-1] == "b.py"
+    uncommitted_calls = [call for call in tools.calls("op") if "--base" not in call["argv"]]
+    assert "judged at the next Stop" in first["systemMessage"]
+    assert len(uncommitted_calls) == 1
+    assert "judged at the next Stop" not in second["systemMessage"]
 
 
 @pytest.mark.usefixtures("first_run_skipped_b_and_d")

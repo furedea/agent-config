@@ -16,7 +16,7 @@ from pathlib import Path
 
 import model_rules_programs
 from model_rules_credentials import Credentials
-from model_rules_outcome import Finding, Judgement, Plan, Prevented, Resumable
+from model_rules_outcome import Finding, Judgement, Plan, Prevented, ReviewedFile
 from model_rules_programs import Programs
 from session_store import LockTimeoutError, StateError, file_lock, private_directory
 
@@ -60,9 +60,9 @@ class Review:
 
     With a `base` it reviews the commits made since that commit; without one it reviews the uncommitted changes and
     the files git does not track yet. `jev-lint` has no single mode for both, so a session needs one review of each.
-    `paths` limits a review to those files; a review that applies the cap names its own subset instead. `pending`
-    names the files an earlier run of the same inputs skipped. `programs` are the trusted `op` and `jev-lint` it
-    starts.
+    `paths` limits a review to those files; a review that applies the cap names its own subset instead. `reviewed`
+    names the files this review passed to the model in an earlier run of the same inputs. `programs` are the trusted
+    `op` and `jev-lint` it starts.
     """
 
     root: Path
@@ -71,13 +71,13 @@ class Review:
     cache: Path
     programs: Programs
     paths: tuple[str, ...] = ()
-    pending: frozenset[str] = frozenset()
+    reviewed: frozenset[str] = frozenset()
 
     def plan(self, deadline: Deadline, cap: int) -> Plan | Prevented:
         """Count the subjects without asking the model, and keep the files whose subjects fit `cap`.
 
-        When the review has `pending` files, the other files were judged by an earlier run and sit in the verdict
-        cache, so they are passed again at no cost and only the `pending` files compete for `cap`.
+        The `reviewed` files sit in the verdict cache, so they are passed again at no cost when the dry run agrees
+        that the cache still answers for them; only the other files compete for `cap`.
         """
         arguments = (str(self.programs.reviewer), *self._arguments("--dry-run"), *self.paths)
         child = _Child(arguments, _environment(), self.root)
@@ -85,7 +85,7 @@ class Review:
         if isinstance(output, Prevented):
             return output
         try:
-            return _capped_plan(json.loads(output), cap, self.pending)
+            return _capped_plan(json.loads(output), cap, self.reviewed)
         except ValueError, KeyError, TypeError, AttributeError:
             return Prevented(f"{REVIEWER} printed a plan that cannot be read")
 
@@ -148,8 +148,9 @@ def review_all(reviews: tuple[Review, ...], credentials: Credentials, deadline: 
         outcome = review.judge(plan, credentials, deadline) if plan.judged else _unjudged(plan)
         if isinstance(outcome, Prevented):
             return outcome
-        resumable = tuple(Resumable(review.kind, file) for file in plan.resumable)
-        combined = combined.combined(replace(outcome, resumable=resumable))
+        resumable = tuple(ReviewedFile(review.kind, file) for file in plan.resumable)
+        reviewed = tuple(ReviewedFile(review.kind, file) for file in plan.paths)
+        combined = combined.combined(replace(outcome, resumable=resumable, reviewed=reviewed))
     return combined
 
 
@@ -227,39 +228,38 @@ def _unjudged(plan: Plan) -> Judgement:
     return Judgement((), plan.subjects, plan.skipped_files, plan.skipped_subjects)
 
 
-def _capped_plan(report: dict, cap: int, pending: frozenset[str]) -> Plan:
+def _capped_plan(report: dict, cap: int, reviewed: frozenset[str]) -> Plan:
     subjects, cached = _count(report, "subjects"), _count(report, "cached")
     if subjects - cached <= cap:
         return Plan((), subjects, subjects - cached)
     per_file: dict[str, int] = {}
     for batch in report["batches"]:
         per_file[batch["file"]] = per_file.get(batch["file"], 0) + _count(batch, "subjects")
-    pending = frozenset(file for file in pending if file in per_file)
-    chosen = _judged_before(per_file, pending, subjects - cached)
+    chosen = _answered_by_cache(per_file, reviewed, subjects - cached)
+    # Files not reviewed before come first, so that every run makes progress on what is still unjudged.
+    waiting = sorted((file for file in per_file if file not in chosen), key=lambda file: file in reviewed)
     total = 0
-    for file, count in per_file.items():
-        if (not pending or file in pending) and _passable(file) and total + count <= cap:
+    for file in waiting:
+        if _passable(file) and total + per_file[file] <= cap:
             chosen.append(file)
-            total += count
+            total += per_file[file]
     skipped = [file for file in per_file if file not in chosen]
     # A file over the whole cap would be skipped on every run, so naming it would make each Stop resume for nothing.
     resumable = tuple(file for file in skipped if _admissible(file, per_file[file]))
     return Plan(tuple(chosen), subjects, total, len(skipped), sum(per_file[file] for file in skipped), resumable)
 
 
-def _judged_before(per_file: dict[str, int], pending: frozenset[str], uncached: int) -> list[str]:
-    """The files an earlier run of the same inputs judged, for the verdict cache to answer at no cost.
+def _answered_by_cache(per_file: dict[str, int], reviewed: frozenset[str], uncached: int) -> list[str]:
+    """The files an earlier run reviewed, which the verdict cache answers at no cost, if the dry run agrees.
 
-    The report does not say which subjects are cached. Files that were never judged are the pending ones and those
-    over the whole cap, so any uncached subject beyond theirs means the cache no longer answers for the rest. Then
-    none are sent: the pending files compete for the cap alone, and the cost stays within it.
+    The report counts the uncached subjects of the whole review, not per file. They equal the subjects of the files
+    not reviewed before exactly when the cache holds everything that was reviewed and nothing else. Any other count
+    means the cache changed (another session, eviction), so nothing is sent for free and no cost is hidden.
     """
-    if not pending:
+    expected = sum(count for file, count in per_file.items() if file not in reviewed)
+    if uncached != expected:
         return []
-    never_judged = sum(count for file, count in per_file.items() if file in pending or not _admissible(file, count))
-    if uncached > never_judged:
-        return []
-    return [file for file, count in per_file.items() if file not in pending and _admissible(file, count)]
+    return [file for file in per_file if file in reviewed and _passable(file)]
 
 
 def _admissible(file: str, subjects: int) -> bool:

@@ -1,0 +1,37 @@
+# M-21 error messages name the operation and the subject (agents/skills/go-style/references/errors.md: "Wrap with the
+# operation and subject"). Advisory. The cutoff is the 0.5 starting value, not
+# fitted: on this folder's fixtures the highest conforming case scored 0.26 and the fit would be 0.61.
+id: error-message-names-operation
+language: Go
+divergent: Go builds an error with errors.New or fmt.Errorf where Python raises and TypeScript throws.
+kind: noul
+subject: node
+# The file is sent whole: a message built by a helper or a sentinel error is defined elsewhere in the file, and
+# `located` measured no false positive for the same cause in the Python rule.
+state: located
+threshold: 0.5
+axis: file
+severity: warning
+inconclusive: Every fixture sits far from the 0.5 cutoff (highest conforming 0.26, lowest violation well above 0.5), so this corpus cannot see the rule drift; a fixture at the boundary is the follow-up (#164).
+# Only functions that build an error are asked about; a function that merely returns a received error is not a subject.
+# An aliased import of fmt or errors is not followed: a syntactic matcher cannot resolve the alias, and widening the
+# regex to any `.New(` or `.Errorf(` would select every constructor and logger call.
+rule:
+  all:
+    - any:
+        - kind: function_declaration
+        - kind: method_declaration
+    - has:
+        kind: call_expression
+        regex: ^(errors\.New|fmt\.Errorf)\(
+        stopBy: end
+ask: >-
+  An error built in this function carries a message that names neither the operation that failed nor the subject it
+  failed on.
+criteria:
+  "true": >-
+    An error built has a generic message such as "invalid", "error" or "failed", or one that names only the operation or
+    only the subject, so a reader of the message alone cannot tell what was being done to what.
+  "false": >-
+    Every error built names the operation and the subject, directly or by wrapping a cause that does. Returning a
+    received error unchanged is not a violation.

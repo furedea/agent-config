@@ -1,0 +1,15 @@
+default: clean
+# Lines are the t.Skip call. violating_test.go: a skip for a known defect with no removal condition.
+# conforming_test.go: a condition in a comment or in the message, and skips that are not for a defect.
+fixtures/violating_test.go:
+  - { line: 6, label: bad, window: 1 }
+  - { line: 10, label: bad, window: 1 }
+  - { line: 14, label: bad, window: 1 }
+  - { line: 19, label: bad, window: 1 }
+  - { line: 24, label: bad, window: 1 }
+  - { line: 28, label: bad, window: 1 }
+fixtures/conforming_test.go:
+  - { line: 10, label: clean, window: 1 }
+  - { line: 14, label: clean, window: 1 }
+  - { line: 19, label: clean, window: 1 }
+  - { line: 25, label: clean, window: 1 }

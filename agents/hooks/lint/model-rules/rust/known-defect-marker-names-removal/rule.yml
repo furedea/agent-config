@@ -1,0 +1,36 @@
+# M-60 a known-defect marker carries a comment naming the condition for removing it
+# (agents/skills/python-style/references/testing.md, which states it for xfail). Rust has no expected-failure marker,
+# so a test ignored for a known defect is the marker here; see go/known-defect-marker-names-removal. Advisory.
+id: known-defect-marker-names-removal
+language: Rust
+divergent: Rust has no xfail; the marker is #[ignore], and an ignore for another reason is not a violation.
+kind: noul
+subject: node
+# The comment sits above the attribute, outside the attribute, so the arm that sends the file is used.
+state: located
+# Fitted by `jev-lint eval` on this rule's own fixtures: 11 cases (6 bad, 5 clean) over 3 passes. The highest clean case
+# scored 0.14 and the lowest violation (the wrapped cfg_attr at violating.rs:33) 0.53 to 0.61, which is within the
+# pass-to-pass spread of the 0.5 starting cutoff; the fit is the midpoint of that gap, 0.36. A fit on so few cases is a
+# starting point, not a calibration.
+threshold: 0.36
+axis: file
+severity: warning
+rule:
+  all:
+    - kind: attribute_item
+    # Also an ignore attached conditionally: `#[cfg_attr(target_os = "windows", ignore = "...")]`. Only the attribute
+    # list after the condition counts: `cfg_attr(feature = "ignore", ..)` and `cfg_attr(ignore, ..)` attach no ignore.
+    - any:
+        - regex: ^#\[ignore\b
+        - regex: (?s)^#\[cfg_attr\(.*,\s*ignore\s*(=|,|\)\])
+ask: >-
+  This test is ignored because of a known defect, without a reason or comment that names the condition under which
+  the marker is removed.
+criteria:
+  "true": >-
+    The test is ignored for a known defect, and neither the attribute's reason nor a comment next to it names a
+    condition such as a fixed defect, a released dependency version, or a finished feature; the marker is bare or only
+    says that the test is broken or to fix it later.
+  "false": >-
+    The test is not ignored for a known defect (for example it is slow or needs a credential), or the attribute's reason
+    or a comment next to it names the condition for removing it.

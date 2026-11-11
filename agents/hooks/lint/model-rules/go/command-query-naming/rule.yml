@@ -1,0 +1,49 @@
+# M-05 command/query naming (agents/AGENTS.md: "name command functions for their side effects and query functions for
+# the value they return"). Advisory: the Stop hook reports findings and never promotes this rule to a gate (ADR-0021).
+# The cutoff is the 0.5 starting value, not fitted: on this folder's fixtures the highest conforming case scored 0.25
+# and the fit would be 0.61, so the eval separates them with a wide margin.
+id: command-query-naming
+language: Go
+kind: noul
+subject: node
+# The function plus the same file's imports and enclosing declarations; no other file is sent.
+state: local
+threshold: 0.5
+axis: file
+severity: warning
+rule:
+  all:
+    - any:
+        - kind: function_declaration
+        - kind: method_declaration
+    - has: { field: name, pattern: $NAME }
+    # Test, benchmark, fuzz and example functions are named for what they verify, not for a read or an effect. A
+    # test, benchmark or fuzz function is a top-level function that takes `*testing.T`, `*testing.B` or `*testing.F`;
+    # a method or a function of another shape that merely starts with `Test` is production code. Known gap: a test of
+    # an aliased or dot-imported `testing` (`t *tst.T`, `t *T`) is not excluded, since a syntactic matcher cannot
+    # resolve the alias; the cost is one more subject asked about, not a wrong exclusion.
+    - not:
+        all:
+          - kind: function_declaration
+          - any:
+              - all:
+                  - has:
+                      field: name
+                      regex: "^(Test|Benchmark|Fuzz)([A-Z_]|$)"
+                  - has:
+                      field: parameters
+                      regex: \*testing\.[TBF]\b
+              - has:
+                  field: name
+                  regex: "^Example([A-Z_]|$)"
+ask: >-
+  The name of this function presents it as a query or as a command, and its body is the other one, or both.
+criteria:
+  "true": >-
+    The name begins with a verb that unambiguously promises a pure read or an effect, and the body does the other: a
+    name that promises a read while the body changes state outside its own locals (writing a file, mutating an argument,
+    a global or a field, sending a request), or a name that promises an effect while the body only computes and returns
+    a value, performing no effect.
+  "false": >-
+    Every other case: the name and the body agree on whether the function reads or acts, or the name's verb promises
+    neither a pure read nor an effect, so the body contradicts nothing.

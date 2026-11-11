@@ -67,6 +67,127 @@ test.fails("known defect", () => {});
 """
 
 
+GO_SOURCE = """\
+package sample
+
+import (
+	"errors"
+	"testing"
+)
+
+func GetUser(users []string) []string {
+	users = users[:0]
+	return users
+}
+
+func Load(path string) (string, error) {
+	if path == "" {
+		return "", errors.New("bad")
+	}
+	return path, nil
+}
+
+func Pure(a, b int) int {
+	return a + b
+}
+
+func TestLoad(t *testing.T) {
+	// Removed when the parser handles empty input (#123).
+	t.Skip("known defect")
+}
+
+func TestBare(t *testing.T) {
+	// broken
+	t.SkipNow()
+}
+
+func (s *Suite) TestSuiteSkip() {
+	s.T().Skip("broken")
+}
+
+func (c *Client) TestEnabled() bool {
+	c.enabled = true
+	return c.enabled
+}
+"""
+
+RUST_SOURCE = """\
+use anyhow::{bail, Context, Result};
+
+pub fn get_user(users: &mut Vec<String>) -> usize {
+    users.clear();
+    users.len()
+}
+
+pub fn load(path: &str) -> Result<String> {
+    if path.is_empty() {
+        bail!("bad");
+    }
+    Ok(path.to_string())
+}
+
+pub fn pure(a: i32, b: i32) -> i32 {
+    a + b
+}
+
+pub fn read(path: &str) -> Result<String> {
+    std::fs::read_to_string(path).context("failed")
+}
+
+pub fn qualify(path: &str) -> anyhow::Result<String> {
+    if path.is_empty() {
+        anyhow::bail!("bad");
+    }
+    Ok(path.to_string())
+}
+
+#[cfg(not(test))]
+pub fn get_connection(pool: &mut Vec<u8>) -> usize {
+    pool.clear();
+    pool.len()
+}
+
+// Removed when the parser handles empty input (#123).
+#[test]
+/* regression */
+#[ignore]
+fn known_defect() {
+    assert_eq!(1, 2);
+}
+
+#[test]
+#[cfg_attr(target_os = "windows", ignore = "broken")]
+fn conditional_defect() {
+    assert_eq!(1, 2);
+}
+
+#[test]
+#[cfg_attr(
+    target_os = "windows",
+    ignore = "broken"
+)]
+fn wrapped_defect() {
+    assert_eq!(1, 2);
+}
+
+#[cfg_attr(target_os = "linux", test)]
+fn get_conditional_test(pool: &mut Vec<u8>) {
+    pool.clear();
+}
+
+#[test]
+#[cfg_attr(feature = "ignore", should_panic)]
+fn feature_named_ignore() {
+    assert_eq!(1, 1);
+}
+
+#[cfg_attr(ignore, test)]
+fn condition_named_ignore() {
+    assert_eq!(1, 1);
+}
+"""
+
+
 def git(root: Path, *arguments: str) -> str:
     result = subprocess.run(["git", *arguments], cwd=root, check=True, capture_output=True, text=True)
     return result.stdout.strip()
@@ -129,6 +250,31 @@ def test_every_saved_eval_baseline_still_scores_as_accepted() -> None:
     assert result.returncode == 0, result.stdout + result.stderr
 
 
+def recorded_files(node: object) -> list[str]:
+    """Every `file` value in a saved eval record, wherever it sits."""
+    if isinstance(node, dict):
+        own = [node["file"]] if isinstance(node.get("file"), str) else []
+        return own + [path for value in node.values() for path in recorded_files(value)]
+    if isinstance(node, list):
+        return [path for value in node for path in recorded_files(value)]
+    return []
+
+
+def test_no_saved_eval_baseline_records_an_absolute_path() -> None:
+    """An absolute path names one checkout's directory; a baseline is relocated on load only from a relative one."""
+    baselines = sorted(RULES.glob("*/*/baseline.json"))
+    assert baselines
+
+    absolute = {
+        f"{baseline.relative_to(RULES)}: {path}"
+        for baseline in baselines
+        for path in recorded_files(json.loads(baseline.read_text()))
+        if Path(path).is_absolute()
+    }
+
+    assert not absolute, "\n".join(sorted(absolute))
+
+
 def test_python_rules_select_the_functions_they_ask_about(repository: Path) -> None:
     (repository / "sample.py").write_text(PYTHON_SOURCE)
 
@@ -152,6 +298,56 @@ def test_typescript_rules_select_the_functions_they_ask_about(repository: Path) 
         "error-message-names-operation": 1,
         "known-defect-marker-names-removal": 1,
     }
+
+
+def test_go_rules_select_the_functions_they_ask_about(repository: Path) -> None:
+    (repository / "sample_test.go").write_text(GO_SOURCE)
+
+    counts = subjects_by_rule(plan(repository))
+
+    # Three functions are named for a read or an effect, plus the production method `TestEnabled` and the suite method
+    # `TestSuiteSkip`, which are not top-level functions taking `*testing.T`; `TestLoad` and `TestBare` are named for
+    # what they verify. Only `Load` builds an error; three skips carry a known-defect marker: `t.Skip`, `t.SkipNow`
+    # and the suite form `s.T().Skip`.
+    assert counts == {
+        "command-query-naming": 5,
+        "error-message-names-operation": 1,
+        "known-defect-marker-names-removal": 3,
+    }
+
+
+def test_rust_rules_select_the_functions_they_ask_about(repository: Path) -> None:
+    (repository / "sample.rs").write_text(RUST_SOURCE)
+
+    counts = subjects_by_rule(plan(repository))
+
+    # `known_defect` carries `#[test]` before `#[ignore]` and two comments, so it is not asked about by name; the
+    # `#[cfg(not(test))]` function is production code and is. `read` builds its message with `.context(..)` and
+    # `qualify` with the path-qualified `anyhow::bail!`. Two of the three ignores are `cfg_attr`, one of them wrapped
+    # over several lines as rustfmt writes it. `cfg_attr` whose condition merely names `ignore` is not an ignore.
+    assert counts == {
+        "command-query-naming": 6,
+        "error-message-names-operation": 3,
+        "known-defect-marker-names-removal": 3,
+    }
+
+
+@pytest.mark.parametrize("language", ["go", "rust"])
+def test_every_go_and_rust_rule_ships_an_eval_suite_with_both_kinds_of_fixture(language: str) -> None:
+    result = subprocess.run(
+        ["jev-lint", "eval", "--dry-run", "--no-config", str(RULES / language)],
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+
+    suites = [line for line in result.stdout.splitlines() if line.startswith(f"{language}/")]
+    assert {line.split(":")[0] for line in suites} == {f"{language}/{rule_id}" for rule_id in RULE_IDS}
+    for rule_id in RULE_IDS:
+        fixtures = (RULES / language / rule_id / "fixtures").iterdir()
+        names = {path.name for path in fixtures}
+        assert {name.split(".")[0].removesuffix("_test") for name in names} == {"violating", "conforming"}
 
 
 def test_functions_committed_since_the_base_are_still_selected(repository: Path) -> None:

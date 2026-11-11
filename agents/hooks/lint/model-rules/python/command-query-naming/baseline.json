@@ -1,13 +1,13 @@
 {
   "schema": "jev-lint-eval-1",
-  "recorded": "2026-11-11T15:01:03.294Z",
+  "recorded": "2026-11-11T16:48:21.262Z",
   "model": "jev-1.14.0",
   "suite": "python/command-query-naming",
   "rules": [
     {
       "id": "command-query-naming",
       "draft": "ef56e71cabd9",
-      "at": 0.5
+      "at": 0.76
     }
   ],
   "cutoffs": {},
@@ -15,153 +15,7 @@
     [
       {
         "rule": "command-query-naming",
-        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
-        "line": 13,
-        "endLine": 19,
-        "kind": "noul",
-        "value": 0.59,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
-        "line": 27,
-        "endLine": 30,
-        "kind": "noul",
-        "value": 0.46,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
-        "line": 34,
-        "endLine": 36,
-        "kind": "noul",
-        "value": 0.08,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
-        "line": 40,
-        "endLine": 43,
-        "kind": "noul",
-        "value": 0.21,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
-        "line": 47,
-        "endLine": 51,
-        "kind": "noul",
-        "value": 0.07,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
-        "line": 55,
-        "endLine": 56,
-        "kind": "noul",
-        "value": 0.06,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
-        "line": 60,
-        "endLine": 62,
-        "kind": "noul",
-        "value": 0.91,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
-        "line": 66,
-        "endLine": 67,
-        "kind": "noul",
-        "value": 0.96,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
-        "line": 71,
-        "endLine": 75,
-        "kind": "noul",
-        "value": 0.97,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
-        "line": 79,
-        "endLine": 80,
-        "kind": "noul",
-        "value": 0.96,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
-        "line": 84,
-        "endLine": 87,
-        "kind": "noul",
-        "value": 0.92,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
-        "line": 91,
-        "endLine": 93,
-        "kind": "noul",
-        "value": 0.96,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
-        "line": 97,
-        "endLine": 98,
-        "kind": "noul",
-        "value": 0.96,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
-        "line": 102,
-        "endLine": 103,
-        "kind": "noul",
-        "value": 0.95,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
-        "line": 107,
-        "endLine": 108,
-        "kind": "noul",
-        "value": 0.51,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
-        "line": 112,
-        "endLine": 113,
-        "kind": "noul",
-        "value": 0.07,
-        "confidence": null
-      }
-    ],
-    [
-      {
-        "rule": "command-query-naming",
-        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
+        "file": "agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
         "line": 13,
         "endLine": 19,
         "kind": "noul",
@@ -170,25 +24,25 @@
       },
       {
         "rule": "command-query-naming",
-        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
+        "file": "agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
         "line": 27,
         "endLine": 30,
         "kind": "noul",
-        "value": 0.4,
+        "value": 0.43,
         "confidence": null
       },
       {
         "rule": "command-query-naming",
-        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
+        "file": "agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
         "line": 34,
         "endLine": 36,
         "kind": "noul",
-        "value": 0.08,
+        "value": 0.07,
         "confidence": null
       },
       {
         "rule": "command-query-naming",
-        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
+        "file": "agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
         "line": 40,
         "endLine": 43,
         "kind": "noul",
@@ -197,16 +51,16 @@
       },
       {
         "rule": "command-query-naming",
-        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
+        "file": "agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
         "line": 47,
         "endLine": 51,
         "kind": "noul",
-        "value": 0.06,
+        "value": 0.07,
         "confidence": null
       },
       {
         "rule": "command-query-naming",
-        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
+        "file": "agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
         "line": 55,
         "endLine": 56,
         "kind": "noul",
@@ -215,153 +69,7 @@
       },
       {
         "rule": "command-query-naming",
-        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
-        "line": 60,
-        "endLine": 62,
-        "kind": "noul",
-        "value": 0.9,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
-        "line": 66,
-        "endLine": 67,
-        "kind": "noul",
-        "value": 0.96,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
-        "line": 71,
-        "endLine": 75,
-        "kind": "noul",
-        "value": 0.96,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
-        "line": 79,
-        "endLine": 80,
-        "kind": "noul",
-        "value": 0.95,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
-        "line": 84,
-        "endLine": 87,
-        "kind": "noul",
-        "value": 0.92,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
-        "line": 91,
-        "endLine": 93,
-        "kind": "noul",
-        "value": 0.95,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
-        "line": 97,
-        "endLine": 98,
-        "kind": "noul",
-        "value": 0.96,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
-        "line": 102,
-        "endLine": 103,
-        "kind": "noul",
-        "value": 0.96,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
-        "line": 107,
-        "endLine": 108,
-        "kind": "noul",
-        "value": 0.62,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
-        "line": 112,
-        "endLine": 113,
-        "kind": "noul",
-        "value": 0.07,
-        "confidence": null
-      }
-    ],
-    [
-      {
-        "rule": "command-query-naming",
-        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
-        "line": 13,
-        "endLine": 19,
-        "kind": "noul",
-        "value": 0.56,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
-        "line": 27,
-        "endLine": 30,
-        "kind": "noul",
-        "value": 0.47,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
-        "line": 34,
-        "endLine": 36,
-        "kind": "noul",
-        "value": 0.08,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
-        "line": 40,
-        "endLine": 43,
-        "kind": "noul",
-        "value": 0.23,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
-        "line": 47,
-        "endLine": 51,
-        "kind": "noul",
-        "value": 0.06,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
-        "line": 55,
-        "endLine": 56,
-        "kind": "noul",
-        "value": 0.07,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
+        "file": "agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
         "line": 60,
         "endLine": 62,
         "kind": "noul",
@@ -370,7 +78,7 @@
       },
       {
         "rule": "command-query-naming",
-        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
+        "file": "agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
         "line": 66,
         "endLine": 67,
         "kind": "noul",
@@ -379,7 +87,7 @@
       },
       {
         "rule": "command-query-naming",
-        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
+        "file": "agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
         "line": 71,
         "endLine": 75,
         "kind": "noul",
@@ -388,7 +96,7 @@
       },
       {
         "rule": "command-query-naming",
-        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
+        "file": "agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
         "line": 79,
         "endLine": 80,
         "kind": "noul",
@@ -397,7 +105,7 @@
       },
       {
         "rule": "command-query-naming",
-        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
+        "file": "agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
         "line": 84,
         "endLine": 87,
         "kind": "noul",
@@ -406,7 +114,7 @@
       },
       {
         "rule": "command-query-naming",
-        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
+        "file": "agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
         "line": 91,
         "endLine": 93,
         "kind": "noul",
@@ -415,16 +123,16 @@
       },
       {
         "rule": "command-query-naming",
-        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
+        "file": "agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
         "line": 97,
         "endLine": 98,
         "kind": "noul",
-        "value": 0.96,
+        "value": 0.95,
         "confidence": null
       },
       {
         "rule": "command-query-naming",
-        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
+        "file": "agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
         "line": 102,
         "endLine": 103,
         "kind": "noul",
@@ -433,28 +141,320 @@
       },
       {
         "rule": "command-query-naming",
-        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
+        "file": "agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
         "line": 107,
         "endLine": 108,
+        "kind": "noul",
+        "value": 0.5,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
+        "line": 112,
+        "endLine": 113,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
+        "line": 13,
+        "endLine": 19,
+        "kind": "noul",
+        "value": 0.56,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
+        "line": 27,
+        "endLine": 30,
+        "kind": "noul",
+        "value": 0.45,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
+        "line": 34,
+        "endLine": 36,
+        "kind": "noul",
+        "value": 0.08,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
+        "line": 40,
+        "endLine": 43,
+        "kind": "noul",
+        "value": 0.24,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
+        "line": 47,
+        "endLine": 51,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
+        "line": 55,
+        "endLine": 56,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
+        "line": 60,
+        "endLine": 62,
+        "kind": "noul",
+        "value": 0.93,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
+        "line": 66,
+        "endLine": 67,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
+        "line": 71,
+        "endLine": 75,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
+        "line": 79,
+        "endLine": 80,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
+        "line": 84,
+        "endLine": 87,
+        "kind": "noul",
+        "value": 0.92,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
+        "line": 91,
+        "endLine": 93,
+        "kind": "noul",
+        "value": 0.94,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
+        "line": 97,
+        "endLine": 98,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
+        "line": 102,
+        "endLine": 103,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
+        "line": 107,
+        "endLine": 108,
+        "kind": "noul",
+        "value": 0.62,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
+        "line": 112,
+        "endLine": 113,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
+        "line": 13,
+        "endLine": 19,
         "kind": "noul",
         "value": 0.58,
         "confidence": null
       },
       {
         "rule": "command-query-naming",
-        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
+        "file": "agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
+        "line": 27,
+        "endLine": 30,
+        "kind": "noul",
+        "value": 0.41,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
+        "line": 34,
+        "endLine": 36,
+        "kind": "noul",
+        "value": 0.07,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
+        "line": 40,
+        "endLine": 43,
+        "kind": "noul",
+        "value": 0.22,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
+        "line": 47,
+        "endLine": 51,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
+        "line": 55,
+        "endLine": 56,
+        "kind": "noul",
+        "value": 0.07,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
+        "line": 60,
+        "endLine": 62,
+        "kind": "noul",
+        "value": 0.92,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
+        "line": 66,
+        "endLine": 67,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
+        "line": 71,
+        "endLine": 75,
+        "kind": "noul",
+        "value": 0.94,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
+        "line": 79,
+        "endLine": 80,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
+        "line": 84,
+        "endLine": 87,
+        "kind": "noul",
+        "value": 0.92,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
+        "line": 91,
+        "endLine": 93,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
+        "line": 97,
+        "endLine": 98,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
+        "line": 102,
+        "endLine": 103,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
+        "line": 107,
+        "endLine": 108,
+        "kind": "noul",
+        "value": 0.57,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/python/command-query-naming/fixtures/subjects.py",
         "line": 112,
         "endLine": 113,
         "kind": "noul",
-        "value": 0.07,
+        "value": 0.06,
         "confidence": null
       }
     ]
   ],
   "spent": {
     "calls": 3,
-    "inputTokens": 22677,
-    "usd": 0.000952434,
-    "ms": 329
+    "inputTokens": 22599,
+    "usd": 0.0009491580000000001,
+    "ms": 177
   }
 }

@@ -1,0 +1,46 @@
+# M-21 error messages name the operation and the subject (agents/skills/rust-style/references/errors.md: an error
+# "must include the operation and path"); see go/error-message-names-operation. Advisory. The cutoff is the
+# 0.5 starting value, not fitted: on this folder's fixtures the highest conforming case scored 0.12.
+id: error-message-names-operation
+language: Rust
+divergent: Rust builds an error with Err, bail! or anyhow! where Python raises and TypeScript throws.
+kind: noul
+subject: node
+# The file is sent whole: an `Err(ConcreteError::Variant)` takes its message from the error type, defined elsewhere in
+# the file, and `located` measured no false positive for the same cause in the Python rule.
+state: located
+threshold: 0.5
+axis: file
+severity: warning
+inconclusive: Every fixture sits far from the 0.5 cutoff (highest conforming 0.12, lowest violation well above 0.5), so this corpus cannot see the rule drift; a fixture at the boundary is the follow-up (#164).
+# Only functions that build an error are asked about; a function that merely propagates one with `?` is not a subject.
+# Known gap: an error built by `ok_or`, `ok_or_else` or `map_err` is not selected, so `map.get(key).ok_or("missing")` is
+# never asked about. Selecting every such call would select most functions that handle an Option or a Result; the
+# follow-up (#164) selects only calls whose argument carries a message written there.
+rule:
+  all:
+    - kind: function_item
+    - any:
+        - has:
+            kind: call_expression
+            regex: ^Err\(
+            stopBy: end
+        - has:
+            kind: macro_invocation
+            regex: ^(anyhow::)?(bail|anyhow|ensure)!
+            stopBy: end
+        # The message attached with anyhow's Context is the one rust-style asks for at I/O and parse boundaries.
+        - has:
+            kind: call_expression
+            regex: \.(with_)?context\(
+            stopBy: end
+ask: >-
+  An error built in this function carries a message that names neither the operation that failed nor the subject it
+  failed on.
+criteria:
+  "true": >-
+    An error built has no message, or a generic one such as "invalid", "error" or "failed", or one that names only the
+    operation or only the subject, so a reader of the message alone cannot tell what was being done to what.
+  "false": >-
+    Every error built names the operation and the subject, directly or by wrapping a cause that does. Propagating a
+    received error unchanged is not a violation.

@@ -1,0 +1,40 @@
+# M-05 command/query naming; see go/command-query-naming. Test functions are left out, as in jev-lint's own
+# fn-name-promises for Rust.
+id: command-query-naming
+language: Rust
+kind: noul
+subject: node
+state: local
+# Fitted by `jev-lint eval` on this rule's own fixtures: 10 cases (4 bad, 6 clean) over 3 passes. The clean case
+# conforming.rs:34 scored up to 0.50, on the 0.5 starting cutoff, and the fit moved it to 0.68. A fit on so few cases
+# is a starting point, not a calibration.
+threshold: 0.68
+axis: file
+severity: warning
+rule:
+  all:
+    - kind: function_item
+    - has: { field: name, pattern: $NAME }
+    # `#[test]` may be followed by other attributes or comments, so look back through all of them. A test attribute
+    # added by `cfg_attr` counts too: `test` listed after the condition, not the condition `cfg_attr(test, ..)`.
+    - not:
+        follows:
+          kind: attribute_item
+          regex: (?s)^#\[(([A-Za-z_][A-Za-z0-9_]*::)*test\b|cfg_attr\(.*,\s*([A-Za-z_][A-Za-z0-9_]*::)*test\s*(,|\)\]))
+          stopBy:
+            not:
+              any:
+                - kind: attribute_item
+                - kind: line_comment
+                - kind: block_comment
+ask: >-
+  The name of this function presents it as a query or as a command, and its body is the other one, or both.
+criteria:
+  "true": >-
+    The name begins with a verb that unambiguously promises a pure read or an effect, and the body does the other: a
+    name that promises a read while the body changes state outside its own locals (writing a file, mutating an argument,
+    a global or a field, sending a request), or a name that promises an effect while the body only computes and returns
+    a value, performing no effect.
+  "false": >-
+    Every other case: the name and the body agree on whether the function reads or acts, or the name's verb promises
+    neither a pure read nor an effect, so the body contradicts nothing.

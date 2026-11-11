@@ -100,6 +100,15 @@ func TestBare(t *testing.T) {
 	// broken
 	t.SkipNow()
 }
+
+func (s *Suite) TestSuiteSkip() {
+	s.T().Skip("broken")
+}
+
+func (c *Client) TestEnabled() bool {
+	c.enabled = true
+	return c.enabled
+}
 """
 
 RUST_SOURCE = """\
@@ -240,12 +249,14 @@ def test_go_rules_select_the_functions_they_ask_about(repository: Path) -> None:
 
     counts = subjects_by_rule(plan(repository))
 
-    # Three functions are named for a read or an effect; `TestLoad` is named for what it verifies. Only `Load` builds
-    # an error; both skips carry a known-defect marker, `t.Skip` and `t.SkipNow`.
+    # Three functions are named for a read or an effect, plus the production method `TestEnabled` and the suite method
+    # `TestSuiteSkip`, which are not top-level functions taking `*testing.T`; `TestLoad` and `TestBare` are named for
+    # what they verify. Only `Load` builds an error; three skips carry a known-defect marker: `t.Skip`, `t.SkipNow`
+    # and the suite form `s.T().Skip`.
     assert counts == {
-        "command-query-naming": 3,
+        "command-query-naming": 5,
         "error-message-names-operation": 1,
-        "known-defect-marker-names-removal": 2,
+        "known-defect-marker-names-removal": 3,
     }
 
 

@@ -15,7 +15,11 @@ severity: warning
 rule:
   all:
     - kind: call_expression
-    - regex: ^[A-Za-z_][A-Za-z0-9_]*\.Skip(f|Now)?\(
+    # Any receiver: `t.Skip`, and the testify suite form `s.T().Skip`. A non-test `x.Skip(` is judged clean.
+    - has:
+        field: function
+        kind: selector_expression
+        regex: \.Skip(f|Now)?$
 ask: >-
   This test is skipped because of a known defect, without a message or comment that names the condition under which
   the skip is removed.

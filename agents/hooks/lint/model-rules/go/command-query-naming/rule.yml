@@ -16,11 +16,23 @@ rule:
         - kind: function_declaration
         - kind: method_declaration
     - has: { field: name, pattern: $NAME }
-    # Test, benchmark, fuzz and example functions are named for what they verify, not for a read or an effect.
+    # Test, benchmark, fuzz and example functions are named for what they verify, not for a read or an effect. A
+    # test, benchmark or fuzz function is a top-level function that takes `*testing.T`, `*testing.B` or `*testing.F`;
+    # a method or a function of another shape that merely starts with `Test` is production code.
     - not:
-        has:
-          field: name
-          regex: "^(Test|Benchmark|Fuzz|Example)([A-Z_]|$)"
+        all:
+          - kind: function_declaration
+          - any:
+              - all:
+                  - has:
+                      field: name
+                      regex: "^(Test|Benchmark|Fuzz)([A-Z_]|$)"
+                  - has:
+                      field: parameters
+                      regex: \*testing\.[TBF]\b
+              - has:
+                  field: name
+                  regex: "^Example([A-Z_]|$)"
 ask: >-
   The name of this function presents it as a query or as a command, and its body is the other one, or both.
 criteria:

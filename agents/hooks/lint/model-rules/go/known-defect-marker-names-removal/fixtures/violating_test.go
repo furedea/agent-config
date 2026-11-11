@@ -23,3 +23,7 @@ func TestSkipNow(t *testing.T) {
 	// broken
 	t.SkipNow()
 }
+
+func (s *Suite) TestSuiteSkip() {
+	s.T().Skip("broken")
+}

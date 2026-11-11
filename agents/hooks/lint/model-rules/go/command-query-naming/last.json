@@ -1,0 +1,298 @@
+{
+  "schema": "jev-lint-eval-1",
+  "recorded": "2026-11-11T14:32:45.352Z",
+  "model": "jev-1.14.0",
+  "suite": "go/command-query-naming",
+  "rules": [
+    {
+      "id": "command-query-naming",
+      "draft": "f793426f06a9",
+      "at": 0.5
+    }
+  ],
+  "cutoffs": {},
+  "passes": [
+    [
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/go/command-query-naming/fixtures/violating.go",
+        "line": 7,
+        "endLine": 10,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/go/command-query-naming/fixtures/violating.go",
+        "line": 12,
+        "endLine": 18,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/go/command-query-naming/fixtures/violating.go",
+        "line": 20,
+        "endLine": 25,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/go/command-query-naming/fixtures/violating.go",
+        "line": 27,
+        "endLine": 29,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/go/command-query-naming/fixtures/conforming.go",
+        "line": 13,
+        "endLine": 19,
+        "kind": "noul",
+        "value": 0.08,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/go/command-query-naming/fixtures/conforming.go",
+        "line": 21,
+        "endLine": 23,
+        "kind": "noul",
+        "value": 0.03,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/go/command-query-naming/fixtures/conforming.go",
+        "line": 25,
+        "endLine": 27,
+        "kind": "noul",
+        "value": 0.03,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/go/command-query-naming/fixtures/conforming.go",
+        "line": 29,
+        "endLine": 36,
+        "kind": "noul",
+        "value": 0.14,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/go/command-query-naming/fixtures/conforming.go",
+        "line": 38,
+        "endLine": 40,
+        "kind": "noul",
+        "value": 0.32,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/go/command-query-naming/fixtures/conforming.go",
+        "line": 42,
+        "endLine": 51,
+        "kind": "noul",
+        "value": 0.45,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/go/command-query-naming/fixtures/conforming.go",
+        "line": 13,
+        "endLine": 19,
+        "kind": "noul",
+        "value": 0.1,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/go/command-query-naming/fixtures/conforming.go",
+        "line": 21,
+        "endLine": 23,
+        "kind": "noul",
+        "value": 0.03,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/go/command-query-naming/fixtures/conforming.go",
+        "line": 25,
+        "endLine": 27,
+        "kind": "noul",
+        "value": 0.03,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/go/command-query-naming/fixtures/conforming.go",
+        "line": 29,
+        "endLine": 36,
+        "kind": "noul",
+        "value": 0.17,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/go/command-query-naming/fixtures/conforming.go",
+        "line": 38,
+        "endLine": 40,
+        "kind": "noul",
+        "value": 0.32,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/go/command-query-naming/fixtures/conforming.go",
+        "line": 42,
+        "endLine": 51,
+        "kind": "noul",
+        "value": 0.54,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/go/command-query-naming/fixtures/violating.go",
+        "line": 7,
+        "endLine": 10,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/go/command-query-naming/fixtures/violating.go",
+        "line": 12,
+        "endLine": 18,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/go/command-query-naming/fixtures/violating.go",
+        "line": 20,
+        "endLine": 25,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/go/command-query-naming/fixtures/violating.go",
+        "line": 27,
+        "endLine": 29,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/go/command-query-naming/fixtures/violating.go",
+        "line": 7,
+        "endLine": 10,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/go/command-query-naming/fixtures/violating.go",
+        "line": 12,
+        "endLine": 18,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/go/command-query-naming/fixtures/violating.go",
+        "line": 20,
+        "endLine": 25,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/go/command-query-naming/fixtures/violating.go",
+        "line": 27,
+        "endLine": 29,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/go/command-query-naming/fixtures/conforming.go",
+        "line": 13,
+        "endLine": 19,
+        "kind": "noul",
+        "value": 0.09,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/go/command-query-naming/fixtures/conforming.go",
+        "line": 21,
+        "endLine": 23,
+        "kind": "noul",
+        "value": 0.03,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/go/command-query-naming/fixtures/conforming.go",
+        "line": 25,
+        "endLine": 27,
+        "kind": "noul",
+        "value": 0.03,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/go/command-query-naming/fixtures/conforming.go",
+        "line": 29,
+        "endLine": 36,
+        "kind": "noul",
+        "value": 0.19,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/go/command-query-naming/fixtures/conforming.go",
+        "line": 38,
+        "endLine": 40,
+        "kind": "noul",
+        "value": 0.26,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/go/command-query-naming/fixtures/conforming.go",
+        "line": 42,
+        "endLine": 51,
+        "kind": "noul",
+        "value": 0.5,
+        "confidence": null
+      }
+    ]
+  ],
+  "spent": {
+    "calls": 6,
+    "inputTokens": 14049,
+    "usd": 0.0005900580000000001,
+    "ms": 306
+  }
+}

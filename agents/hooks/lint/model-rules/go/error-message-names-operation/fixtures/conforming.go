@@ -16,7 +16,7 @@ func LoadConfig(path string) ([]byte, error) {
 
 func ParsePort(raw string) (int, error) {
 	if raw == "" {
-		return 0, errors.New("parse port: value is empty")
+		return 0, fmt.Errorf("parse port %q: value is empty", raw)
 	}
 	return len(raw), nil
 }
@@ -32,9 +32,9 @@ func Remove(path string) error {
 	return nil
 }
 
-func Forward(path string) error {
-	if _, err := os.Stat(path); err != nil {
-		return err
+func Create(path string) error {
+	if _, err := os.Stat(path); err == nil {
+		return errors.New("create " + path + ": already exists")
 	}
-	return errors.New("stat " + path + ": already exists")
+	return nil
 }

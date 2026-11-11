@@ -39,8 +39,8 @@ func (r *Review) Judge(score float64) bool {
 	return score >= 0.5
 }
 
-func LoadPort(raw string) (int, error) {
-	port, err := strconv.Atoi(raw)
+func LoadPort(name string) (int, error) {
+	port, err := strconv.Atoi(os.Getenv(name))
 	if err != nil {
 		return 0, err
 	}

@@ -143,7 +143,8 @@ while the parent keeps waiting.
 When the wait returns done, read the reply with `herdr agent read`. For an implementation, check
 for `LANE-READY`, check the PR state, and report to the user. Treat `LANE-BLOCKED` and its reason
 as incomplete work. When the wait returns on `--timeout`, check `herdr agent list`: keep waiting
-while the recipient is `working` or `blocked`; report any other state to the user. This works for
+while the recipient is `working` or `blocked`; if it is `done`, continue as for a done return;
+report any other state to the user. This works for
 Claude and Codex recipients alike.
 Follow `herdr` for waiting, blocked sessions, and complete response retrieval.
 Successful submission or a settled agent state does not prove that the assigned task is complete;

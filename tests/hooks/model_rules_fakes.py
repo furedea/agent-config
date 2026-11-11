@@ -52,7 +52,9 @@ with open(@CALLS@, "a") as stream:
     }) + "\\n")
 behavior = json.load(open(@BEHAVIOR@))
 if dry_run:
-    print(open(@PLAN@).read())
+    paths = ",".join(sys.argv[sys.argv.index("-c") + 2:])
+    plans = json.load(open(@PLANS@))
+    print(json.dumps(plans[paths]) if paths in plans else open(@PLAN@).read())
     sys.exit(0)
 print(@TOKEN@, file=sys.stderr)
 time.sleep(behavior.get("sleep", 0))
@@ -119,9 +121,16 @@ class Tools:
         }
         (self.directory / "plan.json").write_text(json.dumps(report))
 
-    def report(self, findings: list[dict] | None = None, **extra: object) -> None:
+    def write_plan_of_files(self, files: tuple[str, ...], subjects: int, cached: object) -> None:
+        """What the dry run prints when it is asked about exactly `files`, instead of the plan for the whole diff."""
+        plans_file = self.directory / "plans.json"
+        plans = json.loads(plans_file.read_text())
+        plans[",".join(files)] = {"dryRun": True, "subjects": subjects, "cached": cached, "batches": []}
+        plans_file.write_text(json.dumps(plans))
+
+    def write_report(self, findings: list[dict] | None = None, **extra: object) -> None:
         """What `jev-lint review --json` prints."""
-        report = {"findings": findings or [], "spent": {"calls": 2}, "cachedCount": 1, **extra}
+        report = {"findings": findings or [], "spent": {"calls": 2}, **extra}
         (self.directory / "report.json").write_text(json.dumps(report))
 
     def raw_report(self, text: str) -> None:
@@ -157,6 +166,7 @@ def install_tools(executable: StubWriter, directory: Path) -> Tools:
         "@CALLS@": repr(str(directory / "calls.jsonl")),
         "@KEYCHAIN@": repr(str(directory / "keychain.json")),
         "@PLAN@": repr(str(directory / "plan.json")),
+        "@PLANS@": repr(str(directory / "plans.json")),
         "@REPORT@": repr(str(directory / "report.json")),
         "@BEHAVIOR@": repr(str(directory / "behavior.json")),
         "@TOKEN@": repr(FAKE_TOKEN),
@@ -170,7 +180,8 @@ def install_tools(executable: StubWriter, directory: Path) -> Tools:
             "agent-model-rules-op-environment": ENVIRONMENT_ID,
         }
     )
+    (directory / "plans.json").write_text("{}")
     tools.plan(1, [("notes.txt", 1)])
-    tools.report([finding()])
+    tools.write_report([finding()])
     tools.behave()
     return tools

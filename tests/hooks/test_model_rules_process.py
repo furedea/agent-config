@@ -38,7 +38,8 @@ def test_the_model_is_asked_through_op_with_the_exact_argv(
 ) -> None:
     stop(record)
 
-    [dry_run] = [call for call in tools.calls("jev-lint") if "--dry-run" in call["argv"]]
+    # One dry run plans the cap; a second one, under the cache lock, counts the cached subjects before the model runs.
+    planned, counted = [call for call in tools.calls("jev-lint") if "--dry-run" in call["argv"]]
     [launch] = tools.calls("op")
     rules = str(REPO_ROOT / "agents/hooks/lint/model-rules")
     cache = str(Path(session_store.state_directory()).parent / "model-rules/verdicts.json")
@@ -46,8 +47,9 @@ def test_the_model_is_asked_through_op_with_the_exact_argv(
     # Only the file the session edited is named; `preexisting.txt` was already there and is left out.
     jev_lint = str(tmp_path / "bin" / "jev-lint")
     assert launch["argv"] == ["run", "--environment", ENVIRONMENT_ID, "--", jev_lint, "review", *common, "notes.txt"]
-    assert dry_run["argv"] == ["review", "--json", "--dry-run", *common[1:], "notes.txt"]
-    assert dry_run["cwd"] == str(record.root.resolve())
+    for dry_run in (planned, counted):
+        assert dry_run["argv"] == ["review", "--json", "--dry-run", *common[1:], "notes.txt"]
+        assert dry_run["cwd"] == str(record.root.resolve())
 
 
 def test_the_model_child_runs_under_its_own_deadline_so_it_ends_if_the_hook_is_killed(
@@ -110,11 +112,13 @@ def test_only_the_op_process_receives_the_token_and_only_allowlisted_variables(
     stop(record)
 
     [launch] = tools.calls("op")
-    [dry_run] = [call for call in tools.calls("jev-lint") if "--dry-run" in call["argv"]]
+    dry_runs = [call for call in tools.calls("jev-lint") if "--dry-run" in call["argv"]]
     assert launch["has_token"]
     assert platform_free(launch["env_names"]) <= allowed
-    assert not dry_run["has_token"]
-    assert platform_free(dry_run["env_names"]) <= allowed
+    assert dry_runs
+    for dry_run in dry_runs:
+        assert not dry_run["has_token"]
+        assert platform_free(dry_run["env_names"]) <= allowed
     assert all(FAKE_TOKEN not in argument for call in tools.calls() for argument in call["argv"])
 
 

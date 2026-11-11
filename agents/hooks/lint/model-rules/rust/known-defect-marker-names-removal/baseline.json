@@ -1,0 +1,325 @@
+{
+  "schema": "jev-lint-eval-1",
+  "recorded": "2026-11-11T16:34:46.088Z",
+  "model": "jev-1.14.0",
+  "suite": "rust/known-defect-marker-names-removal",
+  "rules": [
+    {
+      "id": "known-defect-marker-names-removal",
+      "draft": "27a56dd85a51",
+      "at": 0.34
+    }
+  ],
+  "cutoffs": {},
+  "passes": [
+    [
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/rust/known-defect-marker-names-removal/fixtures/conforming.rs",
+        "line": 3,
+        "endLine": 3,
+        "kind": "noul",
+        "value": 0.14,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/rust/known-defect-marker-names-removal/fixtures/conforming.rs",
+        "line": 9,
+        "endLine": 9,
+        "kind": "noul",
+        "value": 0.03,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/rust/known-defect-marker-names-removal/fixtures/conforming.rs",
+        "line": 15,
+        "endLine": 15,
+        "kind": "noul",
+        "value": 0.03,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/rust/known-defect-marker-names-removal/fixtures/conforming.rs",
+        "line": 21,
+        "endLine": 21,
+        "kind": "noul",
+        "value": 0.03,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/rust/known-defect-marker-names-removal/fixtures/conforming.rs",
+        "line": 27,
+        "endLine": 30,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/rust/known-defect-marker-names-removal/fixtures/violating.rs",
+        "line": 2,
+        "endLine": 2,
+        "kind": "noul",
+        "value": 0.7,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/rust/known-defect-marker-names-removal/fixtures/violating.rs",
+        "line": 8,
+        "endLine": 8,
+        "kind": "noul",
+        "value": 0.86,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/rust/known-defect-marker-names-removal/fixtures/violating.rs",
+        "line": 14,
+        "endLine": 14,
+        "kind": "noul",
+        "value": 0.78,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/rust/known-defect-marker-names-removal/fixtures/violating.rs",
+        "line": 21,
+        "endLine": 21,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/rust/known-defect-marker-names-removal/fixtures/violating.rs",
+        "line": 27,
+        "endLine": 27,
+        "kind": "noul",
+        "value": 0.81,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/rust/known-defect-marker-names-removal/fixtures/violating.rs",
+        "line": 33,
+        "endLine": 36,
+        "kind": "noul",
+        "value": 0.56,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/rust/known-defect-marker-names-removal/fixtures/violating.rs",
+        "line": 2,
+        "endLine": 2,
+        "kind": "noul",
+        "value": 0.65,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/rust/known-defect-marker-names-removal/fixtures/violating.rs",
+        "line": 8,
+        "endLine": 8,
+        "kind": "noul",
+        "value": 0.89,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/rust/known-defect-marker-names-removal/fixtures/violating.rs",
+        "line": 14,
+        "endLine": 14,
+        "kind": "noul",
+        "value": 0.83,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/rust/known-defect-marker-names-removal/fixtures/violating.rs",
+        "line": 21,
+        "endLine": 21,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/rust/known-defect-marker-names-removal/fixtures/violating.rs",
+        "line": 27,
+        "endLine": 27,
+        "kind": "noul",
+        "value": 0.86,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/rust/known-defect-marker-names-removal/fixtures/violating.rs",
+        "line": 33,
+        "endLine": 36,
+        "kind": "noul",
+        "value": 0.67,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/rust/known-defect-marker-names-removal/fixtures/conforming.rs",
+        "line": 3,
+        "endLine": 3,
+        "kind": "noul",
+        "value": 0.16,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/rust/known-defect-marker-names-removal/fixtures/conforming.rs",
+        "line": 9,
+        "endLine": 9,
+        "kind": "noul",
+        "value": 0.03,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/rust/known-defect-marker-names-removal/fixtures/conforming.rs",
+        "line": 15,
+        "endLine": 15,
+        "kind": "noul",
+        "value": 0.03,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/rust/known-defect-marker-names-removal/fixtures/conforming.rs",
+        "line": 21,
+        "endLine": 21,
+        "kind": "noul",
+        "value": 0.03,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/rust/known-defect-marker-names-removal/fixtures/conforming.rs",
+        "line": 27,
+        "endLine": 30,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/rust/known-defect-marker-names-removal/fixtures/conforming.rs",
+        "line": 3,
+        "endLine": 3,
+        "kind": "noul",
+        "value": 0.13,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/rust/known-defect-marker-names-removal/fixtures/conforming.rs",
+        "line": 9,
+        "endLine": 9,
+        "kind": "noul",
+        "value": 0.03,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/rust/known-defect-marker-names-removal/fixtures/conforming.rs",
+        "line": 15,
+        "endLine": 15,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/rust/known-defect-marker-names-removal/fixtures/conforming.rs",
+        "line": 21,
+        "endLine": 21,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/rust/known-defect-marker-names-removal/fixtures/conforming.rs",
+        "line": 27,
+        "endLine": 30,
+        "kind": "noul",
+        "value": 0.03,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/rust/known-defect-marker-names-removal/fixtures/violating.rs",
+        "line": 2,
+        "endLine": 2,
+        "kind": "noul",
+        "value": 0.62,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/rust/known-defect-marker-names-removal/fixtures/violating.rs",
+        "line": 8,
+        "endLine": 8,
+        "kind": "noul",
+        "value": 0.88,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/rust/known-defect-marker-names-removal/fixtures/violating.rs",
+        "line": 14,
+        "endLine": 14,
+        "kind": "noul",
+        "value": 0.77,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/rust/known-defect-marker-names-removal/fixtures/violating.rs",
+        "line": 21,
+        "endLine": 21,
+        "kind": "noul",
+        "value": 0.94,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/rust/known-defect-marker-names-removal/fixtures/violating.rs",
+        "line": 27,
+        "endLine": 27,
+        "kind": "noul",
+        "value": 0.86,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-74-model-rules-go-rust/agents/hooks/lint/model-rules/rust/known-defect-marker-names-removal/fixtures/violating.rs",
+        "line": 33,
+        "endLine": 36,
+        "kind": "noul",
+        "value": 0.6,
+        "confidence": null
+      }
+    ]
+  ],
+  "spent": {
+    "calls": 6,
+    "inputTokens": 13776,
+    "usd": 0.0005785920000000001,
+    "ms": 365
+  }
+}

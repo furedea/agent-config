@@ -1,0 +1,244 @@
+{
+  "schema": "jev-lint-eval-1",
+  "recorded": "2026-11-11T15:58:09.353Z",
+  "model": "jev-1.14.0",
+  "suite": "go/error-message-names-operation",
+  "rules": [
+    {
+      "id": "error-message-names-operation",
+      "draft": "c400a472525e",
+      "at": 0.5
+    }
+  ],
+  "cutoffs": {},
+  "passes": [
+    [
+      {
+        "rule": "error-message-names-operation",
+        "file": "agents/hooks/lint/model-rules/go/error-message-names-operation/fixtures/violating.go",
+        "line": 9,
+        "endLine": 14,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "agents/hooks/lint/model-rules/go/error-message-names-operation/fixtures/violating.go",
+        "line": 16,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "agents/hooks/lint/model-rules/go/error-message-names-operation/fixtures/violating.go",
+        "line": 24,
+        "endLine": 29,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "agents/hooks/lint/model-rules/go/error-message-names-operation/fixtures/violating.go",
+        "line": 31,
+        "endLine": 37,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "agents/hooks/lint/model-rules/go/error-message-names-operation/fixtures/conforming.go",
+        "line": 9,
+        "endLine": 15,
+        "kind": "noul",
+        "value": 0.09,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "agents/hooks/lint/model-rules/go/error-message-names-operation/fixtures/conforming.go",
+        "line": 17,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.26,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "agents/hooks/lint/model-rules/go/error-message-names-operation/fixtures/conforming.go",
+        "line": 24,
+        "endLine": 26,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "agents/hooks/lint/model-rules/go/error-message-names-operation/fixtures/conforming.go",
+        "line": 35,
+        "endLine": 40,
+        "kind": "noul",
+        "value": 0.09,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "error-message-names-operation",
+        "file": "agents/hooks/lint/model-rules/go/error-message-names-operation/fixtures/conforming.go",
+        "line": 9,
+        "endLine": 15,
+        "kind": "noul",
+        "value": 0.08,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "agents/hooks/lint/model-rules/go/error-message-names-operation/fixtures/conforming.go",
+        "line": 17,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.24,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "agents/hooks/lint/model-rules/go/error-message-names-operation/fixtures/conforming.go",
+        "line": 24,
+        "endLine": 26,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "agents/hooks/lint/model-rules/go/error-message-names-operation/fixtures/conforming.go",
+        "line": 35,
+        "endLine": 40,
+        "kind": "noul",
+        "value": 0.09,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "agents/hooks/lint/model-rules/go/error-message-names-operation/fixtures/violating.go",
+        "line": 9,
+        "endLine": 14,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "agents/hooks/lint/model-rules/go/error-message-names-operation/fixtures/violating.go",
+        "line": 16,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "agents/hooks/lint/model-rules/go/error-message-names-operation/fixtures/violating.go",
+        "line": 24,
+        "endLine": 29,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "agents/hooks/lint/model-rules/go/error-message-names-operation/fixtures/violating.go",
+        "line": 31,
+        "endLine": 37,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "error-message-names-operation",
+        "file": "agents/hooks/lint/model-rules/go/error-message-names-operation/fixtures/violating.go",
+        "line": 9,
+        "endLine": 14,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "agents/hooks/lint/model-rules/go/error-message-names-operation/fixtures/violating.go",
+        "line": 16,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "agents/hooks/lint/model-rules/go/error-message-names-operation/fixtures/violating.go",
+        "line": 24,
+        "endLine": 29,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "agents/hooks/lint/model-rules/go/error-message-names-operation/fixtures/violating.go",
+        "line": 31,
+        "endLine": 37,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "agents/hooks/lint/model-rules/go/error-message-names-operation/fixtures/conforming.go",
+        "line": 9,
+        "endLine": 15,
+        "kind": "noul",
+        "value": 0.11,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "agents/hooks/lint/model-rules/go/error-message-names-operation/fixtures/conforming.go",
+        "line": 17,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.27,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "agents/hooks/lint/model-rules/go/error-message-names-operation/fixtures/conforming.go",
+        "line": 24,
+        "endLine": 26,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "agents/hooks/lint/model-rules/go/error-message-names-operation/fixtures/conforming.go",
+        "line": 35,
+        "endLine": 40,
+        "kind": "noul",
+        "value": 0.15,
+        "confidence": null
+      }
+    ]
+  ],
+  "spent": {
+    "calls": 6,
+    "inputTokens": 10989,
+    "usd": 0.00046153800000000005,
+    "ms": 161
+  }
+}

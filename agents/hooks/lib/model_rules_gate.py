@@ -11,10 +11,13 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import model_rules_credentials
+import model_rules_programs
 import model_rules_report
 import model_rules_run
 import trusted_owners
+from model_rules_files import Selection, committed_paths, select
 from model_rules_outcome import Judgement, Prevented
+from model_rules_programs import Programs
 from session_snapshot import capture, head_commit
 from session_store import SessionRecord, state_directory
 
@@ -93,41 +96,69 @@ def _preconditions(record: SessionRecord) -> Prevented | None:
         return Prevented("no model rules are installed with the hooks")
     if not record.baseline.changed_paths(capture(record.root)):
         return Prevented("no changes since session registration")
-    return model_rules_run.is_installed() or _repository_gate(record.root)
+    return _repository_gate(record.root)
 
 
 def _judge(record: SessionRecord, deadline: model_rules_run.Deadline) -> Judgement | Prevented:
     if (stop := _preconditions(record)) is not None:
         return stop
+    programs = model_rules_programs.locate()
+    if isinstance(programs, Prevented):
+        return programs
+    changes = _Changes.of(record)
+    reviews = changes.reviews(record, programs)
+    withheld = Judgement((), withheld_files=len(changes.withheld))
+    if not reviews:
+        return withheld
     credentials = model_rules_credentials.load()
     if isinstance(credentials, Prevented):
         return credentials
-    return model_rules_run.review_all(_reviews(record), credentials, deadline)
+    outcome = model_rules_run.review_all(reviews, credentials, deadline)
+    return outcome if isinstance(outcome, Prevented) else outcome.combined(withheld)
 
 
-def _reviews(record: SessionRecord) -> tuple[model_rules_run.Review, ...]:
-    """The commits made since the session started, then the changes not committed yet.
+@dataclass(frozen=True, slots=True)
+class _Changes:
+    """The files a session changed that may be sent, in the commits it made and in the working tree."""
 
-    `jev-lint review` judges `base...HEAD` or, without a base, the working tree against HEAD; neither covers both.
-    """
-    cache = model_rules_run.cache_path(state_directory())
-    start = record.head
-    reviews = []
-    if start is not None and head_commit(record.root) != start:
-        reviews.append(model_rules_run.Review(record.root, start, RULES_DIRECTORY, cache))
-    if changed := _changed_files(record):
-        reviews.append(model_rules_run.Review(record.root, None, RULES_DIRECTORY, cache, changed))
-    return tuple(reviews)
+    committed: Selection
+    uncommitted: Selection
 
+    @classmethod
+    def of(cls, record: SessionRecord) -> _Changes:
+        """Select among the commits made since the session started and the files that differ from its baseline.
 
-def _changed_files(record: SessionRecord) -> tuple[str, ...]:
-    """The existing files whose content differs from the session's baseline.
+        Files that were already there when the session started and that it never touched are not sent.
+        """
+        committed = Selection()
+        if record.head is not None and head_commit(record.root) != record.head:
+            committed = select(record.root, committed_paths(record.root, record.head))
+        changed = record.baseline.changed_paths(capture(record.root))
+        return cls(committed, select(record.root, changed))
 
-    The review of uncommitted changes is limited to these, so that edits and untracked files that were already there
-    when the session started, and that it never touched, are not sent to the model.
-    """
-    changed = record.baseline.changed_paths(capture(record.root))
-    return tuple(path for path in changed if not path.startswith("-") and (record.root / path).is_file())
+    @property
+    def withheld(self) -> frozenset[str]:
+        """Every withheld path once, however many reviews it would have been part of."""
+        return self.committed.withheld | self.uncommitted.withheld
+
+    def reviews(self, record: SessionRecord, programs: Programs) -> tuple[model_rules_run.Review, ...]:
+        """The commits made since the session started, then the changes not committed yet.
+
+        `jev-lint review` judges `base...HEAD` or, without a base, the working tree against HEAD; neither covers both.
+        """
+        cache = model_rules_run.cache_path(state_directory())
+        reviews = []
+        if self.committed.sendable:
+            reviews.append(
+                model_rules_run.Review(
+                    record.root, record.head, RULES_DIRECTORY, cache, programs, self.committed.sendable
+                )
+            )
+        if self.uncommitted.sendable:
+            reviews.append(
+                model_rules_run.Review(record.root, None, RULES_DIRECTORY, cache, programs, self.uncommitted.sendable)
+            )
+        return tuple(reviews)
 
 
 def _repository_gate(root: Path) -> Prevented | None:

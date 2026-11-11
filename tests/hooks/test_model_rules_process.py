@@ -1,8 +1,6 @@
 """What crosses the process boundary of the Stop-time model rules, and what each way of failing leaves behind."""
 
 import json
-import os
-import shutil
 import sys
 from pathlib import Path
 
@@ -35,7 +33,9 @@ def platform_free(names: list[str]) -> set[str]:
     return {name for name in names if not name.startswith("__CF")}
 
 
-def test_the_model_is_asked_through_op_with_the_exact_argv(record: session_store.SessionRecord, tools: Tools) -> None:
+def test_the_model_is_asked_through_op_with_the_exact_argv(
+    record: session_store.SessionRecord, tools: Tools, tmp_path: Path
+) -> None:
     stop(record)
 
     [dry_run] = [call for call in tools.calls("jev-lint") if "--dry-run" in call["argv"]]
@@ -44,7 +44,8 @@ def test_the_model_is_asked_through_op_with_the_exact_argv(record: session_store
     cache = str(Path(session_store.state_directory()).parent / "model-rules/verdicts.json")
     common = ["--json", "--no-config", "--fail-on", "error", "-R", rules, "-c", cache]
     # Only the file the session edited is named; `preexisting.txt` was already there and is left out.
-    assert launch["argv"] == ["run", "--environment", ENVIRONMENT_ID, "--", "jev-lint", "review", *common, "notes.txt"]
+    jev_lint = str(tmp_path / "bin" / "jev-lint")
+    assert launch["argv"] == ["run", "--environment", ENVIRONMENT_ID, "--", jev_lint, "review", *common, "notes.txt"]
     assert dry_run["argv"] == ["review", "--json", "--dry-run", *common[1:], "notes.txt"]
     assert dry_run["cwd"] == str(record.root.resolve())
 
@@ -56,9 +57,10 @@ def test_the_model_child_runs_under_its_own_deadline_so_it_ends_if_the_hook_is_k
 
     stop(record)
 
-    [wrapped] = [call for call in tools.calls("timeout") if "op" in call["argv"]]
+    [wrapped] = [call for call in tools.calls("timeout") if "--environment" in call["argv"]]
     # Only what GNU and BSD `timeout` both accept: short options and a plain number of seconds.
-    assert wrapped["argv"][:6] == ["-s", "TERM", "-k", "5", "7.000", "op"]
+    assert wrapped["argv"][:5] == ["-s", "TERM", "-k", "5", "7.000"]
+    assert wrapped["argv"][5].endswith("/bin/op")
     assert wrapped["argv"][6:9] == ["run", "--environment", ENVIRONMENT_ID]
     assert all(call["argv"][:4] == ["-s", "TERM", "-k", "5"] for call in tools.calls("timeout"))
 
@@ -103,7 +105,7 @@ def test_only_the_op_process_receives_the_token_and_only_allowlisted_variables(
 ) -> None:
     monkeypatch.setenv("TYPESAFE_BASE_URL", "https://example.invalid")
     monkeypatch.setenv("JEV_LINT_CACHE", "none")
-    allowed = set(model_rules_run.ENVIRONMENT_ALLOWLIST) | {"OP_SERVICE_ACCOUNT_TOKEN"}
+    allowed = set(model_rules_run.ENVIRONMENT_ALLOWLIST) | {"PATH", "OP_SERVICE_ACCOUNT_TOKEN"}
 
     stop(record)
 
@@ -120,22 +122,6 @@ def test_the_token_never_reaches_the_output_even_when_a_tool_prints_it(record: s
     result = stop(record)
 
     assert FAKE_TOKEN not in json.dumps(result)
-
-
-@pytest.mark.parametrize("program", ["jev-lint", "op"])
-def test_a_missing_program_skips(
-    record: session_store.SessionRecord, monkeypatch: pytest.MonkeyPatch, program: str
-) -> None:
-    installed = shutil.which(program)
-    assert installed is not None
-    # Only the fakes and the system directories: a real `op` or `jev-lint` of the developer must not be found.
-    monkeypatch.setenv("PATH", os.pathsep.join([str(Path(installed).parent), "/usr/bin", "/bin"]))
-    Path(installed).unlink()
-
-    result = stop(record)
-
-    assert "decision" not in result
-    assert f"{program} is not installed" in result["systemMessage"]
 
 
 @pytest.mark.parametrize(

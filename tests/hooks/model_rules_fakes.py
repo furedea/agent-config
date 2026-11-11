@@ -31,6 +31,7 @@ with open(@CALLS@, "a") as stream:
         "program": "op",
         "argv": sys.argv[1:],
         "env_names": sorted(os.environ),
+        "path": os.environ.get("PATH"),
         "has_token": os.environ.get("OP_SERVICE_ACCOUNT_TOKEN") == @TOKEN@,
     }) + "\\n")
 child = sys.argv[sys.argv.index("--") + 1:]
@@ -46,6 +47,7 @@ with open(@CALLS@, "a") as stream:
         "argv": sys.argv[1:],
         "cwd": os.getcwd(),
         "env_names": sorted(os.environ),
+        "path": os.environ.get("PATH"),
         "has_token": os.environ.get("OP_SERVICE_ACCOUNT_TOKEN") == @TOKEN@,
     }) + "\\n")
 behavior = json.load(open(@BEHAVIOR@))

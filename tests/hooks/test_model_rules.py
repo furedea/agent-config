@@ -151,18 +151,19 @@ def test_nothing_to_judge_asks_the_model_nothing(record: session_store.SessionRe
 def test_commits_made_since_registration_are_reviewed_from_the_starting_commit_then_the_uncommitted_changes(
     record: session_store.SessionRecord, tools: Tools
 ) -> None:
-    subprocess.run(["git", "commit", "--quiet", "--allow-empty", "-m", "later"], cwd=record.root, check=True)
+    commit_file(record, "committed.txt")
 
     result = stop(record)
 
     committed, uncommitted = tools.calls("op")
     assert committed["argv"][committed["argv"].index("--base") + 1] == record.head
+    assert committed["argv"][-1] == "committed.txt"
     assert "--base" not in uncommitted["argv"]
     assert "1 finding(s)" in result["reason"]
 
 
 def test_the_cap_is_shared_by_the_two_reviews(record: session_store.SessionRecord, tools: Tools) -> None:
-    subprocess.run(["git", "commit", "--quiet", "--allow-empty", "-m", "later"], cwd=record.root, check=True)
+    commit_file(record, "committed.txt")
     tools.plan(15, [("a.py", 15)])
 
     result = stop(record)
@@ -226,6 +227,99 @@ def test_a_new_file_created_by_the_session_is_sent(record: session_store.Session
     assert launch["argv"][-2:] == ["created.txt", "notes.txt"]
 
 
+def commit_file(record: session_store.SessionRecord, name: str) -> None:
+    (record.root / name).write_text("committed\n")
+    subprocess.run(["git", "add", name], cwd=record.root, check=True)
+    subprocess.run(["git", "commit", "--quiet", "-m", "later"], cwd=record.root, check=True)
+
+
+def arguments_of_jev_lint(tools: Tools) -> list[str]:
+    return [argument for call in tools.calls("jev-lint") for argument in call["argv"]]
+
+
+@pytest.fixture
+def secret(tmp_path: Path) -> Path:
+    """A file outside the repository that must never be sent anywhere."""
+    path = tmp_path.parent / f"{tmp_path.name}-outside" / "private-config"
+    path.parent.mkdir()
+    path.write_text("Host *\n  IdentityFile ~/.ssh/id_ed25519\n")
+    return path
+
+
+def test_a_symlink_to_a_file_outside_the_repository_is_not_sent_and_is_counted(
+    record: session_store.SessionRecord, tools: Tools, secret: Path
+) -> None:
+    (record.root / "link.txt").symlink_to(secret)
+
+    result = stop(record)
+
+    arguments = arguments_of_jev_lint(tools)
+    assert "link.txt" not in arguments
+    assert "notes.txt" in arguments
+    assert "1 file(s) withheld" in result["reason"]
+    assert "link.txt" not in result["reason"]
+    assert secret.name not in result["reason"]
+
+
+def test_a_symlink_to_a_file_inside_the_repository_is_not_sent_either(
+    record: session_store.SessionRecord, tools: Tools
+) -> None:
+    (record.root / "alias.txt").symlink_to("notes.txt")
+
+    result = stop(record)
+
+    arguments = arguments_of_jev_lint(tools)
+    assert "alias.txt" not in arguments
+    assert "1 file(s) withheld" in result["reason"]
+
+
+def test_a_file_reached_through_a_directory_replaced_by_a_link_is_not_sent(
+    git_project: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, tools: Tools, secret: Path
+) -> None:
+    (git_project / "sub").mkdir()
+    (git_project / "sub" / "file.txt").write_text("inside\n")
+    record = register_session(git_project, tmp_path, monkeypatch)
+    (git_project / "sub" / "file.txt").unlink()
+    (git_project / "sub").rmdir()
+    (git_project / "sub").symlink_to(secret.parent)
+    (secret.parent / "file.txt").write_text("outside\n")
+
+    result = stop(record)
+
+    assert "sub/file.txt" not in arguments_of_jev_lint(tools)
+    assert tools.calls("op") == []
+    assert "withheld" in result["systemMessage"]
+
+
+def test_only_links_changed_means_nothing_is_sent_and_the_notice_says_so(
+    registered: session_store.SessionRecord, tools: Tools, secret: Path
+) -> None:
+    (registered.root / "link.txt").symlink_to(secret)
+
+    result = stop(registered)
+
+    assert "decision" not in result
+    assert tools.calls("op") == []
+    assert "1 file(s) withheld" in result["systemMessage"]
+    assert "link.txt" not in result["systemMessage"]
+
+
+def test_a_committed_symlink_is_not_sent_by_the_review_of_commits(
+    record: session_store.SessionRecord, tools: Tools, secret: Path
+) -> None:
+    (record.root / "link.txt").symlink_to(secret)
+    commit_file(record, "committed.txt")
+    subprocess.run(["git", "add", "link.txt"], cwd=record.root, check=True)
+    subprocess.run(["git", "commit", "--quiet", "-m", "link"], cwd=record.root, check=True)
+
+    result = stop(record)
+
+    arguments = arguments_of_jev_lint(tools)
+    assert "link.txt" not in arguments
+    assert "committed.txt" in arguments
+    assert "1 file(s) withheld" in result["reason"]
+
+
 def test_the_kill_switch_runs_nothing(
     record: session_store.SessionRecord, tools: Tools, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -273,11 +367,13 @@ def test_no_edit_since_registration_skips(registered: session_store.SessionRecor
     assert tools.calls() == []
 
 
-def test_the_stop_hook_blocks_through_the_provider_entry_point(record: session_store.SessionRecord) -> None:
+def test_the_stop_hook_blocks_through_the_provider_entry_point(
+    record: session_store.SessionRecord, tmp_path: Path
+) -> None:
     payload = {"cwd": str(record.root), "session_id": "model-rules"}
 
-    first = _run_hook(payload)
-    second = _run_hook({**payload, "stop_hook_active": True})
+    first = _run_hook(payload, tmp_path / "bin")
+    second = _run_hook({**payload, "stop_hook_active": True}, tmp_path / "bin")
 
     assert json.loads(first)["decision"] == "block"
     assert "decision" not in json.loads(second)
@@ -301,9 +397,25 @@ def test_the_gate_reports_a_receipt_input_that_includes_the_rules(record: sessio
     assert record.results()[model_rules_gate.RECEIPT_KEY]["outcome"] == "findings"
 
 
-def _run_hook(payload: dict) -> str:
+# The hook runs in its own process, so the fake store is installed there before the hook starts, as `install_fakes`
+# does in this one.
+HOOK_DRIVER = """
+import os, runpy, sys
+from pathlib import Path
+sys.path.insert(0, sys.argv[2])
+import model_rules_programs
+programs = Path(sys.argv[3])
+model_rules_programs.DIRECTORIES = (programs,)
+model_rules_programs.STORE_ROOT = programs.resolve()
+model_rules_programs.TRUSTED_UID = os.getuid()
+sys.argv = [sys.argv[1], "claude", "stop"]
+runpy.run_path(sys.argv[0], run_name="__main__")
+"""
+
+
+def _run_hook(payload: dict, programs: Path) -> str:
     result = subprocess.run(
-        [sys.executable, "-I", "-B", str(HOOK), "claude", "stop"],
+        [sys.executable, "-I", "-B", "-c", HOOK_DRIVER, str(HOOK), str(REPO_ROOT / "agents/hooks/lib"), str(programs)],
         input=json.dumps(payload),
         capture_output=True,
         text=True,

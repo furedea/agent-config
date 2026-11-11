@@ -40,4 +40,6 @@ def _footer(judgement: Judgement) -> str:
         parts.append(
             f"{judgement.skipped_subjects} subject(s) in {judgement.skipped_files} file(s) skipped by the cap of 20"
         )
+    if judgement.withheld_files:
+        parts.append(f"{judgement.withheld_files} file(s) withheld: links or outside the repository")
     return ", ".join(parts)

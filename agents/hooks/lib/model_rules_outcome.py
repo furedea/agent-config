@@ -52,6 +52,7 @@ class Judgement:
     skipped_subjects: int = 0
     requests: int = 0
     cached: int = 0
+    withheld_files: int = 0
 
     def combined(self, other: Judgement) -> Judgement:
         """Add another review's result; a finding at the same rule, file and line is kept once."""
@@ -64,4 +65,5 @@ class Judgement:
             self.skipped_subjects + other.skipped_subjects,
             self.requests + other.requests,
             self.cached + other.cached,
+            self.withheld_files + other.withheld_files,
         )

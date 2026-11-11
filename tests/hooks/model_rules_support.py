@@ -5,6 +5,7 @@ in a trusted repository are the same in every file.
 """
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -14,6 +15,7 @@ from tests.hooks.model_rules_fakes import Tools, install_tools
 from tests.runtime import REPO_ROOT, StubWriter
 
 sys.path.insert(0, str(REPO_ROOT / "agents/hooks/lib"))
+import model_rules_programs
 import model_rules_run
 import session_gate
 import session_store
@@ -27,6 +29,12 @@ def install_fakes(executable: StubWriter, tmp_path: Path, monkeypatch: pytest.Mo
     fakes = install_tools(executable, tmp_path.parent / f"{tmp_path.name}-fakes")
     # The hook names `timeout` by absolute path, so the fake has to stand at the path it uses.
     monkeypatch.setattr(model_rules_run, "TIMEOUT_PROGRAM", str(fakes.timeout))
+    # The programs are looked up only in trusted places, so the fake directory stands in for the Nix store: it is the
+    # one trusted directory, its real path is the store root, and the test user is the trusted owner.
+    programs = tmp_path / "bin"
+    monkeypatch.setattr(model_rules_programs, "DIRECTORIES", (programs,))
+    monkeypatch.setattr(model_rules_programs, "STORE_ROOT", programs.resolve())
+    monkeypatch.setattr(model_rules_programs, "TRUSTED_UID", os.getuid())
     return fakes
 
 

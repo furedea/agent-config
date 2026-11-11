@@ -135,10 +135,20 @@ promoted.
     model. `AGENT_MODEL_RULES=off` turns the rules off.
 - **Process boundary.** `jev-lint review --json --no-config --fail-on error -R <rules> -c <cache> [--base <commit>]`
     runs under `op run --environment <id> --`, which injects the key; `--no-config` keeps a repository's
-    `.jev-lint.yaml` from redirecting the code to another endpoint. The hook passes the child only `PATH`, `HOME`,
-    `USER`, `LANG`, `LC_ALL`, `XDG_STATE_HOME`, and `TMPDIR`, plus the service-account token to `op`. It never reads,
-    prints, or logs the token or the key, and discards the stderr of `op` and `jev-lint`. A planning run
-    (`--dry-run`, no key) counts the subjects first.
+    `.jev-lint.yaml` from redirecting the code to another endpoint. The hook passes the child only `HOME`, `USER`,
+    `LANG`, `LC_ALL`, `XDG_STATE_HOME`, and `TMPDIR`, a `PATH` of the trusted directories below plus `/usr/bin:/bin`,
+    and the service-account token to `op`. It never reads, prints, or logs the token or the key, and discards the
+    stderr of `op` and `jev-lint`. A planning run (`--dry-run`, no key) counts the subjects first.
+- **Which programs run.** `op` receives the token, so neither program is looked up through `PATH`: a project `bin`
+    directory or any directory the agent can write to could stand earlier on it and receive the token. Both are
+    started by absolute path, found only in `/etc/profiles/per-user/<user>/bin`, `/run/current-system/sw/bin`, and
+    `/nix/var/nix/profiles/default/bin`, and only if the real path is inside `/nix/store` (read-only, root-owned) and
+    the file is a regular, executable file owned by root that group and others cannot write. Anything else (for
+    example a Homebrew `op`) is refused as `<program> is not trusted (<reason>)`, before the Keychain is read.
+- **What is sent.** Only regular files whose real path is inside the repository: a symbolic link, or a file reached
+    through a directory that now links elsewhere, is withheld, so that a link to `~/.ssh/config` cannot send that
+    file. Both reviews name their files explicitly (the commits' files come from `git diff --name-only`). The notice
+    counts the withheld files and never names them.
 - **Cache.** `${XDG_STATE_HOME:-~/.local/state}/agent-harness/model-rules/verdicts.json`, shared by every repository
     and session and serialized by a lock file beside it. It is trusted input that can silence rules, so the path is in
     `secret_path_policy.json`, which refuses any tool call that names it. That guard sees paths that a tool call or
@@ -147,8 +157,8 @@ promoted.
 
 ### Setting up a new machine
 
-The hook needs `jev-lint` and `op` on `PATH` (dotfiles installs `jev-lint` from agent-config) and two macOS Keychain
-items for the current user. Do this once per machine.
+The hook needs `jev-lint` and `op` installed through Nix into a system profile (dotfiles installs `jev-lint` from
+agent-config; see "Which programs run") and two macOS Keychain items for the current user. Do this once per machine.
 
 1. In 1Password, create a service account with read-only access to the Environment `jev` and its dedicated vault.
     Copy the token (it starts with `ops_`) and the Environment ID. The ID is not a UUID: it is lowercase letters and

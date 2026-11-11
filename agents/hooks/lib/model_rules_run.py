@@ -1,12 +1,12 @@
 """Run `jev-lint review` over a session's changes, within a cap, a lock and a deadline.
 
 The process boundary is the only place that touches the model: `jev-lint` is started directly and `op` injects its key,
-so the hook handles only the service-account token, and only in the environment of the `op` child.
+so the hook handles only the service-account token, and only in the environment of the `op` child. Both programs
+are started by the trusted absolute paths of `model_rules_programs`, with a PATH that holds nothing else.
 """
 
 import json
 import os
-import shutil
 import signal
 import subprocess
 import time
@@ -14,19 +14,20 @@ from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
 
+import model_rules_programs
 from model_rules_credentials import Credentials
 from model_rules_outcome import Finding, Judgement, Plan, Prevented
+from model_rules_programs import Programs
 from session_store import LockTimeoutError, StateError, file_lock, private_directory
 
 REVIEWER = "jev-lint"
-LAUNCHER = "op"
 SUBJECT_CAP = 20
 PLAN_TIMEOUT_SECONDS = 20.0
 JUDGE_TIMEOUT_SECONDS = 60.0
 LOCK_TIMEOUT_SECONDS = 30.0
 OUTPUT_LIMIT_BYTES = 8 * 1024 * 1024
 # Nothing else is passed on: TYPESAFE_BASE_URL or JEV_LINT_CACHE would redirect the code or the cache.
-ENVIRONMENT_ALLOWLIST = ("PATH", "HOME", "USER", "LANG", "LC_ALL", "XDG_STATE_HOME", "TMPDIR")
+ENVIRONMENT_ALLOWLIST = ("HOME", "USER", "LANG", "LC_ALL", "XDG_STATE_HOME", "TMPDIR")
 TOKEN_VARIABLE = "OP_SERVICE_ACCOUNT_TOKEN"
 TIMEOUT_PROGRAM = "/usr/bin/timeout"
 DEADLINE_SIGNAL = "TERM"
@@ -58,20 +59,22 @@ class Review:
 
     With a `base` it reviews the commits made since that commit; without one it reviews the uncommitted changes and
     the files git does not track yet. `jev-lint` has no single mode for both, so a session needs one review of each.
-    `paths` limits a review to those files; a review that applies the cap names its own subset instead.
+    `paths` limits a review to those files; a review that applies the cap names its own subset instead. `programs`
+    are the trusted `op` and `jev-lint` it starts.
     """
 
     root: Path
     base: str | None
     rules: Path
     cache: Path
+    programs: Programs
     paths: tuple[str, ...] = ()
 
     def plan(self, deadline: Deadline, cap: int) -> Plan | Prevented:
         """Count the subjects without asking the model, and keep the files whose subjects fit `cap`."""
-        output = _Child((REVIEWER, *self._arguments("--dry-run"), *self.paths), _environment(), self.root).run(
-            deadline.remaining(PLAN_TIMEOUT_SECONDS)
-        )
+        arguments = (str(self.programs.reviewer), *self._arguments("--dry-run"), *self.paths)
+        child = _Child(arguments, _environment(), self.root)
+        output = child.run(deadline.remaining(PLAN_TIMEOUT_SECONDS))
         if isinstance(output, Prevented):
             return output
         try:
@@ -85,12 +88,12 @@ class Review:
             private_directory(self.cache.parent)
             with file_lock(self.cache.parent / ".lock", timeout=max(0.0, deadline.remaining(LOCK_TIMEOUT_SECONDS))):
                 arguments = (
-                    LAUNCHER,
+                    str(self.programs.launcher),
                     "run",
                     "--environment",
                     credentials.environment,
                     "--",
-                    REVIEWER,
+                    str(self.programs.reviewer),
                     *self._arguments(),
                     *(plan.paths or self.paths),
                 )
@@ -137,22 +140,15 @@ def review_all(reviews: tuple[Review, ...], credentials: Credentials, deadline: 
     return combined
 
 
-def is_installed() -> Prevented | None:
-    """None when both programs the run needs are on PATH, otherwise the missing one."""
-    for program in (REVIEWER, LAUNCHER):
-        if shutil.which(program) is None:
-            return Prevented(f"{program} is not installed")
-    return None
-
-
 def cache_path(state_directory: Path) -> Path:
     """Where the shared verdict cache lives: under the agent state directory, outside every repository."""
     return state_directory.parent / "model-rules" / "verdicts.json"
 
 
 def _environment(extra: dict[str, str] | None = None) -> dict[str, str]:
+    """The allowlisted variables and a PATH of trusted directories only, never the caller's PATH."""
     allowed = {name: os.environ[name] for name in ENVIRONMENT_ALLOWLIST if name in os.environ}
-    return {**allowed, **(extra or {})}
+    return {**allowed, "PATH": model_rules_programs.search_path(), **(extra or {})}
 
 
 @dataclass(frozen=True, slots=True)
@@ -170,7 +166,7 @@ class _Child:
         macOS cannot signal to a child. The hook's own process-group kill backs it up, a little later, and is all
         there is when `/usr/bin/timeout` does not exist.
         """
-        program = self.arguments[0]
+        program = Path(self.arguments[0]).name
         if timeout <= 0:
             return Prevented("the Stop hook has no time left for the model rules")
         wrapper = _deadline_wrapper(timeout)

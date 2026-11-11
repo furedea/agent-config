@@ -24,6 +24,6 @@ criteria:
     request; or the name promises an effect (set, save, update, delete, run, send) and the body only computes and
     returns a value that the caller needs, with no effect performed.
   "false": >-
-    The name and the body agree on whether the function reads or acts. A command that also returns the result of its
-    own effect, a memoizing or lazily initializing query, and a terse conventional name that the body fits are not
-    violations.
+    A name makes a promise only through a verb that unambiguously says the function is a pure read or performs an
+    effect; any other verb promises neither, so the body cannot contradict it. Where a promise is made, a body that
+    keeps it is not a violation.

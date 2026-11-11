@@ -4,7 +4,8 @@ id: error-message-names-operation
 language: Python
 kind: noul
 subject: node
-state: local
+# The whole file: the message is often built by a helper beside the raise, and a reader must see that helper.
+state: located
 threshold: 0.5
 axis: file
 severity: warning

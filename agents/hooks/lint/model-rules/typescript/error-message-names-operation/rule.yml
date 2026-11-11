@@ -3,7 +3,8 @@ id: error-message-names-operation
 languages: [ TypeScript, Tsx ]
 kind: noul
 subject: node
-state: local
+# The whole file: the message is often built by a helper beside the throw, and a reader must see that helper.
+state: located
 threshold: 0.5
 axis: file
 severity: warning

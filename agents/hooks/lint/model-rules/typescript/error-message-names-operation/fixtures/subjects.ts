@@ -33,6 +33,19 @@ export function loadSettings(path: string): string {
   }
 }
 
+// Clean: the throw inside the try is caught by the same function; only the wrapped error, which names the operation
+// and the path, leaves it.
+export function projectTargets(path: string, parse: (path: string) => string[]): string[] {
+  try {
+    if (!existsSync(path)) {
+      throw new Error(path);
+    }
+    return parse(path);
+  } catch (error) {
+    throw new Error(`cannot read the project targets from ${path}`, { cause: error });
+  }
+}
+
 // Clean: rethrows a caught error unchanged.
 export function runStep(step: () => number): number {
   try {

@@ -58,17 +58,23 @@ print(open(@REPORT@).read())
 sys.exit(behavior.get("exit", 0))
 """
 
-# Stands in for GNU `timeout`: it ends its command at the limit and exits 124, as the real one does.
+# Stands in for /usr/bin/timeout: it ends its command at the limit and exits 124, as the real one does.
+# `status` makes it end at once the way a real one can: a positive value is an exit status, a negative one a signal.
 TIMEOUT = """
-import json, subprocess, sys
+import json, os, subprocess, sys
 with open(@CALLS@, "a") as stream:
     stream.write(json.dumps({"program": "timeout", "argv": sys.argv[1:]}) + "\\n")
-if json.load(open(@BEHAVIOR@)).get("timeout_broken"):
-    sys.exit(125)
+status = json.load(open(@BEHAVIOR@)).get("timeout_status")
+if status is not None and status < 0:
+    os.kill(os.getpid(), -status)
+if status is not None:
+    sys.exit(status)
 arguments = sys.argv[1:]
-while arguments[0].startswith("--"):
-    arguments.pop(0)
-limit = float(arguments.pop(0).removesuffix("s"))
+while arguments[0].startswith("-"):
+    option = arguments.pop(0)
+    if option in ("-s", "-k"):
+        arguments.pop(0)
+limit = float(arguments.pop(0))
 process = subprocess.Popen(arguments)
 try:
     sys.exit(process.wait(timeout=limit))
@@ -81,9 +87,10 @@ except subprocess.TimeoutExpired:
 
 @dataclass(frozen=True, slots=True)
 class Tools:
-    """Fake `security`, `op` and `jev-lint` on PATH, and the files that steer and record them."""
+    """Fake `security`, `op` and `jev-lint` on PATH, a fake `timeout` at an absolute path, and their control files."""
 
     directory: Path
+    timeout: Path
 
     @property
     def calls_file(self) -> Path:
@@ -144,17 +151,17 @@ def _fill(template: str, values: dict[str, str]) -> str:
 def install_tools(executable: StubWriter, directory: Path) -> Tools:
     """Write the four fakes and give them a healthy default: a one-subject plan, one finding."""
     directory.mkdir(exist_ok=True)
-    tools = Tools(directory)
     values = {
-        "@CALLS@": repr(str(tools.calls_file)),
+        "@CALLS@": repr(str(directory / "calls.jsonl")),
         "@KEYCHAIN@": repr(str(directory / "keychain.json")),
         "@PLAN@": repr(str(directory / "plan.json")),
         "@REPORT@": repr(str(directory / "report.json")),
         "@BEHAVIOR@": repr(str(directory / "behavior.json")),
         "@TOKEN@": repr(FAKE_TOKEN),
     }
-    for name, template in (("security", SECURITY), ("op", OP), ("jev-lint", JEV_LINT), ("timeout", TIMEOUT)):
+    for name, template in (("security", SECURITY), ("op", OP), ("jev-lint", JEV_LINT)):
         executable(name, _fill(template, values))
+    tools = Tools(directory, executable("timeout", _fill(TIMEOUT, values)))
     tools.keychain(
         **{
             "agent-model-rules-op-token": FAKE_TOKEN,

@@ -1,20 +1,17 @@
-"""Stop-time model rules: when findings block, when they only notify, and what crosses the process boundary."""
+"""Stop-time model rules: when findings block, when they only notify, and which changes are judged."""
 
 import json
-import os
-import shutil
 import subprocess
 import sys
 from pathlib import Path
 
 import pytest
-from tests.hooks.model_rules_fakes import ENVIRONMENT_ID, FAKE_TOKEN, Tools, finding, install_tools
+from tests.hooks.model_rules_fakes import ENVIRONMENT_ID, FAKE_TOKEN, Tools, finding
+from tests.hooks.model_rules_support import edit, install_fakes, register_session, stop
 from tests.runtime import REPO_ROOT, StubWriter
 
 sys.path.insert(0, str(REPO_ROOT / "agents/hooks/lib"))
-import model_rules_credentials
 import model_rules_gate
-import model_rules_run
 import session_gate
 import session_store
 
@@ -23,10 +20,13 @@ HOOK = REPO_ROOT / "agents/hooks/verification_session.py"
 
 @pytest.fixture(autouse=True)
 def tools(executable: StubWriter, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Tools:
-    monkeypatch.setenv("USER", "tester")
-    monkeypatch.delenv("AGENT_MODEL_RULES", raising=False)
-    # Outside the worktree: the fakes' call log changes on every run and must not count as an edit.
-    return install_tools(executable, tmp_path.parent / f"{tmp_path.name}-fakes")
+    return install_fakes(executable, tmp_path, monkeypatch)
+
+
+@pytest.fixture
+def registered(git_project: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> session_store.SessionRecord:
+    """A session registered in a repository of a trusted owner, before any edit."""
+    return register_session(git_project, tmp_path, monkeypatch)
 
 
 @pytest.fixture
@@ -34,34 +34,6 @@ def record(registered: session_store.SessionRecord) -> session_store.SessionReco
     """The registered session after one edit."""
     edit(registered, "after\n")
     return registered
-
-
-@pytest.fixture
-def registered(git_project: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> session_store.SessionRecord:
-    """A session registered in a repository of a trusted owner, before any edit."""
-    subprocess.run(
-        ["git", "remote", "add", "origin", "https://github.com/furedea/fixture.git"], cwd=git_project, check=True
-    )
-    trusted = tmp_path / "trusted_owners.json"
-    trusted.write_text(json.dumps({"owners": ["furedea"], "exclude_forks": True, "repositories": ["furedea/fixture"]}))
-    monkeypatch.setenv("AGENT_TRUSTED_OWNERS", str(trusted))
-    monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path.parent / f"{tmp_path.name}-state"))
-    (git_project / "notes.txt").write_text("before\n")
-    (git_project / "preexisting.txt").write_text("already here when the session starts\n")
-    return session_store.register(git_project, "claude", "model-rules")
-
-
-def edit(record: session_store.SessionRecord, text: str) -> None:
-    (record.root / "notes.txt").write_text(text)
-
-
-def platform_free(names: list[str]) -> set[str]:
-    """Variable names without the ones macOS adds to every exec, such as __CF_USER_TEXT_ENCODING."""
-    return {name for name in names if not name.startswith("__CF")}
-
-
-def stop(record: session_store.SessionRecord, *, active: bool = False) -> dict:
-    return session_gate.stop(record, stop_hook_active=active)
 
 
 def test_new_findings_block_once_and_name_rule_and_location(record: session_store.SessionRecord) -> None:
@@ -174,77 +146,6 @@ def test_nothing_to_judge_asks_the_model_nothing(record: session_store.SessionRe
 
     assert "decision" not in result
     assert tools.calls("op") == []
-
-
-def test_the_model_is_asked_through_op_with_the_exact_argv(record: session_store.SessionRecord, tools: Tools) -> None:
-    stop(record)
-
-    [dry_run] = [call for call in tools.calls("jev-lint") if "--dry-run" in call["argv"]]
-    [launch] = tools.calls("op")
-    rules = str(REPO_ROOT / "agents/hooks/lint/model-rules")
-    cache = str(Path(session_store.state_directory()).parent / "model-rules/verdicts.json")
-    common = ["--json", "--no-config", "--fail-on", "error", "-R", rules, "-c", cache]
-    # Only the file the session edited is named; `preexisting.txt` was already there and is left out.
-    assert launch["argv"] == ["run", "--environment", ENVIRONMENT_ID, "--", "jev-lint", "review", *common, "notes.txt"]
-    assert dry_run["argv"] == ["review", "--json", "--dry-run", *common[1:], "notes.txt"]
-    assert dry_run["cwd"] == str(record.root.resolve())
-
-
-def test_the_model_child_runs_under_its_own_deadline_so_it_ends_if_the_hook_is_killed(
-    record: session_store.SessionRecord, tools: Tools, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    monkeypatch.setattr(model_rules_run, "JUDGE_TIMEOUT_SECONDS", 7)
-
-    stop(record)
-
-    [wrapped] = [call for call in tools.calls("timeout") if "op" in call["argv"]]
-    assert wrapped["argv"][:4] == ["--signal=TERM", "--kill-after=5s", "7.000s", "op"]
-    assert wrapped["argv"][4:7] == ["run", "--environment", ENVIRONMENT_ID]
-
-
-def test_without_a_usable_timeout_the_child_still_runs_and_only_the_in_hook_kill_bounds_it(
-    record: session_store.SessionRecord, tools: Tools, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    monkeypatch.setattr(model_rules_run, "TIMEOUT_PROGRAM", "no-such-timeout")
-
-    result = stop(record)
-
-    assert result["decision"] == "block"
-    assert tools.calls("timeout") == []
-    assert [call["argv"][0] for call in tools.calls("op")] == ["run"]
-
-
-def test_a_timeout_that_rejects_the_options_is_not_used(record: session_store.SessionRecord, tools: Tools) -> None:
-    tools.behave(timeout_broken=True)
-
-    result = stop(record)
-
-    assert result["decision"] == "block"
-    assert [call["argv"][0] for call in tools.calls("op")] == ["run"]
-
-
-def test_only_the_op_process_receives_the_token_and_only_allowlisted_variables(
-    record: session_store.SessionRecord, tools: Tools, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    monkeypatch.setenv("TYPESAFE_BASE_URL", "https://example.invalid")
-    monkeypatch.setenv("JEV_LINT_CACHE", "none")
-    allowed = set(model_rules_run.ENVIRONMENT_ALLOWLIST) | {"OP_SERVICE_ACCOUNT_TOKEN"}
-
-    stop(record)
-
-    [launch] = tools.calls("op")
-    [dry_run] = [call for call in tools.calls("jev-lint") if "--dry-run" in call["argv"]]
-    assert launch["has_token"]
-    assert platform_free(launch["env_names"]) <= allowed
-    assert not dry_run["has_token"]
-    assert platform_free(dry_run["env_names"]) <= allowed
-    assert all(FAKE_TOKEN not in argument for call in tools.calls() for argument in call["argv"])
-
-
-def test_the_token_never_reaches_the_output_even_when_a_tool_prints_it(record: session_store.SessionRecord) -> None:
-    result = stop(record)
-
-    assert FAKE_TOKEN not in json.dumps(result)
 
 
 def test_commits_made_since_registration_are_reviewed_from_the_starting_commit_then_the_uncommitted_changes(
@@ -365,72 +266,6 @@ def test_a_missing_keychain_item_skips_without_asking_the_model(
     assert tools.calls("op") == [] and tools.calls("jev-lint") == []
 
 
-@pytest.mark.parametrize("program", ["jev-lint", "op"])
-def test_a_missing_program_skips(
-    record: session_store.SessionRecord, monkeypatch: pytest.MonkeyPatch, program: str
-) -> None:
-    installed = shutil.which(program)
-    assert installed is not None
-    # Only the fakes and the system directories: a real `op` or `jev-lint` of the developer must not be found.
-    monkeypatch.setenv("PATH", os.pathsep.join([str(Path(installed).parent), "/usr/bin", "/bin"]))
-    Path(installed).unlink()
-
-    result = stop(record)
-
-    assert "decision" not in result
-    assert f"{program} is not installed" in result["systemMessage"]
-
-
-@pytest.mark.parametrize(
-    ("behavior", "reason"),
-    [({"exit": 3}, "exited with status 3"), ({"sleep": 5}, "timed out")],
-    ids=["non-zero-exit", "timeout"],
-)
-def test_a_failed_review_only_notifies(
-    record: session_store.SessionRecord, tools: Tools, monkeypatch: pytest.MonkeyPatch, behavior: dict, reason: str
-) -> None:
-    monkeypatch.setattr(model_rules_run, "JUDGE_TIMEOUT_SECONDS", 0.5)
-    tools.behave(**behavior)
-
-    result = stop(record)
-
-    assert "decision" not in result
-    assert reason in result["systemMessage"]
-
-
-@pytest.mark.parametrize("output", ["not json", '{"findings": 3}', '{"findings": [], "errors": ["x"]}'])
-def test_an_unreadable_report_only_notifies(record: session_store.SessionRecord, tools: Tools, output: str) -> None:
-    tools.raw_report(output)
-
-    result = stop(record)
-
-    assert "decision" not in result
-    assert "Model rules skipped" in result["systemMessage"]
-
-
-def test_a_prevented_run_is_tried_again_at_the_next_stop(record: session_store.SessionRecord, tools: Tools) -> None:
-    tools.behave(exit=3)
-    stop(record)
-    tools.behave()
-
-    assert stop(record)["decision"] == "block"
-
-
-def test_another_session_holding_the_cache_lock_skips_the_run(
-    record: session_store.SessionRecord, tools: Tools, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    monkeypatch.setattr(model_rules_run, "LOCK_TIMEOUT_SECONDS", 0.2)
-    cache = model_rules_run.cache_path(session_store.state_directory())
-    session_store.private_directory(cache.parent)
-
-    with session_store.file_lock(cache.parent / ".lock"):
-        result = stop(record)
-
-    assert "decision" not in result
-    assert "lock" in result["systemMessage"]
-    assert tools.calls("op") == []
-
-
 def test_no_edit_since_registration_skips(registered: session_store.SessionRecord, tools: Tools) -> None:
     result = stop(registered)
 
@@ -446,26 +281,6 @@ def test_the_stop_hook_blocks_through_the_provider_entry_point(record: session_s
 
     assert json.loads(first)["decision"] == "block"
     assert "decision" not in json.loads(second)
-
-
-def test_the_credentials_come_from_the_two_keychain_items_of_the_current_user(tools: Tools) -> None:
-    credentials = model_rules_credentials.load()
-
-    assert credentials == model_rules_credentials.Credentials(FAKE_TOKEN, ENVIRONMENT_ID)
-    assert [call["argv"] for call in tools.calls("security")] == [
-        ["find-generic-password", "-a", "tester", "-s", "agent-model-rules-op-token", "-w"],
-        ["find-generic-password", "-a", "tester", "-s", "agent-model-rules-op-environment", "-w"],
-    ]
-
-
-def test_an_environment_id_need_not_be_a_uuid_but_must_be_lowercase_alphanumeric(tools: Tools) -> None:
-    tools.keychain(**{"agent-model-rules-op-token": FAKE_TOKEN, "agent-model-rules-op-environment": "NOT-valid"})
-
-    assert isinstance(model_rules_credentials.load(), model_rules_credentials.Prevented)
-
-
-def test_credentials_do_not_show_the_token_in_their_representation() -> None:
-    assert FAKE_TOKEN not in repr(model_rules_credentials.Credentials(FAKE_TOKEN, ENVIRONMENT_ID))
 
 
 def test_findings_are_bounded_in_the_message(record: session_store.SessionRecord, tools: Tools) -> None:

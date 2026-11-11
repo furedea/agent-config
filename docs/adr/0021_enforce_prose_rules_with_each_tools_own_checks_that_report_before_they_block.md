@@ -96,15 +96,16 @@ own repositories get model judgement.
     instead of staying silent, and does not store a receipt, so the next Stop tries again.
 - **Orphaned children.** When Claude Code kills the hook (its timeout, Ctrl+C, closing the session), the hook cannot
     clean up, and macOS has no parent-death signal, so `op` and `jev-lint` could run on. Each child is therefore
-    started under `timeout --signal=TERM --kill-after=5s <budget>s`, which ends it at its own deadline whatever
-    happens to the hook; the hook's process-group kill stays as a backstop a few seconds after. `timeout` is found on
-    `PATH` and tried once before use; when none is usable the hook falls back, silently, to its own kill alone, and a
-    killed hook then leaves the child until it ends by itself. This repository does not provide `timeout`: it
-    declares no coreutils input and does not put programs on the user's `PATH` (dotfiles does, as for `jev-lint`), so
-    it uses whichever compatible `timeout` the user's environment has (GNU coreutils from Nix, or the one macOS 26
-    ships, which takes the same options). Making it deterministic belongs with the dotfiles change that provides
-    `jev-lint`. A child is bounded by its budget (at most 60 seconds) plus the 5-second kill-after, and the hook's
-    own kill comes a second after that.
+    started under `/usr/bin/timeout -s TERM -k 5 <budget>`, which ends it at its own deadline whatever happens to
+    the hook; the hook's process-group kill stays as a backstop a second after. The program is named by absolute
+    path, so nothing on `PATH` can stand in for it: macOS ships a BSD `timeout` there and Linux a GNU one. Only what
+    both accept is used (short options, a plain number of seconds with decimals; the BSD one rejects `--version` and
+    needs no probe). When `/usr/bin/timeout` does not exist the hook falls back, silently, to its own kill alone, and
+    a killed hook then leaves the child until it ends by itself. A child is bounded by its budget (at most 60 seconds)
+    plus the 5-second kill-after. The hook reads an exit status of 124 (deadline), 137 (GNU, after the kill) or
+    -9 (BSD `timeout` is itself in the process group it kills, so it dies of the signal) as a timeout. Measured on
+    macOS with the BSD `timeout`: a child that takes `TERM` ended 2.00 seconds after its hook was killed with a 2-second
+    budget, and one that ignores `TERM` 2.96 seconds after with `-k 1`.
 - **First rules.** Each is a `jev-lint` rule file (an ast-grep rule plus `ask:`): command/query naming of functions
     (M-05), error messages that name the operation and subject (M-21), and known-defect markers (`xfail`,
     `test.fails`) that carry a comment naming the removal condition (M-60). Their prose is kept until the rule is

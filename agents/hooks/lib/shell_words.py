@@ -70,6 +70,7 @@ def literal_word(word: dict, source: bytes) -> tuple[str, bool]:
     for index, part in enumerate(parts):
         if part.get("Type") == "Lit" and not is_literal_text(part.get("Value", ""), first=index == 0):
             dynamic = True
+    dynamic |= bool(ZSH_EXPANSION_FLAG.search(_unquoted_text(parts)))
     if dynamic:
         return source_text(word, source), True
     return "".join(literal_part(index, part, source) for index, part in enumerate(parts)), False
@@ -115,6 +116,10 @@ def _single_quote(value: str) -> str:
     return "'" + value.replace("'", "'\\''") + "'"
 
 
+def _unquoted_text(parts: list[dict]) -> str:
+    return "".join(part.get("Value", "") for part in parts if part.get("Type") == "Lit")
+
+
 def spreads(word: dict, source: bytes) -> bool:
     """Whether a word may become several words, or other words than the decoder sees.
 
@@ -123,7 +128,7 @@ def spreads(word: dict, source: bytes) -> bool:
     and `$~name`.
     """
     parts = word.get("Parts", [])
-    unquoted = "".join(part.get("Value", "") for part in parts if part.get("Type") == "Lit")
+    unquoted = _unquoted_text(parts)
     if any(part.get("Type") in SPLIT_PARTS for part in parts) or GLOB.search(unquoted) or BRACES & set(unquoted):
         return True
     if ZSH_EXPANSION_FLAG.search(unquoted):

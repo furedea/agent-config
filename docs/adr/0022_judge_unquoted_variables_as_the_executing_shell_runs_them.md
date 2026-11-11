@@ -28,8 +28,8 @@ command (`$J` with no assignment before it) still asks, and that an option the u
     it runs. Unconfirmed, they ask as before until a provider-specific source is found.
 - **Which names count as one word.** A plain unquoted `$name` or `${name}` is judged as `"$name"` is (a placeholder
     that passes only where any value would) when either holds:
-    1. The name was assigned before the call, in the same command, by a plain `name=value` (also `name+=value` and
-        `export name=value`), the value being any word, a quoted expansion, or `$(...)`, and no statement between an
+    1. The name was assigned before the call, in the same command, by a plain `name=value` (also `export name=value`;
+        never an append, which on an array name adds an element), the value being any word, a quoted expansion, or `$(...)`, and no statement between an
         assignment and the call is anything but such an assignment.
     2. The name is `HOME`, `PWD`, `TMPDIR` or `USER`, which zsh never makes an array. This too needs the call to
         follow nothing but plain assignments, since an earlier `setopt` would change it.

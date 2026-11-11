@@ -15,8 +15,7 @@ as the single word zsh runs, with the one extra rule that a word made only of su
 all empty, and for keeping the shell-independent reading wherever zsh is not certain, and against adding a quoting
 rule to the skills and against widening the `gh` allowlist form by form, to stop prompting for an expansion that is
 safe where the shell is known while keeping ADR-0015's rule 1 true to what actually runs, accepting that an option
-the user's zsh startup files change after the hook's reading (`setopt sh_word_split`, `setopt glob_subst`) is not
-visible to the guard.
+the user's zsh startup files change (`setopt sh_word_split`, `glob_subst`, `ksh_arrays`) is not visible to the guard.
 
 ## Decisions
 
@@ -37,9 +36,12 @@ visible to the guard.
     brace, or leading tilde beside a variable, command substitution (ADR-0015's rule 2), a variable as the program, and
     a script another shell runs (`bash -c`, `sh -c`), which is still read as bash.
 - **A command that may change the expansion asks.** `setopt`, `unsetopt`, `emulate`, `set`, `typeset`/`declare`/
-    `local`, `read`, `eval`, `source`, `alias`, an array assignment (`a=(...)`, `a[2]=...`), and the other programs
-    listed in `executing_shell.py` return the whole command to the shell-independent reading, because they can make
-    `$name` an array or turn word splitting on.
+    `local`, `export`/`readonly` with an option (`export -T`), `read`, `eval`, `source`, `alias`, `print`/`printf`,
+    `getopts`, `zparseopts`, `zstyle`, `zformat`, `vared`, `let`, the other programs listed in `executing_shell.py`,
+    and an array assignment (`a=(...)`, `a[2]=...`) return the whole command to the shell-independent reading,
+    because they can make `$name` an array or turn word splitting on. No list of the zsh builtins that create an
+    array is complete, so a variable also counts as changeable when its name appears anywhere else in the command
+    beyond `$name` and a plain `name=value` assignment: such a builtin takes the name as an argument.
 - **Unchanged.** Pipes, redirects, `;`, `&&`, and `export X=$Y; gh ...` were never the cause: they already pass.
 
 ## Alternatives not taken

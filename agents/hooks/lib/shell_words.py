@@ -16,17 +16,20 @@ QUOTED_PARTS = frozenset({"SglQuoted", "DblQuoted"})
 HOME_PARAMETER = "HOME"
 PARAMETER_MODIFIERS = ("Excl", "Length", "Width", "Index", "Slice", "Repl", "Names", "Exp")
 SIMPLE_PARAMETER_NAME = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
+# The name in each `$name` or `${name}` of a source word.
+SIMPLE_PARAMETER = re.compile(r"\$\{?([A-Za-z_][A-Za-z0-9_]*)")
 # Parameters zsh keeps as arrays or associations, which an unquoted `$name` expands to several words
 # (listed from `${(k)parameters}` under zsh 5.9 with every standard module loaded).
 ZSH_ARRAY_PARAMETERS = frozenset(
     (
-        "aliases argv builtins cdpath commands dirstack dis_aliases dis_builtins dis_functions dis_functions_source "
-        "dis_galiases dis_patchars dis_reswords dis_saliases epochtime errnos fignore fpath funcfiletrace "
-        "funcsourcetrace funcstack functions functions_source functrace galiases history historywords jobdirs "
-        "jobstates jobtexts keymaps langinfo mailpath manpath mapfile match mbegin mend modules nameddirs options "
-        "parameters patchars path pipestatus psvar region_highlight reply reswords saliases signals sysparams "
-        "termcap terminfo userdirs usergroups watch widgets zcurses_attrs zcurses_colors zcurses_keycodes "
-        "zcurses_windows zle_bracketed_paste zle_highlight zsh_eval_context zsh_scheduled_events"
+        "aliases argv builtins cdpath commands dirstack dis_aliases dis_builtins dis_functions "
+        "dis_functions_source dis_galiases dis_patchars dis_reswords dis_saliases epochtime errnos fignore "
+        "fpath funcfiletrace funcsourcetrace funcstack functions functions_source functrace galiases history "
+        "historywords jobdirs jobstates jobtexts keymaps langinfo mailpath manpath mapfile match mbegin mend "
+        "module_path modules nameddirs options parameters patchars path pipestatus psvar region_highlight "
+        "reply reswords saliases signals sysparams termcap terminfo userdirs usergroups watch widgets "
+        "zcurses_attrs zcurses_colors zcurses_keycodes zcurses_windows zle_bracketed_paste zle_highlight "
+        "zsh_eval_context zsh_scheduled_events"
     ).split()
 )
 # A word made only of simple parameters becomes no word at all when zsh finds them all empty.

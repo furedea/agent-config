@@ -130,13 +130,13 @@ def test_the_token_never_reaches_the_output_even_when_a_tool_prints_it(record: s
 
 @pytest.mark.parametrize(
     ("behavior", "reason"),
-    [({"exit": 3}, "exited with status 3"), ({"sleep": 5}, "timed out")],
+    [({"exit": 3}, "exited with status 3"), ({"timeout_status": 124}, "timed out")],
     ids=["non-zero-exit", "timeout"],
 )
 def test_a_failed_review_only_notifies(
-    record: session_store.SessionRecord, tools: Tools, monkeypatch: pytest.MonkeyPatch, behavior: dict, reason: str
+    record: session_store.SessionRecord, tools: Tools, behavior: dict, reason: str
 ) -> None:
-    monkeypatch.setattr(model_rules_run, "JUDGE_TIMEOUT_SECONDS", 0.5)
+    # The fake `timeout` reports an expired deadline at once, so the outcome does not depend on machine speed.
     tools.behave(**behavior)
 
     result = stop(record)

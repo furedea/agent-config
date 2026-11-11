@@ -39,7 +39,7 @@ os.execvp(child[0], child)
 """
 
 JEV_LINT = """
-import json, os, sys, time
+import json, os, sys
 dry_run = "--dry-run" in sys.argv
 with open(@CALLS@, "a") as stream:
     stream.write(json.dumps({
@@ -57,7 +57,6 @@ if dry_run:
     print(json.dumps(plans[paths]) if paths in plans else open(@PLAN@).read())
     sys.exit(0)
 print(@TOKEN@, file=sys.stderr)
-time.sleep(behavior.get("sleep", 0))
 print(open(@REPORT@).read())
 sys.exit(behavior.get("exit", 0))
 """
@@ -141,7 +140,7 @@ class Tools:
         (self.directory / "report.json").write_text(text)
 
     def behave(self, **behavior: object) -> None:
-        """Make the fake `jev-lint` exit with a status or sleep before it answers."""
+        """Make the fake `jev-lint` exit with a status, or the fake `timeout` end at once with `timeout_status`."""
         (self.directory / "behavior.json").write_text(json.dumps(behavior))
 
 

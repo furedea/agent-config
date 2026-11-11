@@ -25,6 +25,7 @@ known_first_party = [
   "command_objections",
   "command_policy",
   "dev_shell",
+  "explicit_targets",
   "fish_script",
   "foreign_shell_policy",
   "powershell_options",

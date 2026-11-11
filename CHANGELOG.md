@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.1.1](https://github.com/furedea/agent-config/compare/v0.1.0...v0.1.1) (2026-11-11)
+
+
+### Features
+
+* **hooks:** judge session changes with jev-lint model rules at Stop ([#150](https://github.com/furedea/agent-config/issues/150)) ([946e976](https://github.com/furedea/agent-config/commit/946e976806586c75e9ba6e1268902ae60a39ed16))
+
+
+### Bug Fixes
+
+* **hooks:** ask for zsh's $=name and $~name expansions ([#152](https://github.com/furedea/agent-config/issues/152)) ([9255c87](https://github.com/furedea/agent-config/commit/9255c87eca08c0ea51b15627060655ed88cb33cc))
+* **hooks:** judge a ~user path by the secret-path rules of the own home ([#129](https://github.com/furedea/agent-config/issues/129)) ([64221f6](https://github.com/furedea/agent-config/commit/64221f6f244e25810e601172fe4d5d4364992890))
+* **hooks:** match static words by their single-quoted form in precise command rules ([#147](https://github.com/furedea/agent-config/issues/147)) ([c432a20](https://github.com/furedea/agent-config/commit/c432a204e97a39eef71fda6cf36bc40f346a0773))
+* **hooks:** run verification tools through the flake dev shell ([#132](https://github.com/furedea/agent-config/issues/132)) ([63dd2f5](https://github.com/furedea/agent-config/commit/63dd2f50e1fea44d9e0a69a1ff9a8f4ac829fd5e))
+* **hooks:** start trusted model-rule programs and send only in-repository regular files ([#156](https://github.com/furedea/agent-config/issues/156)) ([183496b](https://github.com/furedea/agent-config/commit/183496b5c363a5936741be91cc8a2a8a73b29823))
+
 ## 0.1.0 (2026-11-10)
 
 

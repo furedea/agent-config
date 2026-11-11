@@ -1,7 +1,9 @@
 # M-05 command/query naming (agents/AGENTS.md: "name command functions for their side effects and query functions for
 # the value they return"). Advisory: the Stop hook reports findings and never promotes this rule to a gate (ADR-0021).
-# The cutoff is fitted on this folder's fixtures (8 violations, 8 conforming cases): the highest conforming case
-# scored 0.58 and every violation scored above it, so 0.76 is the midpoint of that gap. Refit it when fixtures change.
+# The cutoff is fitted on this folder's fixtures (8 violations, 8 conforming cases, 3 passes, means): the highest
+# conforming case scored 0.58 (0.62 in its worst pass) and the lowest violation 0.91 (0.90 in its worst pass), and
+# 0.76 is the midpoint of that gap. No fixture lies inside the gap, so any cutoff from about 0.62 to 0.90 gives the
+# same eval result: a violation that scores 0.6-0.75 would be dropped unseen. Add a borderline violation and refit.
 id: command-query-naming
 language: Python
 kind: noul

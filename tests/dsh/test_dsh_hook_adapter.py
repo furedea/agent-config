@@ -176,6 +176,16 @@ def test_the_editor_tool_may_view_but_not_edit_a_verification_record(
     assert result.returncode == status
 
 
+@pytest.mark.parametrize("tool", ["edit", "str_replace_editor"])
+@pytest.mark.parametrize(
+    "field", ["old_str", "new_str", "old_string", "new_string", "file_text", "insert_line", "patch"]
+)
+def test_a_view_command_that_carries_edit_fields_is_still_an_edit(run_cli: CliRunner, tool: str, field: str) -> None:
+    values = {"command": "view", "path": RECEIPT_LOG.replace("logs/a1b2.log", "results.json"), field: "x"}
+    result = run_cli(SCRIPT, "paths", "patch", payload={"tool_name": tool, "tool_input": values})
+    assert result.returncode == 2
+
+
 def test_only_the_read_tools_are_wired_to_the_read_path_check() -> None:
     hooks = json.loads((REPO_ROOT / "agents/hooks.json").read_text())["dsh"]["hooks"]["tools/pre-execute"]
     wired = {

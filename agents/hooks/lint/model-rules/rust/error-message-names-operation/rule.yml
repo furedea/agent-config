@@ -1,6 +1,6 @@
 # M-21 error messages name the operation and the subject (agents/skills/rust-style/references/errors.md: an error
-# "must include the operation and path"); see go/error-message-names-operation. Advisory and unfitted, as for
-# command-query-naming.
+# "must include the operation and path"); see go/error-message-names-operation. Advisory. The cutoff is the
+# 0.5 starting value, not fitted: on this folder's fixtures the highest conforming case scored 0.12.
 id: error-message-names-operation
 language: Rust
 divergent: Rust builds an error with Err, bail! or anyhow! where Python raises and TypeScript throws.

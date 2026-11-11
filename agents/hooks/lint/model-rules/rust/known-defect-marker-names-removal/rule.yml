@@ -1,6 +1,7 @@
 # M-60 a known-defect marker carries a comment naming the condition for removing it
 # (agents/skills/python-style/references/testing.md, which states it for xfail). Rust has no expected-failure marker,
-# so a test ignored for a known defect is the marker here; see go/known-defect-marker-names-removal.
+# so a test ignored for a known defect is the marker here; see go/known-defect-marker-names-removal. Advisory. The
+# cutoff is the 0.5 starting value, not fitted: on this folder's fixtures the highest conforming case scored 0.14.
 id: known-defect-marker-names-removal
 language: Rust
 divergent: Rust has no xfail; the marker is #[ignore], and an ignore for another reason is not a violation.

@@ -228,7 +228,8 @@ def _capped_plan(report: dict, cap: int, pending: frozenset[str]) -> Plan:
     for batch in report["batches"]:
         per_file[batch["file"]] = per_file.get(batch["file"], 0) + _count(batch, "subjects")
     # The report does not say which subjects are cached, so a resumed run takes the files it judged before for free.
-    chosen = [file for file in per_file if pending and file not in pending and _passable(file)]
+    # A file over the whole cap was never judged, so it is not one of them.
+    chosen = [file for file, count in per_file.items() if pending and file not in pending and _admissible(file, count)]
     total = 0
     for file, count in per_file.items():
         if (not pending or file in pending) and _passable(file) and total + count <= cap:
@@ -236,8 +237,13 @@ def _capped_plan(report: dict, cap: int, pending: frozenset[str]) -> Plan:
             total += count
     skipped = [file for file in per_file if file not in chosen]
     # A file over the whole cap would be skipped on every run, so naming it would make each Stop resume for nothing.
-    resumable = tuple(file for file in skipped if _passable(file) and per_file[file] <= SUBJECT_CAP)
+    resumable = tuple(file for file in skipped if _admissible(file, per_file[file]))
     return Plan(tuple(chosen), subjects, total, len(skipped), sum(per_file[file] for file in skipped), resumable)
+
+
+def _admissible(file: str, subjects: int) -> bool:
+    """Whether the cap can ever admit the file: it is not an option-like path and its subjects fit the whole cap."""
+    return _passable(file) and subjects <= SUBJECT_CAP
 
 
 def _passable(file: str) -> bool:

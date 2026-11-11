@@ -123,6 +123,20 @@ def test_a_file_larger_than_the_cap_is_reported_but_never_makes_the_stop_resume(
     assert "unchanged; not rerun" in again["systemMessage"]
 
 
+def test_a_resumed_stop_never_sends_a_file_larger_than_the_cap_that_was_not_judged_before(
+    record: session_store.SessionRecord, tools: Tools
+) -> None:
+    tools.plan(75, [("huge.py", 40), *THREE_FILES])
+    stop(record, active=True)
+
+    stop(record, active=True)
+
+    first, resumed = tools.calls("op")
+    assert "huge.py" not in first["argv"]
+    assert "huge.py" not in resumed["argv"]
+    assert resumed["argv"][-3:] == ["a.py", "c.py", "b.py"]
+
+
 def test_a_stop_that_cannot_resume_keeps_the_unseen_findings_for_the_agent(
     record: session_store.SessionRecord, tools: Tools
 ) -> None:

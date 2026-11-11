@@ -93,7 +93,7 @@ def test_every_extension_target_exists(extension: dict[str, list[str]]) -> None:
         ("agents/hooks/lib/patch_input.py", "tests/hooks/test_guard_suppression.py"),
         ("agents/codex/hooks/hook_adapter.py", "tests/codex/test_hook_adapter_cli.py"),
         ("agents/hooks/lib/herdr_grammar.py", "tests/hooks/test_herdr_ownership.py"),
-        ("agents/skills/explain-visually/assets/template.html", "tests/skills/explain-visually/test_verify_page.py"),
+        ("agents/skills/grilling/SKILL.md", "tests/test_workflow_skill_layout.py"),
         (".agents/hooks/rules/related_test_extensions.json", "tests/test_related_test_extensions.py"),
         ("scripts/replay_commands.py", "tests/skills/test_skill_commands.py"),
     ],

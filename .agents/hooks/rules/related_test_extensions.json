@@ -440,9 +440,6 @@
     "tests/hooks/test_cleanup_worktrees_trust.py",
     "tests/hooks/test_cleanup_command.py"
   ],
-  "agents/skills/explain-visually/assets/**": [
-    "tests/skills/explain-visually/test_verify_page.py"
-  ],
   "agents/hooks/guard_suppression.py": [
     "tests/codex/test_hook_adapter_cli.py"
   ]

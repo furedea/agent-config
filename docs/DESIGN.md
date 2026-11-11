@@ -144,7 +144,8 @@ few cases is not a calibration, so the prose stays in `AGENTS.md` and the style 
 - **Process boundary.** `jev-lint review --json --no-config --fail-on error -R <rules> -c <cache> [--base <commit>]`
     runs under `op run --environment <id> --`, which injects the key; `--no-config` keeps a repository's
     `.jev-lint.yaml` from redirecting the code to another endpoint. The hook passes the child only `HOME`, `USER`,
-    `LANG`, `LC_ALL`, `XDG_STATE_HOME`, and `TMPDIR`, a `PATH` of the trusted directories below plus `/usr/bin:/bin`,
+    `LANG`, `LC_ALL`, `XDG_STATE_HOME`, and `TMPDIR`, the fixed `GIT_LITERAL_PATHSPECS=1` (so git reads every path as
+    a file name, never as a pathspec pattern), a `PATH` of the trusted directories below plus `/usr/bin:/bin`,
     and the service-account token to `op`. It never reads, prints, or logs the token or the key, and discards the
     stderr of `op` and `jev-lint`. A planning run (`--dry-run`, no key) counts the subjects first.
 - **Which programs run.** `op` receives the token, so neither program is looked up through `PATH`: a project `bin`

@@ -954,7 +954,7 @@
           "matcher": "^(read|read_image|glob|grep|str_replace_editor)$",
           "hooks": [
             {
-              "command": "\"$HOME/.dsh/hooks/hook_adapter.py\" paths patch",
+              "command": "\"$HOME/.dsh/hooks/hook_adapter.py\" paths read",
               "timeout": 30,
               "type": "command"
             },

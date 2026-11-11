@@ -28,7 +28,7 @@ import verification_session
 
 SECRET_PATH_RULE = "guard_secret_paths.sh"
 SHELL_MODES = ("allowed", "forbidden", "git", "commit")
-PATH_MODES = ("command", "patch")
+PATH_MODES = ("command", "patch", "read")
 AUDIT_KINDS = ("tool", "compaction")
 CONTENT_MODES = ("prompt", "read", "write", "apply-patch", "suppression")
 NO_ARGUMENT: tuple[str, ...] = ()
@@ -205,7 +205,9 @@ class Adapter:
         try:
             with hook_input.payload_directory(context):
                 candidates = (
-                    _edit_targets(context) if mode == "patch" else _command_paths(_command_text(context["tool_input"]))
+                    _command_paths(_command_text(context["tool_input"]))
+                    if mode == "command"
+                    else _edit_targets(context)
                 )
         except shell_paths.UnexpandableGlobError as error:
             audit_log.blocked(_secret_path_refusal(mode, "", context))

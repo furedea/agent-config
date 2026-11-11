@@ -80,10 +80,14 @@ see [ADR-0003](adr/0003_register_verification_in_native_hooks.md).
 - **Hook-owned state.** The receipts, the session baseline, the trusted-owner cache, the audit log, and the
     model-rule verdict cache decide what Stop reruns and what is trusted, so only the hooks, which run outside
     the sandbox, write `verification/`, `model-rules/`, `trusted-owners/`, and `audit/` under
-    `agent-harness/`. The Claude sandbox keeps `~/.local/state/agent-harness` writable (the editor log lives there)
-    and denies writes to those four directories; `secret_path_policy.json` refuses file edits that name them,
-    but lets commands read them, because the agent reads the failure logs. Tools that run outside the sandbox
-    (`excludedCommands`) are not contained by the sandbox rule. An unreadable or malformed record is never
+    `agent-harness/`. The Claude sandbox keeps `~/.local/state/agent-harness` writable (the editor log lives there),
+    and `agents/claude/settings.json` lists those four directories in `denyWrite`. **That sandbox rule is not in
+    effect yet:** agent-harness replaces `denyWrite` with its own list when it renders the settings
+    ([agent-harness#213](https://github.com/furedea/agent-harness/issues/213)), so until that is fixed a command
+    that names a receipt and writes to it is not stopped. `secret_path_policy.json` already refuses file-tool
+    edits that name the directories, but lets commands and read tools read them,
+    because the agent reads the failure logs. Tools that run outside the sandbox
+    (`excludedCommands`) are not contained by the sandbox rule even then. An unreadable or malformed record is never
     reused: Stop reports `Verification unresolved`.
 - Ended or inactive records expire after seven days. Failure logs are capped at 1 MiB each and
     100 MiB in total.
@@ -139,7 +143,7 @@ promoted.
     and session and serialized by a lock file beside it. It is trusted input that can silence rules, so the path is in
     `secret_path_policy.json`, which refuses any tool call that names it. That guard sees paths that a tool call or
     command names literally; a command that builds the path at run time, or a program that writes it, is not covered,
-    so the Claude sandbox also denies writes to it (see Hook-owned state below).
+    so the Claude sandbox is meant to deny writes to it as well (see Hook-owned state below for its current state).
 
 ### Setting up a new machine
 

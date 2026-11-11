@@ -31,7 +31,7 @@ func Parse(raw string) (int, error) {
 func Load(path string) ([]byte, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("parse: %w", err)
+		return nil, fmt.Errorf("load failed")
 	}
 	return data, nil
 }

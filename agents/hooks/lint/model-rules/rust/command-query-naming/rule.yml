@@ -12,11 +12,12 @@ rule:
   all:
     - kind: function_item
     - has: { field: name, pattern: $NAME }
-    # `#[test]` may be followed by other attributes or comments, so look back through all of them.
+    # `#[test]` may be followed by other attributes or comments, so look back through all of them. A test attribute
+    # added by `cfg_attr` counts too: `test` listed after the condition, not the condition `cfg_attr(test, ..)`.
     - not:
         follows:
           kind: attribute_item
-          regex: ^#\[([A-Za-z_][A-Za-z0-9_]*::)*test\b
+          regex: (?s)^#\[(([A-Za-z_][A-Za-z0-9_]*::)*test\b|cfg_attr\(.*,\s*([A-Za-z_][A-Za-z0-9_]*::)*test\s*(,|\)\]))
           stopBy:
             not:
               any:

@@ -169,6 +169,11 @@ fn conditional_defect() {
 fn wrapped_defect() {
     assert_eq!(1, 2);
 }
+
+#[cfg_attr(target_os = "linux", test)]
+fn get_conditional_test(pool: &mut Vec<u8>) {
+    pool.clear();
+}
 """
 
 

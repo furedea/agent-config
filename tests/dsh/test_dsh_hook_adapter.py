@@ -167,6 +167,15 @@ def test_write_tools_cannot_write_the_verification_receipts(run_cli: CliRunner) 
     assert run_cli(SCRIPT, "paths", "patch", payload=payload).returncode == 2
 
 
+@pytest.mark.parametrize("command,status", [("view", 0), ("str_replace", 2)])
+def test_the_editor_tool_may_view_but_not_edit_a_verification_record(
+    run_cli: CliRunner, command: str, status: int
+) -> None:
+    values = {"command": command, "path": RECEIPT_LOG.replace("logs/a1b2.log", "results.json")}
+    result = run_cli(SCRIPT, "paths", "patch", payload={"tool_name": "str_replace_editor", "tool_input": values})
+    assert result.returncode == status
+
+
 def test_only_the_read_tools_are_wired_to_the_read_path_check() -> None:
     hooks = json.loads((REPO_ROOT / "agents/hooks.json").read_text())["dsh"]["hooks"]["tools/pre-execute"]
     wired = {

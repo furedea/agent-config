@@ -25,6 +25,10 @@ GLOB = re.compile(r"(?<!\\)[*?]|(?<!\\)\[.+\]")
 # Brace expansion can pair braces across quoted parts, so any unquoted brace counts.
 BRACES = frozenset("{}")
 LINE_CONTINUATION = "\\\n"
+# shfmt reads `$=name`, `$~name`, and `$^name` as a `$` and literal text, but zsh splits, globs, or distributes the
+# value (`=`, `~`, and `^` are the only characters zsh accepts there, in or out of double quotes); a dollar
+# sign after an even run of backslashes (each pair is one literal backslash) is not escaped.
+ZSH_EXPANSION_FLAG = re.compile(r"(?<!\\)(?:\\\\)*\$[=~^]")
 # Inside double quotes the shell still expands or rewrites only these, `!` being history expansion.
 DOUBLE_QUOTE_SPECIAL = re.compile(r"[$`\\!]")
 
@@ -67,6 +71,7 @@ def literal_word(word: dict, source: bytes) -> tuple[str, bool]:
     for index, part in enumerate(parts):
         if part.get("Type") == "Lit" and not is_literal_text(part.get("Value", ""), first=index == 0):
             dynamic = True
+    dynamic |= bool(ZSH_EXPANSION_FLAG.search(_expandable_text(parts)))
     if dynamic:
         return source_text(word, source), True
     return "".join(literal_part(index, part, source) for index, part in enumerate(parts)), False
@@ -112,15 +117,31 @@ def _single_quote(value: str) -> str:
     return "'" + value.replace("'", "'\\''") + "'"
 
 
+def _unquoted_text(parts: list[dict]) -> str:
+    return "".join(part.get("Value", "") for part in parts if part.get("Type") == "Lit")
+
+
+def _expandable_text(parts: list[dict]) -> str:
+    """The literal text a shell may still expand: unquoted and double-quoted parts, never single-quoted ones."""
+    return "".join(
+        _unquoted_text(part.get("Parts", [])) if part.get("Type") == "DblQuoted" else part.get("Value", "")
+        for part in parts
+        if part.get("Type") in {"Lit", "DblQuoted"}
+    )
+
+
 def spreads(word: dict, source: bytes) -> bool:
     """Whether a word may become several words, or other words than the decoder sees.
 
     That is an unquoted expansion, substitution, glob, or brace, a line continuation, which the
-    shell removes, or a positional parameter or array expansion even in quotes.
+    shell removes, or a positional parameter or array expansion even in quotes, or zsh's `$=name`
+    and `$~name`.
     """
     parts = word.get("Parts", [])
-    unquoted = "".join(part.get("Value", "") for part in parts if part.get("Type") == "Lit")
+    unquoted = _unquoted_text(parts)
     if any(part.get("Type") in SPLIT_PARTS for part in parts) or GLOB.search(unquoted) or BRACES & set(unquoted):
+        return True
+    if ZSH_EXPANSION_FLAG.search(_expandable_text(parts)):
         return True
     if LINE_CONTINUATION in source_text(word, source):
         return True

@@ -8,9 +8,7 @@ readonly FAKE_AGENT_HARNESS_VERSION="9.9.9"
 readonly RENDERED_ENTRY_POINTS=(
   .claude/hooks/guard_command.py
   .claude/statusline/statusline.py
-  .claude/skills/explain-visually/scripts/render.py
   .codex/hooks/hook_adapter.py
-  .codex/skills/explain-visually/scripts/render.py
   .devin/hooks/hook_adapter.py
   .dsh/hooks/hook_adapter.py
   .hermes/hooks/hook_adapter.py

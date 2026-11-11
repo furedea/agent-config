@@ -1,19 +1,6 @@
 {
   "version": 1,
   "skills": {
-    "explain-visually": {
-      "claude": {
-        "frontmatter": {
-          "argument-hint": "<PR, issue, or document>",
-          "disable-model-invocation": true
-        }
-      },
-      "codex": {
-        "openai": {
-          "allow_implicit_invocation": false
-        }
-      }
-    },
     "grilling": {
       "claude": {
         "frontmatter": {

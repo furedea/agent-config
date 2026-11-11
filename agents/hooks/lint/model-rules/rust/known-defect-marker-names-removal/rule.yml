@@ -14,10 +14,11 @@ severity: warning
 rule:
   all:
     - kind: attribute_item
-    # Also an ignore attached conditionally: `#[cfg_attr(target_os = "windows", ignore = "...")]`.
+    # Also an ignore attached conditionally: `#[cfg_attr(target_os = "windows", ignore = "...")]`. Only the attribute
+    # list after the condition counts: `cfg_attr(feature = "ignore", ..)` and `cfg_attr(ignore, ..)` attach no ignore.
     - any:
         - regex: ^#\[ignore\b
-        - regex: (?s)^#\[cfg_attr\(.*\bignore\b
+        - regex: (?s)^#\[cfg_attr\(.*,\s*ignore\s*(=|,|\)\])
 ask: >-
   This test is ignored because of a known defect, without a reason or comment that names the condition under which
   the marker is removed.

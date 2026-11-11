@@ -31,3 +31,14 @@ fn slow() {
 fn conditional() {
     assert_eq!(1, 1);
 }
+
+#[test]
+#[cfg_attr(feature = "ignore", should_panic)]
+fn feature_named_ignore() {
+    assert_eq!(1, 1);
+}
+
+#[cfg_attr(ignore, test)]
+fn condition_named_ignore() {
+    assert_eq!(1, 1);
+}

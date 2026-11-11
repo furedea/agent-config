@@ -174,6 +174,17 @@ fn wrapped_defect() {
 fn get_conditional_test(pool: &mut Vec<u8>) {
     pool.clear();
 }
+
+#[test]
+#[cfg_attr(feature = "ignore", should_panic)]
+fn feature_named_ignore() {
+    assert_eq!(1, 1);
+}
+
+#[cfg_attr(ignore, test)]
+fn condition_named_ignore() {
+    assert_eq!(1, 1);
+}
 """
 
 
@@ -288,7 +299,7 @@ def test_rust_rules_select_the_functions_they_ask_about(repository: Path) -> Non
     # `known_defect` carries `#[test]` before `#[ignore]` and two comments, so it is not asked about by name; the
     # `#[cfg(not(test))]` function is production code and is. `read` builds its message with `.context(..)` and
     # `qualify` with the path-qualified `anyhow::bail!`. Two of the three ignores are `cfg_attr`, one of them wrapped
-    # over several lines as rustfmt writes it.
+    # over several lines as rustfmt writes it. `cfg_attr` whose condition merely names `ignore` is not an ignore.
     assert counts == {
         "command-query-naming": 6,
         "error-message-names-operation": 3,

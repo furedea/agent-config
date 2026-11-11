@@ -62,6 +62,18 @@ def test_the_cap_counts_only_the_cached_subjects_of_the_files_it_kept(
     assert "3 cached" in stop(record)["reason"]
 
 
+def test_a_count_that_cannot_be_read_stops_the_review_before_the_model_is_asked(
+    record: session_store.SessionRecord, tools: Tools
+) -> None:
+    tools.plan(35, THREE_FILES)
+    tools.write_plan_of_files(("a.py", "c.py"), subjects=20, cached="many")
+
+    result = stop(record)
+
+    assert "printed a plan that cannot be read" in result["systemMessage"]
+    assert tools.calls("op") == []
+
+
 def test_the_message_counts_no_cached_subject_when_the_plan_has_none(
     record: session_store.SessionRecord, tools: Tools
 ) -> None:

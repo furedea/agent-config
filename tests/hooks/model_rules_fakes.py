@@ -121,7 +121,7 @@ class Tools:
         }
         (self.directory / "plan.json").write_text(json.dumps(report))
 
-    def write_plan_of_files(self, files: tuple[str, ...], subjects: int, cached: int) -> None:
+    def write_plan_of_files(self, files: tuple[str, ...], subjects: int, cached: object) -> None:
         """What the dry run prints when it is asked about exactly `files`, instead of the plan for the whole diff."""
         plans_file = self.directory / "plans.json"
         plans = json.loads(plans_file.read_text())

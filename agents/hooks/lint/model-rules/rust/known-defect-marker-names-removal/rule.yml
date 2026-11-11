@@ -1,0 +1,28 @@
+# M-60 a known-defect marker carries a comment naming the condition for removing it
+# (agents/skills/python-style/references/testing.md, which states it for xfail). Rust has no expected-failure marker,
+# so a test ignored for a known defect is the marker here; see go/known-defect-marker-names-removal.
+id: known-defect-marker-names-removal
+language: Rust
+divergent: Rust has no xfail; the marker is #[ignore], and an ignore for another reason is not a violation.
+kind: noul
+subject: node
+# The comment sits above the attribute, outside the attribute, so the arm that sends the file is used.
+state: located
+threshold: 0.5
+axis: file
+severity: warning
+rule:
+  all:
+    - kind: attribute_item
+    - regex: ^#\[ignore\b
+ask: >-
+  This test is ignored because of a known defect, without a reason or comment that names the condition under which
+  the marker is removed.
+criteria:
+  "true": >-
+    The test is ignored for a known defect, and neither the attribute's reason nor a comment next to it names a
+    condition such as a fixed defect, a released dependency version, or a finished feature; the marker is bare or only
+    says that the test is broken or to fix it later.
+  "false": >-
+    The test is not ignored for a known defect (for example it is slow or needs a credential), or the attribute's reason
+    or a comment next to it names the condition for removing it.

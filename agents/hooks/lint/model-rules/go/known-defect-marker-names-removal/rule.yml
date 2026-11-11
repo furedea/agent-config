@@ -1,0 +1,29 @@
+# M-60 a known-defect marker carries a comment naming the condition for removing it
+# (agents/skills/python-style/references/testing.md, which states it for xfail). Go has no expected-failure marker
+# (go-style/references/testing.md), so a test skipped for a known defect is the marker here. Advisory and unfitted, as
+# for command-query-naming.
+id: known-defect-marker-names-removal
+language: Go
+divergent: Go has no xfail; the marker is a skipped test, and a skip for another reason is not a violation.
+kind: noul
+subject: node
+# The comment sits above the call statement, outside the call, so the arm that sends the file is used.
+state: located
+threshold: 0.5
+axis: file
+severity: warning
+rule:
+  all:
+    - kind: call_expression
+    - regex: ^[A-Za-z_][A-Za-z0-9_]*\.Skipf?\(
+ask: >-
+  This test is skipped because of a known defect, without a message or comment that names the condition under which
+  the skip is removed.
+criteria:
+  "true": >-
+    The skip is for a known defect, and neither its message nor a comment next to it names a condition such as a fixed
+    defect, a released dependency version, or a finished feature; it only says that the test is broken or to fix it
+    later.
+  "false": >-
+    The skip is not for a known defect (for example a missing platform, tool or credential), or its message or a
+    comment next to it names the condition for removing it.

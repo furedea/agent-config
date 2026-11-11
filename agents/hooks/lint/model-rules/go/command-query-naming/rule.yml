@@ -1,0 +1,34 @@
+# M-05 command/query naming (agents/AGENTS.md: "name command functions for their side effects and query functions for
+# the value they return"). Advisory and unfitted: the cutoff is a starting point, not a calibration, so the Stop hook
+# reports findings and never promotes this rule to a gate (ADR-0021).
+id: command-query-naming
+language: Go
+kind: noul
+subject: node
+# The function plus the same file's imports and enclosing declarations; no other file is sent.
+state: local
+threshold: 0.5
+axis: file
+severity: warning
+rule:
+  all:
+    - any:
+        - kind: function_declaration
+        - kind: method_declaration
+    - has: { field: name, pattern: $NAME }
+    # Test, benchmark, fuzz and example functions are named for what they verify, not for a read or an effect.
+    - not:
+        has:
+          field: name
+          regex: "^(Test|Benchmark|Fuzz|Example)([A-Z_]|$)"
+ask: >-
+  The name of this function presents it as a query or as a command, and its body is the other one, or both.
+criteria:
+  "true": >-
+    The name begins with a verb that unambiguously promises a pure read or an effect, and the body does the other: a
+    name that promises a read while the body changes state outside its own locals (writing a file, mutating an argument,
+    a global or a field, sending a request), or a name that promises an effect while the body only computes and returns
+    a value, performing no effect.
+  "false": >-
+    Every other case: the name and the body agree on whether the function reads or acts, or the name's verb promises
+    neither a pure read nor an effect, so the body contradicts nothing.

@@ -1,0 +1,12 @@
+default: clean
+# violating.go: the message is generic, or names only the subject or only the operation.
+# conforming.go: the explicit cleans are the hard ones, a message assembled from parameters and one that is built after
+# a received error is returned unchanged.
+fixtures/violating.go:
+  - { line: 9, label: bad, window: 1 }
+  - { line: 16, label: bad, window: 1 }
+  - { line: 24, label: bad, window: 1 }
+  - { line: 31, label: bad, window: 1 }
+fixtures/conforming.go:
+  - { line: 24, label: clean, window: 1 }
+  - { line: 35, label: clean, window: 1 }

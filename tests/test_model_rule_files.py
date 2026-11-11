@@ -67,6 +67,64 @@ test.fails("known defect", () => {});
 """
 
 
+GO_SOURCE = """\
+package sample
+
+import (
+	"errors"
+	"testing"
+)
+
+func GetUser(users []string) []string {
+	users = users[:0]
+	return users
+}
+
+func Load(path string) (string, error) {
+	if path == "" {
+		return "", errors.New("bad")
+	}
+	return path, nil
+}
+
+func Pure(a, b int) int {
+	return a + b
+}
+
+func TestLoad(t *testing.T) {
+	// Removed when the parser handles empty input (#123).
+	t.Skip("known defect")
+}
+"""
+
+RUST_SOURCE = """\
+use anyhow::{bail, Result};
+
+pub fn get_user(users: &mut Vec<String>) -> usize {
+    users.clear();
+    users.len()
+}
+
+pub fn load(path: &str) -> Result<String> {
+    if path.is_empty() {
+        bail!("bad");
+    }
+    Ok(path.to_string())
+}
+
+pub fn pure(a: i32, b: i32) -> i32 {
+    a + b
+}
+
+// Removed when the parser handles empty input (#123).
+#[test]
+#[ignore]
+fn known_defect() {
+    assert_eq!(1, 2);
+}
+"""
+
+
 def git(root: Path, *arguments: str) -> str:
     result = subprocess.run(["git", *arguments], cwd=root, check=True, capture_output=True, text=True)
     return result.stdout.strip()
@@ -152,6 +210,51 @@ def test_typescript_rules_select_the_functions_they_ask_about(repository: Path) 
         "error-message-names-operation": 1,
         "known-defect-marker-names-removal": 1,
     }
+
+
+def test_go_rules_select_the_functions_they_ask_about(repository: Path) -> None:
+    (repository / "sample_test.go").write_text(GO_SOURCE)
+
+    counts = subjects_by_rule(plan(repository))
+
+    # Three functions are named for a read or an effect; `TestLoad` is named for what it verifies. Only `Load` builds
+    # an error; only the skip carries a known-defect marker.
+    assert counts == {
+        "command-query-naming": 3,
+        "error-message-names-operation": 1,
+        "known-defect-marker-names-removal": 1,
+    }
+
+
+def test_rust_rules_select_the_functions_they_ask_about(repository: Path) -> None:
+    (repository / "sample.rs").write_text(RUST_SOURCE)
+
+    counts = subjects_by_rule(plan(repository))
+
+    # `known_defect` carries `#[test]` before `#[ignore]` and a comment, so it is not asked about by name.
+    assert counts == {
+        "command-query-naming": 3,
+        "error-message-names-operation": 1,
+        "known-defect-marker-names-removal": 1,
+    }
+
+
+@pytest.mark.parametrize("language", ["go", "rust"])
+def test_every_go_and_rust_rule_ships_an_eval_suite_with_both_kinds_of_fixture(language: str) -> None:
+    result = subprocess.run(
+        ["jev-lint", "eval", "--dry-run", "--no-config", str(RULES / language)],
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+
+    suites = [line for line in result.stdout.splitlines() if line.startswith(f"{language}/")]
+    assert {line.split(":")[0] for line in suites} == {f"{language}/{rule_id}" for rule_id in RULE_IDS}
+    for rule_id in RULE_IDS:
+        fixtures = (RULES / language / rule_id / "fixtures").iterdir()
+        names = {path.name for path in fixtures}
+        assert {name.split(".")[0].removesuffix("_test") for name in names} == {"violating", "conforming"}
 
 
 def test_functions_committed_since_the_base_are_still_selected(repository: Path) -> None:

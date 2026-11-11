@@ -1,0 +1,35 @@
+# M-21 error messages name the operation and the subject (agents/skills/rust-style/references/errors.md: an error
+# "must include the operation and path"); see go/error-message-names-operation. Advisory and unfitted, as for
+# command-query-naming.
+id: error-message-names-operation
+language: Rust
+divergent: Rust builds an error with Err, bail! or anyhow! where Python raises and TypeScript throws.
+kind: noul
+subject: node
+state: local
+threshold: 0.5
+axis: file
+severity: warning
+# Only functions that build an error are asked about; a function that merely propagates one with `?` is not a subject.
+rule:
+  all:
+    - kind: function_item
+    - any:
+        - has:
+            kind: call_expression
+            regex: ^(Err|anyhow::anyhow)\(
+            stopBy: end
+        - has:
+            kind: macro_invocation
+            regex: ^(bail|anyhow|ensure)!
+            stopBy: end
+ask: >-
+  An error built in this function carries a message that names neither the operation that failed nor the subject it
+  failed on.
+criteria:
+  "true": >-
+    An error built has no message, or a generic one such as "invalid", "error" or "failed", or one that names only the
+    operation or only the subject, so a reader of the message alone cannot tell what was being done to what.
+  "false": >-
+    Every error built names the operation and the subject, directly or by wrapping a cause that does. Propagating a
+    received error unchanged is not a violation.

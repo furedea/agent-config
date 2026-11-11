@@ -1,0 +1,13 @@
+default: clean
+# Lines are the #[ignore] attribute. violating.rs: an ignore for a known defect with no removal condition.
+# conforming.rs: a condition in a comment or in the reason, and ignores that are not for a defect.
+fixtures/violating.rs:
+  - { line: 2, label: bad, window: 1 }
+  - { line: 8, label: bad, window: 1 }
+  - { line: 14, label: bad, window: 1 }
+  - { line: 21, label: bad, window: 1 }
+fixtures/conforming.rs:
+  - { line: 3, label: clean, window: 1 }
+  - { line: 9, label: clean, window: 1 }
+  - { line: 15, label: clean, window: 1 }
+  - { line: 21, label: clean, window: 1 }

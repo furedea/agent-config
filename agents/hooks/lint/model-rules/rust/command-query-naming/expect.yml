@@ -1,0 +1,13 @@
+default: clean
+# Lines are the first line of each function; a window of 1 keeps neighbouring functions apart.
+# violating.rs: the verb promises a pure read or an effect and the body does the other.
+# conforming.rs: the explicit cleans are the hard ones, whose verb promises neither (check, judge, load).
+fixtures/violating.rs:
+  - { line: 4, label: bad, window: 1 }
+  - { line: 9, label: bad, window: 1 }
+  - { line: 13, label: bad, window: 1 }
+  - { line: 17, label: bad, window: 1 }
+fixtures/conforming.rs:
+  - { line: 21, label: clean, window: 1 }
+  - { line: 29, label: clean, window: 1 }
+  - { line: 34, label: clean, window: 1 }

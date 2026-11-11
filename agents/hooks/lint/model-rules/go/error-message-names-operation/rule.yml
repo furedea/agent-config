@@ -1,0 +1,31 @@
+# M-21 error messages name the operation and the subject (agents/skills/go-style/references/errors.md: "Wrap with the
+# operation and subject"). Advisory and unfitted, as for command-query-naming.
+id: error-message-names-operation
+language: Go
+divergent: Go builds an error with errors.New or fmt.Errorf where Python raises and TypeScript throws.
+kind: noul
+subject: node
+state: local
+threshold: 0.5
+axis: file
+severity: warning
+# Only functions that build an error are asked about; a function that merely returns a received error is not a subject.
+rule:
+  all:
+    - any:
+        - kind: function_declaration
+        - kind: method_declaration
+    - has:
+        kind: call_expression
+        regex: ^(errors\.New|fmt\.Errorf)\(
+        stopBy: end
+ask: >-
+  An error built in this function carries a message that names neither the operation that failed nor the subject it
+  failed on.
+criteria:
+  "true": >-
+    An error built has a generic message such as "invalid", "error" or "failed", or one that names only the operation or
+    only the subject, so a reader of the message alone cannot tell what was being done to what.
+  "false": >-
+    Every error built names the operation and the subject, directly or by wrapping a cause that does. Returning a
+    received error unchanged is not a violation.

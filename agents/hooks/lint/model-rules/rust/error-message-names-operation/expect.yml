@@ -1,0 +1,12 @@
+default: clean
+# violating.rs: the message is generic, or names only the subject or only the operation.
+# conforming.rs: the explicit cleans are the hard ones, a message built by another function and one that follows a
+# propagated error.
+fixtures/violating.rs:
+  - { line: 3, label: bad, window: 1 }
+  - { line: 10, label: bad, window: 1 }
+  - { line: 17, label: bad, window: 1 }
+  - { line: 24, label: bad, window: 1 }
+fixtures/conforming.rs:
+  - { line: 21, label: clean, window: 1 }
+  - { line: 28, label: clean, window: 1 }

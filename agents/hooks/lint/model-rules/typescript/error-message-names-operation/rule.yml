@@ -5,11 +5,10 @@ kind: noul
 subject: node
 # The whole file: the message is often built by a helper beside the throw, and a reader must see that helper.
 state: located
-threshold: 0.5
-inconclusive: >-
-  The fixtures are clear cases: the quietest violation and the loudest conforming case are both far from the cutoff
-  (FN-margin 0.46, FP-margin 0.36), so this corpus cannot see the rule drift. Add a fixture aimed at the boundary
-  before trusting it as a regression gate.
+# The cutoff is fitted on this folder's fixtures (4 violations, 5 conforming cases, 3 passes, means): the highest
+# conforming case (projectTargets) scored 0.50 (0.55 in its worst pass) and the lowest violation 0.95, and 0.75 is the
+# midpoint of that gap. Refit it when fixtures change.
+threshold: 0.75
 axis: file
 severity: warning
 rule:

@@ -12,7 +12,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 
-from session_snapshot import Snapshot, capture
+from session_snapshot import COMMIT_ID, Snapshot, capture, head_commit
 
 SCHEMA = 1
 RETENTION_SECONDS = 7 * 24 * 60 * 60
@@ -48,6 +48,12 @@ class SessionRecord:
     def baseline(self) -> Snapshot:
         """The worktree files captured when the session registered, against which changes are measured."""
         return Snapshot.from_json(read_json(self.directory / "baseline.json")["files"])
+
+    @property
+    def head(self) -> str | None:
+        """The commit HEAD named when the session registered; None for an older record or an empty repository."""
+        value = read_json(self.directory / "baseline.json").get("head")
+        return value if isinstance(value, str) and COMMIT_ID.fullmatch(value) else None
 
     def results(self) -> dict:
         """Read the saved results; raise StateError when they are unreadable or lack a `checks` mapping."""
@@ -167,6 +173,7 @@ def _create_record(key: SessionKey, directory: Path, *, resuming: bool) -> Sessi
                 "provider": key.provider,
                 "created_at": time.time(),
                 "files": baseline.to_json(),
+                "head": head_commit(key.root),
             },
         )
         atomic_json(staging / "results.json", {"checks": {}, "session_id": key.session_id, "revalidate_all": resuming})

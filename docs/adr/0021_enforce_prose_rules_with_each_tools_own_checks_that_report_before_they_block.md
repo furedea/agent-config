@@ -2,17 +2,18 @@
 
 - Status: Proposed
 - Date: 2026-11-10
+- Amended: 2026-11-11 (the hook behaviour, the two reviews, the Keychain)
 
 In the context of turning the prose rules of `AGENTS.md` and the style skills into machine checks (#74), facing rules
 that differ in how they can be judged (existing linter, ast-grep, model, prose only) and a model judge whose cutoffs
 are not yet fitted (ADR-0020), we decided for making each tool's own configuration the single source of truth (linter
 config, ast-grep rule YAML with its native tests, jev-lint rule files), deleting a prose rule in the same change that
-replaces it with a check (a model-judged rule keeps its prose until it is promoted), returning findings to the agent without blocking, promoting a rule to blocking only after
-its example tests show no false positive, running model-judged rules once at Stop as a single `jev-lint review` over the changed functions of trusted
+replaces it with a check (a model-judged rule keeps its prose until it is promoted), showing findings to the agent by blocking Stop once for each set of inputs and never blocking again on the same inputs, promoting a rule to a gate that blocks every time only after
+its example tests show no false positive, running model-judged rules once at Stop as `jev-lint review` over the changed functions of trusted
 repositories, reusing `jev-lint`'s own verdict cache stored outside the repository, and building and pinning `jev-lint` with its dependencies through Nix as `packages.<system>.jev-lint` in this
 repository (agent-config), and against a separate rule registry, blocking on edit, judging per edit, and running without a cache,
 to achieve one place per rule and no prose that can drift from its check, accepting that an unpromoted rule can be
-ignored by the agent, that an unpromoted model-judged rule exists both as prose and as a check until its promotion, that a Stop-time verdict arrives after the edits it judges, that there is no single inventory
+ignored by the agent after it has seen the finding once, that a Stop block delays the end of a turn once per change, that an unpromoted model-judged rule exists both as prose and as a check until its promotion, that a Stop-time verdict arrives after the edits it judges, that there is no single inventory
 of rules across tools, that the hook depends on `jev-lint`'s cache and batching behaviour, and that only the owner's
 own repositories get model judgement.
 
@@ -28,16 +29,29 @@ own repositories get model judgement.
     until the promotion change, which then deletes it. The
     prose-to-check mapping (original text, location, tool, tests) is recorded in that PR's body only, not in the
     repository.
-- **Hook behaviour.** Findings are returned to the agent as feedback and never block. A rule becomes blocking only
-    when its example tests pass with no false positive on the conforming examples and on the repository's own files;
-    the promotion is a reviewed change to the tool's config. Model-judged rules are not promoted until their cutoff has
-    been fitted on a larger corpus, as ADR-0020 requires.
-- **Judging time.** Static rules run on the files changed by each edit. Model-judged rules run once at Stop, as a
-    single `jev-lint review --json` with all model rules (`-R <rules dir>`) over the changes made in the session, not
-    per edit and not once per rule and file. The session's changes are the diff of the working tree against the commit
-    `HEAD` pointed to when the session started, which the hook records at session start; so functions committed during
-    the session are still judged. Edits that were already uncommitted when it started are in the same diff and are
-    judged too; that over-inclusion is accepted because the hook cannot tell them apart without a working-tree snapshot.
+- **Hook behaviour.** Static rules return findings as feedback after an edit and never block. A model-judged finding
+    at Stop follows the rule that the verification receipts already use: findings on inputs not judged before block
+    Stop once (`decision: block` with the findings as the reason), so that the agent sees them, because the only
+    non-blocking Stop output, `systemMessage`, reaches the user and not the agent. The same findings on unchanged
+    inputs are only a message (`unchanged; not rerun`) and never block again, so a finding the agent declines to
+    fix cannot trap it; nothing blocks while `stop_hook_active` is set, and findings that it kept from blocking are recorded as not yet shown, so that they block once at the next Stop on the same inputs; and anything that prevents a run is only a
+    message. A rule becomes a gate that blocks every time only when its example tests pass with no false positive on
+    the conforming examples and on the repository's own files; the promotion is a reviewed change to the tool's
+    config. Model-judged rules are not promoted until their cutoff has been fitted on a larger corpus, as ADR-0020
+    requires.
+- **Judging time.** Static rules run on the files changed by each edit. Model-judged rules run at Stop, as
+    `jev-lint review --json` with all model rules (`-R <rules dir>`) over the changes made in the session, not per
+    edit and not once per rule and file. `jev-lint review` has no mode for the session's changes as a whole:
+    `--base <commit>` judges the commits since that commit (`base...HEAD`) and, without it, the working tree against
+    `HEAD` plus the files git does not track yet. The hook therefore runs up to two reviews, which share the subject
+    cap and the verdict cache: one with `--base` set to the commit `HEAD` pointed to when the session started, which
+    the hook records at session start, so that functions committed during the session are still judged (it is skipped
+    when nothing was committed or the record has no start commit), and one without it for the changes not committed
+    yet, limited to the files whose content differs from the session's baseline snapshot, so that edits and untracked
+    files that were already there and that the session never touched are not sent. A file the session did touch is
+    judged by its whole diff against `HEAD`, so earlier uncommitted hunks in it are judged too; that over-inclusion
+    is accepted because the baseline records signatures per file, not per hunk. A
+    function that was committed and then edited again can appear in both; its finding is reported once.
 - **Subjects and context.** `jev-lint` selects the subjects with each rule's ast-grep matcher and judges per function
     (the rule's `subject:`). Each subject is judged with the function plus the same file's imports and enclosing
     declarations (state arm `local`); no other file is sent. Only functions changed in the session are judged, at most
@@ -45,31 +59,53 @@ own repositories get model judgement.
 - **Cache.** The hook does not keep a cache of its own. It passes `jev-lint` its verdict cache (`-c <path>`) stored
     outside the repository, under the agent state directory, because `jev-lint` documents the cache as trusted input
     that can silence rules, and a file inside the repository could be committed. Keeping it under the state directory
-    means it is not committed; it does not by itself stop the agent from writing there, because no current guard covers
-    that path. The hook change must therefore add a guard rule that denies agent writes to the verdict cache, with a
-    test; until then the cache is only "not committed", and the findings stay advisory. The file is shared by every
+    means it is not committed; it does not by itself stop the agent from writing there. The hook change therefore adds
+    a rule to `secret_path_policy.json` that refuses any tool call naming the cache path, with a test. The guard
+    sees only paths that a call names literally: a command that builds the path at run time, or a program that
+    writes it, is not covered, and the sandbox allows writes under the state directory, so the cache is protected
+    against accident and casual edits and not against a determined agent. The file is shared by every
     repository, worktree, and session, and `jev-lint`'s write atomicity is not verified, so the hook serializes runs
     with a lock file next to the cache and gives up with a one-line notice if it cannot take the lock within the run's
     time limit. A `jev-lint` or model change is
     handled by `jev-lint`'s own cache keying.
-- **Where it runs.** The Stop-time run is an agent-config hook (Python) wired next to the existing Stop entry
-    (`agents/hooks.json` to `verification_session`) and reusing `trusted_owners`. agent-harness holds no
+- **Where it runs.** The Stop-time run is part of the existing Stop flow of agent-config's hooks (Python), not a
+    second Stop hook: `verification_session` calls it after the verification passes and it reuses the verification's
+    receipts, so that one place decides when a result is new and when it is unchanged, and `trusted_owners`. A
+    separate hook would run in parallel with the verification, could not apply the unchanged-inputs rule to both, and
+    could not tell the agent anything without a second block. agent-harness holds no
     model-rule logic: it only distributes configuration, while `jev-lint` is a tool that this hook runs, like
     ast-grep. The Rust `JudgementBackend` of agent-harness #209 is removed as dead code.
 - **Repository gate.** Code is sent to the model only for repositories whose owner `trusted_owners` trusts (the
     owner's own repositories). For any other repository the hook skips model rules and says so in one line. An
     environment variable (`AGENT_MODEL_RULES=off`) switches model rules off entirely.
-- **Key handling.** The hook runs `op run --environment <id> -- jev-lint review --json -R <rules dir> -c <state
-    dir>/agent-harness/model-rules/verdicts.json`. The key comes from the "jev" 1Password Environment, is injected
-    only into the `jev-lint` child process, and is never read, printed, or logged by the hook. The environment id
-    comes from `AGENT_MODEL_RULES_OP_ENVIRONMENT`. `op` runs with a 1Password service account, so that no interactive
-    approval is needed at every Stop. The account's token is read-only and limited to the "jev" Environment and a
-    dedicated automation vault, and is stored in the macOS Keychain. The hook reads the token from the Keychain and
-    passes it as `OP_SERVICE_ACCOUNT_TOKEN` only to the `op` child process, never to the agent, and to `jev-lint`
-    only through what `op` injects.
-- **Failure behaviour.** The run times out at 60 seconds and never blocks Stop. When it is skipped (untrusted
-    repository, kill switch, missing environment id, missing Keychain token) or fails (timeout, non-zero exit, unparsable output), the hook
-    returns a one-line notice instead of staying silent.
+- **Key handling.** The hook runs `op run --environment <id> -- jev-lint review --json --no-config --fail-on error
+    -R <rules dir> -c <state dir>/agent-harness/model-rules/verdicts.json` (with `--base <commit>` for the review of
+    commits). `--no-config` keeps a repository's `.jev-lint.yaml` from changing the endpoint the code is sent to.
+    The key comes from the "jev" 1Password Environment, is injected only into the `jev-lint` child process, and is
+    never read, printed, or logged by the hook. The Environment ID and the token are both read from the macOS login
+    Keychain as generic passwords of the current user (services `agent-model-rules-op-environment` and
+    `agent-model-rules-op-token`); the ID is not a UUID, so it is checked only as lowercase letters and digits. `op`
+    runs with a 1Password service account, so that no interactive approval is needed at every Stop. The account's
+    token is read-only and limited to the "jev" Environment and a dedicated automation vault. The hook passes the
+    token as `OP_SERVICE_ACCOUNT_TOKEN` only to the `op` child process, never to the agent, and to `jev-lint` only
+    through what `op` injects. Child processes get only an allowlist of environment variables, so a variable such as
+    `TYPESAFE_BASE_URL` cannot redirect the request, and their standard error is discarded.
+- **Failure behaviour.** A run has 60 seconds and never ends in a block for a reason other than a finding. When it
+    is skipped (untrusted repository, kill switch, missing Keychain item, missing `op` or `jev-lint`) or fails
+    (timeout, non-zero exit, unparsable output, errors reported by `jev-lint`), the hook returns a one-line message
+    instead of staying silent, and does not store a receipt, so the next Stop tries again.
+- **Orphaned children.** When Claude Code kills the hook (its timeout, Ctrl+C, closing the session), the hook cannot
+    clean up, and macOS has no parent-death signal, so `op` and `jev-lint` could run on. Each child is therefore
+    started under `/usr/bin/timeout -s TERM -k 5 <budget>`, which ends it at its own deadline whatever happens to
+    the hook; the hook's process-group kill stays as a backstop a second after. The program is named by absolute
+    path, so nothing on `PATH` can stand in for it: macOS ships a BSD `timeout` there and Linux a GNU one. Only what
+    both accept is used (short options, a plain number of seconds with decimals; the BSD one rejects `--version` and
+    needs no probe). When `/usr/bin/timeout` does not exist the hook falls back, silently, to its own kill alone, and
+    a killed hook then leaves the child until it ends by itself. A child is bounded by its budget (at most 60 seconds)
+    plus the 5-second kill-after. The hook reads an exit status of 124 (deadline), 137 (GNU, after the kill) or
+    -9 (BSD `timeout` is itself in the process group it kills, so it dies of the signal) as a timeout. Measured on
+    macOS with the BSD `timeout`: a child that takes `TERM` ended 2.00 seconds after its hook was killed with a 2-second
+    budget, and one that ignores `TERM` 2.96 seconds after with `-k 1`.
 - **First rules.** Each is a `jev-lint` rule file (an ast-grep rule plus `ask:`): command/query naming of functions
     (M-05), error messages that name the operation and subject (M-21), and known-defect markers (`xfail`,
     `test.fails`) that carry a comment naming the removal condition (M-60). Their prose is kept until the rule is
@@ -88,6 +124,11 @@ own repositories get model judgement.
 - **A rule registry (one YAML file per rule with source link, method, threshold, and examples).** Rejected: it
     duplicates what each tool's config already declares, and its source links are unnecessary once the prose rule is
     deleted.
+- **Findings that never block, as `systemMessage` only.** Rejected: that output reaches the user and not the agent,
+    so the agent would never see a finding unless the user relayed it.
+- **Block at every Stop that has findings.** Rejected: an agent that declines a finding would be stopped again on
+    the same inputs; blocking only for inputs not judged before, as the verification receipts do, cannot loop.
+- **A second Stop hook for the model rules.** Rejected: see Where it runs.
 - **Block on edit.** Rejected: an unproven rule would stop the agent on false positives, and the model judge is
     not yet precise enough (ADR-0020).
 - **Judge per edit.** Rejected: cost and latency grow with every edit, and most intermediate states are rewritten

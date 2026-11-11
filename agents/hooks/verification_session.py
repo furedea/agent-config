@@ -76,7 +76,7 @@ def dispatch(provider: str, event: str, payload: dict) -> dict[str, object]:
     elif event == "post-tool-use":
         _confirm_tool(record, payload)
     elif event == "stop":
-        return {**session_gate.gate(record)}
+        return {**session_gate.stop(record, stop_hook_active=bool(payload.get("stop_hook_active")))}
     elif event == "session-end":
         _end_session(record)
         prune()

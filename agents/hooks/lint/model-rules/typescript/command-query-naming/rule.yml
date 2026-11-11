@@ -1,0 +1,29 @@
+# M-05 command/query naming; see python/command-query-naming. Arrow functions are not subjects yet.
+id: command-query-naming
+languages: [ TypeScript, Tsx ]
+kind: noul
+subject: node
+state: local
+threshold: 0.5
+axis: file
+severity: warning
+rule:
+  any:
+    - all:
+        - kind: function_declaration
+        - has: { field: name, pattern: $NAME }
+    - all:
+        - kind: method_definition
+        - has: { field: name, pattern: $NAME }
+ask: >-
+  The name of this function presents it as a query or as a command, and its body is the other one, or both.
+criteria:
+  "true": >-
+    A reader of the name alone would expect a pure lookup (get, find, is, has, count, compute, to) and the body also
+    changes state outside its own locals, such as writing a file, mutating an argument, a global or a field, or sending a
+    request; or the name promises an effect (set, save, update, delete, run, send) and the body only computes and
+    returns a value that the caller needs, with no effect performed.
+  "false": >-
+    The name and the body agree on whether the function reads or acts. A command that also returns the result of its
+    own effect, a memoizing or lazily initializing query, and a terse conventional name that the body fits are not
+    violations.

@@ -1,0 +1,25 @@
+# M-21 error messages name the operation and the subject (agents/skills/python-style: error messages state what was
+# being done and to what). Advisory and unfitted, as for command-query-naming.
+id: error-message-names-operation
+language: Python
+kind: noul
+subject: node
+state: local
+threshold: 0.5
+axis: file
+severity: warning
+# Only functions that raise are asked about; a function that merely lets an error pass is not a subject.
+rule:
+  all:
+    - kind: function_definition
+    - has: { kind: raise_statement, stopBy: end }
+ask: >-
+  An error raised or thrown in this function carries a message that names neither the operation that failed nor the subject
+  it failed on.
+criteria:
+  "true": >-
+    An error raised or thrown has no message, or a generic one such as "invalid", "error" or "failed", or one that names only
+    the operation or only the subject, so a reader of the message alone cannot tell what was being done to what.
+  "false": >-
+    Every error raised or thrown names the operation and the subject, directly or by wrapping a cause that does.
+    Re-raising or rethrowing a caught error unchanged is not a violation.

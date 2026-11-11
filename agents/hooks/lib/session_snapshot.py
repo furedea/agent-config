@@ -3,6 +3,7 @@
 import hashlib
 import json
 import os
+import re
 import stat
 import subprocess
 from dataclasses import dataclass
@@ -10,6 +11,7 @@ from pathlib import Path
 
 # Larger tracked files are signed by metadata so SessionStart stays inside its hook timeout.
 HASH_LIMIT_BYTES = 1 << 20
+COMMIT_ID = re.compile(r"[0-9a-f]{40}|[0-9a-f]{64}")
 
 
 class SnapshotError(ValueError):
@@ -54,6 +56,20 @@ class Snapshot:
         ):
             raise SnapshotError("Invalid baseline file signatures")
         return cls(tuple(sorted(value.items())))
+
+
+def head_commit(root: Path) -> str | None:
+    """The full commit ID HEAD names, or None in a repository that has no commit yet."""
+    try:
+        output = subprocess.check_output(
+            ["git", "-c", "core.fsmonitor=false", "-C", str(root), "rev-parse", "--verify", "--quiet", "HEAD"],
+            stderr=subprocess.DEVNULL,
+            text=True,
+        )
+    except OSError, subprocess.CalledProcessError:
+        return None
+    value = output.strip()
+    return value if COMMIT_ID.fullmatch(value) else None
 
 
 def repository_root(directory: Path) -> Path:

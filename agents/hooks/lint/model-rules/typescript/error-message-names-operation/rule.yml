@@ -1,0 +1,27 @@
+# M-21 error messages name the operation and the subject; see python/error-message-names-operation.
+id: error-message-names-operation
+languages: [ TypeScript, Tsx ]
+kind: noul
+subject: node
+state: local
+threshold: 0.5
+axis: file
+severity: warning
+rule:
+  any:
+    - all:
+        - kind: function_declaration
+        - has: { kind: throw_statement, stopBy: end }
+    - all:
+        - kind: method_definition
+        - has: { kind: throw_statement, stopBy: end }
+ask: >-
+  An error raised or thrown in this function carries a message that names neither the operation that failed nor the subject
+  it failed on.
+criteria:
+  "true": >-
+    An error raised or thrown has no message, or a generic one such as "invalid", "error" or "failed", or one that names only
+    the operation or only the subject, so a reader of the message alone cannot tell what was being done to what.
+  "false": >-
+    Every error raised or thrown names the operation and the subject, directly or by wrapping a cause that does.
+    Re-raising or rethrowing a caught error unchanged is not a violation.

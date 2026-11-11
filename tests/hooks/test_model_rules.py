@@ -1,6 +1,7 @@
 """Stop-time model rules: when findings block, when they only notify, and which changes are judged."""
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -300,8 +301,22 @@ def test_only_links_changed_means_nothing_is_sent_and_the_notice_says_so(
 
     assert "decision" not in result
     assert tools.calls("op") == []
+    assert tools.calls("security") == []
     assert "1 file(s) withheld" in result["systemMessage"]
     assert "link.txt" not in result["systemMessage"]
+
+
+def test_a_hard_link_to_a_file_outside_the_repository_is_not_sent(
+    record: session_store.SessionRecord, tools: Tools, secret: Path
+) -> None:
+    os.link(secret, record.root / "second-name.txt")
+
+    result = stop(record)
+
+    arguments = arguments_of_jev_lint(tools)
+    assert "second-name.txt" not in arguments
+    assert "notes.txt" in arguments
+    assert "1 file(s) withheld" in result["reason"]
 
 
 def test_a_committed_symlink_is_not_sent_by_the_review_of_commits(

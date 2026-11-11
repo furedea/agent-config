@@ -7,7 +7,7 @@ the verification so that one rule, "unchanged inputs never trap the agent", cove
 
 import hashlib
 import os
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from pathlib import Path
 
 import model_rules_credentials
@@ -105,14 +105,16 @@ def _judge(record: SessionRecord, deadline: model_rules_run.Deadline) -> Judgeme
     programs = model_rules_programs.locate()
     if isinstance(programs, Prevented):
         return programs
+    changes = _Changes.of(record)
+    reviews = changes.reviews(record, programs)
+    withheld = Judgement((), withheld_files=len(changes.withheld))
+    if not reviews:
+        return withheld
     credentials = model_rules_credentials.load()
     if isinstance(credentials, Prevented):
         return credentials
-    changes = _Changes.of(record)
-    outcome = model_rules_run.review_all(changes.reviews(record, programs), credentials, deadline)
-    if isinstance(outcome, Prevented):
-        return outcome
-    return replace(outcome, withheld_files=len(changes.withheld))
+    outcome = model_rules_run.review_all(reviews, credentials, deadline)
+    return outcome if isinstance(outcome, Prevented) else outcome.combined(withheld)
 
 
 @dataclass(frozen=True, slots=True)

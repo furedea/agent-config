@@ -2,9 +2,14 @@
 
 What leaves the machine is the content of the files named to `jev-lint`, and `jev-lint` reads a path the way any
 program does: through symbolic links. A link committed or created inside the repository could therefore make it read
-`~/.ssh/config`. Only regular files whose real path is inside the repository are sent; a link, or a file reached
-through a directory that now links elsewhere, is withheld. Withheld paths are kept apart from the sendable ones and
-only their number is reported, because their names may themselves be sensitive.
+`~/.ssh/config`. Only regular files whose real path is inside the repository and that have no other hard link are
+sent; a symbolic link, a file reached through a directory that now links elsewhere, and a hard-linked file (whose
+other name may be outside the repository) are withheld. Withheld paths are kept apart from the sendable ones and only
+their number is reported, because their names may themselves be sensitive.
+
+The check happens when the files are chosen, a moment before the child opens them. The agent is not running while the
+Stop hook runs, so only a process it left behind could race that gap; closing it would need a private copy of the
+files, which is not done here.
 """
 
 import os
@@ -80,6 +85,7 @@ def _verdict(real_root: Path, candidate: Path, path: str) -> bool | None:
     if not stat.S_ISREG(mode):
         return None
     try:
-        return candidate.resolve(strict=True).is_relative_to(real_root)
+        # A second name for a file that may live outside the repository looks like any other regular file.
+        return candidate.stat().st_nlink == 1 and candidate.resolve(strict=True).is_relative_to(real_root)
     except OSError, RuntimeError:
         return False

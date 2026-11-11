@@ -9,6 +9,7 @@ subject: node
 # The function plus the same file's imports and enclosing declarations; no other file is sent.
 state: local
 threshold: 0.5
+inconclusive: The highest conforming case scores about 0.25, just at the 0.25 margin from the 0.5 cutoff, so replay flips between blind and not blind from run to run; a clean fixture nearer the cutoff is the follow-up (#164).
 axis: file
 severity: warning
 rule:

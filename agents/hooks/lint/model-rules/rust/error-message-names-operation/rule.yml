@@ -12,7 +12,6 @@ state: located
 threshold: 0.5
 axis: file
 severity: warning
-inconclusive: Every fixture sits far from the 0.5 cutoff (highest conforming 0.12, lowest violation well above 0.5), so this corpus cannot see the rule drift; a fixture at the boundary is the follow-up (#164).
 # Only functions that build an error are asked about; a function that merely propagates one with `?` is not a subject.
 # An error built by `ok_or`, `ok_or_else` or `map_err` is selected only when an argument writes a message there, a string
 # literal or `format!`. Selecting every such call would select most functions that handle an Option or a Result; a call

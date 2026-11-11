@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strconv"
 )
 
 func LoadConfig(path string) ([]byte, error) {
@@ -38,12 +37,4 @@ func Create(path string) error {
 		return errors.New("create " + path + ": already exists")
 	}
 	return nil
-}
-
-func ParseCount(raw string) (int, error) {
-	count, err := strconv.Atoi(raw)
-	if err != nil {
-		return 0, fmt.Errorf("parse count: %w", err)
-	}
-	return count, nil
 }

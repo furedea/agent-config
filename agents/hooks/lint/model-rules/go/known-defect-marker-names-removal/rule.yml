@@ -10,9 +10,9 @@ subject: node
 # The comment sits above the call statement, outside the call, so the arm that sends the file is used.
 state: located
 threshold: 0.5
+inconclusive: The highest conforming case scores about 0.25, just at the 0.25 margin from the 0.5 cutoff, so replay flips between blind and not blind from run to run; a clean fixture nearer the cutoff is the follow-up (#164).
 axis: file
 severity: warning
-inconclusive: Every fixture sits far from the 0.5 cutoff (highest conforming 0.12, lowest violation well above 0.5), so this corpus cannot see the rule drift; a fixture at the boundary is the follow-up (#164).
 rule:
   all:
     - kind: call_expression

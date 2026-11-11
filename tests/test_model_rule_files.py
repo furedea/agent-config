@@ -250,6 +250,31 @@ def test_every_saved_eval_baseline_still_scores_as_accepted() -> None:
     assert result.returncode == 0, result.stdout + result.stderr
 
 
+def recorded_files(node: object) -> list[str]:
+    """Every `file` value in a saved eval record, wherever it sits."""
+    if isinstance(node, dict):
+        own = [node["file"]] if isinstance(node.get("file"), str) else []
+        return own + [path for value in node.values() for path in recorded_files(value)]
+    if isinstance(node, list):
+        return [path for value in node for path in recorded_files(value)]
+    return []
+
+
+def test_no_saved_eval_baseline_records_an_absolute_path() -> None:
+    """An absolute path names one checkout's directory; a baseline is relocated on load only from a relative one."""
+    baselines = sorted(RULES.glob("*/*/baseline.json"))
+    assert baselines
+
+    absolute = {
+        f"{baseline.relative_to(RULES)}: {path}"
+        for baseline in baselines
+        for path in recorded_files(json.loads(baseline.read_text()))
+        if Path(path).is_absolute()
+    }
+
+    assert not absolute, "\n".join(sorted(absolute))
+
+
 def test_python_rules_select_the_functions_they_ask_about(repository: Path) -> None:
     (repository / "sample.py").write_text(PYTHON_SOURCE)
 

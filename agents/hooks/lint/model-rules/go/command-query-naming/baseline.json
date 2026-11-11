@@ -1,6 +1,6 @@
 {
   "schema": "jev-lint-eval-1",
-  "recorded": "2026-11-11T15:58:09.179Z",
+  "recorded": "2026-11-11T16:48:20.689Z",
   "model": "jev-1.14.0",
   "suite": "go/command-query-naming",
   "rules": [
@@ -19,227 +19,7 @@
         "line": 13,
         "endLine": 19,
         "kind": "noul",
-        "value": 0.08,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "agents/hooks/lint/model-rules/go/command-query-naming/fixtures/conforming.go",
-        "line": 21,
-        "endLine": 23,
-        "kind": "noul",
-        "value": 0.03,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "agents/hooks/lint/model-rules/go/command-query-naming/fixtures/conforming.go",
-        "line": 25,
-        "endLine": 27,
-        "kind": "noul",
-        "value": 0.03,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "agents/hooks/lint/model-rules/go/command-query-naming/fixtures/conforming.go",
-        "line": 29,
-        "endLine": 36,
-        "kind": "noul",
-        "value": 0.16,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "agents/hooks/lint/model-rules/go/command-query-naming/fixtures/conforming.go",
-        "line": 38,
-        "endLine": 40,
-        "kind": "noul",
-        "value": 0.22,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "agents/hooks/lint/model-rules/go/command-query-naming/fixtures/conforming.go",
-        "line": 42,
-        "endLine": 51,
-        "kind": "noul",
-        "value": 0.23,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "agents/hooks/lint/model-rules/go/command-query-naming/fixtures/violating.go",
-        "line": 7,
-        "endLine": 10,
-        "kind": "noul",
-        "value": 0.95,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "agents/hooks/lint/model-rules/go/command-query-naming/fixtures/violating.go",
-        "line": 12,
-        "endLine": 18,
-        "kind": "noul",
-        "value": 0.97,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "agents/hooks/lint/model-rules/go/command-query-naming/fixtures/violating.go",
-        "line": 20,
-        "endLine": 25,
-        "kind": "noul",
-        "value": 0.97,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "agents/hooks/lint/model-rules/go/command-query-naming/fixtures/violating.go",
-        "line": 27,
-        "endLine": 29,
-        "kind": "noul",
-        "value": 0.97,
-        "confidence": null
-      }
-    ],
-    [
-      {
-        "rule": "command-query-naming",
-        "file": "agents/hooks/lint/model-rules/go/command-query-naming/fixtures/violating.go",
-        "line": 7,
-        "endLine": 10,
-        "kind": "noul",
-        "value": 0.95,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "agents/hooks/lint/model-rules/go/command-query-naming/fixtures/violating.go",
-        "line": 12,
-        "endLine": 18,
-        "kind": "noul",
-        "value": 0.96,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "agents/hooks/lint/model-rules/go/command-query-naming/fixtures/violating.go",
-        "line": 20,
-        "endLine": 25,
-        "kind": "noul",
-        "value": 0.97,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "agents/hooks/lint/model-rules/go/command-query-naming/fixtures/violating.go",
-        "line": 27,
-        "endLine": 29,
-        "kind": "noul",
-        "value": 0.97,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "agents/hooks/lint/model-rules/go/command-query-naming/fixtures/conforming.go",
-        "line": 13,
-        "endLine": 19,
-        "kind": "noul",
         "value": 0.1,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "agents/hooks/lint/model-rules/go/command-query-naming/fixtures/conforming.go",
-        "line": 21,
-        "endLine": 23,
-        "kind": "noul",
-        "value": 0.03,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "agents/hooks/lint/model-rules/go/command-query-naming/fixtures/conforming.go",
-        "line": 25,
-        "endLine": 27,
-        "kind": "noul",
-        "value": 0.03,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "agents/hooks/lint/model-rules/go/command-query-naming/fixtures/conforming.go",
-        "line": 29,
-        "endLine": 36,
-        "kind": "noul",
-        "value": 0.17,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "agents/hooks/lint/model-rules/go/command-query-naming/fixtures/conforming.go",
-        "line": 38,
-        "endLine": 40,
-        "kind": "noul",
-        "value": 0.26,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "agents/hooks/lint/model-rules/go/command-query-naming/fixtures/conforming.go",
-        "line": 42,
-        "endLine": 51,
-        "kind": "noul",
-        "value": 0.23,
-        "confidence": null
-      }
-    ],
-    [
-      {
-        "rule": "command-query-naming",
-        "file": "agents/hooks/lint/model-rules/go/command-query-naming/fixtures/violating.go",
-        "line": 7,
-        "endLine": 10,
-        "kind": "noul",
-        "value": 0.96,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "agents/hooks/lint/model-rules/go/command-query-naming/fixtures/violating.go",
-        "line": 12,
-        "endLine": 18,
-        "kind": "noul",
-        "value": 0.96,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "agents/hooks/lint/model-rules/go/command-query-naming/fixtures/violating.go",
-        "line": 20,
-        "endLine": 25,
-        "kind": "noul",
-        "value": 0.96,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "agents/hooks/lint/model-rules/go/command-query-naming/fixtures/violating.go",
-        "line": 27,
-        "endLine": 29,
-        "kind": "noul",
-        "value": 0.97,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "agents/hooks/lint/model-rules/go/command-query-naming/fixtures/conforming.go",
-        "line": 13,
-        "endLine": 19,
-        "kind": "noul",
-        "value": 0.08,
         "confidence": null
       },
       {
@@ -275,6 +55,134 @@
         "line": 38,
         "endLine": 40,
         "kind": "noul",
+        "value": 0.26,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/go/command-query-naming/fixtures/conforming.go",
+        "line": 42,
+        "endLine": 51,
+        "kind": "noul",
+        "value": 0.24,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/go/command-query-naming/fixtures/violating.go",
+        "line": 7,
+        "endLine": 10,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/go/command-query-naming/fixtures/violating.go",
+        "line": 12,
+        "endLine": 18,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/go/command-query-naming/fixtures/violating.go",
+        "line": 20,
+        "endLine": 25,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/go/command-query-naming/fixtures/violating.go",
+        "line": 27,
+        "endLine": 29,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/go/command-query-naming/fixtures/violating.go",
+        "line": 7,
+        "endLine": 10,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/go/command-query-naming/fixtures/violating.go",
+        "line": 12,
+        "endLine": 18,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/go/command-query-naming/fixtures/violating.go",
+        "line": 20,
+        "endLine": 25,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/go/command-query-naming/fixtures/violating.go",
+        "line": 27,
+        "endLine": 29,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/go/command-query-naming/fixtures/conforming.go",
+        "line": 13,
+        "endLine": 19,
+        "kind": "noul",
+        "value": 0.08,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/go/command-query-naming/fixtures/conforming.go",
+        "line": 21,
+        "endLine": 23,
+        "kind": "noul",
+        "value": 0.03,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/go/command-query-naming/fixtures/conforming.go",
+        "line": 25,
+        "endLine": 27,
+        "kind": "noul",
+        "value": 0.03,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/go/command-query-naming/fixtures/conforming.go",
+        "line": 29,
+        "endLine": 36,
+        "kind": "noul",
+        "value": 0.13,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/go/command-query-naming/fixtures/conforming.go",
+        "line": 38,
+        "endLine": 40,
+        "kind": "noul",
         "value": 0.27,
         "confidence": null
       },
@@ -287,12 +195,104 @@
         "value": 0.24,
         "confidence": null
       }
+    ],
+    [
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/go/command-query-naming/fixtures/conforming.go",
+        "line": 13,
+        "endLine": 19,
+        "kind": "noul",
+        "value": 0.07,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/go/command-query-naming/fixtures/conforming.go",
+        "line": 21,
+        "endLine": 23,
+        "kind": "noul",
+        "value": 0.03,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/go/command-query-naming/fixtures/conforming.go",
+        "line": 25,
+        "endLine": 27,
+        "kind": "noul",
+        "value": 0.03,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/go/command-query-naming/fixtures/conforming.go",
+        "line": 29,
+        "endLine": 36,
+        "kind": "noul",
+        "value": 0.16,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/go/command-query-naming/fixtures/conforming.go",
+        "line": 38,
+        "endLine": 40,
+        "kind": "noul",
+        "value": 0.26,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/go/command-query-naming/fixtures/conforming.go",
+        "line": 42,
+        "endLine": 51,
+        "kind": "noul",
+        "value": 0.26,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/go/command-query-naming/fixtures/violating.go",
+        "line": 7,
+        "endLine": 10,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/go/command-query-naming/fixtures/violating.go",
+        "line": 12,
+        "endLine": 18,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/go/command-query-naming/fixtures/violating.go",
+        "line": 20,
+        "endLine": 25,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/go/command-query-naming/fixtures/violating.go",
+        "line": 27,
+        "endLine": 29,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      }
     ]
   ],
   "spent": {
     "calls": 6,
-    "inputTokens": 14055,
-    "usd": 0.00059031,
-    "ms": 278
+    "inputTokens": 13905,
+    "usd": 0.00058401,
+    "ms": 248
   }
 }

@@ -11,7 +11,6 @@ state: local
 threshold: 0.5
 axis: file
 severity: warning
-inconclusive: Every fixture sits far from the 0.5 cutoff (highest conforming 0.25, lowest violation well above 0.5), so this corpus cannot see the rule drift; a fixture at the boundary is the follow-up (#164).
 rule:
   all:
     - any:

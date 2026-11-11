@@ -152,6 +152,53 @@ def test_secret_paths_block_with_dsh_fields(run_cli: CliRunner, mode: str, paylo
     assert blocked_path in result.stderr
 
 
+RECEIPT_LOG = "~/.local/state/agent-harness/verification/0463f9a1/dsh-c3602be4/logs/a1b2.log"
+
+
+@pytest.mark.parametrize("tool", ["read", "read_image", "grep", "glob"])
+def test_read_tools_can_read_the_verification_logs_but_not_secrets(run_cli: CliRunner, tool: str) -> None:
+    logs = run_cli(SCRIPT, "paths", "read", payload={"tool_name": tool, "tool_input": {"path": RECEIPT_LOG}})
+    secret = run_cli(SCRIPT, "paths", "read", payload={"tool_name": tool, "tool_input": {"path": "~/.ssh/config"}})
+    assert (logs.returncode, secret.returncode) == (0, 2)
+
+
+def test_write_tools_cannot_write_the_verification_receipts(run_cli: CliRunner) -> None:
+    payload = {"tool_name": "write", "tool_input": {"path": RECEIPT_LOG.replace("logs/a1b2.log", "results.json")}}
+    assert run_cli(SCRIPT, "paths", "patch", payload=payload).returncode == 2
+
+
+@pytest.mark.parametrize("command,status", [("view", 0), ("str_replace", 2)])
+def test_the_editor_tool_may_view_but_not_edit_a_verification_record(
+    run_cli: CliRunner, command: str, status: int
+) -> None:
+    values = {"command": command, "path": RECEIPT_LOG.replace("logs/a1b2.log", "results.json")}
+    result = run_cli(SCRIPT, "paths", "patch", payload={"tool_name": "str_replace_editor", "tool_input": values})
+    assert result.returncode == status
+
+
+@pytest.mark.parametrize("tool", ["edit", "str_replace_editor"])
+@pytest.mark.parametrize(
+    "field",
+    [
+        *("old_str", "new_str", "old_string", "new_string", "file_text", "insert_line", "patch"),
+        *("oldText", "newText", "new_text", "text", "edits", "replace_all", "unknown_field"),
+    ],
+)
+def test_a_view_command_that_carries_edit_fields_is_still_an_edit(run_cli: CliRunner, tool: str, field: str) -> None:
+    values = {"command": "view", "path": RECEIPT_LOG.replace("logs/a1b2.log", "results.json"), field: "x"}
+    result = run_cli(SCRIPT, "paths", "patch", payload={"tool_name": tool, "tool_input": values})
+    assert result.returncode == 2
+
+
+def test_only_the_read_tools_are_wired_to_the_read_path_check() -> None:
+    hooks = json.loads((REPO_ROOT / "agents/hooks.json").read_text())["dsh"]["hooks"]["tools/pre-execute"]
+    wired = {
+        entry["matcher"]: [hook["command"] for hook in entry["hooks"] if "paths" in hook["command"]] for entry in hooks
+    }
+    assert wired["^(read|read_image|glob|grep)$"] == ['"$HOME/.dsh/hooks/hook_adapter.py" paths read']
+    assert wired["^str_replace_editor$"] == ['"$HOME/.dsh/hooks/hook_adapter.py" paths patch']
+
+
 def patch_input(*lines: str) -> str:
     return "\n".join(["*** Begin Patch", *lines, "*** End Patch"]) + "\n"
 

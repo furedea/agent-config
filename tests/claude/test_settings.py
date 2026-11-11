@@ -69,6 +69,17 @@ def test_sandboxed_commands_cannot_write_git_hooks_and_configuration() -> None:
     assert all(path.startswith(("~/", "/")) for path in sandbox["filesystem"]["denyWrite"])
 
 
+def test_sandboxed_commands_cannot_write_the_state_only_hooks_write() -> None:
+    filesystem = json.loads((REPO_ROOT / "agents/claude/settings.json").read_text())["sandbox"]["filesystem"]
+    assert "~/.local/state/agent-harness" in filesystem["allowWrite"]
+    assert {
+        "~/.local/state/agent-harness/verification",
+        "~/.local/state/agent-harness/model-rules",
+        "~/.local/state/agent-harness/trusted-owners",
+        "~/.local/state/agent-harness/audit",
+    } <= set(filesystem["denyWrite"])
+
+
 def test_agent_commits_and_tags_are_left_unsigned() -> None:
     environment = json.loads((REPO_ROOT / "agents/claude/settings.json").read_text())["env"]
     count = int(environment["GIT_CONFIG_COUNT"])

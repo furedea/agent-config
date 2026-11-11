@@ -28,9 +28,10 @@ import verification_session
 
 SECRET_PATH_RULE = "guard_secret_paths.sh"
 SHELL_MODES = ("allowed", "forbidden", "git", "commit")
-PATH_MODES = ("command", "patch")
+PATH_MODES = ("command", "patch", "read")
 AUDIT_KINDS = ("tool", "compaction")
 CONTENT_MODES = ("prompt", "read", "write", "apply-patch", "suppression")
+VIEW_FIELDS = frozenset({"command", "path", "file_path", "view_range"})
 NO_ARGUMENT: tuple[str, ...] = ()
 ANY_ARGUMENT = None
 Formatter = Callable[[str, dict], dict]
@@ -205,13 +206,17 @@ class Adapter:
         try:
             with hook_input.payload_directory(context):
                 candidates = (
-                    _edit_targets(context) if mode == "patch" else _command_paths(_command_text(context["tool_input"]))
+                    _command_paths(_command_text(context["tool_input"]))
+                    if mode == "command"
+                    else _edit_targets(context)
                 )
         except shell_paths.UnexpandableGlobError as error:
             audit_log.blocked(_secret_path_refusal(mode, "", context))
             return hook_decision.emit(hook_decision.ask(f"Needs review: {error}.").hardened())
         for value in candidates:
-            if rule := secret_path_policy.blocked_rule(value, rules):
+            if rule := secret_path_policy.blocked_rule(
+                value, rules, editing=mode == "patch" and not views_only(context)
+            ):
                 audit_log.blocked(_secret_path_refusal(mode, value, context))
                 raise ValueError(_secret_path_reason(value, rule))
         return 0
@@ -311,9 +316,18 @@ def tool_input(payload: dict) -> object:
 
 
 def views_only(context: dict) -> bool:
-    """Tell whether an editor tool call only views a file, so edit-time guards have nothing to check."""
+    """Tell whether an editor tool call only views a file, so edit-time guards have nothing to check.
+
+    Only the fields in VIEW_FIELDS may appear. Any other field, known or not, makes the call an edit whatever its
+    `command` says, because a tool may ignore `command` and apply the edit that field describes.
+    """
     values = context["tool_input"]
-    return context.get("tool_name") == "Edit" and isinstance(values, dict) and values.get("command") == "view"
+    return (
+        context.get("tool_name") == "Edit"
+        and isinstance(values, dict)
+        and values.get("command") == "view"
+        and values.keys() <= VIEW_FIELDS
+    )
 
 
 def failed(context: dict) -> bool:

@@ -951,7 +951,22 @@
           ]
         },
         {
-          "matcher": "^(read|read_image|glob|grep|str_replace_editor)$",
+          "matcher": "^(read|read_image|glob|grep)$",
+          "hooks": [
+            {
+              "command": "\"$HOME/.dsh/hooks/hook_adapter.py\" paths read",
+              "timeout": 30,
+              "type": "command"
+            },
+            {
+              "command": "\"$HOME/.dsh/hooks/hook_adapter.py\" content read",
+              "timeout": 30,
+              "type": "command"
+            }
+          ]
+        },
+        {
+          "matcher": "^str_replace_editor$",
           "hooks": [
             {
               "command": "\"$HOME/.dsh/hooks/hook_adapter.py\" paths patch",

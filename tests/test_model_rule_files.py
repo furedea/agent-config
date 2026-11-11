@@ -125,6 +125,13 @@ pub fn read(path: &str) -> Result<String> {
     std::fs::read_to_string(path).context("failed")
 }
 
+pub fn qualify(path: &str) -> anyhow::Result<String> {
+    if path.is_empty() {
+        anyhow::bail!("bad");
+    }
+    Ok(path.to_string())
+}
+
 #[cfg(not(test))]
 pub fn get_connection(pool: &mut Vec<u8>) -> usize {
     pool.clear();
@@ -133,6 +140,7 @@ pub fn get_connection(pool: &mut Vec<u8>) -> usize {
 
 // Removed when the parser handles empty input (#123).
 #[test]
+/* regression */
 #[ignore]
 fn known_defect() {
     assert_eq!(1, 2);
@@ -246,11 +254,12 @@ def test_rust_rules_select_the_functions_they_ask_about(repository: Path) -> Non
 
     counts = subjects_by_rule(plan(repository))
 
-    # `known_defect` carries `#[test]` before `#[ignore]` and a comment, so it is not asked about by name; the
-    # `#[cfg(not(test))]` function is production code and is. `read` builds its message with `.context(..)`.
+    # `known_defect` carries `#[test]` before `#[ignore]` and two comments, so it is not asked about by name; the
+    # `#[cfg(not(test))]` function is production code and is. `read` builds its message with `.context(..)` and
+    # `qualify` with the path-qualified `anyhow::bail!`.
     assert counts == {
-        "command-query-naming": 5,
-        "error-message-names-operation": 2,
+        "command-query-naming": 6,
+        "error-message-names-operation": 3,
         "known-defect-marker-names-removal": 1,
     }
 

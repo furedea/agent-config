@@ -17,11 +17,11 @@ rule:
     - any:
         - has:
             kind: call_expression
-            regex: ^(Err|anyhow::anyhow)\(
+            regex: ^Err\(
             stopBy: end
         - has:
             kind: macro_invocation
-            regex: ^(bail|anyhow|ensure)!
+            regex: ^(anyhow::)?(bail|anyhow|ensure)!
             stopBy: end
         # The message attached with anyhow's Context is the one rust-style asks for at I/O and parse boundaries.
         - has:

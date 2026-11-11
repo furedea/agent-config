@@ -22,6 +22,7 @@ rule:
               any:
                 - kind: attribute_item
                 - kind: line_comment
+                - kind: block_comment
 ask: >-
   The name of this function presents it as a query or as a command, and its body is the other one, or both.
 criteria:

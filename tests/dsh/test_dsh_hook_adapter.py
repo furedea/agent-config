@@ -172,9 +172,8 @@ def test_only_the_read_tools_are_wired_to_the_read_path_check() -> None:
     wired = {
         entry["matcher"]: [hook["command"] for hook in entry["hooks"] if "paths" in hook["command"]] for entry in hooks
     }
-    assert wired["^(read|read_image|glob|grep|str_replace_editor)$"] == [
-        '"$HOME/.dsh/hooks/hook_adapter.py" paths read'
-    ]
+    assert wired["^(read|read_image|glob|grep)$"] == ['"$HOME/.dsh/hooks/hook_adapter.py" paths read']
+    assert wired["^str_replace_editor$"] == ['"$HOME/.dsh/hooks/hook_adapter.py" paths patch']
 
 
 def patch_input(*lines: str) -> str:

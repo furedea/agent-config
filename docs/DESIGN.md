@@ -108,7 +108,9 @@ promoted.
     yet shown and block once at the next Stop on the same inputs. The model rules get only the time the Stop hook has
     left after the verification (at most 90 seconds), and do not run when too little remains. Anything that prevents a run (the kill switch, an untrusted
     repository, a missing Keychain item, a missing `op` or `jev-lint`, a timeout, a non-zero exit, unreadable output) is
-    a one-line notice and never blocks.
+    a one-line notice and never blocks. Each child runs under `timeout --signal=TERM --kill-after=5s <budget>s`, so
+    it still ends within its budget (at most 60 seconds, plus 5) if Claude Code kills the hook; without a usable
+    `timeout` on `PATH` only the hook's own process-group kill applies (see ADR-0021).
 - **What is judged.** `jev-lint review` has no single mode for "everything since the session started": with
     `--base <commit>` it judges the commits since that commit (`base...HEAD`), and without it the uncommitted changes
     and the files git does not track yet (limited here to the files the session changed since registration, so

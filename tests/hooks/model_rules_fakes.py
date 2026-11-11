@@ -58,6 +58,26 @@ print(open(@REPORT@).read())
 sys.exit(behavior.get("exit", 0))
 """
 
+# Stands in for GNU `timeout`: it ends its command at the limit and exits 124, as the real one does.
+TIMEOUT = """
+import json, subprocess, sys
+with open(@CALLS@, "a") as stream:
+    stream.write(json.dumps({"program": "timeout", "argv": sys.argv[1:]}) + "\\n")
+if json.load(open(@BEHAVIOR@)).get("timeout_broken"):
+    sys.exit(125)
+arguments = sys.argv[1:]
+while arguments[0].startswith("--"):
+    arguments.pop(0)
+limit = float(arguments.pop(0).removesuffix("s"))
+process = subprocess.Popen(arguments)
+try:
+    sys.exit(process.wait(timeout=limit))
+except subprocess.TimeoutExpired:
+    process.kill()
+    process.wait()
+    sys.exit(124)
+"""
+
 
 @dataclass(frozen=True, slots=True)
 class Tools:
@@ -122,7 +142,7 @@ def _fill(template: str, values: dict[str, str]) -> str:
 
 
 def install_tools(executable: StubWriter, directory: Path) -> Tools:
-    """Write the three fakes and give them a healthy default: a one-subject plan, one finding."""
+    """Write the four fakes and give them a healthy default: a one-subject plan, one finding."""
     directory.mkdir(exist_ok=True)
     tools = Tools(directory)
     values = {
@@ -133,7 +153,7 @@ def install_tools(executable: StubWriter, directory: Path) -> Tools:
         "@BEHAVIOR@": repr(str(directory / "behavior.json")),
         "@TOKEN@": repr(FAKE_TOKEN),
     }
-    for name, template in (("security", SECURITY), ("op", OP), ("jev-lint", JEV_LINT)):
+    for name, template in (("security", SECURITY), ("op", OP), ("jev-lint", JEV_LINT), ("timeout", TIMEOUT)):
         executable(name, _fill(template, values))
     tools.keychain(
         **{

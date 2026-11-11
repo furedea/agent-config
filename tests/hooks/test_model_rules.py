@@ -190,6 +190,39 @@ def test_the_model_is_asked_through_op_with_the_exact_argv(record: session_store
     assert dry_run["cwd"] == str(record.root.resolve())
 
 
+def test_the_model_child_runs_under_its_own_deadline_so_it_ends_if_the_hook_is_killed(
+    record: session_store.SessionRecord, tools: Tools, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(model_rules_run, "JUDGE_TIMEOUT_SECONDS", 7)
+
+    stop(record)
+
+    [wrapped] = [call for call in tools.calls("timeout") if "op" in call["argv"]]
+    assert wrapped["argv"][:4] == ["--signal=TERM", "--kill-after=5s", "7.000s", "op"]
+    assert wrapped["argv"][4:7] == ["run", "--environment", ENVIRONMENT_ID]
+
+
+def test_without_a_usable_timeout_the_child_still_runs_and_only_the_in_hook_kill_bounds_it(
+    record: session_store.SessionRecord, tools: Tools, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(model_rules_run, "TIMEOUT_PROGRAM", "no-such-timeout")
+
+    result = stop(record)
+
+    assert result["decision"] == "block"
+    assert tools.calls("timeout") == []
+    assert [call["argv"][0] for call in tools.calls("op")] == ["run"]
+
+
+def test_a_timeout_that_rejects_the_options_is_not_used(record: session_store.SessionRecord, tools: Tools) -> None:
+    tools.behave(timeout_broken=True)
+
+    result = stop(record)
+
+    assert result["decision"] == "block"
+    assert [call["argv"][0] for call in tools.calls("op")] == ["run"]
+
+
 def test_only_the_op_process_receives_the_token_and_only_allowlisted_variables(
     record: session_store.SessionRecord, tools: Tools, monkeypatch: pytest.MonkeyPatch
 ) -> None:

@@ -28,6 +28,12 @@ OUTPUT_LIMIT_BYTES = 8 * 1024 * 1024
 # Nothing else is passed on: TYPESAFE_BASE_URL or JEV_LINT_CACHE would redirect the code or the cache.
 ENVIRONMENT_ALLOWLIST = ("PATH", "HOME", "USER", "LANG", "LC_ALL", "XDG_STATE_HOME", "TMPDIR")
 TOKEN_VARIABLE = "OP_SERVICE_ACCOUNT_TOKEN"
+TIMEOUT_PROGRAM = "timeout"
+DEADLINE_SIGNAL = "TERM"
+KILL_AFTER_SECONDS = 5
+PROBE_TIMEOUT_SECONDS = 5.0
+# What `timeout` exits with when the command ran past its limit: 124, or 137 when it had to be killed.
+DEADLINE_STATUSES = (124, 137)
 
 
 @dataclass(frozen=True, slots=True)
@@ -158,13 +164,19 @@ class _Child:
     cwd: Path
 
     def run(self, timeout: float) -> bytes | Prevented:
-        """Run it, killing its whole process group at the deadline; stderr is discarded and never surfaced."""
+        """Run it to the deadline; stderr is discarded and never surfaced.
+
+        Two things end it. `timeout(1)` runs beside the hook and still fires if Claude Code kills the hook, which
+        macOS cannot signal to a child. The hook's own process-group kill backs it up, a little later, and is all
+        there is when no usable `timeout` exists.
+        """
         program = self.arguments[0]
         if timeout <= 0:
             return Prevented("the Stop hook has no time left for the model rules")
+        wrapper = _deadline_wrapper(timeout, self.environment)
         try:
             process = subprocess.Popen(
-                self.arguments,
+                (*wrapper, *self.arguments),
                 cwd=self.cwd,
                 env=self.environment,
                 stdin=subprocess.DEVNULL,
@@ -175,17 +187,47 @@ class _Child:
         except OSError:
             return Prevented(f"{program} could not be started")
         try:
-            output, _ = process.communicate(timeout=timeout)
+            output, _ = process.communicate(timeout=timeout + (KILL_AFTER_SECONDS + 1 if wrapper else 0))
         except subprocess.TimeoutExpired:
             with suppress(ProcessLookupError):
                 os.killpg(process.pid, signal.SIGKILL)
             process.communicate()
+            output = None
+        if output is None or (wrapper and process.returncode in DEADLINE_STATUSES):
             return Prevented(f"{program} timed out after {timeout:.0f}s")
         if process.returncode != 0:
             return Prevented(f"{program} exited with status {process.returncode}")
         if len(output) > OUTPUT_LIMIT_BYTES:
             return Prevented(f"{program} printed more than {OUTPUT_LIMIT_BYTES // (1024 * 1024)} MiB")
         return output
+
+
+def _deadline_wrapper(timeout: float, environment: dict[str, str]) -> tuple[str, ...]:
+    """The `timeout` words that bound a child to `timeout` seconds, or () when no usable `timeout` is found.
+
+    `timeout` is found on PATH and tried once on `true` with the same options, so a `timeout` that does not take them
+    (a different implementation, a broken one) is skipped without a notice. It is not provided by this repository:
+    the user's Nix profile puts GNU coreutils on PATH, and macOS 26 also ships a compatible one.
+    """
+    program = shutil.which(TIMEOUT_PROGRAM)
+    if program is None:
+        return ()
+    options = (f"--signal={DEADLINE_SIGNAL}", f"--kill-after={KILL_AFTER_SECONDS}s")
+    try:
+        probe = subprocess.run(
+            (program, *options, "1s", "true"),
+            env=environment,
+            stdin=subprocess.DEVNULL,
+            capture_output=True,
+            timeout=PROBE_TIMEOUT_SECONDS,
+            check=False,
+        )
+    except OSError, subprocess.TimeoutExpired:
+        return ()
+    if probe.returncode != 0:
+        return ()
+    # Under a millisecond rounds to "0.000s", which `timeout` reads as no limit at all.
+    return (program, *options, f"{max(timeout, 0.001):.3f}s")
 
 
 def _unjudged(plan: Plan) -> Judgement:

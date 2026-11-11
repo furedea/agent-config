@@ -13,6 +13,7 @@ from typing import Self
 import fish_script
 import powershell_options
 import shell_input
+import zsh_assignments
 from shell_names import FOREIGN_COMMAND_OPTION, FOREIGN_SHELLS, SHELL_LOOKALIKE, SHELLS, VERSION_SUFFIX
 from shell_words import (
     UnsupportedSyntaxError,
@@ -176,7 +177,9 @@ def parse(source: str, depth: int = 0, directories: tuple[Path | None, ...] = ()
         return ()
     if depth > 8:
         raise UnsupportedSyntaxError("shell wrapper nesting exceeds the inspection limit", "wrapper")
-    records = tuple(nodes(syntax_tree(source)))
+    tree = syntax_tree(source)
+    records = tuple(nodes(tree))
+    one_word = zsh_assignments.one_word_names(tree, source.encode())
     owners = {id(node["Cmd"]): node for node in records if isinstance(node.get("Cmd"), dict)}
     if any(node.get("Type") not in ALLOWED_NODES for node in records):
         raise UnsupportedSyntaxError("dynamic or unsupported shell syntax requires explicit review", "expansion")
@@ -188,7 +191,13 @@ def parse(source: str, depth: int = 0, directories: tuple[Path | None, ...] = ()
         if node.get("Type") != "CallExpr" or not node.get("Args"):
             continue
         owner = owners.get(id(node), node)
-        command = replace(literal_command(node, owner, data), wrapper_depth=depth + (id(node) in hidden_calls))
+        command = replace(
+            literal_command(node, owner, data),
+            wrapper_depth=depth + (id(node) in hidden_calls),
+            zsh_spreading=tuple(
+                spreads(word, data, one_word_names=one_word.get(id(node), frozenset())) for word in node["Args"]
+            ),
+        )
         layers = [command, *unwrapped(command)]
         for layer in layers:
             directories = reached_directories(directories, layer)
@@ -335,7 +344,6 @@ def literal_command(node: dict, owner: dict, data: bytes) -> Command:
         trailer=" ".join(source_text(redirect, data) for redirect in redirects),
         dynamic=tuple(flag for _, flag in decoded),
         spreading=tuple(spreads(word, data) for word in node["Args"]),
-        zsh_spreading=tuple(spreads(word, data, zsh=True) for word in node["Args"]),
         writes=_statement_writes(owner, data),
     )
 

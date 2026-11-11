@@ -1,13 +1,14 @@
 # M-05 command/query naming (agents/AGENTS.md: "name command functions for their side effects and query functions for
-# the value they return"). Advisory and unfitted: the cutoff is a starting point, not a calibration, so the Stop hook
-# reports findings and never promotes this rule to a gate (ADR-0021).
+# the value they return"). Advisory: the Stop hook reports findings and never promotes this rule to a gate (ADR-0021).
+# The cutoff is fitted on this folder's fixtures (8 violations, 8 conforming cases): the highest conforming case
+# scored 0.58 and every violation scored above it, so 0.76 is the midpoint of that gap. Refit it when fixtures change.
 id: command-query-naming
 language: Python
 kind: noul
 subject: node
 # The function plus the same file's imports and enclosing declarations; no other file is sent.
 state: local
-threshold: 0.5
+threshold: 0.76
 axis: file
 severity: warning
 rule:

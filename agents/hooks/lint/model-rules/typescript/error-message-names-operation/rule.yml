@@ -6,6 +6,10 @@ subject: node
 # The whole file: the message is often built by a helper beside the throw, and a reader must see that helper.
 state: located
 threshold: 0.5
+inconclusive: >-
+  The fixtures are clear cases: the quietest violation and the loudest conforming case are both far from the cutoff
+  (FN-margin 0.46, FP-margin 0.36), so this corpus cannot see the rule drift. Add a fixture aimed at the boundary
+  before trusting it as a regression gate.
 axis: file
 severity: warning
 rule:

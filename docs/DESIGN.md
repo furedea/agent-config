@@ -109,7 +109,7 @@ see [ADR-0003](adr/0003_register_verification_in_native_hooks.md).
 ## Model Rules at Stop
 
 After the verification passes, the same Stop hook judges the session's changes with the model rules in
-`agents/hooks/lint/model-rules/` (Python and TypeScript: command/query naming M-05, error messages that name the
+`agents/hooks/lint/model-rules/` (Python, TypeScript, Go and Rust: command/query naming M-05, error messages that name the
 operation and subject M-21, known-defect markers with a removal condition M-60); see
 [ADR-0021](adr/0021_enforce_prose_rules_with_each_tools_own_checks_that_report_before_they_block.md). The rules are
 advisory and their cutoffs are unfitted, so their prose stays in `AGENTS.md` and the style skills until a rule is

@@ -13,6 +13,9 @@ threshold: 0.5
 axis: file
 severity: warning
 # Only functions that build an error are asked about; a function that merely propagates one with `?` is not a subject.
+# Known gap: an error built by `ok_or`, `ok_or_else` or `map_err` is not selected, so `map.get(key).ok_or("missing")` is
+# never asked about. Selecting every such call would select most functions that handle an Option or a Result; the
+# follow-up (#164) selects only calls whose argument carries a message written there.
 rule:
   all:
     - kind: function_item

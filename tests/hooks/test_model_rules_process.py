@@ -141,6 +141,8 @@ def test_a_failed_review_only_notifies(
 
     result = stop(record)
 
+    # Planning succeeded and the review itself was started: the model run is the one that failed.
+    assert [call for call in tools.calls("timeout") if "--environment" in call["argv"]]
     assert "decision" not in result
     assert reason in result["systemMessage"]
 

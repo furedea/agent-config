@@ -63,11 +63,14 @@ sys.exit(behavior.get("exit", 0))
 
 # Stands in for /usr/bin/timeout: it ends its command at the limit and exits 124, as the real one does.
 # `status` makes it end at once the way a real one can: a positive value is an exit status, a negative one a signal.
+# It applies to the model run only; the planning dry runs still go through, so a test reaches the review itself.
 TIMEOUT = """
 import json, os, subprocess, sys
 with open(@CALLS@, "a") as stream:
     stream.write(json.dumps({"program": "timeout", "argv": sys.argv[1:]}) + "\\n")
 status = json.load(open(@BEHAVIOR@)).get("timeout_status")
+if "--dry-run" in sys.argv:
+    status = None
 if status is not None and status < 0:
     os.kill(os.getpid(), -status)
 if status is not None:

@@ -46,6 +46,7 @@ with open(@CALLS@, "a") as stream:
         "program": "jev-lint",
         "argv": sys.argv[1:],
         "cwd": os.getcwd(),
+        "literal_pathspecs": os.environ.get("GIT_LITERAL_PATHSPECS"),
         "env_names": sorted(os.environ),
         "path": os.environ.get("PATH"),
         "has_token": os.environ.get("OP_SERVICE_ACCOUNT_TOKEN") == @TOKEN@,

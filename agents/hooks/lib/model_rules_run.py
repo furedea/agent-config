@@ -217,7 +217,7 @@ def _unjudged(plan: Plan) -> Judgement:
 def _capped_plan(report: dict, cap: int) -> Plan:
     subjects, cached = _count(report, "subjects"), _count(report, "cached")
     if subjects - cached <= cap:
-        return Plan((), subjects, subjects - cached)
+        return Plan((), subjects, subjects - cached, cached=cached)
     per_file: dict[str, int] = {}
     for batch in report["batches"]:
         per_file[batch["file"]] = per_file.get(batch["file"], 0) + _count(batch, "subjects")
@@ -228,7 +228,11 @@ def _capped_plan(report: dict, cap: int) -> Plan:
             chosen.append(file)
             total += count
     skipped = {file for file in per_file if file not in chosen}
-    return Plan(tuple(chosen), subjects, total, len(skipped), sum(per_file[file] for file in skipped))
+    skipped_subjects = sum(per_file[file] for file in skipped)
+    # The dry run does not say which files hold the cached subjects, so the count cannot exceed what is judged.
+    return Plan(
+        tuple(chosen), subjects, total, len(skipped), skipped_subjects, min(cached, subjects - skipped_subjects)
+    )
 
 
 def _judgement(output: bytes, plan: Plan) -> Judgement | Prevented:
@@ -244,7 +248,7 @@ def _judgement(output: bytes, plan: Plan) -> Judgement | Prevented:
             plan.skipped_files,
             plan.skipped_subjects,
             _count(spent, "calls"),
-            _count(report, "cachedCount"),
+            plan.cached,
         )
     except ValueError, KeyError, TypeError, AttributeError:
         return Prevented(f"{REVIEWER} printed a report that cannot be read")

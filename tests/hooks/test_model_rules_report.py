@@ -45,6 +45,22 @@ def test_a_clean_review_also_tells_the_seconds_spent(record: session_store.Sessi
     assert re.search(r"judged 1 of 1 subject\(s\) in \d+\.\ds", stop(record)["systemMessage"])
 
 
+def test_the_message_tells_how_many_judged_subjects_came_from_the_verdict_cache(
+    record: session_store.SessionRecord, tools: Tools
+) -> None:
+    tools.plan(10, [("a.py", 10)], cached=4)
+
+    assert "4 cached" in stop(record)["reason"]
+
+
+def test_the_message_counts_no_cached_subject_when_the_plan_has_none(
+    record: session_store.SessionRecord, tools: Tools
+) -> None:
+    tools.plan(10, [("a.py", 10)])
+
+    assert "0 cached" in stop(record)["reason"]
+
+
 def test_the_message_tells_the_subjects_and_files_the_cap_skipped(
     record: session_store.SessionRecord, tools: Tools
 ) -> None:

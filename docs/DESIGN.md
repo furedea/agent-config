@@ -117,9 +117,14 @@ TypeScript, and M-60 for Rust); the others stay at the 0.5 starting value, which
 few cases is not a calibration, so the prose stays in `AGENTS.md` and the style skills until a rule is promoted.
 
 - **Delivery.** It follows the verification receipts in `results.json`. Findings on inputs not judged before block
-    Stop once, so the agent sees them. The same inputs only notify (`findings unchanged; not rerun`) and never block
-    again. The Stop message tells the seconds the review took, how many subjects were judged, and how many subjects
-    in how many files the cap skipped. Nothing blocks when `stop_hook_active` is set; findings kept from blocking that way are recorded as not
+    Stop once, so the agent sees them. The same inputs only notify (`jev-lint: 2 findings · unchanged; not rerun`) and
+    never block again. The Stop message is one line, shaped like the test lines:
+    `jev-lint: 0 findings · 74 subjects · passed · $0.0004 · 4.3s`. With findings the state reads `advisory`; when the
+    cap skipped subjects the count reads `judged/total` (`20/46 subjects`); a review that did not run reads
+    `jev-lint: skipped · <reason>`. The cost is `spent.usd` of the review JSON, summed over the two reviews. The
+    findings (`- rule · file:line`, without the rule's text) and the instruction "Fix each one, or say why it does not
+    apply." appear only in the block reason. The receipt also stores the requests, cached count, seconds and cost so
+    the timing can be measured later. Nothing blocks when `stop_hook_active` is set; findings kept from blocking that way are recorded as not
     yet shown and block once at the next Stop on the same inputs. The model rules get only the time the Stop hook has
     left after the verification (at most 90 seconds), and do not run when too little remains. Anything that prevents a run (the kill switch, an untrusted
     repository, a missing Keychain item, a missing `op` or `jev-lint`, a timeout, a non-zero exit, unreadable output) is

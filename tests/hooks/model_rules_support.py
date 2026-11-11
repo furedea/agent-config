@@ -58,5 +58,11 @@ def edit(record: session_store.SessionRecord, text: str) -> None:
     (record.root / "notes.txt").write_text(text)
 
 
+def commit_file(record: session_store.SessionRecord, name: str) -> None:
+    (record.root / name).write_text("committed\n")
+    subprocess.run(["git", "add", name], cwd=record.root, check=True)
+    subprocess.run(["git", "commit", "--quiet", "-m", "later"], cwd=record.root, check=True)
+
+
 def stop(record: session_store.SessionRecord, *, active: bool = False) -> dict:
     return session_gate.stop(record, stop_hook_active=active)

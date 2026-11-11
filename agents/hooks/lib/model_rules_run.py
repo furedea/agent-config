@@ -276,6 +276,7 @@ def _judgement(output: bytes, plan: Plan, cached: int) -> Judgement | Prevented:
             plan.skipped_subjects,
             _count(spent, "calls"),
             cached,
+            usd=_number(spent.get("usd")) or 0.0,
         )
     except ValueError, KeyError, TypeError, AttributeError:
         return Prevented(f"{REVIEWER} printed a report that cannot be read")

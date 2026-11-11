@@ -27,7 +27,7 @@ class Plan:
     """What one review will judge: the files to pass (empty means the whole diff) and what the cap left out.
 
     `cost` counts the subjects the model will be asked about, so those already in the verdict cache are not charged
-    against the cap. `cached` counts those among the subjects that will be passed; only the dry run knows it.
+    against the cap.
     """
 
     paths: tuple[str, ...]
@@ -35,7 +35,6 @@ class Plan:
     cost: int
     skipped_files: int = 0
     skipped_subjects: int = 0
-    cached: int = 0
 
     @property
     def judged(self) -> int:

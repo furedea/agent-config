@@ -11,7 +11,7 @@ import signal
 import subprocess
 import time
 from contextlib import suppress
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from pathlib import Path
 
 import model_rules_programs
@@ -76,41 +76,54 @@ class Review:
         if isinstance(report, Prevented):
             return report
         try:
-            plan = _capped_plan(report, cap)
-            if not plan.paths:
-                return plan
-            # The plan of the whole diff does not say which files hold the cached subjects, so ask about the kept ones.
-            kept = self._dry_run(deadline, plan.paths)
-            if isinstance(kept, Prevented):
-                return kept
-            return replace(plan, cached=_count(kept, "cached"))
+            return _capped_plan(report, cap)
         except ValueError, KeyError, TypeError, AttributeError:
             return Prevented(f"{REVIEWER} printed a plan that cannot be read")
 
     def judge(self, plan: Plan, credentials: Credentials, deadline: Deadline) -> Judgement | Prevented:
-        """Ask the model about the planned subjects, with the verdict cache shared by every session."""
+        """Ask the model about the planned subjects, with the verdict cache shared by every session.
+
+        The cached count is planned under the same lock, just before the model is asked, so it is the state the
+        judgement uses: neither the plan of the whole diff nor another session's later writes can make it differ.
+        """
         try:
             private_directory(self.cache.parent)
             with file_lock(self.cache.parent / ".lock", timeout=max(0.0, deadline.remaining(LOCK_TIMEOUT_SECONDS))):
-                arguments = (
-                    str(self.programs.launcher),
-                    "run",
-                    "--environment",
-                    credentials.environment,
-                    "--",
-                    str(self.programs.reviewer),
-                    *self._arguments(),
-                    *(plan.paths or self.paths),
-                )
-                child = _Child(arguments, _environment({TOKEN_VARIABLE: credentials.token}), self.root)
-                output = child.run(deadline.remaining(JUDGE_TIMEOUT_SECONDS))
+                return self._judge_locked(plan, credentials, deadline)
         except LockTimeoutError:
             return Prevented("another session holds the verdict cache lock")
         except (OSError, StateError) as error:
             return Prevented(f"the verdict cache directory is unusable: {error}")
+
+    def _judge_locked(self, plan: Plan, credentials: Credentials, deadline: Deadline) -> Judgement | Prevented:
+        paths = plan.paths or self.paths
+        cached = self._cached_count(deadline, paths)
+        if isinstance(cached, Prevented):
+            return cached
+        arguments = (
+            str(self.programs.launcher),
+            "run",
+            "--environment",
+            credentials.environment,
+            "--",
+            str(self.programs.reviewer),
+            *self._arguments(),
+            *paths,
+        )
+        child = _Child(arguments, _environment({TOKEN_VARIABLE: credentials.token}), self.root)
+        output = child.run(deadline.remaining(JUDGE_TIMEOUT_SECONDS))
         if isinstance(output, Prevented):
             return output
-        return _judgement(output, plan)
+        return _judgement(output, plan, cached)
+
+    def _cached_count(self, deadline: Deadline, paths: tuple[str, ...]) -> int | Prevented:
+        report = self._dry_run(deadline, paths)
+        if isinstance(report, Prevented):
+            return report
+        try:
+            return _count(report, "cached")
+        except TypeError:
+            return Prevented(f"{REVIEWER} printed a plan that cannot be read")
 
     def _dry_run(self, deadline: Deadline, paths: tuple[str, ...]) -> dict | Prevented:
         arguments = (str(self.programs.reviewer), *self._arguments("--dry-run"), *paths)
@@ -235,7 +248,7 @@ def _unjudged(plan: Plan) -> Judgement:
 def _capped_plan(report: dict, cap: int) -> Plan:
     subjects, cached = _count(report, "subjects"), _count(report, "cached")
     if subjects - cached <= cap:
-        return Plan((), subjects, subjects - cached, cached=cached)
+        return Plan((), subjects, subjects - cached)
     per_file: dict[str, int] = {}
     for batch in report["batches"]:
         per_file[batch["file"]] = per_file.get(batch["file"], 0) + _count(batch, "subjects")
@@ -249,7 +262,7 @@ def _capped_plan(report: dict, cap: int) -> Plan:
     return Plan(tuple(chosen), subjects, total, len(skipped), sum(per_file[file] for file in skipped))
 
 
-def _judgement(output: bytes, plan: Plan) -> Judgement | Prevented:
+def _judgement(output: bytes, plan: Plan, cached: int) -> Judgement | Prevented:
     try:
         report = json.loads(output)
         if report.get("errors"):
@@ -262,7 +275,7 @@ def _judgement(output: bytes, plan: Plan) -> Judgement | Prevented:
             plan.skipped_files,
             plan.skipped_subjects,
             _count(spent, "calls"),
-            plan.cached,
+            cached,
         )
     except ValueError, KeyError, TypeError, AttributeError:
         return Prevented(f"{REVIEWER} printed a report that cannot be read")

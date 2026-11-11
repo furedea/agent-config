@@ -7,6 +7,7 @@ fixtures/violating.rs:
   - { line: 14, label: bad, window: 1 }
   - { line: 21, label: bad, window: 1 }
   - { line: 27, label: bad, window: 1 }
+  - { line: 33, label: bad, window: 1 }
 fixtures/conforming.rs:
   - { line: 3, label: clean, window: 1 }
   - { line: 9, label: clean, window: 1 }

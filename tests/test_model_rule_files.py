@@ -160,6 +160,15 @@ fn known_defect() {
 fn conditional_defect() {
     assert_eq!(1, 2);
 }
+
+#[test]
+#[cfg_attr(
+    target_os = "windows",
+    ignore = "broken"
+)]
+fn wrapped_defect() {
+    assert_eq!(1, 2);
+}
 """
 
 
@@ -273,11 +282,12 @@ def test_rust_rules_select_the_functions_they_ask_about(repository: Path) -> Non
 
     # `known_defect` carries `#[test]` before `#[ignore]` and two comments, so it is not asked about by name; the
     # `#[cfg(not(test))]` function is production code and is. `read` builds its message with `.context(..)` and
-    # `qualify` with the path-qualified `anyhow::bail!`.
+    # `qualify` with the path-qualified `anyhow::bail!`. Two of the three ignores are `cfg_attr`, one of them wrapped
+    # over several lines as rustfmt writes it.
     assert counts == {
         "command-query-naming": 6,
         "error-message-names-operation": 3,
-        "known-defect-marker-names-removal": 2,
+        "known-defect-marker-names-removal": 3,
     }
 
 

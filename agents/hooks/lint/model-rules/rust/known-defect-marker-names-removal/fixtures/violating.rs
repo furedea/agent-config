@@ -28,3 +28,12 @@ fn comment_without_condition() {
 fn conditional() {
     assert_eq!(1, 2);
 }
+
+#[test]
+#[cfg_attr(
+    target_os = "windows",
+    ignore = "this test fails on windows because of the way paths are compared there"
+)]
+fn conditional_wrapped() {
+    assert_eq!(1, 2);
+}

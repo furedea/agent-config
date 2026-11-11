@@ -5,7 +5,10 @@ language: Rust
 kind: noul
 subject: node
 state: local
-threshold: 0.5
+# Fitted by `jev-lint eval` on this rule's own fixtures: 10 cases (4 bad, 6 clean) over 3 passes. The clean case
+# conforming.rs:34 scored up to 0.50, on the 0.5 starting cutoff, and the fit moved it to 0.68. A fit on so few cases
+# is a starting point, not a calibration.
+threshold: 0.68
 axis: file
 severity: warning
 rule:

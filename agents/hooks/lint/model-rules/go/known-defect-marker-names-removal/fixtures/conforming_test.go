@@ -25,3 +25,12 @@ func TestShortMode(t *testing.T) {
 		t.Skip("short mode")
 	}
 }
+
+func TestAfterRewrite(t *testing.T) {
+	t.Skip("known defect, skipped until the cache rewrite lands")
+}
+
+func TestPlatformGap(t *testing.T) {
+	// Windows has no symlink support here; enable the test when the sandbox runs on Linux only.
+	t.Skip("symlinks are unsupported on this platform")
+}

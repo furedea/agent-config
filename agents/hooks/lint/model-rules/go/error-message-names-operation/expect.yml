@@ -7,6 +7,9 @@ fixtures/violating.go:
   - { line: 16, label: bad, window: 1 }
   - { line: 24, label: bad, window: 1 }
   - { line: 31, label: bad, window: 1 }
+  - { line: 39, label: bad, window: 1 }
+  - { line: 47, label: bad, window: 1 }
 fixtures/conforming.go:
-  - { line: 24, label: clean, window: 1 }
-  - { line: 35, label: clean, window: 1 }
+  - { line: 25, label: clean, window: 1 }
+  - { line: 36, label: clean, window: 1 }
+  - { line: 43, label: clean, window: 1 }

@@ -35,3 +35,19 @@ func Load(path string) ([]byte, error) {
 	}
 	return data, nil
 }
+
+func Read(path string) ([]byte, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("read failed: %w", err)
+	}
+	return data, nil
+}
+
+func Find(index map[string]int, key string) (int, error) {
+	value, ok := index[key]
+	if !ok {
+		return 0, errors.New("no entry for " + key)
+	}
+	return value, nil
+}

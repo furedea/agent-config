@@ -185,6 +185,50 @@ fn feature_named_ignore() {
 fn condition_named_ignore() {
     assert_eq!(1, 1);
 }
+
+#[cfg_attr(feature = "tokio", tokio::test(flavor = "multi_thread"))]
+fn argumented_conditional_test() {
+    assert_eq!(1, 1);
+}
+
+#[cfg_attr(
+    feature = "tokio",
+    tokio::test(flavor = "multi_thread")
+)]
+fn wrapped_argumented_test() {
+    assert_eq!(1, 1);
+}
+
+#[cfg_attr(any(unix, ignore = "ci"), should_panic)]
+fn nested_condition_names_ignore() {
+    assert_eq!(1, 1);
+}
+
+#[test]
+#[cfg_attr(unix, ignore)]
+fn bare_conditional_ignore() {
+    assert_eq!(1, 2);
+}
+
+pub fn lookup(map: &Map, key: &str) -> Result<u8, &'static str> {
+    map.get(key).ok_or("missing")
+}
+
+pub fn lookup_named(map: &Map, key: &str) -> Result<u8, String> {
+    map.get(key).ok_or_else(|| format!("read {key}: missing"))
+}
+
+pub fn convert(raw: &str) -> Result<u8, String> {
+    raw.parse().map_err(|e| format!("parse {raw}: {e}"))
+}
+
+pub fn keep_error(map: &Map, key: &str, err: Error) -> Result<u8, Error> {
+    map.get(key).ok_or(err)
+}
+
+pub fn convert_plain(raw: &str) -> Result<u8, Error> {
+    raw.parse().map_err(From::from)
+}
 """
 
 
@@ -323,12 +367,16 @@ def test_rust_rules_select_the_functions_they_ask_about(repository: Path) -> Non
 
     # `known_defect` carries `#[test]` before `#[ignore]` and two comments, so it is not asked about by name; the
     # `#[cfg(not(test))]` function is production code and is. `read` builds its message with `.context(..)` and
-    # `qualify` with the path-qualified `anyhow::bail!`. Two of the three ignores are `cfg_attr`, one of them wrapped
-    # over several lines as rustfmt writes it. `cfg_attr` whose condition merely names `ignore` is not an ignore.
+    # `qualify` with the path-qualified `anyhow::bail!`. Three of the four ignores are `cfg_attr`: one wrapped over
+    # several lines as rustfmt writes it, one a bare `ignore` after the condition. `cfg_attr` whose condition merely
+    # names `ignore`, also inside `any(..)`, is not an ignore. A `cfg_attr` that attaches a test with arguments
+    # (`tokio::test(..)`), wrapped or not, is a test and is left out of the naming rule. `ok_or`, `ok_or_else` and
+    # `map_err` select a function only when an argument writes a message (a literal or `format!`), not when it passes
+    # an existing error value or `From::from`.
     assert counts == {
-        "command-query-naming": 6,
-        "error-message-names-operation": 3,
-        "known-defect-marker-names-removal": 3,
+        "command-query-naming": 12,
+        "error-message-names-operation": 6,
+        "known-defect-marker-names-removal": 4,
     }
 
 

@@ -36,3 +36,14 @@ pub fn forward(raw: &str) -> Result<u16> {
 pub fn read_config(path: &str) -> Result<String> {
     std::fs::read_to_string(path).with_context(|| format!("read config {path}"))
 }
+
+pub fn find_entry(map: &std::collections::HashMap<String, u16>, key: &str) -> Result<u16, String> {
+    map.get(key)
+        .copied()
+        .ok_or_else(|| format!("read {key}: missing"))
+}
+
+pub fn convert_port(raw: &str) -> Result<u16, String> {
+    raw.parse::<u16>()
+        .map_err(|e| format!("parse port {raw:?}: {e}"))
+}

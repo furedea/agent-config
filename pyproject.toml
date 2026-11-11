@@ -75,7 +75,7 @@ known_first_party = [
 paths = ["agents", "scripts", "tests"]
 min_confidence = 100
 sort_by_size = true
-exclude = [".venv", "build", "dist", "agents/hooks/lint/model-rules/*/*/fixtures"]
+exclude = [".venv", "build", "dist", "*/agents/hooks/lint/model-rules/*/*/fixtures/*"]
 
 [tool.uv]
 managed = true

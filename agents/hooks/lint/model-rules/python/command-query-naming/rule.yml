@@ -25,4 +25,5 @@ criteria:
   "false": >-
     A name makes a promise only through a verb that unambiguously says the function is a pure read or performs an
     effect; any other verb promises neither, so the body cannot contradict it. Where a promise is made, a body that
-    keeps it is not a violation.
+    keeps it is not a violation: a read may lazily initialize itself or write only its own cache, and an effect may
+    also return the result of that effect.

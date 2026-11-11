@@ -28,6 +28,17 @@ def load_settings(path):
         raise RuntimeError(f"cannot load settings from {path}") from error
 
 
+# Clean: the raise inside the try is caught by the same function; only the wrapped error, which names the operation
+# and the path, leaves it.
+def project_targets(path, parse):
+    try:
+        if not path.exists():
+            raise FileNotFoundError(path)
+        return parse(path)
+    except (OSError, ValueError) as error:
+        raise RuntimeError(f"cannot read the project targets from {path}") from error
+
+
 # Clean: rethrows a caught error unchanged.
 def run_step(step):
     try:

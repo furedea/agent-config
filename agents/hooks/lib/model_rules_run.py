@@ -11,7 +11,7 @@ import signal
 import subprocess
 import time
 from contextlib import suppress
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 import model_rules_programs
@@ -72,13 +72,18 @@ class Review:
 
     def plan(self, deadline: Deadline, cap: int) -> Plan | Prevented:
         """Count the subjects without asking the model, and keep the files whose subjects fit `cap`."""
-        arguments = (str(self.programs.reviewer), *self._arguments("--dry-run"), *self.paths)
-        child = _Child(arguments, _environment(), self.root)
-        output = child.run(deadline.remaining(PLAN_TIMEOUT_SECONDS))
-        if isinstance(output, Prevented):
-            return output
+        report = self._dry_run(deadline, self.paths)
+        if isinstance(report, Prevented):
+            return report
         try:
-            return _capped_plan(json.loads(output), cap)
+            plan = _capped_plan(report, cap)
+            if not plan.paths:
+                return plan
+            # The plan of the whole diff does not say which files hold the cached subjects, so ask about the kept ones.
+            kept = self._dry_run(deadline, plan.paths)
+            if isinstance(kept, Prevented):
+                return kept
+            return replace(plan, cached=_count(kept, "cached"))
         except ValueError, KeyError, TypeError, AttributeError:
             return Prevented(f"{REVIEWER} printed a plan that cannot be read")
 
@@ -106,6 +111,19 @@ class Review:
         if isinstance(output, Prevented):
             return output
         return _judgement(output, plan)
+
+    def _dry_run(self, deadline: Deadline, paths: tuple[str, ...]) -> dict | Prevented:
+        arguments = (str(self.programs.reviewer), *self._arguments("--dry-run"), *paths)
+        output = _Child(arguments, _environment(), self.root).run(deadline.remaining(PLAN_TIMEOUT_SECONDS))
+        if isinstance(output, Prevented):
+            return output
+        try:
+            report = json.loads(output)
+        except ValueError:
+            return Prevented(f"{REVIEWER} printed a plan that cannot be read")
+        if not isinstance(report, dict):
+            return Prevented(f"{REVIEWER} printed a plan that cannot be read")
+        return report
 
     def _arguments(self, *extra: str) -> tuple[str, ...]:
         base = ("--base", self.base) if self.base else ()
@@ -228,11 +246,7 @@ def _capped_plan(report: dict, cap: int) -> Plan:
             chosen.append(file)
             total += count
     skipped = {file for file in per_file if file not in chosen}
-    skipped_subjects = sum(per_file[file] for file in skipped)
-    # The dry run does not say which files hold the cached subjects, so the count cannot exceed what is judged.
-    return Plan(
-        tuple(chosen), subjects, total, len(skipped), skipped_subjects, min(cached, subjects - skipped_subjects)
-    )
+    return Plan(tuple(chosen), subjects, total, len(skipped), sum(per_file[file] for file in skipped))
 
 
 def _judgement(output: bytes, plan: Plan) -> Judgement | Prevented:

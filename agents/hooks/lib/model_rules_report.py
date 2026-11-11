@@ -41,10 +41,9 @@ def _footer(judgement: Judgement) -> str:
         f"{judgement.cached} cached",
     ]
     if judgement.skipped_subjects:
-        skipped = (
+        parts.append(
             f"{judgement.skipped_subjects} subject(s) in {judgement.skipped_files} file(s) skipped by the cap of 20"
         )
-        parts.append(f"{skipped}, judged at the next Stop" if judgement.resumable else skipped)
     if judgement.withheld_files:
         parts.append(f"{judgement.withheld_files} file(s) withheld: links or outside the repository")
     return ", ".join(parts)

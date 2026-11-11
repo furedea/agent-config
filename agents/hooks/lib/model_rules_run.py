@@ -11,17 +11,16 @@ import signal
 import subprocess
 import time
 from contextlib import suppress
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from pathlib import Path
 
 import model_rules_programs
 from model_rules_credentials import Credentials
-from model_rules_outcome import Finding, Judgement, Plan, Prevented, ReviewedFile
+from model_rules_outcome import Finding, Judgement, Plan, Prevented
 from model_rules_programs import Programs
 from session_store import LockTimeoutError, StateError, file_lock, private_directory
 
 REVIEWER = "jev-lint"
-COMMITTED, UNCOMMITTED = "committed", "uncommitted"
 SUBJECT_CAP = 20
 PLAN_TIMEOUT_SECONDS = 20.0
 JUDGE_TIMEOUT_SECONDS = 60.0
@@ -60,9 +59,8 @@ class Review:
 
     With a `base` it reviews the commits made since that commit; without one it reviews the uncommitted changes and
     the files git does not track yet. `jev-lint` has no single mode for both, so a session needs one review of each.
-    `paths` limits a review to those files; a review that applies the cap names its own subset instead. `reviewed`
-    names the files this review passed to the model in an earlier run of the same inputs. `programs` are the trusted
-    `op` and `jev-lint` it starts.
+    `paths` limits a review to those files; a review that applies the cap names its own subset instead. `programs`
+    are the trusted `op` and `jev-lint` it starts.
     """
 
     root: Path
@@ -71,21 +69,16 @@ class Review:
     cache: Path
     programs: Programs
     paths: tuple[str, ...] = ()
-    reviewed: frozenset[str] = frozenset()
 
     def plan(self, deadline: Deadline, cap: int) -> Plan | Prevented:
-        """Count the subjects without asking the model, and keep the files whose subjects fit `cap`.
-
-        The `reviewed` files sit in the verdict cache, so they are passed again at no cost when the dry run agrees
-        that the cache still answers for them; only the other files compete for `cap`.
-        """
+        """Count the subjects without asking the model, and keep the files whose subjects fit `cap`."""
         arguments = (str(self.programs.reviewer), *self._arguments("--dry-run"), *self.paths)
         child = _Child(arguments, _environment(), self.root)
         output = child.run(deadline.remaining(PLAN_TIMEOUT_SECONDS))
         if isinstance(output, Prevented):
             return output
         try:
-            return _capped_plan(json.loads(output), cap, self.reviewed)
+            return _capped_plan(json.loads(output), cap)
         except ValueError, KeyError, TypeError, AttributeError:
             return Prevented(f"{REVIEWER} printed a plan that cannot be read")
 
@@ -113,11 +106,6 @@ class Review:
         if isinstance(output, Prevented):
             return output
         return _judgement(output, plan)
-
-    @property
-    def kind(self) -> str:
-        """Which of the two reviews of a session this is: the commits since `base`, or the uncommitted changes."""
-        return COMMITTED if self.base else UNCOMMITTED
 
     def _arguments(self, *extra: str) -> tuple[str, ...]:
         base = ("--base", self.base) if self.base else ()
@@ -148,9 +136,7 @@ def review_all(reviews: tuple[Review, ...], credentials: Credentials, deadline: 
         outcome = review.judge(plan, credentials, deadline) if plan.judged else _unjudged(plan)
         if isinstance(outcome, Prevented):
             return outcome
-        resumable = tuple(ReviewedFile(review.kind, file) for file in plan.resumable)
-        reviewed = tuple(ReviewedFile(review.kind, file) for file in plan.paths)
-        combined = combined.combined(replace(outcome, resumable=resumable, reviewed=reviewed))
+        combined = combined.combined(outcome)
     return combined
 
 
@@ -228,48 +214,21 @@ def _unjudged(plan: Plan) -> Judgement:
     return Judgement((), plan.subjects, plan.skipped_files, plan.skipped_subjects)
 
 
-def _capped_plan(report: dict, cap: int, reviewed: frozenset[str]) -> Plan:
+def _capped_plan(report: dict, cap: int) -> Plan:
     subjects, cached = _count(report, "subjects"), _count(report, "cached")
     if subjects - cached <= cap:
         return Plan((), subjects, subjects - cached)
     per_file: dict[str, int] = {}
     for batch in report["batches"]:
         per_file[batch["file"]] = per_file.get(batch["file"], 0) + _count(batch, "subjects")
-    chosen = _answered_by_cache(per_file, reviewed, subjects - cached)
-    # Files not reviewed before come first, so that every run makes progress on what is still unjudged.
-    waiting = sorted((file for file in per_file if file not in chosen), key=lambda file: file in reviewed)
+    chosen: list[str] = []
     total = 0
-    for file in waiting:
-        if _passable(file) and total + per_file[file] <= cap:
+    for file, count in per_file.items():
+        if not file.startswith("-") and total + count <= cap:
             chosen.append(file)
-            total += per_file[file]
-    skipped = [file for file in per_file if file not in chosen]
-    # A file over the whole cap would be skipped on every run, so naming it would make each Stop resume for nothing.
-    resumable = tuple(file for file in skipped if _admissible(file, per_file[file]))
-    return Plan(tuple(chosen), subjects, total, len(skipped), sum(per_file[file] for file in skipped), resumable)
-
-
-def _answered_by_cache(per_file: dict[str, int], reviewed: frozenset[str], uncached: int) -> list[str]:
-    """The files an earlier run reviewed, which the verdict cache answers at no cost, if the dry run agrees.
-
-    The report counts the uncached subjects of the whole review, not per file. They equal the subjects of the files
-    not reviewed before exactly when the cache holds everything that was reviewed and nothing else. Any other count
-    means the cache changed (another session, eviction), so nothing is sent for free and no cost is hidden.
-    """
-    expected = sum(count for file, count in per_file.items() if file not in reviewed)
-    if uncached != expected:
-        return []
-    return [file for file in per_file if file in reviewed and _passable(file)]
-
-
-def _admissible(file: str, subjects: int) -> bool:
-    """Whether the cap can ever admit the file: it is not an option-like path and its subjects fit the whole cap."""
-    return _passable(file) and subjects <= SUBJECT_CAP
-
-
-def _passable(file: str) -> bool:
-    """Whether the file can be given to `jev-lint` as a path argument; one that starts with `-` would be an option."""
-    return not file.startswith("-")
+            total += count
+    skipped = {file for file in per_file if file not in chosen}
+    return Plan(tuple(chosen), subjects, total, len(skipped), sum(per_file[file] for file in skipped))
 
 
 def _judgement(output: bytes, plan: Plan) -> Judgement | Prevented:

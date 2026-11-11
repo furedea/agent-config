@@ -36,7 +36,7 @@ def as_run_by_zsh(
 def _is_named_beyond_expansions(name: str, command: str) -> bool:
     """Whether the command, with its quotes and escapes removed as the shell does, names the variable otherwise."""
     escaped = re.escape(name)
-    spelled = re.sub(r"[\\'\"]", "", command.replace("\\\n", ""))
+    spelled = re.sub(r"[\\'\"]", "", re.sub(r"\$(?=['\"])", "", command.replace("\\\n", "")))
     rest = re.sub(rf"\${escaped}\b|\$\{{{escaped}\}}", "", spelled)
     return bool(re.search(rf"(?<![\w$]){escaped}(?!\w)", rest))
 

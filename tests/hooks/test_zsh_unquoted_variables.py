@@ -88,6 +88,8 @@ def test_any_other_unquoted_variable_still_asks(command: str) -> None:
         pytest.param('typeset -a TMP"DIR"; gh run view $TMPDIR --log', id="a double-quoted spelling of the name"),
         pytest.param("read -A TMP\\DIR <<< x; gh run view $TMPDIR --log", id="an escaped spelling of the name"),
         pytest.param("typeset -a TMP\\\nDIR; gh run view $TMPDIR --log", id="a spelling split by a line continuation"),
+        pytest.param("typeset -a $'TMPDIR'; gh run view $TMPDIR --log", id="an ANSI-C quoted spelling of the name"),
+        pytest.param('typeset -a $"TMPDIR"; gh run view $TMPDIR --log', id="a locale-quoted spelling of the name"),
         pytest.param("echo TMPDIR; gh pr edit 438 --body-file $TMPDIR/body.md", id="the name as any other argument"),
         pytest.param("gh pr edit 438 --body-file ${TMPDIR:-/tmp}/body.md", id="a modifier"),
         pytest.param("gh pr edit 438 --body-file $TMPDIR/body.md --title TMPDIR", id="the name beside the call"),

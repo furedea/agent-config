@@ -152,7 +152,7 @@ def test_an_unreadable_report_only_notifies(record: session_store.SessionRecord,
     result = stop(record)
 
     assert "decision" not in result
-    assert "Model rules skipped" in result["systemMessage"]
+    assert "jev-lint: skipped · " in result["systemMessage"]
 
 
 def test_a_prevented_run_is_tried_again_at_the_next_stop(record: session_store.SessionRecord, tools: Tools) -> None:

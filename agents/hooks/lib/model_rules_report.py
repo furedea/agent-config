@@ -1,49 +1,59 @@
-"""Describe a judgement to the agent in a bounded, advisory message."""
+"""Describe a judgement as one result line, like a test line, and as the instruction a block gives the agent."""
 
 from model_rules_outcome import Finding, Judgement
 
 MAX_FINDINGS = 10
-MESSAGE_LIMIT_CHARS = 400
+INSTRUCTION = "Fix each one, or say why it does not apply."
+PREFIX = "jev-lint"
 
 
-def describe(judgement: Judgement) -> str:
-    """List the findings with where they are and how far past the cutoff they scored, then what the cap left out."""
-    lines = [
-        f"Model rules (advisory) · {len(judgement.findings)} finding(s) in this session's changes. "
-        "Fix each one, or say why it does not apply."
+def describe_line(judgement: Judgement) -> str:
+    """The result line: findings, subjects judged, the state, the cost and the seconds taken."""
+    parts = [
+        _counted(len(judgement.findings), "finding"),
+        _subjects(judgement),
+        "advisory" if judgement.findings else "passed",
+        f"${judgement.usd:.4f}",
+        f"{judgement.seconds:.1f}s",
     ]
-    lines += [_line(finding) for finding in judgement.findings[:MAX_FINDINGS]]
+    if judgement.withheld_files:
+        parts.append(f"{judgement.withheld_files} withheld: links or outside the repository")
+    return _line(parts)
+
+
+def describe_details(judgement: Judgement) -> str:
+    """What only a block reason carries: the instruction and one `- rule · file:line` per finding."""
+    if not judgement.findings:
+        return ""
+    lines = [INSTRUCTION, *(_finding_line(finding) for finding in judgement.findings[:MAX_FINDINGS])]
     if len(judgement.findings) > MAX_FINDINGS:
         lines.append(f"... and {len(judgement.findings) - MAX_FINDINGS} more")
-    lines.append(_footer(judgement))
     return "\n".join(lines)
 
 
-def describe_clean(judgement: Judgement) -> str:
-    """The one-line result of a review that reported nothing."""
-    return f"Model rules · no findings · {_footer(judgement)}"
+def describe_unchanged(findings: int) -> str:
+    """The line for inputs that were judged before and are not judged again."""
+    return _line([_counted(findings, "finding"), "unchanged; not rerun"])
 
 
-def _line(finding: Finding) -> str:
-    score = (
-        ""
-        if finding.score is None or finding.cutoff is None
-        else f" (score {finding.score:.2f}, cutoff {finding.cutoff:.2f})"
-    )
-    message = finding.message.strip().replace("\n", " ")[:MESSAGE_LIMIT_CHARS]
-    return f"- {finding.rule} · {finding.file}:{finding.line}{score}\n  {message}"
+def describe_skipped(reason: str) -> str:
+    """The line for a review that did not run or did not finish."""
+    return _line(["skipped", reason])
 
 
-def _footer(judgement: Judgement) -> str:
-    parts = [
-        f"judged {judgement.judged} of {judgement.subjects} subject(s) in {judgement.seconds:.1f}s",
-        f"{judgement.requests} request(s)",
-        f"{judgement.cached} cached",
-    ]
+def _line(parts: list[str]) -> str:
+    return f"{PREFIX}: {' · '.join(parts)}"
+
+
+def _counted(count: int, noun: str) -> str:
+    return f"{count} {noun}" if count == 1 else f"{count} {noun}s"
+
+
+def _subjects(judgement: Judgement) -> str:
     if judgement.skipped_subjects:
-        parts.append(
-            f"{judgement.skipped_subjects} subject(s) in {judgement.skipped_files} file(s) skipped by the cap of 20"
-        )
-    if judgement.withheld_files:
-        parts.append(f"{judgement.withheld_files} file(s) withheld: links or outside the repository")
-    return ", ".join(parts)
+        return f"{judgement.judged}/{_counted(judgement.subjects, 'subject')}"
+    return _counted(judgement.subjects, "subject")
+
+
+def _finding_line(finding: Finding) -> str:
+    return f"- {finding.rule} · {finding.file}:{finding.line}"

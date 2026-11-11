@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 from tests.hooks.model_rules_fakes import ENVIRONMENT_ID, FAKE_TOKEN, Tools, finding
-from tests.hooks.model_rules_support import edit, install_fakes, register_session, stop
+from tests.hooks.model_rules_support import commit_file, edit, install_fakes, register_session, stop
 from tests.runtime import REPO_ROOT, StubWriter
 
 sys.path.insert(0, str(REPO_ROOT / "agents/hooks/lib"))
@@ -76,7 +76,7 @@ def test_findings_never_block_again_after_the_agent_continued_because_of_a_stop_
     result = stop(record, active=True)
 
     assert "decision" not in result
-    assert "command-query-naming" in result["systemMessage"]
+    assert "1 finding · " in result["systemMessage"]
 
 
 def test_findings_that_could_not_block_because_the_stop_hook_was_active_block_once_at_the_next_stop(
@@ -137,7 +137,7 @@ def test_a_review_without_findings_only_notifies(record: session_store.SessionRe
     result = stop(record)
 
     assert "decision" not in result
-    assert "no findings" in result["systemMessage"]
+    assert "0 findings" in result["systemMessage"]
 
 
 def test_nothing_to_judge_asks_the_model_nothing(record: session_store.SessionRecord, tools: Tools) -> None:
@@ -160,7 +160,7 @@ def test_commits_made_since_registration_are_reviewed_from_the_starting_commit_t
     assert committed["argv"][committed["argv"].index("--base") + 1] == record.head
     assert committed["argv"][-1] == "committed.txt"
     assert "--base" not in uncommitted["argv"]
-    assert "1 finding(s)" in result["reason"]
+    assert "1 finding · " in result["reason"]
 
 
 def test_the_cap_is_shared_by_the_two_reviews(record: session_store.SessionRecord, tools: Tools) -> None:
@@ -170,7 +170,7 @@ def test_the_cap_is_shared_by_the_two_reviews(record: session_store.SessionRecor
     result = stop(record)
 
     assert len(tools.calls("op")) == 1
-    assert "15 subject(s) in 1 file(s) skipped by the cap of 20" in result["reason"]
+    assert "15/30 subjects" in result["reason"]
 
 
 def test_the_cap_keeps_whole_files_that_fit_and_reports_the_rest(
@@ -182,7 +182,7 @@ def test_the_cap_keeps_whole_files_that_fit_and_reports_the_rest(
 
     [launch] = tools.calls("op")
     assert launch["argv"][-2:] == ["a.py", "c.py"]
-    assert "15 subject(s) in 1 file(s) skipped by the cap of 20" in result["reason"]
+    assert "20/35 subjects" in result["reason"]
 
 
 def test_subjects_already_cached_do_not_count_against_the_cap(
@@ -252,12 +252,6 @@ def test_a_directory_named_fixtures_elsewhere_is_still_sent(record: session_stor
     assert "tests/fixtures/data.txt" in arguments_of_jev_lint(tools)
 
 
-def commit_file(record: session_store.SessionRecord, name: str) -> None:
-    (record.root / name).write_text("committed\n")
-    subprocess.run(["git", "add", name], cwd=record.root, check=True)
-    subprocess.run(["git", "commit", "--quiet", "-m", "later"], cwd=record.root, check=True)
-
-
 def arguments_of_jev_lint(tools: Tools) -> list[str]:
     return [argument for call in tools.calls("jev-lint") for argument in call["argv"]]
 
@@ -281,7 +275,7 @@ def test_a_symlink_to_a_file_outside_the_repository_is_not_sent_and_is_counted(
     arguments = arguments_of_jev_lint(tools)
     assert "link.txt" not in arguments
     assert "notes.txt" in arguments
-    assert "1 file(s) withheld" in result["reason"]
+    assert "1 withheld" in result["reason"]
     assert "link.txt" not in result["reason"]
     assert secret.name not in result["reason"]
 
@@ -295,7 +289,7 @@ def test_a_symlink_to_a_file_inside_the_repository_is_not_sent_either(
 
     arguments = arguments_of_jev_lint(tools)
     assert "alias.txt" not in arguments
-    assert "1 file(s) withheld" in result["reason"]
+    assert "1 withheld" in result["reason"]
 
 
 def test_a_file_reached_through_a_directory_replaced_by_a_link_is_not_sent(
@@ -326,7 +320,7 @@ def test_only_links_changed_means_nothing_is_sent_and_the_notice_says_so(
     assert "decision" not in result
     assert tools.calls("op") == []
     assert tools.calls("security") == []
-    assert "1 file(s) withheld" in result["systemMessage"]
+    assert "1 withheld" in result["systemMessage"]
     assert "link.txt" not in result["systemMessage"]
 
 
@@ -340,7 +334,7 @@ def test_a_hard_link_to_a_file_outside_the_repository_is_not_sent(
     arguments = arguments_of_jev_lint(tools)
     assert "second-name.txt" not in arguments
     assert "notes.txt" in arguments
-    assert "1 file(s) withheld" in result["reason"]
+    assert "1 withheld" in result["reason"]
 
 
 def test_a_committed_symlink_is_not_sent_by_the_review_of_commits(
@@ -356,7 +350,7 @@ def test_a_committed_symlink_is_not_sent_by_the_review_of_commits(
     arguments = arguments_of_jev_lint(tools)
     assert "link.txt" not in arguments
     assert "committed.txt" in arguments
-    assert "1 file(s) withheld" in result["reason"]
+    assert "1 withheld" in result["reason"]
 
 
 def test_the_kill_switch_runs_nothing(

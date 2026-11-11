@@ -130,7 +130,11 @@ class Tools:
 
     def write_report(self, findings: list[dict] | None = None, **extra: object) -> None:
         """What `jev-lint review --json` prints."""
-        report = {"findings": findings or [], "spent": {"calls": 2}, **extra}
+        report = {
+            "findings": findings or [],
+            "spent": {"calls": 2, "inputTokens": 900, "usd": 0.0011, "ms": 3200},
+            **extra,
+        }
         (self.directory / "report.json").write_text(json.dumps(report))
 
     def raw_report(self, text: str) -> None:

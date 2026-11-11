@@ -39,6 +39,12 @@ class Advice:
 
     message: str
     blocking: bool = False
+    details: str = ""
+
+    @property
+    def reason(self) -> str:
+        """The block reason: the result line, then the instruction and findings."""
+        return f"{self.message}\n{self.details}" if self.details else self.message
 
 
 def advise(record: SessionRecord, *, stop_hook_active: bool, budget_seconds: float = BUDGET_SECONDS) -> Advice:
@@ -57,21 +63,35 @@ def advise(record: SessionRecord, *, stop_hook_active: bool, budget_seconds: flo
 def _advise(record: SessionRecord, stop_hook_active: bool, deadline: model_rules_run.Deadline) -> Advice:
     inputs = _inputs(record)
     receipt = record.results().get(RECEIPT_KEY)
-    if isinstance(receipt, dict) and receipt.get("input") == inputs and isinstance(receipt.get("summary"), str):
+    if isinstance(receipt, dict) and receipt.get("input") == inputs and isinstance(receipt.get("findings"), int):
         return _answer_from(record, receipt, stop_hook_active)
     started = time.monotonic()
     outcome = _judge(record, deadline)
     if isinstance(outcome, Prevented):
         return _prevented(outcome)
     outcome = replace(outcome, seconds=time.monotonic() - started)
-    if not outcome.findings:
-        message = model_rules_report.describe_clean(outcome)
-        _save(record, {"input": inputs, "outcome": CLEAN, "summary": message})
-        return Advice(message)
-    message = model_rules_report.describe(outcome)
-    blocking = not stop_hook_active
-    _save(record, {"input": inputs, "outcome": SHOWN if blocking else UNSHOWN, "summary": message})
-    return Advice(message, blocking)
+    message = model_rules_report.describe_line(outcome)
+    details = model_rules_report.describe_details(outcome)
+    blocking = bool(outcome.findings) and not stop_hook_active
+    state = CLEAN if not outcome.findings else SHOWN if blocking else UNSHOWN
+    _save(record, _receipt(inputs, outcome, state))
+    return Advice(message, blocking, details if blocking else "")
+
+
+def _receipt(inputs: str, outcome: Judgement, state: str) -> dict:
+    """What a later Stop on the same inputs reuses, and the measurements that let the timing be studied."""
+    return {
+        "input": inputs,
+        "outcome": state,
+        "findings": len(outcome.findings),
+        "details": model_rules_report.describe_details(outcome),
+        "subjects": outcome.subjects,
+        "judged": outcome.judged,
+        "requests": outcome.requests,
+        "cached": outcome.cached,
+        "seconds": round(outcome.seconds, 3),
+        "usd": outcome.usd,
+    }
 
 
 def _answer_from(record: SessionRecord, receipt: dict, stop_hook_active: bool) -> Advice:
@@ -79,17 +99,15 @@ def _answer_from(record: SessionRecord, receipt: dict, stop_hook_active: bool) -
 
     Turning unshown findings into shown ones updates the receipt.
     """
-    summary = receipt["summary"]
+    message = model_rules_report.describe_unchanged(receipt["findings"])
     if receipt.get("outcome") == UNSHOWN and not stop_hook_active:
         _save(record, {**receipt, "outcome": SHOWN})
-        return Advice(summary, blocking=True)
-    if receipt.get("outcome") in {SHOWN, UNSHOWN}:
-        return Advice(f"Model rules · findings unchanged; not rerun\n{summary}")
-    return Advice("Model rules · reused · unchanged since the last review")
+        return Advice(message, blocking=True, details=str(receipt.get("details", "")))
+    return Advice(message)
 
 
 def _prevented(prevented: Prevented) -> Advice:
-    return Advice(f"Model rules skipped · {prevented.reason}")
+    return Advice(model_rules_report.describe_skipped(prevented.reason))
 
 
 def _save(record: SessionRecord, receipt: dict) -> None:

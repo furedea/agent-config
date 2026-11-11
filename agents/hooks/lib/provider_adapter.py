@@ -31,9 +31,7 @@ SHELL_MODES = ("allowed", "forbidden", "git", "commit")
 PATH_MODES = ("command", "patch", "read")
 AUDIT_KINDS = ("tool", "compaction")
 CONTENT_MODES = ("prompt", "read", "write", "apply-patch", "suppression")
-EDIT_FIELDS = frozenset(
-    {"old_str", "new_str", "old_string", "new_string", "file_text", "insert_line", "patch", "content", "input"}
-)
+VIEW_FIELDS = frozenset({"command", "path", "file_path", "view_range"})
 NO_ARGUMENT: tuple[str, ...] = ()
 ANY_ARGUMENT = None
 Formatter = Callable[[str, dict], dict]
@@ -320,15 +318,15 @@ def tool_input(payload: dict) -> object:
 def views_only(context: dict) -> bool:
     """Tell whether an editor tool call only views a file, so edit-time guards have nothing to check.
 
-    A call that carries any field an edit needs is not a view, whatever its `command` says: a tool may ignore
-    the extra `command` and apply the edit.
+    Only the fields in VIEW_FIELDS may appear. Any other field, known or not, makes the call an edit whatever its
+    `command` says, because a tool may ignore `command` and apply the edit that field describes.
     """
     values = context["tool_input"]
     return (
         context.get("tool_name") == "Edit"
         and isinstance(values, dict)
         and values.get("command") == "view"
-        and EDIT_FIELDS.isdisjoint(values)
+        and values.keys() <= VIEW_FIELDS
     )
 
 

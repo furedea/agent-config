@@ -178,7 +178,11 @@ def test_the_editor_tool_may_view_but_not_edit_a_verification_record(
 
 @pytest.mark.parametrize("tool", ["edit", "str_replace_editor"])
 @pytest.mark.parametrize(
-    "field", ["old_str", "new_str", "old_string", "new_string", "file_text", "insert_line", "patch"]
+    "field",
+    [
+        *("old_str", "new_str", "old_string", "new_string", "file_text", "insert_line", "patch"),
+        *("oldText", "newText", "new_text", "text", "edits", "replace_all", "unknown_field"),
+    ],
 )
 def test_a_view_command_that_carries_edit_fields_is_still_an_edit(run_cli: CliRunner, tool: str, field: str) -> None:
     values = {"command": "view", "path": RECEIPT_LOG.replace("logs/a1b2.log", "results.json"), field: "x"}

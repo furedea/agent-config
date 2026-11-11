@@ -31,13 +31,15 @@ ADR-0015's rule 1 true to what the text proves, accepting that `$J` assigned on 
     that passes only where any value would) only when `name` is `HOME`, `PWD`, `TMPDIR` or `USER`, which zsh never makes
     an array, and the name appears nowhere else in the command except as an expansion (`$name`, `${name}`, quoted or
     not). Any other appearance, such as an assignment, a declaration, `read`, `unset`, `trap`, a function, `echo name`,
-    or `${name:-x}`, however it is spelled, returns the command to the shell-independent reading, because without a
+    or `${name:-x}`, however it is spelled (quotes and escapes are removed before the check), returns the command to the shell-independent reading, because without a
     mention the command cannot have changed the value the environment gave.
 - **One word, or none.** A word made only of such variables disappears when they are empty, so the command is also
     judged with each combination of those words removed (at most four such words); every remaining call must be allowed.
 - **What still asks.** Any other name (`$J`, `$path`, `$argv`, `$commands`, positional parameters, `$@`), `${=name}`,
     `${~name}`, `$=name`, `$~name`, flags, subscripts, modifiers, a word with a glob, brace, or leading tilde beside the
     variable, a script another shell runs (`bash -c`), and command substitution in a call's own words (ADR-0015's rule 2).
+- **Known gap.** A name the command builds at run time (`A=TMP; typeset -a "${A}DIR"`) is not a static mention, so it is
+    not seen; ADR-0015 leaves run-time spellings to the sandbox and the provider's own prompt.
 - **Independent fix.** `$=name` and `$~name` are read by shfmt as a `$` followed by literal text, so they used to pass as
     a static word; they now ask in every shell.
 

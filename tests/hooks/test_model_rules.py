@@ -228,6 +228,30 @@ def test_a_new_file_created_by_the_session_is_sent(record: session_store.Session
     assert launch["argv"][-2:] == ["created.txt", "notes.txt"]
 
 
+def test_rule_fixtures_hold_intentional_violations_and_are_not_sent(
+    record: session_store.SessionRecord, tools: Tools
+) -> None:
+    fixtures = record.root / "agents/hooks/lint/model-rules/python/some-rule/fixtures"
+    fixtures.mkdir(parents=True)
+    (fixtures / "violation.txt").write_text("a name that promises a query and writes\n")
+
+    stop(record)
+
+    arguments = arguments_of_jev_lint(tools)
+    assert "agents/hooks/lint/model-rules/python/some-rule/fixtures/violation.txt" not in arguments
+    assert "notes.txt" in arguments
+
+
+def test_a_directory_named_fixtures_elsewhere_is_still_sent(record: session_store.SessionRecord, tools: Tools) -> None:
+    fixtures = record.root / "tests/fixtures"
+    fixtures.mkdir(parents=True)
+    (fixtures / "data.txt").write_text("data\n")
+
+    stop(record)
+
+    assert "tests/fixtures/data.txt" in arguments_of_jev_lint(tools)
+
+
 def commit_file(record: session_store.SessionRecord, name: str) -> None:
     (record.root / name).write_text("committed\n")
     subprocess.run(["git", "add", name], cwd=record.root, check=True)

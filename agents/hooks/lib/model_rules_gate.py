@@ -7,7 +7,8 @@ the verification so that one rule, "unchanged inputs never trap the agent", cove
 
 import hashlib
 import os
-from dataclasses import dataclass
+import time
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 import model_rules_credentials
@@ -57,10 +58,12 @@ def _advise(record: SessionRecord, stop_hook_active: bool, deadline: model_rules
     inputs = _inputs(record)
     receipt = record.results().get(RECEIPT_KEY)
     if isinstance(receipt, dict) and receipt.get("input") == inputs and isinstance(receipt.get("summary"), str):
-        return _reused(record, receipt, stop_hook_active)
+        return _answer_from(record, receipt, stop_hook_active)
+    started = time.monotonic()
     outcome = _judge(record, deadline)
     if isinstance(outcome, Prevented):
         return _prevented(outcome)
+    outcome = replace(outcome, seconds=time.monotonic() - started)
     if not outcome.findings:
         message = model_rules_report.describe_clean(outcome)
         _save(record, {"input": inputs, "outcome": CLEAN, "summary": message})
@@ -71,8 +74,11 @@ def _advise(record: SessionRecord, stop_hook_active: bool, deadline: model_rules
     return Advice(message, blocking)
 
 
-def _reused(record: SessionRecord, receipt: dict, stop_hook_active: bool) -> Advice:
-    """Answer from a receipt for the same inputs; findings the agent has not seen yet still block, once."""
+def _answer_from(record: SessionRecord, receipt: dict, stop_hook_active: bool) -> Advice:
+    """Answer from a receipt for the same inputs; findings the agent has not seen yet still block, once.
+
+    Turning unshown findings into shown ones updates the receipt.
+    """
     summary = receipt["summary"]
     if receipt.get("outcome") == UNSHOWN and not stop_hook_active:
         _save(record, {**receipt, "outcome": SHOWN})

@@ -117,7 +117,8 @@ promoted.
 
 - **Delivery.** It follows the verification receipts in `results.json`. Findings on inputs not judged before block
     Stop once, so the agent sees them. The same inputs only notify (`findings unchanged; not rerun`) and never block
-    again. Nothing blocks when `stop_hook_active` is set; findings kept from blocking that way are recorded as not
+    again. The Stop message tells the seconds the review took, how many subjects were judged, and how many subjects
+    in how many files the cap skipped. Nothing blocks when `stop_hook_active` is set; findings kept from blocking that way are recorded as not
     yet shown and block once at the next Stop on the same inputs. The model rules get only the time the Stop hook has
     left after the verification (at most 90 seconds), and do not run when too little remains. Anything that prevents a run (the kill switch, an untrusted
     repository, a missing Keychain item, a missing `op` or `jev-lint`, a timeout, a non-zero exit, unreadable output) is
@@ -128,7 +129,8 @@ promoted.
 - **What is judged.** `jev-lint review` has no single mode for "everything since the session started": with
     `--base <commit>` it judges the commits since that commit (`base...HEAD`), and without it the uncommitted changes
     and the files git does not track yet (limited here to the files the session changed since registration, so
-    files that were already dirty and untouched are not sent). The hook runs both: the first with the commit `HEAD` named at session start
+    files that were already dirty and untouched are not sent; the rule fixtures under
+    `agents/hooks/lint/model-rules/**/fixtures/**` hold violations on purpose and are never sent). The hook runs both: the first with the commit `HEAD` named at session start
     (recorded in `baseline.json`; an older record has none and only the second runs), the second always. At most 20
     subjects are judged per Stop, whole files at a time; the rest is reported as skipped. Subjects already in the
     verdict cache are not counted. A repository whose owner `trusted_owners.json` does not trust is never sent to the

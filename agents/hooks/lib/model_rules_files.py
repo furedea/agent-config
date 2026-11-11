@@ -17,7 +17,10 @@ import stat
 import subprocess
 from collections.abc import Iterable
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePosixPath
+
+# The fixtures of the model rules hold violations on purpose, so judging them would only report what they are for.
+RULE_FIXTURES = "agents/hooks/lint/model-rules/**/fixtures/**"
 
 
 @dataclass(frozen=True, slots=True)
@@ -31,8 +34,8 @@ class Selection:
 def select(root: Path, paths: Iterable[str]) -> Selection:
     """Split changed `paths` of the repository at `root` into the sendable and the withheld.
 
-    A path that no longer exists, is not a file (a nested repository), or reads like an option has nothing to send and
-    is left out without being counted.
+    A path that no longer exists, is not a file (a nested repository), reads like an option, or is a rule fixture has
+    nothing to send and is left out without being counted.
     """
     real_root = root.resolve()
     sendable: list[str] = []
@@ -74,7 +77,7 @@ def committed_paths(root: Path, base: str) -> tuple[str, ...]:
 
 def _verdict(real_root: Path, candidate: Path, path: str) -> bool | None:
     """True to send, False to withhold, None when there is nothing to send."""
-    if path.startswith("-"):
+    if path.startswith("-") or PurePosixPath(path).full_match(RULE_FIXTURES):
         return None
     try:
         mode = candidate.lstat().st_mode

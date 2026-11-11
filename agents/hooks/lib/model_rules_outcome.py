@@ -44,7 +44,7 @@ class Plan:
 
 @dataclass(frozen=True, slots=True)
 class Judgement:
-    """The findings of the reviews of one Stop with the work they took."""
+    """The findings of the reviews of one Stop with the work they took, `seconds` of it."""
 
     findings: tuple[Finding, ...]
     subjects: int = 0
@@ -53,6 +53,12 @@ class Judgement:
     requests: int = 0
     cached: int = 0
     withheld_files: int = 0
+    seconds: float = 0.0
+
+    @property
+    def judged(self) -> int:
+        """How many subjects were passed to the model, cached ones included."""
+        return self.subjects - self.skipped_subjects
 
     def combined(self, other: Judgement) -> Judgement:
         """Add another review's result; a finding at the same rule, file and line is kept once."""
@@ -66,4 +72,5 @@ class Judgement:
             self.requests + other.requests,
             self.cached + other.cached,
             self.withheld_files + other.withheld_files,
+            self.seconds + other.seconds,
         )

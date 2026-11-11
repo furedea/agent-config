@@ -23,6 +23,11 @@ rule:
             kind: macro_invocation
             regex: ^(bail|anyhow|ensure)!
             stopBy: end
+        # The message attached with anyhow's Context is the one rust-style asks for at I/O and parse boundaries.
+        - has:
+            kind: call_expression
+            regex: \.(with_)?context\(
+            stopBy: end
 ask: >-
   An error built in this function carries a message that names neither the operation that failed nor the subject it
   failed on.

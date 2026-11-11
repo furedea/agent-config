@@ -18,3 +18,8 @@ func TestCommentWithoutCondition(t *testing.T) {
 	// TODO: this fails.
 	t.Skip("known defect")
 }
+
+func TestSkipNow(t *testing.T) {
+	// broken
+	t.SkipNow()
+}

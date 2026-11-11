@@ -6,6 +6,7 @@ fixtures/violating_test.go:
   - { line: 10, label: bad, window: 1 }
   - { line: 14, label: bad, window: 1 }
   - { line: 19, label: bad, window: 1 }
+  - { line: 24, label: bad, window: 1 }
 fixtures/conforming_test.go:
   - { line: 10, label: clean, window: 1 }
   - { line: 14, label: clean, window: 1 }

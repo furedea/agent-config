@@ -1,4 +1,4 @@
-use anyhow::{anyhow, bail, Result};
+use anyhow::{anyhow, bail, Context, Result};
 
 pub fn validate(name: &str) -> Result<(), String> {
     if name.is_empty() {
@@ -26,4 +26,8 @@ pub fn load(path: &str) -> Result<String> {
         bail!("parse");
     }
     Ok(path.to_string())
+}
+
+pub fn read(path: &str) -> Result<String> {
+    std::fs::read_to_string(path).context("failed")
 }

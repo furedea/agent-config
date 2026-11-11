@@ -16,7 +16,7 @@ rule:
     - not:
         follows:
           kind: attribute_item
-          regex: test
+          regex: ^#\[([A-Za-z_][A-Za-z0-9_]*::)*test\b
           stopBy:
             not:
               any:

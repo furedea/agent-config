@@ -95,10 +95,15 @@ func TestLoad(t *testing.T) {
 	// Removed when the parser handles empty input (#123).
 	t.Skip("known defect")
 }
+
+func TestBare(t *testing.T) {
+	// broken
+	t.SkipNow()
+}
 """
 
 RUST_SOURCE = """\
-use anyhow::{bail, Result};
+use anyhow::{bail, Context, Result};
 
 pub fn get_user(users: &mut Vec<String>) -> usize {
     users.clear();
@@ -114,6 +119,16 @@ pub fn load(path: &str) -> Result<String> {
 
 pub fn pure(a: i32, b: i32) -> i32 {
     a + b
+}
+
+pub fn read(path: &str) -> Result<String> {
+    std::fs::read_to_string(path).context("failed")
+}
+
+#[cfg(not(test))]
+pub fn get_connection(pool: &mut Vec<u8>) -> usize {
+    pool.clear();
+    pool.len()
 }
 
 // Removed when the parser handles empty input (#123).
@@ -218,11 +233,11 @@ def test_go_rules_select_the_functions_they_ask_about(repository: Path) -> None:
     counts = subjects_by_rule(plan(repository))
 
     # Three functions are named for a read or an effect; `TestLoad` is named for what it verifies. Only `Load` builds
-    # an error; only the skip carries a known-defect marker.
+    # an error; both skips carry a known-defect marker, `t.Skip` and `t.SkipNow`.
     assert counts == {
         "command-query-naming": 3,
         "error-message-names-operation": 1,
-        "known-defect-marker-names-removal": 1,
+        "known-defect-marker-names-removal": 2,
     }
 
 
@@ -231,10 +246,11 @@ def test_rust_rules_select_the_functions_they_ask_about(repository: Path) -> Non
 
     counts = subjects_by_rule(plan(repository))
 
-    # `known_defect` carries `#[test]` before `#[ignore]` and a comment, so it is not asked about by name.
+    # `known_defect` carries `#[test]` before `#[ignore]` and a comment, so it is not asked about by name; the
+    # `#[cfg(not(test))]` function is production code and is. `read` builds its message with `.context(..)`.
     assert counts == {
-        "command-query-naming": 3,
-        "error-message-names-operation": 1,
+        "command-query-naming": 5,
+        "error-message-names-operation": 2,
         "known-defect-marker-names-removal": 1,
     }
 

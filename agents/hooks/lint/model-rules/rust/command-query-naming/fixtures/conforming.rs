@@ -35,10 +35,6 @@ pub fn load_port(raw: &str) -> Result<u16, std::num::ParseIntError> {
     raw.parse()
 }
 
-pub fn run(args: &[String]) -> usize {
-    args.len()
-}
-
 #[test]
 fn get_next_after_reset() {
     let mut counter = 0;

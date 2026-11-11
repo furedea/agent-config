@@ -49,7 +49,3 @@ func LoadPort(raw string) (int, error) {
 	}
 	return port, nil
 }
-
-func Run(args []string) int {
-	return len(args)
-}

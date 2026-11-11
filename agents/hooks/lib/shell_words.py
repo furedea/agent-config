@@ -15,6 +15,10 @@ WORD_PARTS = frozenset({None, "Lit", "SglQuoted", "DblQuoted", "ParamExp", "Word
 QUOTED_PARTS = frozenset({"SglQuoted", "DblQuoted"})
 HOME_PARAMETER = "HOME"
 PARAMETER_MODIFIERS = ("Excl", "Length", "Width", "Index", "Slice", "Repl", "Names", "Exp")
+# The name in each `$name` or `${name}` of a source word.
+SIMPLE_PARAMETER = re.compile(r"\$\{?([A-Za-z_][A-Za-z0-9_]*)")
+# Environment variables zsh never makes an array: an unquoted expansion of one is a single word.
+ENVIRONMENT_NAMES = frozenset({"HOME", "PWD", "TMPDIR", "USER"})
 # A word made only of simple parameters becomes no word at all when zsh finds them all empty.
 WHOLLY_PARAMETERS = re.compile(r"(?:\$[A-Za-z_][A-Za-z0-9_]*|\$\{[A-Za-z_][A-Za-z0-9_]*\})+")
 # All positional parameters, any single one (a digit), and every array element ([@] or [*]) can

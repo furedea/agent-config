@@ -1,13 +1,14 @@
 """Decide whether the shell that runs a command is known to expand it with zsh's default options."""
 
 import os
+import re
 from collections.abc import Iterator
 from dataclasses import replace
 from itertools import combinations
 from pathlib import Path
 
 import shell_syntax
-from shell_words import vanishes_when_empty
+from shell_words import ENVIRONMENT_NAMES, SIMPLE_PARAMETER, vanishes_when_empty
 
 # Only Claude Code's Bash tool is confirmed to run commands in $SHELL, which the hook inherits; a
 # payload without a provider comes straight from Claude Code. Codex and the other providers choose
@@ -17,15 +18,25 @@ CONFIRMED_PROVIDERS = frozenset({"", "claude"})
 MAX_VANISHING_WORDS = 4
 
 
-def as_run_by_zsh(payload: dict, commands: tuple[shell_syntax.Command, ...]) -> tuple[shell_syntax.Command, ...]:
-    """Read each command's unquoted variables as zsh runs them, or unchanged when the shell is not certain.
+def as_run_by_zsh(
+    payload: dict, command: str, commands: tuple[shell_syntax.Command, ...]
+) -> tuple[shell_syntax.Command, ...]:
+    """Read unquoted environment variables as zsh runs them, or leave the commands when the shell is not certain.
 
-    Which variables are one word is decided where each call stands (`zsh_assignments`); this only
-    applies that to the commands when the shell is known to be zsh.
+    An unquoted `$TMPDIR`, `$HOME`, `$PWD`, or `$USER` is one word, or none if empty, but only while the command
+    mentions the name nowhere but in expansions: an assignment, declaration, `read`, `unset`, `trap`, or function
+    could make it an array or change its value, however it is spelled.
     """
     if not _is_zsh(payload):
         return commands
-    return tuple(_as_run_by_zsh(item) for item in commands)
+    names = frozenset(name for name in ENVIRONMENT_NAMES if not _is_named_beyond_expansions(name, command))
+    return tuple(_as_run_by_zsh(item, names) for item in commands)
+
+
+def _is_named_beyond_expansions(name: str, command: str) -> bool:
+    escaped = re.escape(name)
+    rest = re.sub(rf"\${escaped}\b|\$\{{{escaped}\}}", "", command)
+    return bool(re.search(rf"(?<![\w$]){escaped}(?!\w)", rest))
 
 
 def _is_zsh(payload: dict) -> bool:
@@ -35,19 +46,21 @@ def _is_zsh(payload: dict) -> bool:
     return Path(executable).name == "zsh"
 
 
-def _as_run_by_zsh(item: shell_syntax.Command) -> shell_syntax.Command:
-    """Read the command's unquoted simple variables as one word each, or none if empty.
+def _as_run_by_zsh(item: shell_syntax.Command, names: frozenset[str]) -> shell_syntax.Command:
+    """Read the command's unquoted variables among `names` as one word each, or none if empty.
 
     Only a command the outer shell itself runs: a script another shell runs is read as before,
     and so is a command with more vanishing words than the guard enumerates.
     """
-    vanishing = tuple(
-        spreading and not zsh_spreading and vanishes_when_empty(word)
+    one_word = tuple(
+        spreading and not zsh_spreading and set(SIMPLE_PARAMETER.findall(word)) <= names
         for word, spreading, zsh_spreading in zip(item.words, item.spreading, item.zsh_spreading, strict=True)
     )
+    vanishing = tuple(flag and vanishes_when_empty(word) for word, flag in zip(item.words, one_word, strict=True))
     if item.wrapper_depth or sum(vanishing) > MAX_VANISHING_WORDS:
         return item
-    return replace(item, spreading=item.zsh_spreading, vanishing=vanishing)
+    spreading = tuple(spreads and not flag for spreads, flag in zip(item.spreading, one_word, strict=True))
+    return replace(item, spreading=spreading, vanishing=vanishing)
 
 
 def vanishing_variants(item: shell_syntax.Command) -> Iterator[shell_syntax.Command]:

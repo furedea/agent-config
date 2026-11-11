@@ -63,7 +63,6 @@ known_first_party = [
   "static_rule_scan",
   "trusted_owners",
   "verification_session",
-  "zsh_assignments",
 ]
 
 [tool.vulture]

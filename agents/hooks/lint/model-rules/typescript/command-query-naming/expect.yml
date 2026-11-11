@@ -1,0 +1,21 @@
+default: clean
+note: >-
+  TypeScript mirror of the Python suite, with the same causes: verbs such as check and judge promise neither a pure
+  read nor an effect. Defects are names that promise a pure read or an effect the body contradicts.
+fixtures/subjects.ts:
+  - { line: 7, label: clean, window: 1, why: "'check' promises neither a read nor an effect" }
+  - { line: 28, label: clean, window: 1, why: "'judge' promises neither a read nor an effect" }
+  - { line: 35, label: clean, window: 1, why: "a command that returns the result of its own effect" }
+  - { line: 42, label: clean, window: 1, why: "a memoizing query writes only its own cache" }
+  - { line: 50, label: clean, window: 1, why: "a pure lookup named as one" }
+  - { line: 55, label: clean, window: 1, why: "a conventional terse name that the body fits" }
+  - { line: 60, label: bad, window: 1, why: "'get' promises a read; the body appends to a module-level log" }
+  - { line: 66, label: bad, window: 1, why: "'save' promises an effect; the body only computes" }
+  - { line: 71, label: bad, window: 1, why: "'is' promises a predicate; the body deletes a file" }
+  - { line: 80, label: bad, window: 1, why: "'update' promises an effect; the body only builds a string" }
+  - { line: 85, label: bad, window: 1, why: "'count' promises a read; the body empties the argument" }
+  - { line: 92, label: bad, window: 1, why: "'find' promises a read; the body sends a request" }
+  - { line: 101, label: bad, window: 1, why: "'delete' promises an effect; the body deletes nothing" }
+  - { line: 106, label: bad, window: 1, why: "'set' promises an effect; the body sets nothing" }
+  - { line: 111, label: clean, window: 1, why: "a command that returns the results of its effects" }
+  - { line: 116, label: clean, window: 1, why: "a pure conversion named as one" }

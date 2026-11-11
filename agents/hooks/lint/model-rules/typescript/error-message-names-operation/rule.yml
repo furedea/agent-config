@@ -3,8 +3,12 @@ id: error-message-names-operation
 languages: [ TypeScript, Tsx ]
 kind: noul
 subject: node
-state: local
-threshold: 0.5
+# The whole file: the message is often built by a helper beside the throw, and a reader must see that helper.
+state: located
+# The cutoff is fitted on this folder's fixtures (4 violations, 5 conforming cases, 3 passes, means): the highest
+# conforming case (projectTargets) scored 0.50 (0.55 in its worst pass) and the lowest violation 0.95, and 0.75 is the
+# midpoint of that gap. Refit it when fixtures change.
+threshold: 0.75
 axis: file
 severity: warning
 rule:

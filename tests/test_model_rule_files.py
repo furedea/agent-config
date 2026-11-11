@@ -1,8 +1,9 @@
 """The shipped model rules load, select the intended functions, and need neither a key nor the network.
 
 `jev-lint review --dry-run` plans a run without asking the model, so these tests judge the matchers (which subjects
-each rule would ask about) and nothing else. Whether the model judges those subjects well is not tested here: the
-cutoffs are unfitted, which is why the rules are advisory.
+each rule would ask about) and nothing else. Whether the model judges those subjects well is not tested here; that is
+what each rule's eval fixtures and baseline.json record, and `jev-lint eval --replay` re-scores them without a key.
+The rules stay advisory.
 """
 
 import json
@@ -113,6 +114,19 @@ def test_every_model_rule_loads_without_an_error() -> None:
 
     assert "0 error(s)" in result.stdout
     assert RULE_IDS <= {line.split("/")[-1] for line in result.stdout.splitlines() if "/" in line and " " not in line}
+
+
+def test_every_saved_eval_baseline_still_scores_as_accepted() -> None:
+    """A moved fixture line, an edited cutoff or criteria, or a stale exemption fails the replay; no key is needed."""
+    result = subprocess.run(
+        ["jev-lint", "eval", "--replay", "--no-config", "--no-color", str(RULES)],
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr
 
 
 def test_python_rules_select_the_functions_they_ask_about(repository: Path) -> None:

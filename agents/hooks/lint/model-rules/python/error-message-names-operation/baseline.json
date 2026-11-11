@@ -1,0 +1,271 @@
+{
+  "schema": "jev-lint-eval-1",
+  "recorded": "2026-11-11T14:52:47.096Z",
+  "model": "jev-1.14.0",
+  "suite": "python/error-message-names-operation",
+  "rules": [
+    {
+      "id": "error-message-names-operation",
+      "draft": "9d0e967dbb95",
+      "at": 0.5
+    }
+  ],
+  "cutoffs": {},
+  "passes": [
+    [
+      {
+        "rule": "error-message-names-operation",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/error-message-names-operation/fixtures/subjects.py",
+        "line": 9,
+        "endLine": 12,
+        "kind": "noul",
+        "value": 0.09,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/error-message-names-operation/fixtures/subjects.py",
+        "line": 16,
+        "endLine": 20,
+        "kind": "noul",
+        "value": 0.02,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/error-message-names-operation/fixtures/subjects.py",
+        "line": 24,
+        "endLine": 28,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/error-message-names-operation/fixtures/subjects.py",
+        "line": 33,
+        "endLine": 39,
+        "kind": "noul",
+        "value": 0.25,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/error-message-names-operation/fixtures/subjects.py",
+        "line": 43,
+        "endLine": 47,
+        "kind": "noul",
+        "value": 0.15,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/error-message-names-operation/fixtures/subjects.py",
+        "line": 51,
+        "endLine": 54,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/error-message-names-operation/fixtures/subjects.py",
+        "line": 58,
+        "endLine": 61,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/error-message-names-operation/fixtures/subjects.py",
+        "line": 65,
+        "endLine": 68,
+        "kind": "noul",
+        "value": 0.92,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/error-message-names-operation/fixtures/subjects.py",
+        "line": 72,
+        "endLine": 75,
+        "kind": "noul",
+        "value": 0.94,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "error-message-names-operation",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/error-message-names-operation/fixtures/subjects.py",
+        "line": 9,
+        "endLine": 12,
+        "kind": "noul",
+        "value": 0.08,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/error-message-names-operation/fixtures/subjects.py",
+        "line": 16,
+        "endLine": 20,
+        "kind": "noul",
+        "value": 0.02,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/error-message-names-operation/fixtures/subjects.py",
+        "line": 24,
+        "endLine": 28,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/error-message-names-operation/fixtures/subjects.py",
+        "line": 33,
+        "endLine": 39,
+        "kind": "noul",
+        "value": 0.29,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/error-message-names-operation/fixtures/subjects.py",
+        "line": 43,
+        "endLine": 47,
+        "kind": "noul",
+        "value": 0.15,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/error-message-names-operation/fixtures/subjects.py",
+        "line": 51,
+        "endLine": 54,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/error-message-names-operation/fixtures/subjects.py",
+        "line": 58,
+        "endLine": 61,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/error-message-names-operation/fixtures/subjects.py",
+        "line": 65,
+        "endLine": 68,
+        "kind": "noul",
+        "value": 0.94,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/error-message-names-operation/fixtures/subjects.py",
+        "line": 72,
+        "endLine": 75,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "error-message-names-operation",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/error-message-names-operation/fixtures/subjects.py",
+        "line": 9,
+        "endLine": 12,
+        "kind": "noul",
+        "value": 0.09,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/error-message-names-operation/fixtures/subjects.py",
+        "line": 16,
+        "endLine": 20,
+        "kind": "noul",
+        "value": 0.02,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/error-message-names-operation/fixtures/subjects.py",
+        "line": 24,
+        "endLine": 28,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/error-message-names-operation/fixtures/subjects.py",
+        "line": 33,
+        "endLine": 39,
+        "kind": "noul",
+        "value": 0.29,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/error-message-names-operation/fixtures/subjects.py",
+        "line": 43,
+        "endLine": 47,
+        "kind": "noul",
+        "value": 0.17,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/error-message-names-operation/fixtures/subjects.py",
+        "line": 51,
+        "endLine": 54,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/error-message-names-operation/fixtures/subjects.py",
+        "line": 58,
+        "endLine": 61,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/error-message-names-operation/fixtures/subjects.py",
+        "line": 65,
+        "endLine": 68,
+        "kind": "noul",
+        "value": 0.94,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/python/error-message-names-operation/fixtures/subjects.py",
+        "line": 72,
+        "endLine": 75,
+        "kind": "noul",
+        "value": 0.94,
+        "confidence": null
+      }
+    ]
+  ],
+  "spent": {
+    "calls": 3,
+    "inputTokens": 11763,
+    "usd": 0.000494046,
+    "ms": 192
+  }
+}

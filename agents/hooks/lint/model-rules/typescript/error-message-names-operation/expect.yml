@@ -1,0 +1,15 @@
+default: clean
+note: >-
+  TypeScript mirror of the Python suite. The first clean case is a message built by another function in the same
+  file; projectTargets is a second one (an inner throw that the same function catches and wraps). Defects are errors
+  with no message, a generic one, or one naming only the operation or only the subject.
+fixtures/subjects.ts:
+  - { line: 8, label: clean, window: 1, why: "the message comes from a helper that names both" }
+  - { line: 17, label: clean, window: 1, why: "names the operation and the subject" }
+  - { line: 28, label: clean, window: 1, why: "wraps a cause and names the operation and the subject" }
+  - { line: 38, label: clean, window: 1, why: "the inner throw is caught here; only the wrapped error leaves" }
+  - { line: 50, label: clean, window: 1, why: "rethrows a caught error unchanged" }
+  - { line: 59, label: bad, window: 1, why: "generic message" }
+  - { line: 67, label: bad, window: 1, why: "no message" }
+  - { line: 76, label: bad, window: 1, why: "names only the subject" }
+  - { line: 84, label: bad, window: 1, why: "names only the operation" }

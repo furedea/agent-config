@@ -1,13 +1,16 @@
 # M-05 command/query naming (agents/AGENTS.md: "name command functions for their side effects and query functions for
-# the value they return"). Advisory and unfitted: the cutoff is a starting point, not a calibration, so the Stop hook
-# reports findings and never promotes this rule to a gate (ADR-0021).
+# the value they return"). Advisory: the Stop hook reports findings and never promotes this rule to a gate (ADR-0021).
+# The cutoff is fitted on this folder's fixtures (8 violations, 8 conforming cases, 3 passes, means): the highest
+# conforming case scored 0.58 (0.62 in its worst pass) and the lowest violation 0.91 (0.90 in its worst pass), and
+# 0.76 is the midpoint of that gap. No fixture lies inside the gap, so any cutoff from about 0.62 to 0.90 gives the
+# same eval result: a violation that scores 0.6-0.75 would be dropped unseen. Add a borderline violation and refit.
 id: command-query-naming
 language: Python
 kind: noul
 subject: node
 # The function plus the same file's imports and enclosing declarations; no other file is sent.
 state: local
-threshold: 0.5
+threshold: 0.76
 axis: file
 severity: warning
 rule:
@@ -23,6 +26,7 @@ criteria:
     request; or the name promises an effect (set, save, update, delete, run, send) and the body only computes and
     returns a value that the caller needs, with no effect performed.
   "false": >-
-    The name and the body agree on whether the function reads or acts. A command that also returns the result of its
-    own effect, a memoizing or lazily initializing query, and a terse conventional name that the body fits are not
-    violations.
+    A name makes a promise only through a verb that unambiguously says the function is a pure read or performs an
+    effect; any other verb promises neither, so the body cannot contradict it. Where a promise is made, a body that
+    keeps it is not a violation: a read may lazily initialize itself or write only its own cache, and an effect may
+    also return the result of that effect.

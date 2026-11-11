@@ -1,10 +1,12 @@
 # M-21 error messages name the operation and the subject (agents/skills/python-style: error messages state what was
-# being done and to what). Advisory and unfitted, as for command-query-naming.
+# being done and to what). Advisory. The cutoff stays 0.5: on this folder's fixtures the highest
+# conforming case scored 0.28 and the lowest violation is well above 0.5 (jev-lint's fitted midpoint is 0.61).
 id: error-message-names-operation
 language: Python
 kind: noul
 subject: node
-state: local
+# The whole file: the message is often built by a helper beside the raise, and a reader must see that helper.
+state: located
 threshold: 0.5
 axis: file
 severity: warning

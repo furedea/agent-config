@@ -1,0 +1,15 @@
+default: clean
+note: >-
+  The first clean case is the real false positive found in agent-config (a message built by another function in the
+  same file); project_targets is a second one (an inner raise that the same function catches and wraps). Defects are
+  errors with no message, a generic one, or one naming only the operation or only the subject.
+fixtures/subjects.py:
+  - { line: 9, label: clean, window: 1, why: "false positive: the message comes from a helper that names both" }
+  - { line: 16, label: clean, window: 1, why: "names the operation and the subject" }
+  - { line: 24, label: clean, window: 1, why: "wraps a cause and names the operation and the subject" }
+  - { line: 33, label: clean, window: 1, why: "false positive: the inner raise is caught here; only the wrapped error leaves" }
+  - { line: 43, label: clean, window: 1, why: "rethrows a caught error unchanged" }
+  - { line: 51, label: bad, window: 1, why: "generic message" }
+  - { line: 58, label: bad, window: 1, why: "no message" }
+  - { line: 65, label: bad, window: 1, why: "names only the subject" }
+  - { line: 72, label: bad, window: 1, why: "names only the operation" }

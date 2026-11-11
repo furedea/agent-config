@@ -1,0 +1,487 @@
+{
+  "schema": "jev-lint-eval-1",
+  "recorded": "2026-11-11T15:01:03.536Z",
+  "model": "jev-1.14.0",
+  "suite": "typescript/command-query-naming",
+  "rules": [
+    {
+      "id": "command-query-naming",
+      "draft": "41a08df6ab72",
+      "at": 0.5
+    }
+  ],
+  "cutoffs": {},
+  "passes": [
+    [
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 7,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.66,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 26,
+        "endLine": 26,
+        "kind": "noul",
+        "value": 0.08,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 28,
+        "endLine": 31,
+        "kind": "noul",
+        "value": 0.43,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 35,
+        "endLine": 39,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 42,
+        "endLine": 47,
+        "kind": "noul",
+        "value": 0.3,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 50,
+        "endLine": 52,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 55,
+        "endLine": 57,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 60,
+        "endLine": 63,
+        "kind": "noul",
+        "value": 0.92,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 66,
+        "endLine": 68,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 71,
+        "endLine": 77,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 80,
+        "endLine": 82,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 85,
+        "endLine": 89,
+        "kind": "noul",
+        "value": 0.93,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 92,
+        "endLine": 98,
+        "kind": "noul",
+        "value": 0.94,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 101,
+        "endLine": 103,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 106,
+        "endLine": 108,
+        "kind": "noul",
+        "value": 0.89,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 111,
+        "endLine": 113,
+        "kind": "noul",
+        "value": 0.66,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 116,
+        "endLine": 118,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 7,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.67,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 26,
+        "endLine": 26,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 28,
+        "endLine": 31,
+        "kind": "noul",
+        "value": 0.41,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 35,
+        "endLine": 39,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 42,
+        "endLine": 47,
+        "kind": "noul",
+        "value": 0.27,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 50,
+        "endLine": 52,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 55,
+        "endLine": 57,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 60,
+        "endLine": 63,
+        "kind": "noul",
+        "value": 0.92,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 66,
+        "endLine": 68,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 71,
+        "endLine": 77,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 80,
+        "endLine": 82,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 85,
+        "endLine": 89,
+        "kind": "noul",
+        "value": 0.92,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 92,
+        "endLine": 98,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 101,
+        "endLine": 103,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 106,
+        "endLine": 108,
+        "kind": "noul",
+        "value": 0.91,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 111,
+        "endLine": 113,
+        "kind": "noul",
+        "value": 0.63,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 116,
+        "endLine": 118,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 7,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.63,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 26,
+        "endLine": 26,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 28,
+        "endLine": 31,
+        "kind": "noul",
+        "value": 0.44,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 35,
+        "endLine": 39,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 42,
+        "endLine": 47,
+        "kind": "noul",
+        "value": 0.26,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 50,
+        "endLine": 52,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 55,
+        "endLine": 57,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 60,
+        "endLine": 63,
+        "kind": "noul",
+        "value": 0.91,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 66,
+        "endLine": 68,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 71,
+        "endLine": 77,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 80,
+        "endLine": 82,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 85,
+        "endLine": 89,
+        "kind": "noul",
+        "value": 0.93,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 92,
+        "endLine": 98,
+        "kind": "noul",
+        "value": 0.94,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 101,
+        "endLine": 103,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 106,
+        "endLine": 108,
+        "kind": "noul",
+        "value": 0.89,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 111,
+        "endLine": 113,
+        "kind": "noul",
+        "value": 0.68,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/fix-74-model-rules-false-positives/agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 116,
+        "endLine": 118,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      }
+    ]
+  ],
+  "spent": {
+    "calls": 3,
+    "inputTokens": 24660,
+    "usd": 0.0010357200000000002,
+    "ms": 221
+  }
+}

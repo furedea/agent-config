@@ -82,6 +82,10 @@
         "~/Library/Group Containers/2BUA8C4S2C.com.1password/**"
       ],
       "denyWrite": [
+        "~/.local/state/agent-harness/verification",
+        "~/.local/state/agent-harness/model-rules",
+        "~/.local/state/agent-harness/trusted-owners",
+        "~/.local/state/agent-harness/audit",
         "~/**/.git/hooks",
         "~/**/.git/config",
         "~/**/.git/worktrees/*/config.worktree"

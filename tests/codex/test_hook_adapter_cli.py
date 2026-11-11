@@ -40,6 +40,9 @@ def harness(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     return root
 
 
+RECEIPT = "~/.local/state/agent-harness/verification/0463f9a1/codex-c3602be4/results.json"
+
+
 def patch_payload(*paths: str) -> dict:
     return {
         "tool_input": {
@@ -144,6 +147,8 @@ def test_missing_policy_fails_closed(
         ("command", {"tool_input": {"command": "cat {a,b}.md"}}, ""),
         ("patch", patch_payload(".env.local"), ".env.local"),
         ("patch", {"tool_input": {"file_path": "~/.ssh/config"}}, "~/.ssh/config"),
+        ("patch", patch_payload(RECEIPT), RECEIPT),
+        ("command", {"tool_input": {"command": f"cat {RECEIPT}"}}, ""),
     ],
 )
 @pytest.mark.usefixtures("harness")

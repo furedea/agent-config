@@ -211,7 +211,7 @@ class Adapter:
             audit_log.blocked(_secret_path_refusal(mode, "", context))
             return hook_decision.emit(hook_decision.ask(f"Needs review: {error}.").hardened())
         for value in candidates:
-            if rule := secret_path_policy.blocked_rule(value, rules):
+            if rule := secret_path_policy.blocked_rule(value, rules, editing=mode == "patch"):
                 audit_log.blocked(_secret_path_refusal(mode, value, context))
                 raise ValueError(_secret_path_reason(value, rule))
         return 0

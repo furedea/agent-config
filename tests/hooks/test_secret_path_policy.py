@@ -63,8 +63,29 @@ def test_the_model_rule_verdict_cache_is_denied_to_agents(path: str) -> None:
     assert "write" in rule["access"]
 
 
-def test_the_other_agent_harness_state_is_not_denied() -> None:
-    assert policy.blocked_rule("~/.local/state/agent-harness/verification/results.json", RULES) is None
+HOOK_OWNED_STATE = [
+    "~/.local/state/agent-harness/verification/0463f9a1/claude-c3602be4/results.json",
+    "~/.local/state/agent-harness/verification/0463f9a1/claude-c3602be4/baseline.json",
+    "/Users/someone/.local/state/agent-harness/trusted-owners/owners.json",
+    "$HOME/.local/state/agent-harness/audit/claude/2026-11-11.jsonl",
+    "~/.local/state/agent-harness/model-rules/verdicts.json",
+]
+
+
+@pytest.mark.parametrize("path", HOOK_OWNED_STATE)
+def test_file_tools_cannot_write_the_state_only_hooks_may_write(path: str) -> None:
+    rule = policy.blocked_rule(path, RULES, editing=True)
+    assert rule is not None
+    assert "write" in rule["access"]
+
+
+@pytest.mark.parametrize("path", HOOK_OWNED_STATE[:4])
+def test_agents_can_read_the_verification_logs_and_other_hook_state(path: str) -> None:
+    assert policy.blocked_rule(path, RULES) is None
+
+
+def test_the_agent_state_directory_itself_stays_writable_for_the_editor_log() -> None:
+    assert policy.blocked_rule("~/.local/state/agent-harness/nvim.log", RULES, editing=True) is None
 
 
 @pytest.mark.parametrize("path", ["~root/.aws/credentials", "~no-such-user/.ssh/id_rsa", "~root/.config/gh/hosts.yml"])

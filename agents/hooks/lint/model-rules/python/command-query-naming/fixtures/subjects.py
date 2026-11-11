@@ -78,3 +78,36 @@ def is_stale(path, limit):
 # Bad: a command name whose body only builds a string and performs no update.
 def update_label(item):
     return f"{item.name} ({item.count})"
+
+
+# Bad: a query name whose body empties the argument it counted.
+def count_items(items):
+    total = len(items)
+    items.clear()
+    return total
+
+
+# Bad: a query name whose body sends a request.
+def find_user(users, name):
+    requests.post("https://audit.example.com/lookups", json={"name": name})
+    return users.get(name)
+
+
+# Bad: a command name whose body returns the surviving entries and deletes nothing.
+def delete_expired(entries, now):
+    return [entry for entry in entries if entry.expires_at > now]
+
+
+# Bad: a command name whose body returns a converted number and sets nothing.
+def set_timeout(config, seconds):
+    return seconds * 1000
+
+
+# Clean: a command that returns the results of the effects it performs.
+def run_all(tasks):
+    return [task.run() for task in tasks]
+
+
+# Clean: a pure conversion named as one.
+def to_dict(user):
+    return {"name": user.name, "count": user.count}

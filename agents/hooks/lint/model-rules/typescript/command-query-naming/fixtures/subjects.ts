@@ -80,3 +80,39 @@ export function isStale(path: string, limit: number): boolean {
 export function updateLabel(item: Item): string {
   return `${item.name} (${item.count})`;
 }
+
+// Bad: a query name whose body empties the argument it counted.
+export function countItems(items: Item[]): number {
+  const total = items.length;
+  items.length = 0;
+  return total;
+}
+
+// Bad: a query name whose body sends a request.
+export async function findUser(users: Map<string, User>, name: string): Promise<User | undefined> {
+  await fetch("https://audit.example.com/lookups", {
+    method: "POST",
+    body: JSON.stringify({ name }),
+  });
+  return users.get(name);
+}
+
+// Bad: a command name whose body returns the surviving entries and deletes nothing.
+export function deleteExpired(entries: Entry[], now: number): Entry[] {
+  return entries.filter((entry) => entry.expiresAt > now);
+}
+
+// Bad: a command name whose body returns a converted number and sets nothing.
+export function setTimeoutMs(config: Config, seconds: number): number {
+  return seconds * 1000;
+}
+
+// Clean: a command that returns the results of the effects it performs.
+export function runAll(tasks: Task[]): unknown[] {
+  return tasks.map((task) => task.run());
+}
+
+// Clean: a pure conversion named as one.
+export function toDict(user: User): Record<string, unknown> {
+  return { name: user.name, count: user.count };
+}

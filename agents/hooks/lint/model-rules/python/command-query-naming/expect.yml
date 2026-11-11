@@ -13,3 +13,9 @@ fixtures/subjects.py:
   - { line: 66, label: bad, window: 1, why: "'save' promises an effect; the body only computes" }
   - { line: 71, label: bad, window: 1, why: "'is' promises a predicate; the body deletes a file" }
   - { line: 79, label: bad, window: 1, why: "'update' promises an effect; the body only builds a string" }
+  - { line: 84, label: bad, window: 1, why: "'count' promises a read; the body empties the argument" }
+  - { line: 91, label: bad, window: 1, why: "'find' promises a read; the body sends a request" }
+  - { line: 97, label: bad, window: 1, why: "'delete' promises an effect; the body deletes nothing" }
+  - { line: 102, label: bad, window: 1, why: "'set' promises an effect; the body sets nothing" }
+  - { line: 107, label: clean, window: 1, why: "a command that returns the results of its effects" }
+  - { line: 112, label: clean, window: 1, why: "a pure conversion named as one" }

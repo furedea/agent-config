@@ -11,6 +11,7 @@ from pathlib import Path
 from explicit_targets import TARGET_LANGUAGES, project_targets, strings
 from go_selection import GO_FULL_SUITE, go_files, go_package_exists, go_test_arguments
 from javascript_runner import javascript_runner, package_manager, runner_arguments
+from model_rule_fixtures import is_model_rule_fixture
 from rust_targets import rust_test_target
 from source_listing import remaining_sources
 
@@ -67,7 +68,6 @@ RULE_ARRAYS = {
     "source_dirs",
     "full_suite_triggers",
 }
-MODEL_RULE_FIXTURES = "agents/hooks/lint/model-rules/*/fixtures/*"
 PYTEST = ("uv", "run", "--frozen", "pytest", "--no-header", "-q")
 RUST_FULL_SUITE = Invocation("rust", "full suite", ("cargo", "test", "--quiet"))
 
@@ -184,7 +184,7 @@ def language_plan(root: Path, rules: dict, changed: tuple[str, ...]) -> tuple[li
 
     Model-rule eval fixtures are inputs for jev-lint and are never part of any language project, so they are dropped.
     """
-    changed = tuple(path for path in changed if not fnmatch.fnmatchcase(path, MODEL_RULE_FIXTURES))
+    changed = tuple(path for path in changed if not is_model_rule_fixture(path))
     explicit, covered, errors = project_targets(root, changed)
     invocations: list[Invocation] = []
     for language in LANGUAGES:

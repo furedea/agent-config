@@ -45,6 +45,7 @@ known_first_party = [
   "lib",
   "lint_format",
   "literal_words",
+  "model_rule_fixtures",
   "model_rules_credentials",
   "model_rules_files",
   "model_rules_gate",

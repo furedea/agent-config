@@ -17,10 +17,9 @@ import stat
 import subprocess
 from collections.abc import Iterable
 from dataclasses import dataclass
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 
-# The fixtures of the model rules hold violations on purpose, so judging them would only report what they are for.
-RULE_FIXTURES = "agents/hooks/lint/model-rules/**/fixtures/**"
+from model_rule_fixtures import is_model_rule_fixture
 
 
 @dataclass(frozen=True, slots=True)
@@ -77,7 +76,7 @@ def committed_paths(root: Path, base: str) -> tuple[str, ...]:
 
 def _verdict(real_root: Path, candidate: Path, path: str) -> bool | None:
     """True to send, False to withhold, None when there is nothing to send."""
-    if path.startswith("-") or PurePosixPath(path).full_match(RULE_FIXTURES):
+    if path.startswith("-") or is_model_rule_fixture(path):
         return None
     try:
         mode = candidate.lstat().st_mode

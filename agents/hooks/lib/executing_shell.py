@@ -19,7 +19,7 @@ CONFIRMED_PROVIDERS = frozenset({"", "claude"})
 EXPANSION_CHANGING_PROGRAMS = frozenset(
     {
         *"alias autoload builtin emulate eval exec float functions getopts integer let mapfile noglob nocorrect"
-        " print printf private read readarray set setopt shopt source unalias unset unsetopt vared zformat"
+        " print printf private read readarray set setopt shopt source trap unalias unset unsetopt vared zformat"
         " zmodload zparseopts zstyle".split(),
         ".",
     }

@@ -133,21 +133,18 @@ Right after prompting, wait in the background for the recipient to finish: first
 `herdr agent wait <name> --until working`, then
 `herdr agent wait <name> --until done --timeout 1800000` (30 minutes), each as its own single
 `herdr` call. Waiting only for done can return at once while the agent still shows done from an
-earlier turn. Do not wait for `blocked` and do not relay approval prompts: the user notices them
-through Herdr's sound, toast, and sidebar status (or the provider's notification hook) and
-approves in the recipient's own pane, while the parent keeps waiting.
+earlier turn. Treat `done` as the end of the recipient's turn, that is, its final report; the
+recipient therefore waits for CI in the foreground and does not end its turn before CI finishes
+([Wait for CI](../git-workflow/references/delivery.md#wait-for-ci)). Do not wait for `blocked`
+and do not relay approval prompts: the user notices them through Herdr's sound, toast, and
+sidebar status (or the provider's notification hook) and approves in the recipient's own pane,
+while the parent keeps waiting.
 
-When the wait returns done, read the reply with `herdr agent read`. A review recipient carries no
-marker, so read its findings. For an implementation, a reply without `LANE-READY` or
-`LANE-BLOCKED` means the turn ended while work continues (for example the recipient is waiting
-for CI in the background): treat it as incomplete and wait again with
-`--until working --timeout 1800000`, then `--until done --timeout 1800000`. If the
-`--until working` wait times out, the turn really ended: report the reply to the user. Otherwise
-check the PR state and report to the user. Treat `LANE-BLOCKED` and its reason as incomplete
-work. When the `--until done` wait returns on `--timeout`, check `herdr agent list`: tell the
-user in one line that the recipient is still working or blocked, then wait again; for a done
-recipient re-read the reply; report any other state. This works for Claude and Codex recipients
-alike.
+When the wait returns done, read the reply with `herdr agent read`. For an implementation, check
+for `LANE-READY`, check the PR state, and report to the user. Treat `LANE-BLOCKED` and its reason
+as incomplete work. When the wait returns on `--timeout`, check `herdr agent list`: keep waiting
+while the recipient is `working` or `blocked`; report any other state to the user. This works for
+Claude and Codex recipients alike.
 Follow `herdr` for waiting, blocked sessions, and complete response retrieval.
 Successful submission or a settled agent state does not prove that the assigned task is complete;
 read the response and compare it with the requested outcome.

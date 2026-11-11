@@ -71,9 +71,12 @@ run or an empty `--required` result in such a repository is not a failure.
    the run exists from push time, possibly `queued`. If none is listed, wait briefly and look again, up to a fixed
    bound (for example 2 minutes). If none appears within it, the workflow did not trigger: stop and
    report instead of waiting forever.
-2. Wait for each relevant run with `gh run watch <run-id> --exit-status` as one blocking background
-   command and take its completion notification. Do not poll: one blocking command, or one bounded
-   wait for the run to appear, is fine; repeated manual checks across turns are not.
+2. Wait for each relevant run with `gh run watch <run-id> --exit-status`. An interactive session
+   runs it as one blocking background command and takes its completion notification. A delegated
+   lane runs it in the foreground (Bash timeout at its maximum, 600000 ms) and re-runs the same
+   command until the run finishes: ending the turn while CI runs makes the lane look `done` to its
+   parent. Do not poll: one blocking command, or one bounded wait for the run to appear, is fine;
+   repeated manual checks across turns are not.
 3. When the runs have finished, confirm the repository's required check (`all-green` where it
    exists) with `gh pr checks <n> --required`.
 4. On failure, identify the failing check with `gh pr checks <n>` and read its log with

@@ -42,9 +42,8 @@ Rules:
   more than one `herdr` command. Write the brief to a file in this session's scratchpad and
   prompt the lane to read that file.
 - Learn that the lane finished by waiting in the background right after the prompt, as the
-  command block shows. The parent does not relay approval prompts, and handles a done without
-  `LANE-READY` / `LANE-BLOCKED` and a timeout as [herdr-delegation](../../herdr-delegation/SKILL.md)
-  describes.
+  command block shows. The parent does not relay approval prompts; the wait, the timeout, and
+  the lane's foreground CI wait follow [herdr-delegation](../../herdr-delegation/SKILL.md).
 - The lane runs the whole loop: asks Codex to implement when requested, verifies, commits, pushes,
   and opens the PR. The brief carries the complete Codex command. Code review follows
   [Review on GitHub](delivery.md#review-on-github); workflow-file pushes and `LANE-READY` follow

@@ -18,7 +18,9 @@ rule:
     - has: { field: name, pattern: $NAME }
     # Test, benchmark, fuzz and example functions are named for what they verify, not for a read or an effect. A
     # test, benchmark or fuzz function is a top-level function that takes `*testing.T`, `*testing.B` or `*testing.F`;
-    # a method or a function of another shape that merely starts with `Test` is production code.
+    # a method or a function of another shape that merely starts with `Test` is production code. Known gap: a test of
+    # an aliased or dot-imported `testing` (`t *tst.T`, `t *T`) is not excluded, since a syntactic matcher cannot
+    # resolve the alias; the cost is one more subject asked about, not a wrong exclusion.
     - not:
         all:
           - kind: function_declaration

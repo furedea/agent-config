@@ -132,7 +132,7 @@ def test_no_model_rules_run_when_the_stop_hook_has_no_time_left(
 
 
 def test_a_review_without_findings_only_notifies(record: session_store.SessionRecord, tools: Tools) -> None:
-    tools.report([])
+    tools.write_report([])
 
     result = stop(record)
 
@@ -419,7 +419,7 @@ def test_the_stop_hook_blocks_through_the_provider_entry_point(
 
 
 def test_findings_are_bounded_in_the_message(record: session_store.SessionRecord, tools: Tools) -> None:
-    tools.report([finding(line=number) for number in range(30)])
+    tools.write_report([finding(line=number) for number in range(30)])
 
     reason = stop(record)["reason"]
 

@@ -121,14 +121,14 @@ class Tools:
         }
         (self.directory / "plan.json").write_text(json.dumps(report))
 
-    def plan_of_files(self, files: tuple[str, ...], subjects: int, cached: int) -> None:
+    def write_plan_of_files(self, files: tuple[str, ...], subjects: int, cached: int) -> None:
         """What the dry run prints when it is asked about exactly `files`, instead of the plan for the whole diff."""
         plans_file = self.directory / "plans.json"
         plans = json.loads(plans_file.read_text())
         plans[",".join(files)] = {"dryRun": True, "subjects": subjects, "cached": cached, "batches": []}
         plans_file.write_text(json.dumps(plans))
 
-    def report(self, findings: list[dict] | None = None, **extra: object) -> None:
+    def write_report(self, findings: list[dict] | None = None, **extra: object) -> None:
         """What `jev-lint review --json` prints."""
         report = {"findings": findings or [], "spent": {"calls": 2}, **extra}
         (self.directory / "report.json").write_text(json.dumps(report))
@@ -182,6 +182,6 @@ def install_tools(executable: StubWriter, directory: Path) -> Tools:
     )
     (directory / "plans.json").write_text("{}")
     tools.plan(1, [("notes.txt", 1)])
-    tools.report([finding()])
+    tools.write_report([finding()])
     tools.behave()
     return tools

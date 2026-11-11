@@ -40,7 +40,7 @@ def test_the_message_tells_the_seconds_spent_and_the_subjects_judged(
 
 
 def test_a_clean_review_also_tells_the_seconds_spent(record: session_store.SessionRecord, tools: Tools) -> None:
-    tools.report([])
+    tools.write_report([])
 
     assert re.search(r"judged 1 of 1 subject\(s\) in \d+\.\ds", stop(record)["systemMessage"])
 
@@ -57,7 +57,7 @@ def test_the_cap_counts_only_the_cached_subjects_of_the_files_it_kept(
     record: session_store.SessionRecord, tools: Tools
 ) -> None:
     tools.plan(35, THREE_FILES, cached=5)
-    tools.plan_of_files(("a.py", "c.py"), subjects=20, cached=3)
+    tools.write_plan_of_files(("a.py", "c.py"), subjects=20, cached=3)
 
     assert "3 cached" in stop(record)["reason"]
 

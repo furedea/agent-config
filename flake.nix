@@ -27,7 +27,9 @@
       ];
       forAllSystems = nixpkgs.lib.genAttrs systems;
       pkgsFor = system: import nixpkgs { inherit system; };
-      pythonFor = pkgs: pkgs.callPackage ./nix/python.nix { };
+      # 3.15.2 is the first release whose `ssl` module denylists the compromised eMudhra
+      # intermediates; the stable nixpkgs input still ships 3.15.0.
+      pythonFor = system: nixpkgs-unstable.legacyPackages.${system}.python315;
       uvFor = pkgs: pkgs.callPackage ./nix/uv.nix { };
     in
     {
@@ -41,7 +43,7 @@
           default =
             pkgs.runCommand "agent-source"
               {
-                buildInputs = [ (pythonFor pkgs) ];
+                buildInputs = [ (pythonFor system) ];
                 # The plain source path lets consumers read files at evaluation time without import-from-derivation.
                 passthru.tree = ./agents;
               }
@@ -124,7 +126,7 @@
                 statix
               ])
               ++ [
-                (pythonFor pkgs)
+                (pythonFor system)
                 (uvFor pkgs)
               ]
               # agent-harness publishes its package for macOS only; CI installs the locked revision itself.

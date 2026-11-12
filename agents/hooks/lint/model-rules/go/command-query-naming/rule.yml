@@ -1,7 +1,9 @@
 # M-05 command/query naming (agents/AGENTS.md: "name command functions for their side effects and query functions for
 # the value they return"). Advisory: the Stop hook reports findings and never promotes this rule to a gate (ADR-0021).
 # The cutoff is the 0.5 starting value, not fitted: on this folder's fixtures the highest conforming case scored 0.45
-# and the fit would be 0.71, so the eval separates them with a margin.
+# and the fit would be 0.71, so the eval separates them with a margin. That case is the unlabelled helper
+# `reload` (conforming.go:67), which scored 0.40 to 0.48 across passes; labelling it makes replay report the FP side
+# as unstable (margin 0.05, spread 0.08), so it stays a subject judged by default.
 id: command-query-naming
 language: Go
 kind: noul

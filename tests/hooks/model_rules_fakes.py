@@ -39,7 +39,7 @@ os.execvp(child[0], child)
 """
 
 JEV_LINT = """
-import json, os, sys, time
+import json, os, sys
 dry_run = "--dry-run" in sys.argv
 with open(@CALLS@, "a") as stream:
     stream.write(json.dumps({
@@ -58,18 +58,19 @@ if dry_run:
     print(json.dumps(plans[paths]) if paths in plans else open(@PLAN@).read())
     sys.exit(0)
 print(@TOKEN@, file=sys.stderr)
-time.sleep(behavior.get("sleep", 0))
 print(open(@REPORT@).read())
 sys.exit(behavior.get("exit", 0))
 """
 
 # Stands in for /usr/bin/timeout: it ends its command at the limit and exits 124, as the real one does.
 # `status` makes it end at once the way a real one can: a positive value is an exit status, a negative one a signal.
+# `timeout_status` ends the model run and `plan_timeout_status` the planning dry runs, so each stage is tested alone.
 TIMEOUT = """
 import json, os, subprocess, sys
 with open(@CALLS@, "a") as stream:
     stream.write(json.dumps({"program": "timeout", "argv": sys.argv[1:]}) + "\\n")
-status = json.load(open(@BEHAVIOR@)).get("timeout_status")
+stage = "plan_timeout_status" if "--dry-run" in sys.argv else "timeout_status"
+status = json.load(open(@BEHAVIOR@)).get(stage)
 if status is not None and status < 0:
     os.kill(os.getpid(), -status)
 if status is not None:
@@ -142,7 +143,7 @@ class Tools:
         (self.directory / "report.json").write_text(text)
 
     def behave(self, **behavior: object) -> None:
-        """Make the fake `jev-lint` exit with a status or sleep before it answers."""
+        """Make the fake `jev-lint` exit with a status, or the fake `timeout` end at once with `timeout_status`."""
         (self.directory / "behavior.json").write_text(json.dumps(behavior))
 
 

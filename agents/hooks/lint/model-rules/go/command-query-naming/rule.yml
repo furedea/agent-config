@@ -1,7 +1,8 @@
 # M-05 command/query naming (agents/AGENTS.md: "name command functions for their side effects and query functions for
 # the value they return"). Advisory: the Stop hook reports findings and never promotes this rule to a gate (ADR-0021).
-# The cutoff is the 0.5 starting value, not fitted: on this folder's fixtures the highest conforming case scored 0.25
-# and the fit would be 0.61, so the eval separates them with a wide margin.
+# The cutoff is the 0.5 starting value, not fitted: on this folder's fixtures the highest conforming case scored 0.30
+# and the fit would be 0.63. That is a margin of 0.20 from the cutoff, close to the 0.25 line at which replay can call
+# a suite blind, so this boundary is still near the edge.
 id: command-query-naming
 language: Go
 kind: noul
@@ -9,7 +10,6 @@ subject: node
 # The function plus the same file's imports and enclosing declarations; no other file is sent.
 state: local
 threshold: 0.5
-inconclusive: The highest conforming case scores about 0.25, just at the 0.25 margin from the 0.5 cutoff, so replay flips between blind and not blind from run to run; a clean fixture nearer the cutoff is the follow-up (#164).
 axis: file
 severity: warning
 rule:

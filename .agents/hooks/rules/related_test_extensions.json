@@ -439,6 +439,7 @@
   "agents/hooks/cleanup_worktrees.py": [
     "tests/hooks/test_cleanup_worktrees_isolation.py",
     "tests/hooks/test_cleanup_worktrees_trust.py",
+    "tests/hooks/test_cleanup_worktrees_keep_reason.py",
     "tests/hooks/test_cleanup_command.py"
   ],
   "agents/hooks/guard_suppression.py": [

@@ -13,4 +13,4 @@ fixtures/conforming.go:
   - { line: 39, label: clean, window: 1 }
   - { line: 43, label: clean, window: 1 }
   - { line: 54, label: clean, window: 1, why: "boundary: a read that sorts a copy changes only its own local, not the argument" }
-  - { line: 63, label: clean, window: 1, why: "boundary: an effect-named command whose effect is done by the helper it calls" }
+  - { line: 63, label: clean, window: 1, why: "boundary: an effect-named command that reads a file but whose effect is replacing its own field" }

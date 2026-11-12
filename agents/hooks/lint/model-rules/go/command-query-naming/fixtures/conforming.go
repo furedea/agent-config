@@ -61,10 +61,6 @@ func FindLargest(values []int) int {
 }
 
 func (r *Review) Refresh(path string) error {
-	return r.reload(path)
-}
-
-func (r *Review) reload(path string) error {
 	body, err := os.ReadFile(path)
 	if err != nil {
 		return err

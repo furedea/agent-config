@@ -102,6 +102,18 @@ def test_every_way_timeout_reports_an_expired_deadline_is_a_timeout(
     assert "timed out" in result["systemMessage"]
 
 
+def test_a_timed_out_planning_dry_run_ends_the_run_before_the_model_is_asked(
+    record: session_store.SessionRecord, tools: Tools
+) -> None:
+    tools.behave(plan_timeout_status=124)
+
+    result = stop(record)
+
+    assert "decision" not in result
+    assert "timed out" in result["systemMessage"]
+    assert [call for call in tools.calls("timeout") if "--environment" in call["argv"]] == []
+
+
 def test_only_the_op_process_receives_the_token_and_only_allowlisted_variables(
     record: session_store.SessionRecord, tools: Tools, monkeypatch: pytest.MonkeyPatch
 ) -> None:

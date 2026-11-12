@@ -22,6 +22,7 @@
     "tests/hooks/test_command_cli.py",
     "tests/hooks/test_command_policy.py",
     "tests/hooks/test_allowed_gh_api.py",
+    "tests/hooks/test_allowed_graphql.py",
     "tests/hooks/test_request_command.py"
   ],
   "agents/hooks/rules/forbidden_commands.json": [

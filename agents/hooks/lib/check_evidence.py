@@ -4,6 +4,17 @@ import re
 from dataclasses import dataclass
 
 ANSI = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
+TAP_FOOTER = re.compile(r"^\S (pass|fail|cancelled|skipped|todo) (\d+)")
+OUTCOME_KIND = {
+    "passed": "passed",
+    "pass": "passed",
+    "failed": "failed",
+    "fail": "failed",
+    "cancelled": "failed",
+    "skipped": "skipped",
+    "todo": "skipped",
+    "ignored": "skipped",
+}
 DISPLAY_ORDER = {
     "pytest": 0,
     "rust": 1,
@@ -51,22 +62,60 @@ def summarize(label: str, output: str) -> Evidence:
         summary = re.sub(r" in [0-9.]+s.*$", "", summaries[-1].strip("= "))
         executed = sum(int(count) for count in re.findall(r"(\d+) (?:passed|failed|xfailed|xpassed)\b", summary))
         return Evidence(re.sub(r", 0 (failed|skipped)", "", summary), executed)
-    summaries = [
-        line.strip()
-        for line in lines
-        if re.match(r"^\s*(Tests:|Tests\s+|test result:|# (tests|pass|fail|skipped|todo|cancelled) \d)", line)
-    ]
-    observed: list[int] = []
-    for line in lines:
-        if label == "rust" and line.startswith("test result:"):
-            observed.append(sum(int(count) for count in re.findall(r"(\d+) (?:passed|failed);", line)))
-        elif label in {"vitest", "jest"} and re.match(r"^\s*Tests[:\s]", line):
-            observed.append(sum(int(count) for count in re.findall(r"(\d+) (?:passed|failed)\b", line)))
-        elif label in {"vitest", "jest"} and re.match(r"^\s*No test (files|suites|tests)?\s*found", line):
-            observed.append(0)
-        elif label == "node" and (match := re.match(r"^# (?:pass|fail) (\d+)", line)):
-            observed.append(int(match[1]))
-    return Evidence("; ".join(summaries) or "test count unavailable", sum(observed) if observed else None)
+    if label == "rust":
+        return summarize_rust(lines)
+    return summarize_javascript(lines)
+
+
+@dataclass(frozen=True, slots=True)
+class Counts:
+    """Outcome totals of one runner invocation, reported as `N passed[, F failed][, S skipped]`."""
+
+    passed: int = 0
+    failed: int = 0
+    skipped: int = 0
+
+    @classmethod
+    def tally(cls, found: list[tuple[str, str]]) -> Counts:
+        """Sum (count, outcome) pairs; todo and ignored tests count as skipped."""
+        totals = {"passed": 0, "failed": 0, "skipped": 0}
+        for count, outcome in found:
+            totals[OUTCOME_KIND[outcome]] += int(count)
+        return cls(**totals)
+
+    def evidence(self, skipped_word: str = "skipped") -> Evidence:
+        """Name the skipped count with the runner's own word; observations are passed plus failed."""
+        summary = f"{self.passed} passed"
+        if self.failed:
+            summary += f", {self.failed} failed"
+        if self.skipped:
+            summary += f", {self.skipped} {skipped_word}"
+        return Evidence(summary, self.passed + self.failed)
+
+
+def summarize_rust(lines: list[str]) -> Evidence:
+    """Sum every `test result:` line; cargo prints one per test binary."""
+    results = [line for line in lines if line.startswith("test result:")]
+    if not results:
+        return Evidence("test count unavailable", None)
+    return Counts.tally(
+        [pair for line in results for pair in re.findall(r"(\d+) (passed|failed|ignored);", line)]
+    ).evidence("ignored")
+
+
+def summarize_javascript(lines: list[str]) -> Evidence:
+    """Sum every vitest/jest `Tests` line or node footer (TAP or spec); repeated runs add up to one count."""
+    tests_lines = [line for line in lines if re.match(r"^\s*Tests[:\s]", line)]
+    if tests_lines:
+        return Counts.tally(
+            [pair for line in tests_lines for pair in re.findall(r"(\d+) (passed|failed|skipped|todo)\b", line)]
+        ).evidence()
+    footer = [(match[2], match[1]) for match in map(TAP_FOOTER.match, lines) if match]
+    if any(outcome in {"pass", "fail", "cancelled"} for _, outcome in footer):
+        return Counts.tally(footer).evidence()
+    if any(re.match(r"^\s*No test (files|suites|tests)?\s*found", line) for line in lines):
+        return Evidence("test count unavailable", 0)
+    return Evidence("test count unavailable", None)
 
 
 def summarize_go(lines: list[str]) -> Evidence:

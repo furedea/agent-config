@@ -32,6 +32,78 @@ def test_executed_count_distinguishes_absence_from_unknown(label: str, text: str
     assert output.summarize(label, text).executed == executed
 
 
+CARGO_TWO_BINARIES = """\
+running 3 tests
+test result: ok. 3 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+running 2 tests
+test result: FAILED. 2 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+"""
+NODE_TAP_FOOTER = """\
+# tests 5
+# suites 0
+# pass 3
+# fail 1
+# cancelled 0
+# skipped 1
+# todo 0
+# duration_ms 52.1
+"""
+NODE_TAP_ALL_PASS = "# tests 2\n# suites 0\n# pass 2\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n"
+VITEST_OUTPUT = (
+    " Test Files  2 passed (2)\n      Tests  1 failed | 2 skipped | 1 todo | 9 passed (13)\n   Duration  1.2s"
+)
+VITEST_ALL_PASS = " Test Files  1 passed (1)\n      Tests  12 passed (12)"
+JEST_OUTPUT = "Test Suites: 1 failed, 1 total\nTests:       1 failed, 2 skipped, 1 todo, 4 passed, 8 total"
+JEST_ALL_PASS = "Tests:       5 passed, 5 total"
+NODE_TAP_CANCELLED = "# tests 3\n# pass 2\n# fail 0\n# cancelled 1\n# skipped 0\n# todo 0\n"
+NODE_SPEC_FOOTER = NODE_TAP_FOOTER.replace("# ", chr(0x2139) + " ")
+TWO_JEST_RUNS = "Tests:       5 passed, 5 total\nTests:       1 failed, 2 passed, 3 total"
+
+
+@pytest.mark.parametrize(
+    ("label", "text", "summary"),
+    [
+        ("rust", CARGO_TWO_BINARIES, "5 passed, 1 failed, 1 ignored"),
+        ("rust", "test result: ok. 312 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out", "312 passed"),
+        ("node", NODE_TAP_FOOTER, "3 passed, 1 failed, 1 skipped"),
+        ("node", NODE_TAP_ALL_PASS, "2 passed"),
+        ("npm test", NODE_TAP_FOOTER, "3 passed, 1 failed, 1 skipped"),
+        ("bun test", NODE_TAP_ALL_PASS, "2 passed"),
+        ("vitest", VITEST_OUTPUT, "9 passed, 1 failed, 3 skipped"),
+        ("vitest", VITEST_ALL_PASS, "12 passed"),
+        ("jest", JEST_OUTPUT, "4 passed, 1 failed, 3 skipped"),
+        ("jest", JEST_ALL_PASS, "5 passed"),
+        ("jest", TWO_JEST_RUNS, "7 passed, 1 failed"),
+        ("node", NODE_TAP_CANCELLED, "2 passed, 1 failed"),
+        ("node", NODE_SPEC_FOOTER, "3 passed, 1 failed, 1 skipped"),
+        ("go", "ok  \texample/a\t0.01s\nok  \texample/b\t0.02s", "2 packages tested"),
+        ("pytest", "= 4 passed, 1 skipped in 0.1s =", "4 passed, 1 skipped"),
+        ("bats", "1..2\nok 1 a\nnot ok 2 b", "1 passed, 1 failed"),
+    ],
+)
+def test_every_runner_reports_one_count_line(label: str, text: str, summary: str) -> None:
+    assert output.summarize(label, text).summary == summary
+
+
+@pytest.mark.parametrize(
+    ("label", "text", "executed"),
+    [
+        ("rust", CARGO_TWO_BINARIES, 6),
+        ("node", NODE_TAP_FOOTER, 4),
+        ("vitest", VITEST_OUTPUT, 10),
+        ("jest", JEST_OUTPUT, 5),
+    ],
+)
+def test_executed_excludes_skipped_and_ignored_tests(label: str, text: str, executed: int) -> None:
+    assert output.summarize(label, text).executed == executed
+
+
+@pytest.mark.parametrize("label", ["rust", "node", "npm test", "vitest", "jest"])
+def test_unrecognized_runner_output_stays_unavailable(label: str) -> None:
+    assert output.summarize(label, "smoke: ok\nall scripts passed") == output.Evidence("test count unavailable", None)
+
+
 def test_partial_bats_plan_is_visible() -> None:
     assert output.summarize("bats", "1..3\nok 1 first").summary == "1 passed (partial results; 3 planned)"
 

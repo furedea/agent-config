@@ -3,6 +3,7 @@ package fixture
 import (
 	"errors"
 	"os"
+	"slices"
 	"strconv"
 )
 
@@ -48,4 +49,30 @@ func LoadPort(name string) (int, error) {
 		return 0, errors.New("port must be positive")
 	}
 	return port, nil
+}
+
+func FindLargest(values []int) int {
+	sorted := slices.Clone(values)
+	slices.Sort(sorted)
+	if len(sorted) == 0 {
+		return 0
+	}
+	return sorted[len(sorted)-1]
+}
+
+func (r *Review) Refresh(path string) error {
+	return r.reload(path)
+}
+
+func (r *Review) reload(path string) error {
+	body, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	score, err := strconv.ParseFloat(string(body), 64)
+	if err != nil {
+		return err
+	}
+	r.scores = []float64{score}
+	return nil
 }

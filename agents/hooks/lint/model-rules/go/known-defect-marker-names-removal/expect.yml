@@ -1,6 +1,8 @@
 default: clean
 # Lines are the t.Skip call. violating_test.go: a skip for a known defect with no removal condition.
-# conforming_test.go: a condition in a comment or in the message, and skips that are not for a defect.
+# conforming_test.go: a condition in a comment or in the message, and skips that are not for a defect; the last two
+# are boundary cases that look like a violation (a toolchain gap with a version in the message, a comment that names
+# the release that carries the fix).
 fixtures/violating_test.go:
   - { line: 6, label: bad, window: 1 }
   - { line: 10, label: bad, window: 1 }
@@ -11,9 +13,11 @@ fixtures/violating_test.go:
   - { line: 32, label: bad, window: 1 }
   - { line: 37, label: bad, window: 1 }
 fixtures/conforming_test.go:
-  - { line: 10, label: clean, window: 1 }
-  - { line: 14, label: clean, window: 1 }
-  - { line: 19, label: clean, window: 1 }
-  - { line: 25, label: clean, window: 1 }
-  - { line: 30, label: clean, window: 1 }
-  - { line: 35, label: clean, window: 1 }
+  - { line: 11, label: clean, window: 1 }
+  - { line: 15, label: clean, window: 1 }
+  - { line: 20, label: clean, window: 1 }
+  - { line: 26, label: clean, window: 1 }
+  - { line: 31, label: clean, window: 1 }
+  - { line: 36, label: clean, window: 1 }
+  - { line: 41, label: clean, window: 1, why: "boundary: skipped for a missing toolchain feature, not a defect; the message names the version it needs" }
+  - { line: 47, label: clean, window: 1, why: "boundary: a known defect whose comment names the release that carries the fix" }

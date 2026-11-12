@@ -28,6 +28,8 @@ LOCK_TIMEOUT_SECONDS = 30.0
 OUTPUT_LIMIT_BYTES = 8 * 1024 * 1024
 # Nothing else is passed on: TYPESAFE_BASE_URL or JEV_LINT_CACHE would redirect the code or the cache.
 ENVIRONMENT_ALLOWLIST = ("HOME", "USER", "LANG", "LC_ALL", "XDG_STATE_HOME", "TMPDIR")
+# Set by us, never inherited: git must read every path handed to `jev-lint` as a file name, not as a pathspec pattern.
+FIXED_ENVIRONMENT = {"GIT_LITERAL_PATHSPECS": "1"}
 TOKEN_VARIABLE = "OP_SERVICE_ACCOUNT_TOKEN"
 TIMEOUT_PROGRAM = "/usr/bin/timeout"
 DEADLINE_SIGNAL = "TERM"
@@ -179,7 +181,7 @@ def cache_path(state_directory: Path) -> Path:
 def _environment(extra: dict[str, str] | None = None) -> dict[str, str]:
     """The allowlisted variables and a PATH of trusted directories only, never the caller's PATH."""
     allowed = {name: os.environ[name] for name in ENVIRONMENT_ALLOWLIST if name in os.environ}
-    return {**allowed, "PATH": model_rules_programs.search_path(), **(extra or {})}
+    return {**allowed, **FIXED_ENVIRONMENT, "PATH": model_rules_programs.search_path(), **(extra or {})}
 
 
 @dataclass(frozen=True, slots=True)

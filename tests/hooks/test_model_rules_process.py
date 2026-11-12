@@ -107,7 +107,11 @@ def test_only_the_op_process_receives_the_token_and_only_allowlisted_variables(
 ) -> None:
     monkeypatch.setenv("TYPESAFE_BASE_URL", "https://example.invalid")
     monkeypatch.setenv("JEV_LINT_CACHE", "none")
-    allowed = set(model_rules_run.ENVIRONMENT_ALLOWLIST) | {"PATH", "OP_SERVICE_ACCOUNT_TOKEN"}
+    allowed = (
+        set(model_rules_run.ENVIRONMENT_ALLOWLIST)
+        | set(model_rules_run.FIXED_ENVIRONMENT)
+        | {"PATH", "OP_SERVICE_ACCOUNT_TOKEN"}
+    )
 
     stop(record)
 
@@ -120,6 +124,18 @@ def test_only_the_op_process_receives_the_token_and_only_allowlisted_variables(
         assert not dry_run["has_token"]
         assert platform_free(dry_run["env_names"]) <= allowed
     assert all(FAKE_TOKEN not in argument for call in tools.calls() for argument in call["argv"])
+
+
+def test_every_jev_lint_run_reads_paths_literally_whatever_the_caller_environment(
+    record: session_store.SessionRecord, tools: Tools, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("GIT_LITERAL_PATHSPECS", "0")
+
+    stop(record)
+
+    runs = tools.calls("jev-lint")
+    assert runs
+    assert {run["literal_pathspecs"] for run in runs} == {"1"}
 
 
 def test_the_token_never_reaches_the_output_even_when_a_tool_prints_it(record: session_store.SessionRecord) -> None:

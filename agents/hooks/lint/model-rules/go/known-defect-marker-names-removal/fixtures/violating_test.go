@@ -27,3 +27,12 @@ func TestSkipNow(t *testing.T) {
 func (s *Suite) TestSuiteSkip() {
 	s.T().Skip("broken")
 }
+
+func TestTracked(t *testing.T) {
+	t.Skip("known bug, tracked in #123")
+}
+
+func TestUnstable(t *testing.T) {
+	// Fails since the last refactor.
+	t.Skip("known defect in the importer")
+}

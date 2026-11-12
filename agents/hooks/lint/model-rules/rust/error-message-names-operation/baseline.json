@@ -1,12 +1,12 @@
 {
   "schema": "jev-lint-eval-1",
-  "recorded": "2026-11-11T16:48:21.851Z",
+  "recorded": "2026-11-11T19:12:44.502Z",
   "model": "jev-1.14.0",
   "suite": "rust/error-message-names-operation",
   "rules": [
     {
       "id": "error-message-names-operation",
-      "draft": "02afacb24d13",
+      "draft": "d8fb9ae0e24a",
       "at": 0.5
     }
   ],
@@ -15,56 +15,11 @@
     [
       {
         "rule": "error-message-names-operation",
-        "file": "agents/hooks/lint/model-rules/rust/error-message-names-operation/fixtures/violating.rs",
-        "line": 3,
-        "endLine": 8,
-        "kind": "noul",
-        "value": 0.98,
-        "confidence": null
-      },
-      {
-        "rule": "error-message-names-operation",
-        "file": "agents/hooks/lint/model-rules/rust/error-message-names-operation/fixtures/violating.rs",
-        "line": 10,
-        "endLine": 15,
-        "kind": "noul",
-        "value": 0.97,
-        "confidence": null
-      },
-      {
-        "rule": "error-message-names-operation",
-        "file": "agents/hooks/lint/model-rules/rust/error-message-names-operation/fixtures/violating.rs",
-        "line": 17,
-        "endLine": 22,
-        "kind": "noul",
-        "value": 0.92,
-        "confidence": null
-      },
-      {
-        "rule": "error-message-names-operation",
-        "file": "agents/hooks/lint/model-rules/rust/error-message-names-operation/fixtures/violating.rs",
-        "line": 24,
-        "endLine": 29,
-        "kind": "noul",
-        "value": 0.95,
-        "confidence": null
-      },
-      {
-        "rule": "error-message-names-operation",
-        "file": "agents/hooks/lint/model-rules/rust/error-message-names-operation/fixtures/violating.rs",
-        "line": 31,
-        "endLine": 33,
-        "kind": "noul",
-        "value": 0.96,
-        "confidence": null
-      },
-      {
-        "rule": "error-message-names-operation",
         "file": "agents/hooks/lint/model-rules/rust/error-message-names-operation/fixtures/conforming.rs",
         "line": 3,
         "endLine": 8,
         "kind": "noul",
-        "value": 0.05,
+        "value": 0.06,
         "confidence": null
       },
       {
@@ -73,7 +28,7 @@
         "line": 10,
         "endLine": 15,
         "kind": "noul",
-        "value": 0.1,
+        "value": 0.08,
         "confidence": null
       },
       {
@@ -91,7 +46,7 @@
         "line": 28,
         "endLine": 34,
         "kind": "noul",
-        "value": 0.09,
+        "value": 0.13,
         "confidence": null
       },
       {
@@ -100,7 +55,97 @@
         "line": 36,
         "endLine": 38,
         "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "agents/hooks/lint/model-rules/rust/error-message-names-operation/fixtures/conforming.rs",
+        "line": 40,
+        "endLine": 44,
+        "kind": "noul",
         "value": 0.08,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "agents/hooks/lint/model-rules/rust/error-message-names-operation/fixtures/conforming.rs",
+        "line": 46,
+        "endLine": 49,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "agents/hooks/lint/model-rules/rust/error-message-names-operation/fixtures/violating.rs",
+        "line": 3,
+        "endLine": 8,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "agents/hooks/lint/model-rules/rust/error-message-names-operation/fixtures/violating.rs",
+        "line": 10,
+        "endLine": 15,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "agents/hooks/lint/model-rules/rust/error-message-names-operation/fixtures/violating.rs",
+        "line": 17,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.92,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "agents/hooks/lint/model-rules/rust/error-message-names-operation/fixtures/violating.rs",
+        "line": 24,
+        "endLine": 29,
+        "kind": "noul",
+        "value": 0.94,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "agents/hooks/lint/model-rules/rust/error-message-names-operation/fixtures/violating.rs",
+        "line": 31,
+        "endLine": 33,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "agents/hooks/lint/model-rules/rust/error-message-names-operation/fixtures/violating.rs",
+        "line": 35,
+        "endLine": 37,
+        "kind": "noul",
+        "value": 0.94,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "agents/hooks/lint/model-rules/rust/error-message-names-operation/fixtures/violating.rs",
+        "line": 39,
+        "endLine": 43,
+        "kind": "noul",
+        "value": 0.65,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "agents/hooks/lint/model-rules/rust/error-message-names-operation/fixtures/violating.rs",
+        "line": 45,
+        "endLine": 47,
+        "kind": "noul",
+        "value": 0.79,
         "confidence": null
       }
     ],
@@ -147,7 +192,34 @@
         "line": 31,
         "endLine": 33,
         "kind": "noul",
-        "value": 0.97,
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "agents/hooks/lint/model-rules/rust/error-message-names-operation/fixtures/violating.rs",
+        "line": 35,
+        "endLine": 37,
+        "kind": "noul",
+        "value": 0.94,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "agents/hooks/lint/model-rules/rust/error-message-names-operation/fixtures/violating.rs",
+        "line": 39,
+        "endLine": 43,
+        "kind": "noul",
+        "value": 0.62,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "agents/hooks/lint/model-rules/rust/error-message-names-operation/fixtures/violating.rs",
+        "line": 45,
+        "endLine": 47,
+        "kind": "noul",
+        "value": 0.81,
         "confidence": null
       },
       {
@@ -165,7 +237,7 @@
         "line": 10,
         "endLine": 15,
         "kind": "noul",
-        "value": 0.08,
+        "value": 0.09,
         "confidence": null
       },
       {
@@ -174,7 +246,7 @@
         "line": 21,
         "endLine": 26,
         "kind": "noul",
-        "value": 0.03,
+        "value": 0.05,
         "confidence": null
       },
       {
@@ -183,7 +255,7 @@
         "line": 28,
         "endLine": 34,
         "kind": "noul",
-        "value": 0.08,
+        "value": 0.14,
         "confidence": null
       },
       {
@@ -192,7 +264,25 @@
         "line": 36,
         "endLine": 38,
         "kind": "noul",
-        "value": 0.09,
+        "value": 0.07,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "agents/hooks/lint/model-rules/rust/error-message-names-operation/fixtures/conforming.rs",
+        "line": 40,
+        "endLine": 44,
+        "kind": "noul",
+        "value": 0.12,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "agents/hooks/lint/model-rules/rust/error-message-names-operation/fixtures/conforming.rs",
+        "line": 46,
+        "endLine": 49,
+        "kind": "noul",
+        "value": 0.07,
         "confidence": null
       }
     ],
@@ -203,7 +293,7 @@
         "line": 3,
         "endLine": 8,
         "kind": "noul",
-        "value": 0.06,
+        "value": 0.07,
         "confidence": null
       },
       {
@@ -212,7 +302,7 @@
         "line": 10,
         "endLine": 15,
         "kind": "noul",
-        "value": 0.13,
+        "value": 0.16,
         "confidence": null
       },
       {
@@ -221,7 +311,7 @@
         "line": 21,
         "endLine": 26,
         "kind": "noul",
-        "value": 0.03,
+        "value": 0.04,
         "confidence": null
       },
       {
@@ -239,7 +329,25 @@
         "line": 36,
         "endLine": 38,
         "kind": "noul",
-        "value": 0.09,
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "agents/hooks/lint/model-rules/rust/error-message-names-operation/fixtures/conforming.rs",
+        "line": 40,
+        "endLine": 44,
+        "kind": "noul",
+        "value": 0.1,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "agents/hooks/lint/model-rules/rust/error-message-names-operation/fixtures/conforming.rs",
+        "line": 46,
+        "endLine": 49,
+        "kind": "noul",
+        "value": 0.08,
         "confidence": null
       },
       {
@@ -275,7 +383,7 @@
         "line": 24,
         "endLine": 29,
         "kind": "noul",
-        "value": 0.94,
+        "value": 0.93,
         "confidence": null
       },
       {
@@ -284,15 +392,42 @@
         "line": 31,
         "endLine": 33,
         "kind": "noul",
-        "value": 0.97,
+        "value": 0.94,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "agents/hooks/lint/model-rules/rust/error-message-names-operation/fixtures/violating.rs",
+        "line": 35,
+        "endLine": 37,
+        "kind": "noul",
+        "value": 0.94,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "agents/hooks/lint/model-rules/rust/error-message-names-operation/fixtures/violating.rs",
+        "line": 39,
+        "endLine": 43,
+        "kind": "noul",
+        "value": 0.63,
+        "confidence": null
+      },
+      {
+        "rule": "error-message-names-operation",
+        "file": "agents/hooks/lint/model-rules/rust/error-message-names-operation/fixtures/violating.rs",
+        "line": 45,
+        "endLine": 47,
+        "kind": "noul",
+        "value": 0.8,
         "confidence": null
       }
     ]
   ],
   "spent": {
     "calls": 6,
-    "inputTokens": 13158,
-    "usd": 0.000552636,
-    "ms": 160
+    "inputTokens": 18975,
+    "usd": 0.00079695,
+    "ms": 202
   }
 }

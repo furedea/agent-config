@@ -16,11 +16,27 @@ rule:
     - kind: function_item
     - has: { field: name, pattern: $NAME }
     # `#[test]` may be followed by other attributes or comments, so look back through all of them. A test attribute
-    # added by `cfg_attr` counts too: `test` listed after the condition, not the condition `cfg_attr(test, ..)`.
+    # added by `cfg_attr` counts too, matched on the attribute nodes: `cfg_attr`'s arguments are one flat token list in
+    # which the condition is nested or ends at the first comma, so a `test` that directly follows a comma or a `::` is
+    # in the attribute list, while `cfg_attr(test, ..)` and a `test` inside another attribute's arguments are not.
     - not:
         follows:
           kind: attribute_item
-          regex: (?s)^#\[(([A-Za-z_][A-Za-z0-9_]*::)*test\b|cfg_attr\(.*,\s*([A-Za-z_][A-Za-z0-9_]*::)*test\s*(,|\)\]))
+          has:
+            kind: attribute
+            any:
+              - regex: ^([A-Za-z_][A-Za-z0-9_]*::)*test\b
+              - all:
+                  - has: { kind: identifier, regex: ^cfg_attr$ }
+                  - has:
+                      field: arguments
+                      kind: token_tree
+                      has:
+                        kind: identifier
+                        regex: ^test$
+                        any:
+                          - follows: { regex: "^,$", stopBy: neighbor }
+                          - follows: { regex: "^::$", stopBy: neighbor }
           stopBy:
             not:
               any:

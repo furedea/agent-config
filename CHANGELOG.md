@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.1.2](https://github.com/furedea/agent-config/compare/v0.1.1...v0.1.2) (2026-11-12)
+
+
+### Features
+
+* **hooks:** add Go and Rust model rules with eval fixtures ([#158](https://github.com/furedea/agent-config/issues/158)) ([9731488](https://github.com/furedea/agent-config/commit/973148896e9e7031fc1f50fa9842f0b817293db2))
+* **hooks:** show model-rule timing and skip rule fixtures ([#157](https://github.com/furedea/agent-config/issues/157)) ([d0c32ae](https://github.com/furedea/agent-config/commit/d0c32aecf3aa56130307d3e2fc33310a07f8b043))
+* **hooks:** show the model rules as one result line with cost ([#170](https://github.com/furedea/agent-config/issues/170)) ([41b9033](https://github.com/furedea/agent-config/commit/41b90332b1a1df9d8a12f496fe272a63d73fab53))
+
+
+### Bug Fixes
+
+* **hooks:** allow a jq filter after read-only GraphQL queries ([#180](https://github.com/furedea/agent-config/issues/180)) ([cfb80d8](https://github.com/furedea/agent-config/commit/cfb80d89010d26cdf2f235a060ff005a1f309722))
+* **hooks:** keep model-rule eval fixtures out of Stop test verification ([#160](https://github.com/furedea/agent-config/issues/160)) ([a4f1c6c](https://github.com/furedea/agent-config/commit/a4f1c6cdc645d081e63744f2ea29ba30a86af273))
+* **hooks:** read paths literally in every jev-lint child process ([#173](https://github.com/furedea/agent-config/issues/173)) ([0d2c683](https://github.com/furedea/agent-config/commit/0d2c6831de4271cd9efc5d9fc532ac4c995aec62))
+* **hooks:** remove model-rule false positives with principles and eval fixtures ([#163](https://github.com/furedea/agent-config/issues/163)) ([b07fc4e](https://github.com/furedea/agent-config/commit/b07fc4e5ed4d332b78664e59878beeeffc803b3f))
+* **hooks:** report one count per runner in the Stop test lines ([#177](https://github.com/furedea/agent-config/issues/177)) ([0f36b82](https://github.com/furedea/agent-config/commit/0f36b826e2e702090702c53d6405523fec5c7687))
+* **hooks:** take the model-rule cached count from the dry-run plan ([#167](https://github.com/furedea/agent-config/issues/167)) ([c87fdfd](https://github.com/furedea/agent-config/commit/c87fdfda19b0170e5513952a877484506c7415b8))
+
 ## [0.1.1](https://github.com/furedea/agent-config/compare/v0.1.0...v0.1.1) (2026-11-11)
 
 

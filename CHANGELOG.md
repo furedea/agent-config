@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/furedea/agent-config/compare/v0.1.2...v0.1.3) (2026-11-12)
+
+
+### Bug Fixes
+
+* **hooks:** report why a merged branch's worktree is kept ([#184](https://github.com/furedea/agent-config/issues/184)) ([5164b3a](https://github.com/furedea/agent-config/commit/5164b3a616072953b8103f639153248e3353a8bf))
+
 ## [0.1.2](https://github.com/furedea/agent-config/compare/v0.1.1...v0.1.2) (2026-11-12)
 
 

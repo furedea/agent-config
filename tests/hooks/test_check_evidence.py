@@ -56,6 +56,9 @@ VITEST_OUTPUT = (
 VITEST_ALL_PASS = " Test Files  1 passed (1)\n      Tests  12 passed (12)"
 JEST_OUTPUT = "Test Suites: 1 failed, 1 total\nTests:       1 failed, 2 skipped, 1 todo, 4 passed, 8 total"
 JEST_ALL_PASS = "Tests:       5 passed, 5 total"
+NODE_TAP_CANCELLED = "# tests 3\n# pass 2\n# fail 0\n# cancelled 1\n# skipped 0\n# todo 0\n"
+NODE_SPEC_FOOTER = NODE_TAP_FOOTER.replace("# ", chr(0x2139) + " ")
+TWO_JEST_RUNS = "Tests:       5 passed, 5 total\nTests:       1 failed, 2 passed, 3 total"
 
 
 @pytest.mark.parametrize(
@@ -71,6 +74,9 @@ JEST_ALL_PASS = "Tests:       5 passed, 5 total"
         ("vitest", VITEST_ALL_PASS, "12 passed"),
         ("jest", JEST_OUTPUT, "4 passed, 1 failed, 3 skipped"),
         ("jest", JEST_ALL_PASS, "5 passed"),
+        ("jest", TWO_JEST_RUNS, "7 passed, 1 failed"),
+        ("node", NODE_TAP_CANCELLED, "2 passed, 1 failed"),
+        ("node", NODE_SPEC_FOOTER, "3 passed, 1 failed, 1 skipped"),
         ("go", "ok  \texample/a\t0.01s\nok  \texample/b\t0.02s", "2 packages tested"),
         ("pytest", "= 4 passed, 1 skipped in 0.1s =", "4 passed, 1 skipped"),
         ("bats", "1..2\nok 1 a\nnot ok 2 b", "1 passed, 1 failed"),

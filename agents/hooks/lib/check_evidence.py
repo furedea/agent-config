@@ -4,12 +4,13 @@ import re
 from dataclasses import dataclass
 
 ANSI = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
-TAP_FOOTER = re.compile(r"^# (pass|fail|skipped|todo) (\d+)")
+TAP_FOOTER = re.compile(r"^\S (pass|fail|cancelled|skipped|todo) (\d+)")
 OUTCOME_KIND = {
     "passed": "passed",
     "pass": "passed",
     "failed": "failed",
     "fail": "failed",
+    "cancelled": "failed",
     "skipped": "skipped",
     "todo": "skipped",
     "ignored": "skipped",
@@ -103,12 +104,14 @@ def summarize_rust(lines: list[str]) -> Evidence:
 
 
 def summarize_javascript(lines: list[str]) -> Evidence:
-    """Read a vitest/jest `Tests` line or a node TAP footer; both are reduced to one count."""
-    for line in lines:
-        if re.match(r"^\s*Tests[:\s]", line):
-            return Counts.tally(re.findall(r"(\d+) (passed|failed|skipped|todo)\b", line)).evidence()
+    """Sum every vitest/jest `Tests` line or node footer (TAP or spec); repeated runs add up to one count."""
+    tests_lines = [line for line in lines if re.match(r"^\s*Tests[:\s]", line)]
+    if tests_lines:
+        return Counts.tally(
+            [pair for line in tests_lines for pair in re.findall(r"(\d+) (passed|failed|skipped|todo)\b", line)]
+        ).evidence()
     footer = [(match[2], match[1]) for match in map(TAP_FOOTER.match, lines) if match]
-    if any(outcome in {"pass", "fail"} for _, outcome in footer):
+    if any(outcome in {"pass", "fail", "cancelled"} for _, outcome in footer):
         return Counts.tally(footer).evidence()
     if any(re.match(r"^\s*No test (files|suites|tests)?\s*found", line) for line in lines):
         return Evidence("test count unavailable", 0)

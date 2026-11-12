@@ -46,3 +46,12 @@ func TestUntilRelease(t *testing.T) {
 	// The upstream bug is tracked in #88; this stays skipped until the v2 client release that carries its fix.
 	t.Skip("upstream client drops the last frame")
 }
+
+func TestPinnedTransport(t *testing.T) {
+	// Fixed upstream in x/net v0.40.0; remove the skip when go.mod requires that version or later.
+	t.Skip("http2 server resets the stream")
+}
+
+func TestUpstreamTicket(t *testing.T) {
+	t.Skip("broken, tracked in example/transport#412; remove once that issue is closed")
+}

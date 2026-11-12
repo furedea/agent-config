@@ -1,7 +1,7 @@
 # M-60 a known-defect marker carries a comment naming the condition for removing it
 # (agents/skills/python-style/references/testing.md, which states it for xfail). Go has no expected-failure marker
 # (go-style/references/testing.md), so a test skipped for a known defect is the marker here. Advisory. The cutoff
-# is the 0.5 starting value, not fitted: on this folder's fixtures the highest conforming case scored 0.12.
+# is the 0.5 starting value, not fitted: on this folder's fixtures the highest conforming case scored 0.27.
 id: known-defect-marker-names-removal
 language: Go
 divergent: Go has no xfail; the marker is a skipped test, and a skip for another reason is not a violation.
@@ -10,7 +10,6 @@ subject: node
 # The comment sits above the call statement, outside the call, so the arm that sends the file is used.
 state: located
 threshold: 0.5
-inconclusive: The highest conforming case scores about 0.25, just at the 0.25 margin from the 0.5 cutoff, so replay flips between blind and not blind from run to run; a clean fixture nearer the cutoff is the follow-up (#164).
 axis: file
 severity: warning
 rule:

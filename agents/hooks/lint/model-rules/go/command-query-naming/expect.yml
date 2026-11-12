@@ -2,7 +2,7 @@ default: clean
 # Lines are the first line of each function; a window of 1 keeps neighbouring functions apart.
 # violating.go: the verb promises a pure read or an effect and the body does the other.
 # conforming.go: the explicit cleans are the hard ones, whose verb promises neither (check, judge, load), and the
-# boundary ones, which look like a violation but conform (a read that sorts its own copy, an effect done by a helper).
+# boundary ones, which look like a violation but conform (a read that sorts its own copy, an effect-named method that reads a file but only replaces its own field).
 fixtures/violating.go:
   - { line: 7, label: bad, window: 1 }
   - { line: 12, label: bad, window: 1 }

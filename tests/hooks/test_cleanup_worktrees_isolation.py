@@ -49,7 +49,7 @@ def test_lane_status_never_runs_a_filter_from_raced_admin_configuration(
     )
     wrapper.chmod(0o755)
 
-    assert cleanup_worktrees.worktree_is_clean(primary, worktree)
+    assert cleanup_worktrees.worktree_blocker(primary, worktree) is None
 
     assert not marker.exists()
     if planted in {"commondir", "both"}:
@@ -90,7 +90,7 @@ def test_lane_git_uses_the_primary_common_directory(
     monkeypatch.setenv("GIT_COMMON_DIR", str(tmp_path / "planted"))
     monkeypatch.setenv("GIT_CONFIG_NOSYSTEM", "0")
 
-    assert cleanup_worktrees.worktree_is_clean(primary, worktree)
+    assert cleanup_worktrees.worktree_blocker(primary, worktree) is None
 
     assert record.read_text().splitlines() == [f"{primary / '.git'}|1"] * 2
 
@@ -121,7 +121,7 @@ def test_lane_status_disables_submodules_and_lfs_filters(primary: Path, mocker: 
     process = mocker.patch("cleanup_worktrees.subprocess.run", autospec=True)
     process.return_value.stdout = ""
 
-    assert cleanup_worktrees.worktree_is_clean(primary, worktree)
+    assert cleanup_worktrees.worktree_blocker(primary, worktree) is None
 
     status = process.call_args.args[0]
     assert "status" in status

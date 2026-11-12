@@ -187,14 +187,10 @@ def cleanup(primary: Path, current: Path | None, *, dry_run: bool) -> list[str]:
     kept = []
     removed = set()
     for worktree in worktrees:
-        if (
-            worktree.path in {primary, current}
-            or not _is_merged(primary, worktree.branch, merged)
-            or not worktree_is_clean(primary, worktree)
-        ):
+        if worktree.path in {primary, current} or not _is_merged(primary, worktree.branch, merged):
             continue
-        if kept := irreplaceable_ignored_paths(primary, worktree):
-            kept.append(f"keep worktree {worktree.path}: ignored files would be lost: {', '.join(kept)}")
+        if reason := keep_reason(primary, worktree):
+            kept.append(f"keep worktree {worktree.path}: {reason}")
             continue
         removed.add(worktree.path)
         report.append(f"remove worktree {worktree.path} and branch {worktree.branch}")
@@ -217,29 +213,29 @@ def cleanup(primary: Path, current: Path | None, *, dry_run: bool) -> list[str]:
     return report + kept
 
 
-def worktree_is_clean(primary: Path, worktree: Worktree) -> bool:
-    """Return whether the worktree is verifiably registered to `primary` and has no change to lose.
+def keep_reason(primary: Path, worktree: Worktree) -> str | None:
+    """Return why a merged branch's worktree must stay, or None when it is safe to remove."""
+    if blocker := worktree_blocker(primary, worktree):
+        return blocker
+    if ignored := irreplaceable_ignored_paths(primary, worktree):
+        return f"ignored files would be lost: {', '.join(ignored)}"
+    return None
+
+
+def worktree_blocker(primary: Path, worktree: Worktree) -> str | None:
+    """Return why the worktree is not verifiably registered to `primary` and change-free, or None when it is.
 
     Any mismatch between the worktree's `.git` file, its admin directory, and the primary, any per-worktree
-    config, any submodule, or any status entry makes it not clean; the check fails closed.
+    config, any submodule, or any status entry is a blocker; the check fails closed.
     """
-    if not worktree.admin_dir or _git_file_target(worktree.path) != worktree.admin_dir:
-        return False
-    try:
-        if (
-            (worktree.admin_dir / (worktree.admin_dir / "commondir").read_text().strip()).resolve() != primary / ".git"
-            or Path((worktree.admin_dir / "gitdir").read_text().strip()).resolve() != worktree.path / ".git"
-            or (worktree.admin_dir / "config.worktree").exists()
-        ):
-            return False
-    except OSError:
-        return False
+    if reason := _registration_blocker(primary, worktree):
+        return reason
     command = ("git", f"--git-dir={worktree.admin_dir}", f"--work-tree={worktree.path}")
     if any(
         entry.startswith("160000 ") for entry in run(*command, "ls-files", "--stage", "-z", cwd=primary).split("\0")
     ):
-        return False
-    return not run(
+        return "submodule entry"
+    status = run(
         *command,
         "-c",
         "diff.ignoreSubmodules=all",
@@ -248,6 +244,23 @@ def worktree_is_clean(primary: Path, worktree: Worktree) -> bool:
         "--ignore-submodules=all",
         cwd=primary,
     )
+    return "uncommitted changes" if status else None
+
+
+def _registration_blocker(primary: Path, worktree: Worktree) -> str | None:
+    admin = worktree.admin_dir
+    if not admin:
+        return "no admin directory registered for it"
+    if _git_file_target(worktree.path) != admin:
+        return ".git file does not point at the admin directory"
+    try:
+        if (admin / (admin / "commondir").read_text().strip()).resolve() != primary / ".git":
+            return "commondir does not point at the primary"
+        if Path((admin / "gitdir").read_text().strip()).resolve() != worktree.path / ".git":
+            return "gitdir does not point back at the worktree"
+    except OSError:
+        return "admin directory cannot be read"
+    return "config.worktree is present" if (admin / "config.worktree").exists() else None
 
 
 def irreplaceable_ignored_paths(primary: Path, worktree: Worktree) -> list[str]:

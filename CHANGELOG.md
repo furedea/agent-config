@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.4](https://github.com/furedea/agent-config/compare/v0.1.3...v0.1.4) (2026-11-13)
+
+
+### Features
+
+* **hooks:** allow furedea review replies and mutation-free GraphQL queries ([#188](https://github.com/furedea/agent-config/issues/188)) ([a616ba2](https://github.com/furedea/agent-config/commit/a616ba2262001908f1026acea855dd5dfc13b105))
+* **hooks:** judge && lists and filtered pipelines of gh and herdr commands ([#187](https://github.com/furedea/agent-config/issues/187)) ([5b98db8](https://github.com/furedea/agent-config/commit/5b98db8f4a5a406d34af54295808f7f3419c1cbb))
+
 ## [0.1.3](https://github.com/furedea/agent-config/compare/v0.1.2...v0.1.3) (2026-11-12)
 
 

@@ -1,0 +1,12 @@
+id: go_package_name_lowercase
+language: go
+severity: warning
+message: "Name the package with lowercase letters and digits only, without underscores."
+note: "An external test package (`foo_test`) is skipped. Whether the name is a single word is not judged."
+rule:
+  kind: package_identifier
+  inside:
+    kind: package_clause
+  regex: "[A-Z_]"
+  not:
+    regex: ^[a-z0-9]+_test$

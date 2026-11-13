@@ -1,0 +1,17 @@
+id: go_no_generated_mocks
+valid:
+  - |
+    import "github.com/stretchr/testify/assert"
+  - |
+    import "github.com/stretchr/testify/require"
+invalid:
+  - |
+    import "go.uber.org/mock/gomock"
+  - |
+    import "github.com/stretchr/testify/mock"
+  - |
+    import (
+        "testing"
+
+        "github.com/golang/mock/gomock"
+    )

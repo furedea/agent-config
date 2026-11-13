@@ -1,0 +1,9 @@
+id: go_no_generated_mocks
+language: go
+severity: warning
+message: "Write a fake by hand instead of using a generated or framework mock."
+rule:
+  kind: import_spec
+  has:
+    field: path
+    regex: ^"(github\.com/golang/mock/gomock|go\.uber\.org/mock/gomock|github\.com/stretchr/testify/mock|github\.com/vektra/mockery(/v\d+)?(/.*)?|github\.com/maxbrunsfeld/counterfeiter(/v\d+)?(/.*)?)"$

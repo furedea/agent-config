@@ -1,0 +1,9 @@
+id: go_no_other_assertion_library
+language: go
+severity: warning
+message: "Assert with testify (`assert` / `require`); do not add another assertion library."
+rule:
+  kind: import_spec
+  has:
+    field: path
+    regex: ^"(github\.com/onsi/gomega|github\.com/smartystreets/goconvey/convey|github\.com/matryer/is|gotest\.tools(/v3)?/assert|github\.com/frankban/quicktest|github\.com/maxatome/go-testdeep(/td)?)"$

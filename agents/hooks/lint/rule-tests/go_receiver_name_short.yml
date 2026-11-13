@@ -1,0 +1,17 @@
+id: go_receiver_name_short
+valid:
+  - |
+    func (s *Server) Start() {}
+  - |
+    func (sv Server) Stop() {}
+  - |
+    func (Server) Name() string { return "" }
+  - |
+    func start(server *Server) {}
+invalid:
+  - |
+    func (server *Server) Start() {}
+  - |
+    func (this Server) Stop() {}
+  - |
+    func (self *Server) Name() string { return "" }

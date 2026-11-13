@@ -1,0 +1,23 @@
+id: go_error_no_capitalized_message
+valid:
+  - |
+    func load(path string) error {
+        return fmt.Errorf("read config %s: %w", path, err)
+    }
+  - |
+    func load() error {
+        return errors.New("HTTP 500 from upstream")
+    }
+invalid:
+  - |
+    func load() error {
+        return errors.New("Config missing")
+    }
+  - |
+    func load() error {
+        return fmt.Errorf("Invalid port")
+    }
+  - |
+    func load(path string) error {
+        return fmt.Errorf("Read config %s: %w", path, err)
+    }

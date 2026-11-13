@@ -1,0 +1,21 @@
+id: go_no_other_assertion_library
+valid:
+  - |
+    import (
+        "testing"
+
+        "github.com/stretchr/testify/assert"
+    )
+  - |
+    import "github.com/google/go-cmp/cmp"
+invalid:
+  - |
+    import "github.com/onsi/gomega"
+  - |
+    import (
+        "testing"
+
+        "gotest.tools/v3/assert"
+    )
+  - |
+    import . "github.com/smartystreets/goconvey/convey"

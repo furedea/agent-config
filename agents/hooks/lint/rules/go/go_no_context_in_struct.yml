@@ -1,0 +1,10 @@
+id: go_no_context_in_struct
+language: go
+severity: warning
+message: "Do not store a `context.Context` in a struct; pass it as the first parameter."
+rule:
+  kind: field_declaration
+  has:
+    field: type
+    kind: qualified_type
+    regex: ^context\.Context$

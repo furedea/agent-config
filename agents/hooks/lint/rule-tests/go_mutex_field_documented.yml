@@ -1,0 +1,24 @@
+id: go_mutex_field_documented
+valid:
+  - |
+    type Cache struct {
+        // mu guards items.
+        mu    sync.Mutex
+        items map[string]int
+    }
+  - |
+    type Cache struct {
+        items map[string]int
+    }
+invalid:
+  - |
+    type Cache struct {
+        mu    sync.Mutex
+        items map[string]int
+    }
+  - |
+    type Cache struct {
+        name string
+        mu   sync.RWMutex
+        items map[string]int
+    }

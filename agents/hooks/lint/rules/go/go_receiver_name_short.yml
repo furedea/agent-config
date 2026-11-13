@@ -1,0 +1,11 @@
+id: go_receiver_name_short
+language: go
+severity: warning
+message: "Name the receiver with one or two letters, not a long name or `this` / `self`."
+note: "Using the same receiver name across a type's methods is not judged."
+rule:
+  kind: parameter_list
+  regex: ^\(\s*\w{3,}\s
+  inside:
+    kind: method_declaration
+    field: receiver

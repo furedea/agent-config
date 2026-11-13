@@ -1,0 +1,10 @@
+id: go_use_slog
+language: go
+severity: warning
+message: "Log with `log/slog` instead of the standard `log` package."
+note: "Test files are skipped."
+ignores:
+  - "**/*_test.go"
+rule:
+  kind: call_expression
+  regex: ^log\.(Print|Printf|Println|Fatal|Fatalf|Fatalln|Panic|Panicf|Panicln)\(

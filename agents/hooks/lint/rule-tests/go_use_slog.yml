@@ -1,0 +1,23 @@
+id: go_use_slog
+valid:
+  - |
+    func run() {
+        slog.Info("start", "port", 80)
+    }
+  - |
+    func run() {
+        log.SetFlags(0)
+    }
+invalid:
+  - |
+    func run() {
+        log.Printf("start %d", 80)
+    }
+  - |
+    func run() {
+        log.Fatal(err)
+    }
+  - |
+    func run() {
+        log.Println("start")
+    }

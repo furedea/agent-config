@@ -1,0 +1,33 @@
+id: go_library_no_global_logger
+valid:
+  - |
+    package main
+
+    func main() {
+        slog.SetDefault(logger)
+    }
+  - |
+    package store
+
+    func New(logger *slog.Logger) *Store {
+        return &Store{logger: logger}
+    }
+invalid:
+  - |
+    package store
+
+    func init() {
+        slog.SetDefault(logger)
+    }
+  - |
+    package store
+
+    func New() {
+        log.SetOutput(os.Stderr)
+    }
+  - |
+    package store
+
+    func New() {
+        log.SetFlags(0)
+    }

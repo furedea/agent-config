@@ -1,0 +1,18 @@
+id: go_no_context_in_struct
+valid:
+  - |
+    type Server struct {
+        addr string
+    }
+  - |
+    func run(ctx context.Context) {}
+invalid:
+  - |
+    type Server struct {
+        ctx context.Context
+    }
+  - |
+    type Server struct {
+        addr string
+        context.Context
+    }

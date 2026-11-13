@@ -1,0 +1,14 @@
+id: go_mutex_field_documented
+language: go
+severity: warning
+message: "Document the fields the mutex guards in a comment directly above it."
+note: "Whether the mutex sits directly above the fields it guards is not judged."
+rule:
+  kind: field_declaration
+  has:
+    field: type
+    kind: qualified_type
+    regex: ^sync\.(RW)?Mutex$
+  not:
+    follows:
+      kind: comment

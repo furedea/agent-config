@@ -1,0 +1,33 @@
+id: gha_workflow_default_shell
+language: yaml
+severity: warning
+message: "Set `shell` under `defaults.run` so steps run with `pipefail`."
+note: "Only workflows that define a job with steps are checked; a workflow of reusable-workflow calls has no `run:` step."
+files:
+  - .github/workflows/**
+rule:
+  kind: block_mapping
+  inside:
+    kind: block_node
+    inside:
+      kind: document
+  has:
+    kind: block_mapping_pair
+    has:
+      field: key
+      regex: ^jobs$
+  not:
+    has:
+      kind: block_mapping_pair
+      all:
+        - has:
+            field: key
+            regex: ^defaults$
+        - has:
+            field: value
+            has:
+              stopBy: end
+              kind: block_mapping_pair
+              has:
+                field: key
+                regex: ^shell$

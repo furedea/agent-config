@@ -19,7 +19,7 @@ tests/
 
 - `test-helper/` is the project-standard directory name for helper libraries
 - Each category gets its own `test-helper/` because helpers are domain-specific (hook input builders differ from CLI stubs)
-- Test files: `.bats` extension, `snake_case` naming
+- Test files: `.bats` extension
 - Helper files: `.bash` extension, loaded via `load test-helper/setup`
 
 ### File Structure

@@ -1,0 +1,28 @@
+id: gha_workflow_concurrency
+language: yaml
+severity: warning
+message: "Add a top-level `concurrency` group so stale runs on the same ref are cancelled."
+note: "Only workflows triggered by `push` or `pull_request` are checked; a workflow that is only called or dispatched has no burst of runs per ref."
+files:
+  - .github/workflows/**
+rule:
+  kind: block_mapping
+  inside:
+    kind: block_node
+    inside:
+      kind: document
+  has:
+    kind: block_mapping_pair
+    all:
+      - has:
+          field: key
+          regex: ^"?on"?$
+      - has:
+          field: value
+          regex: \b(push|pull_request)\b
+  not:
+    has:
+      kind: block_mapping_pair
+      has:
+        field: key
+        regex: ^concurrency$

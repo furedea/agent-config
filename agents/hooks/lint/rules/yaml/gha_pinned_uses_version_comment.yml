@@ -1,0 +1,23 @@
+id: gha_pinned_uses_version_comment
+language: yaml
+severity: warning
+message: "Record the version of a SHA-pinned action in a trailing comment, such as `# v4.2.1`."
+note: "Local actions (`./path`) and tag references are not checked: the first has no version to record, and the second is rejected by zizmor's unpinned-uses."
+files:
+  - .github/workflows/**
+  - "**/action.yml"
+  - "**/action.yaml"
+rule:
+  kind: block_mapping_pair
+  all:
+    - has:
+        field: key
+        regex: ^uses$
+    - has:
+        field: value
+        regex: "@[0-9a-f]{40}$"
+  not:
+    precedes:
+      stopBy: neighbor
+      kind: comment
+      regex: ^#\s*v?\d

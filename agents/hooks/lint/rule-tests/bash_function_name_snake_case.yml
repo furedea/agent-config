@@ -1,0 +1,17 @@
+id: bash_function_name_snake_case
+valid:
+  - |
+    function parse_args() { :; }
+  - |
+    usage() { :; }
+  - |
+    _private_helper() { :; }
+invalid:
+  - |
+    function parseArgs() { :; }
+  - |
+    parse-args() { :; }
+  - |
+    function Parse_Args() { :; }
+  - |
+    1st_step() { :; }

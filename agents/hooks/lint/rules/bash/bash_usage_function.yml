@@ -1,0 +1,16 @@
+id: bash_usage_function
+language: bash
+severity: warning
+message: "Define a `usage` function that prints the script's documentation."
+note: "Only files that start with a shebang are checked; a sourced library has none."
+rule:
+  kind: program
+  has:
+    kind: comment
+    regex: ^#!
+  not:
+    has:
+      kind: function_definition
+      has:
+        field: name
+        regex: ^usage$

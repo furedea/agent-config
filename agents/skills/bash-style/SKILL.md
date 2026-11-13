@@ -6,21 +6,8 @@ description: >
 
 # Shell Script Coding Style Guidelines
 
-## File Header (every script)
+## Working Directory and Tracing
 
-Start executable Bash scripts with the following interpreter and error-handling defaults:
-
-```sh
-#!/usr/bin/env bash
-set -euCo pipefail
-```
-
-- `#!/usr/bin/env bash` — resolve Bash from `PATH` and run with it explicitly, not with `sh`
-- `set -euCo pipefail`:
-    - `-e`: exit on error
-    - `-u`: exit on undefined variable reference
-    - `-C`: prohibit overwriting files with `>` (use `>|` to force)
-    - `-o pipefail`: fail if any command in a pipe chain fails
 - Choose the working directory by responsibility. Hooks that operate on a project must use the
   target project's working directory. Resolve bundled resources relative to the script's location.
   Use `cd "$(dirname "$0")"` only when all relative operations should use that location.
@@ -38,7 +25,7 @@ set -x
 
 ## usage Function
 
-Every script must define a `usage` function that prints documentation. Use a heredoc inside the function body:
+Print the documentation from the `usage` function with a heredoc inside its body:
 
 ```sh
 function usage() {
@@ -68,11 +55,8 @@ readonly INPUT_DIR="$SCRIPT_DIR/../data/input"
 readonly MAX_RETRY=3
 ```
 
-Always quote the right-hand side — values may contain spaces or special characters.
-
 ## Variables
 
-- Quote all parameter expansions and string values to guard against word splitting and glob expansion (shellcheck SC2086 catches unquoted uses)
 - Use default values for variables that may be empty or undefined:
     ```sh
     readonly OUTPUT="${1:-output.txt}"   # default value
@@ -82,18 +66,14 @@ Always quote the right-hand side — values may contain spaces or special charac
 
 ## Naming
 
-| Kind            | Convention                          | Example                 |
-| --------------- | ----------------------------------- | ----------------------- |
-| Constants       | `SCREAMING_SNAKE_CASE` + `readonly` | `readonly MAX_RETRY=3`  |
-| Variables       | `snake_case`                        | `input_file="..."`      |
-| Functions       | `snake_case`                        | `function parse_args()` |
-| Local variables | `_snake_case` (leading underscore)  | `local _tmp_dir`        |
-
-Do not start names with a digit.
+| Kind      | Convention                          | Example                |
+| --------- | ----------------------------------- | ---------------------- |
+| Constants | `SCREAMING_SNAKE_CASE` + `readonly` | `readonly MAX_RETRY=3` |
+| Variables | `snake_case`                        | `input_file="..."`     |
 
 ## Local Variables
 
-Declare function-local variables with `local` and prefix with `_`:
+Declare function-local variables with `local`:
 
 ```sh
 function build_output() {
@@ -102,10 +82,6 @@ function build_output() {
   cp "$_src" "$_dst"
 }
 ```
-
-## Formatting
-
-Indent with **2 spaces** (Google Shell Style Guide convention). Configure via `.editorconfig` at the project root; `shfmt` reads it automatically. Run `shfmt -d <file>` to check. Common quoting errors are caught by `shellcheck`. The conventions above describe what those tools do not enforce.
 
 ## Task-Specific References
 

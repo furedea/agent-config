@@ -11,7 +11,7 @@ These patterns are easy to overlook but important for security and reliability.
 
 ## 1. Permissions — Whitelist Approach
 
-The default `GITHUB_TOKEN` has read/write access to the repo, which is broader than most jobs need. Declare `permissions: {}` at the workflow level (deny-all), then grant only what each job actually requires.
+The default `GITHUB_TOKEN` has read/write access to the repo, which is broader than most jobs need. Grant only what each job actually requires.
 
 ```yaml
 permissions: {} # workflow level: deny-all
@@ -25,39 +25,9 @@ jobs:
 
 Common permission keys: `contents`, `issues`, `pull-requests`, `packages`, `id-token` (OIDC), `checks`, `statuses`.
 
-## 2. Version Pinning
+## 2. timeout-minutes
 
-Tags such as `@v4` or `@v4.2.1` can be moved or deleted by the action author, so the same tag may
-point to different code over time. Pin every action to a full commit SHA and record the version in
-a comment for readability and update tooling.
-
-```yaml
-# Avoid — tag can move
-- uses: actions/checkout@v4
-
-# Recommended — immutable SHA with the version as a comment
-- uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.1
-```
-
-## 3. Script Injection Prevention
-
-GitHub context values like PR titles, issue bodies, and branch names come from untrusted external sources. Interpolating them directly into `run:` allows an attacker to inject arbitrary shell commands. Always pass them through `env:` instead, and quote the variable in the script. This is not escaping: the value never becomes part of the script text.
-
-```yaml
-# Dangerous — PR title injected directly into shell
-- run: echo "${{ github.event.pull_request.title }}"
-
-# Safe — the shell reads the value from a variable; it is never interpolated into the script
-- env:
-      TITLE: ${{ github.event.pull_request.title }}
-  run: echo "$TITLE"
-```
-
-Untrusted inputs include: `github.event.pull_request.title`, `github.event.issue.body`, `github.head_ref`, `github.event.*.name`, any user-controlled field.
-
-## 4. timeout-minutes
-
-The default job timeout is 6 hours. A hung step will consume runner minutes silently. Set an explicit timeout appropriate for the job — typically 5–15 minutes for CI.
+Choose a timeout appropriate for the job — typically 5–15 minutes for CI.
 
 ```yaml
 jobs:
@@ -65,17 +35,7 @@ jobs:
         timeout-minutes: 10
 ```
 
-## 5. Shell Settings
-
-Explicitly specifying `shell: bash` causes GitHub Actions to run steps with `bash --noprofile --norc -eo pipefail`, which enables `pipefail` — without it, a failed command in a pipe chain (e.g. `cmd | grep`) can silently succeed.
-
-Set it at the `defaults.run` level to apply to all steps in the workflow or job:
-
-```yaml
-defaults:
-    run:
-        shell: bash
-```
+## 3. Shell Settings
 
 For debugging, add `set -x` at the top of a `run:` block to print each command and its output to stderr before execution:
 
@@ -85,20 +45,11 @@ For debugging, add `set -x` at the top of a `run:` block to print each command a
       uv run --frozen pytest
 ```
 
-## 6. Concurrency
+## 4. Concurrency
 
-When the same workflow can be triggered multiple times simultaneously for the same ref (e.g. rapid commits to a PR branch), earlier runs are typically wasted work. Use `concurrency` to cancel stale runs automatically.
+Use `cancel-in-progress: false` for deploy workflows that must run in order; cancel stale runs everywhere else.
 
-```yaml
-# At workflow top-level — cancel previous runs on the same branch/PR
-concurrency:
-    group: ${{ github.workflow }}-${{ github.ref }}
-    cancel-in-progress: true # use false for deploy workflows that must run in order
-```
-
-This is most useful for `pull_request` and `push` triggers where users push multiple commits in quick succession. Each branch/PR gets its own group, so cancellation is scoped — PR #42 runs do not affect PR #43 runs.
-
-## 7. Cache Design
+## 5. Cache Design
 
 - Measure representative cold and warm runs before adding a cache. Prefer
   GitHub's cache backend; use an external backend only when self-hosted runner
@@ -113,7 +64,3 @@ This is most useful for `pull_request` and `push` triggers where users push mult
   cache broad paths that may contain credentials. When using an external shared
   backend, do not let untrusted workflows write caches that privileged
   workflows later execute.
-
-## 8. Workflow File Names
-
-Name workflow files in kebab-case with the `.yml` extension (e.g. `release-please.yml`). This is the GitHub Actions convention and an exception to the general underscore rule for file names.

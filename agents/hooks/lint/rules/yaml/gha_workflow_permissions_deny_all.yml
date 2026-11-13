@@ -1,0 +1,27 @@
+id: gha_workflow_permissions_deny_all
+language: yaml
+severity: warning
+message: "Declare `permissions: {}` at the workflow level and grant each job only what it needs."
+files:
+  - .github/workflows/**
+rule:
+  kind: block_mapping
+  inside:
+    kind: block_node
+    inside:
+      kind: document
+  has:
+    kind: block_mapping_pair
+    has:
+      field: key
+      regex: ^jobs$
+  not:
+    has:
+      kind: block_mapping_pair
+      all:
+        - has:
+            field: key
+            regex: ^permissions$
+        - has:
+            field: value
+            regex: ^\{\s*\}$

@@ -12,10 +12,7 @@ rule:
       kind: interface_type
       has:
         kind: method_elem
-        has:
-          field: name
-          kind: field_identifier
-          regex: ^is[A-Z]
+        regex: ^is[A-Z]\w*\(\s*\)$
   not:
     follows:
       kind: comment

@@ -2,9 +2,18 @@ id: go_use_slog
 language: go
 severity: warning
 message: "Log with `log/slog` instead of the standard `log` package."
-note: "Test files are skipped."
+note: "Test files are skipped. Only a file that imports the standard `log` package is judged."
 ignores:
   - "**/*_test.go"
 rule:
   kind: call_expression
   regex: ^log\.(Print|Printf|Println|Fatal|Fatalf|Fatalln|Panic|Panicf|Panicln)\(
+  inside:
+    kind: source_file
+    has:
+      kind: import_spec
+      has:
+        field: path
+        regex: ^"log"$
+      stopBy: end
+    stopBy: end

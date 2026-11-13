@@ -1,23 +1,40 @@
 id: go_use_slog
 valid:
   - |
+    import "log/slog"
+
     func run() {
         slog.Info("start", "port", 80)
     }
   - |
+    import "log"
+
     func run() {
         log.SetFlags(0)
     }
+  - |
+    func run(log Logger) {
+        log.Printf("start %d", 80)
+    }
 invalid:
   - |
+    import "log"
+
     func run() {
         log.Printf("start %d", 80)
     }
   - |
+    import "log"
+
     func run() {
         log.Fatal(err)
     }
   - |
+    import (
+        "fmt"
+        "log"
+    )
+
     func run() {
         log.Println("start")
     }

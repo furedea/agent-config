@@ -5,6 +5,10 @@ valid:
     type Payment interface{ isPayment() }
   - |
     type Reader interface{ Read() error }
+  - |
+    type Validator interface{ isValid() bool }
+  - |
+    type Policy interface{ isAllowed(u User) bool }
 invalid:
   - |
     type Payment interface{ isPayment() }

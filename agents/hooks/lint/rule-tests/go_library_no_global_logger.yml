@@ -3,6 +3,8 @@ valid:
   - |
     package main
 
+    import "log/slog"
+
     func main() {
         slog.SetDefault(logger)
     }
@@ -12,9 +14,17 @@ valid:
     func New(logger *slog.Logger) *Store {
         return &Store{logger: logger}
     }
+  - |
+    package store
+
+    func New(log Logger) {
+        log.SetOutput(os.Stderr)
+    }
 invalid:
   - |
     package store
+
+    import "log/slog"
 
     func init() {
         slog.SetDefault(logger)
@@ -22,11 +32,15 @@ invalid:
   - |
     package store
 
+    import "log"
+
     func New() {
         log.SetOutput(os.Stderr)
     }
   - |
     package store
+
+    import "log"
 
     func New() {
         log.SetFlags(0)

@@ -50,7 +50,7 @@
         "gh"
       ],
       "patterns": [
-        "^gh api( (-X|--method) POST)? repos/furedea/[a-zA-Z0-9_.-]+/pulls/[0-9]+/comments/[0-9]+/replies -f body='[^']*('\\\\''[^']*)*'( (--jq|-q) '[^']*'| --silent)?$"
+        "^gh api( (-X|--method) POST)? repos/furedea/[a-zA-Z0-9_.-]+/pulls/[0-9]+/comments/[0-9]+/replies -f body='[^']*('\\\\''[^']*)*'( (--jq|-q) ('[^']*'|\\.[A-Za-z0-9_.]*)| --silent)?$"
       ],
       "justification": "Allow a reply to a review comment on a furedea repository's pull request: only one -f body (no -F, --field, or --input, which read files), an optional POST method, and a jq filter or --silent; other owners, endpoints, methods, and fields ask."
     },

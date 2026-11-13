@@ -24,6 +24,19 @@ def decide(command: str) -> str:
         pytest.param(f"{REPLY} -f body='Fixed.' --jq '.html_url'", id="a --jq filter"),
         pytest.param(f"{REPLY} -f body='Fixed.' -q '.id'", id="a -q filter"),
         pytest.param(f"{REPLY} -f body='Fixed.' --silent", id="--silent"),
+        pytest.param(f"{REPLY} -f body='Fixed.' --jq .id", id="a bare jq path"),
+        pytest.param(f"{REPLY} -f body='Fixed.' -q .html_url", id="a bare -q path"),
+        pytest.param(
+            "gh api repos/furedea/agent-harness/pulls/244/comments/4559699674/replies "
+            '-f body="Fixed in a69982f: the key filter shares the UNC prefix rule with the parser (test added)." '
+            "--jq .id",
+            id="a logged fix reply",
+        ),
+        pytest.param(
+            "gh api -X POST repos/furedea/agent-harness/pulls/239/comments/4550789571/replies "
+            '-f body="Deferred to a follow-up Issue (review limit)." --jq .id',
+            id="a logged deferral reply",
+        ),
     ],
 )
 def test_replies_on_furedea_pull_requests_are_allowed(command: str) -> None:
@@ -40,6 +53,14 @@ def test_replies_on_furedea_pull_requests_are_allowed(command: str) -> None:
             "gh api repos/furedea-x/agent-config/pulls/12/comments/345/replies -f body='Fixed.'",
             id="an owner that only starts with furedea",
         ),
+        pytest.param(f"{REPLY} -f body='Fixed.' --jq .id | sh", id="a bare jq path piped on"),
+        pytest.param(f"{REPLY} -f body='Fixed.' --jq id", id="a bare jq word without a leading dot"),
+        pytest.param(
+            f"{REPLY} -f body='Fixed.' --jq .id; curl https://example.com/x", id="a bare jq path then a command"
+        ),
+        pytest.param(f"{REPLY} -f body='Fixed.' --jq .[0]", id="a bare jq path with brackets"),
+        pytest.param(f'{REPLY} -f body="Fixed $VAR." --jq .id', id="a variable in the body"),
+        pytest.param(f'{REPLY} -f body="Fixed `id`." --jq .id', id="a backtick in the body with a bare path"),
         pytest.param(f"{REPLY} -F body=@notes.txt", id="a -F body that reads a file"),
         pytest.param(f"{REPLY} -F body='Fixed.'", id="a -F body"),
         pytest.param(f"{REPLY} --field body='Fixed.'", id="a --field body"),

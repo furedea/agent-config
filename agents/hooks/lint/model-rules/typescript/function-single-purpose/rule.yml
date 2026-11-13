@@ -1,6 +1,7 @@
 # M-30 single-purpose functions (agents/AGENTS.md: "keep functions single-purpose at one abstraction level").
-# Advisory: the Stop hook reports findings and never promotes this rule to a gate (ADR-0021). Every function is asked
-# about; the criteria exclude orchestration that only calls named steps.
+# Advisory: the Stop hook reports findings and never promotes this rule to a gate (ADR-0021). Only functions of ten
+# lines or more are asked about, so the rule leaves most of the shared Stop subject budget to the tuned rules; the
+# criteria exclude orchestration that only calls named steps.
 id: function-single-purpose
 languages: [ TypeScript, Tsx ]
 kind: noul
@@ -14,6 +15,10 @@ rule:
     - any:
         - kind: function_declaration
         - kind: method_definition
+        - all:
+            - kind: arrow_function
+            - inside: { kind: variable_declarator }
+    - regex: "(?s)^([^\\n]*\\n){9}"
 ask: >-
   This function does more than one job, or mixes high-level steps with low-level details in one body.
 criteria:

@@ -42,6 +42,18 @@ class Box:
 
 def plain(a, b):
     return a + b
+
+
+def run(path):
+    client = Client(path)
+    client.connect()
+    rows = client.read()
+    total = 0
+    for row in rows:
+        total += row
+    client.flush()
+    client.close()
+    return total
 """,
     ),
     "typescript": (
@@ -64,6 +76,19 @@ class Box {
 
 function plain(a: number, b: number): number {
   return a + b;
+}
+
+const arrow = (a: number): number => a + 1;
+
+function run(path: string): number {
+  const client = new Client(path);
+  client.connect();
+  const rows = client.read();
+  let total = 0;
+  for (const row of rows) {
+    total += row;
+  }
+  return total;
 }
 """,
     ),
@@ -88,6 +113,17 @@ func City(order Order) string {
 func Plain(a, b int) int {
 	return a + b
 }
+
+func Run(path string) int {
+	client := NewClient(path)
+	client.Connect()
+	rows := client.Read()
+	total := 0
+	for _, row := range rows {
+		total += row
+	}
+	return total
+}
 """,
     ),
     "rust": (
@@ -111,15 +147,27 @@ impl Box {
 pub fn plain(a: i32, b: i32) -> i32 {
     a + b
 }
+
+pub fn run(path: &str) -> i32 {
+    let client = Client::new(path);
+    client.connect();
+    let rows = client.read();
+    let mut total = 0;
+    for row in rows {
+        total += row;
+    }
+    total
+}
 """,
     ),
 }
 
-# Functions in each sample: three methods and one plain function. Only `items` returns its own collection, only
-# `total` has a comment, only `city` chains three member accesses into a call.
+# Each sample has three methods, a plain function, and `run`, the only function of ten lines or more and the only one
+# that constructs an object (TypeScript adds an arrow function bound to a name, which no rule selects here). Only
+# `items` returns its own collection, only `total` has a comment, only `city` chains three member accesses into a call.
 EXPECTED = {
-    "function-single-purpose": 4,
-    "construction-separate-from-execution": 4,
+    "function-single-purpose": 1,
+    "construction-separate-from-execution": 1,
     "no-reaching-through-collaborators": 1,
     "no-comment-restating-code": 1,
     "no-exposed-mutable-collection": 1,

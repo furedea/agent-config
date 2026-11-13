@@ -1,6 +1,7 @@
 # M-31 separate construction from execution (agents/AGENTS.md: "separate object creation/configuration from execution
-# logic"). Advisory: the Stop hook reports findings and never promotes this rule to a gate (ADR-0021). Every function
-# is asked about; value objects and plain data are not collaborators.
+# logic"). Advisory: the Stop hook reports findings and never promotes this rule to a gate (ADR-0021). Only functions
+# that construct an object are asked about, to spare the shared Stop subject budget; value objects and plain data are
+# not collaborators.
 id: construction-separate-from-execution
 language: Go
 kind: noul
@@ -14,6 +15,13 @@ rule:
     - any:
         - kind: function_declaration
         - kind: method_declaration
+    - has:
+        stopBy: end
+        any:
+            - kind: composite_literal
+              has: { field: type, regex: "^[A-Za-z_.]+$" }
+            - kind: call_expression
+              regex: "^([A-Za-z_]\\w*\\.)?New[A-Z]"
 ask: >-
   This function creates and configures its own collaborators and then also runs the logic that uses them.
 criteria:

@@ -15,6 +15,9 @@ rule:
     - any:
         - kind: function_declaration
         - kind: method_definition
+        - all:
+            - kind: arrow_function
+            - inside: { kind: variable_declarator }
     - has: { kind: comment, stopBy: end }
 ask: >-
   A comment in this function restates what the code beside it already says.

@@ -14,6 +14,9 @@ rule:
     - any:
         - kind: function_declaration
         - kind: method_definition
+        - all:
+            - kind: arrow_function
+            - inside: { kind: variable_declarator }
     - has: { pattern: $A.$B.$C.$D($$$), stopBy: end }
 ask: >-
   This function reaches through one collaborator into another's internals instead of asking its direct collaborator.

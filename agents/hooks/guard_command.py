@@ -122,8 +122,8 @@ def announced(verdict: Verdict, policy: Policy) -> Verdict:
 def command_verdict(kind: str, payload: dict, policy: Policy) -> Verdict:
     """The first objection any segment raises, then whether the command's settings could redirect a request.
 
-    Rules marked literal_words apply to one plain gh, herdr, curl, or wget call, or a curl call
-    piped through known stdin-only filters, with no shell expansions.
+    Rules marked literal_words apply to a plain gh, herdr, curl, or wget call, or an `&&` list of
+    them, each piped at most through known stdin-only filters, with no shell expansions.
     """
     command = payload.get("tool_input", {}).get("command") or ""
     try:

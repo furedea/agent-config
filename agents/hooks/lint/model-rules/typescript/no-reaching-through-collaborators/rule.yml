@@ -1,0 +1,27 @@
+# M-32 Law of Demeter (agents/AGENTS.md: "prefer DRY, YAGNI, and Law of Demeter"). Advisory: the Stop hook reports
+# findings and never promotes this rule to a gate (ADR-0021). Selected by a call chain of three member accesses or
+# more; the criteria exempt fluent builders and standard libraries.
+id: no-reaching-through-collaborators
+languages: [ TypeScript, Tsx ]
+kind: noul
+subject: node
+state: local
+threshold: 0.5
+axis: file
+severity: warning
+rule:
+  all:
+    - any:
+        - kind: function_declaration
+        - kind: method_definition
+    - has: { pattern: $A.$B.$C.$D($$$), stopBy: end }
+ask: >-
+  This function reaches through one collaborator into another's internals instead of asking its direct collaborator.
+criteria:
+  "true": >-
+    The body navigates a chain such as a.b.c.d() through objects it does not own, so it depends on the structure of
+    its collaborators' collaborators and would break if an intermediate object were reorganized.
+  "false": >-
+    The chain is a fluent builder or iterator pipeline over one value, a standard-library or module path
+    (os.path.join, std::fs::read), data access on a plain record or DTO, or a chain over the function's own fields.
+    Calling methods on a direct collaborator is not a violation.

@@ -1,0 +1,25 @@
+# M-31 separate construction from execution (agents/AGENTS.md: "separate object creation/configuration from execution
+# logic"). Advisory: the Stop hook reports findings and never promotes this rule to a gate (ADR-0021). Every function
+# is asked about; value objects and plain data are not collaborators.
+id: construction-separate-from-execution
+language: Rust
+kind: noul
+subject: node
+state: local
+threshold: 0.5
+axis: file
+severity: warning
+rule:
+  all:
+    - kind: function_item
+ask: >-
+  This function creates and configures its own collaborators and then also runs the logic that uses them.
+criteria:
+  "true": >-
+    The body constructs a service, client, connection, repository, parser or similar collaborator, configures it
+    (options, credentials, wiring), and then drives the business logic with it, so that testing the logic requires
+    building the collaborator inside this function.
+  "false": >-
+    The collaborator is passed in, or the function only constructs and returns (a factory, a builder, a composition
+    root), or only executes with what it was given. Creating plain data, value objects, local collections or
+    short-lived helpers is not a violation.

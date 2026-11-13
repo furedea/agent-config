@@ -269,7 +269,12 @@ def plan(root: Path, base: str | None = None) -> dict:
 
 
 def subjects_by_rule(report: dict) -> dict[str, int]:
-    return {entry["rule"]: entry["subjects"] for entry in report["byRule"] if entry["subjects"]}
+    """Subject counts of the three rules this file's samples were written for; other rules have their own tests."""
+    return {
+        entry["rule"]: entry["subjects"]
+        for entry in report["byRule"]
+        if entry["subjects"] and entry["rule"] in RULE_IDS
+    }
 
 
 def test_every_model_rule_loads_without_an_error() -> None:

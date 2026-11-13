@@ -1,0 +1,24 @@
+# M-30 single-purpose functions (agents/AGENTS.md: "keep functions single-purpose at one abstraction level").
+# Advisory: the Stop hook reports findings and never promotes this rule to a gate (ADR-0021). Every function is asked
+# about; the criteria exclude orchestration that only calls named steps.
+id: function-single-purpose
+language: Python
+kind: noul
+subject: node
+state: local
+threshold: 0.5
+axis: file
+severity: warning
+rule:
+  all:
+    - kind: function_definition
+ask: >-
+  This function does more than one job, or mixes high-level steps with low-level details in one body.
+criteria:
+  "true": >-
+    A reader cannot state what the function does in one sentence without "and", or its body alternates between
+    orchestrating named steps and doing the low-level work of those steps inline (parsing bytes, formatting strings,
+    indexing, driving a protocol) so that two levels of abstraction share one body.
+  "false": >-
+    The body does one job, or only sequences calls to named steps at one level. A long body of one level, a function
+    whose several statements all serve one result, and a thin wrapper are not violations.

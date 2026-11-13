@@ -2,10 +2,7 @@
 
 - Think in English, but generate responses in Japanese
 - Use "，" and "．" in writing in Japanese, instead of "。" and "、"
-- Directory names: Use hyphens (-) as separators (ex: claude-scripts)
-- File names: Use underscores (\_) as separators (ex: lint_format.sh)
 - Write documentation, code comments, and commit messages in English for public repositories; a squash-merge commit body is the Japanese PR body
-- When writing commit messages, follow Conventional Commits rules
 - Implement based on Test-Specification-Driven Development (TSDD)
 - Read web pages with the agent's web-fetch tool; use `curl` only to check a local server, and ask before any request to an external host; get exact values or files with `gh api` or `nix store prefetch-file`
 

@@ -63,7 +63,7 @@ pytestmark = pytest.mark.usefixtures("isolated_project")
         pytest.param("gh api repos/owner/repo/pulls/1/comments --jq '.[] | .body'", id="GitHub reads 2"),
         pytest.param("gh api '/advisories?ecosystem=pip&affects=urllib3' --jq '.[] | .summary'", id="GitHub reads 3"),
         pytest.param(
-            "gh api repos/owner/repo/pulls/1/comments/99/replies -f body='it'\\''s great'",
+            "gh api repos/furedea/repo/pulls/1/comments/99/replies -f body='it'\\''s great'",
             id="apostrophe in a single-quoted body",
         ),
         pytest.param("gh api graphql -f query='query { viewer { login } }'", id="GitHub GraphQL queries"),

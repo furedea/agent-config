@@ -22,22 +22,26 @@ FILTER_LITERAL_TEXT = re.compile(r"[A-Za-z0-9_./:=,%+ \t\n-]*")
 
 
 def allows_literal_rules(command: str, commands: tuple[shell_syntax.Command, ...]) -> bool:
-    """Allow literal calls and curl pipelines through known read-only filters; when unsure, ask."""
-    if len(commands) > 1:
-        return (
-            commands[0].arguments[0] == "curl"
-            and shell_inspection.is_plain_pipeline(command)
-            and all(is_read_only_filter(item) for item in commands[1:])
-            and allows_literal_rules(commands[0].raw, commands[:1])
-        )
-    if not commands or Path(commands[0].arguments[0]).name not in LITERAL_PROGRAMS:
+    """Allow literal calls, and `&&` lists of them with pipelines through known read-only filters; when unsure, ask."""
+    if not commands or any(item.wrapper_depth for item in commands):
         return False
     try:
-        if not shell_syntax.is_one_simple_command(command):
+        lengths = shell_inspection.plain_and_list_shape(command)
+        if lengths is None or sum(lengths) != len(commands) or not has_literal_words(command):
             return False
-        return has_literal_words(command)
     except shell_syntax.UnsupportedSyntaxError:
         return False
+    pipelines, start = [], 0
+    for length in lengths:
+        pipelines.append(commands[start : start + length])
+        start += length
+    return all(is_literal_pipeline(pipeline) for pipeline in pipelines)
+
+
+def is_literal_pipeline(pipeline: tuple[shell_syntax.Command, ...]) -> bool:
+    """A literal-program call, followed only by known read-only filters."""
+    head, *filters = pipeline
+    return Path(head.arguments[0]).name in LITERAL_PROGRAMS and all(is_read_only_filter(item) for item in filters)
 
 
 def has_literal_words(command: str) -> bool:

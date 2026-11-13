@@ -65,8 +65,7 @@ def is_plain_pipeline(source: str) -> bool:
 
 
 def _plain_pipeline_statement(statement: dict, data: bytes) -> bool:
-    flags = ("Background", "Coprocess", "Negated", "Disown", "Redirs")
-    if any(statement.get(flag) for flag in flags):
+    if _has_statement_flag(statement):
         return False
     command = statement.get("Cmd", {})
     if command.get("Type") == "CallExpr":
@@ -77,3 +76,39 @@ def _plain_pipeline_statement(statement: dict, data: bytes) -> bool:
     if data[offset : offset + 1] != b"|" or data[offset + 1 : offset + 2] in {b"|", b"&"}:
         return False
     return all(_plain_pipeline_statement(command[side], data) for side in ("X", "Y"))
+
+
+def plain_and_list_shape(source: str) -> tuple[int, ...] | None:
+    """The length of each pipeline in a foreground `&&` list of unwrapped simple calls; None for any other shape."""
+    statements = shell_syntax.syntax_tree(source).get("Stmts", [])
+    if len(statements) != 1:
+        return None
+    return _and_list_lengths(statements[0], source.encode())
+
+
+def _and_list_lengths(statement: dict, data: bytes) -> tuple[int, ...] | None:
+    if _has_statement_flag(statement):
+        return None
+    command = statement.get("Cmd", {})
+    if command.get("Type") == "CallExpr":
+        return None if command.get("Assigns") else (1,)
+    if command.get("Type") != "BinaryCmd":
+        return None
+    offset = command["OpPos"]["Offset"]
+    if data[offset : offset + 2] == b"&&":
+        left, right = (_and_list_lengths(command[side], data) for side in ("X", "Y"))
+        return None if left is None or right is None else (*left, *right)
+    if _plain_pipeline_statement(statement, data):
+        return (_pipeline_length(statement),)
+    return None
+
+
+def _pipeline_length(statement: dict) -> int:
+    command = statement["Cmd"]
+    if command.get("Type") == "CallExpr":
+        return 1
+    return sum(_pipeline_length(command[side]) for side in ("X", "Y"))
+
+
+def _has_statement_flag(statement: dict) -> bool:
+    return any(statement.get(flag) for flag in ("Background", "Coprocess", "Negated", "Disown", "Redirs"))

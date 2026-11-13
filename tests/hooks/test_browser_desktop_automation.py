@@ -25,6 +25,7 @@ def decision(project: Path, command: str, kind: str = "allowed") -> str:
         "agent-desktop click @s8f3k2p9:e8",
         "agent-desktop list-apps",
         "agent-browser snapshot -d 3",
+        "agent-browser open https://example.com && agent-browser snapshot",
     ],
 )
 def test_ordinary_automation_runs_from_the_first_call(git_project: Path, command: str) -> None:
@@ -50,7 +51,6 @@ def test_ordinary_automation_runs_from_the_first_call(git_project: Path, command
         "agent-browser connect 9222",
         "agent-browser upload @e1 /Users/kaito/.ssh/id_ed25519",
         "agent-browser download @e1 /tmp/file",
-        "agent-browser open https://example.com && agent-browser snapshot",
         "agent-browser open $URL",
         "agent-browser open https://example.com > out.txt",
         "AGENT_BROWSER_PROFILE=Default agent-browser open https://example.com",

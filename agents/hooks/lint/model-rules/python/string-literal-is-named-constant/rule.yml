@@ -1,0 +1,33 @@
+# agents/skills/python-style/references/code_style.md: define semantically meaningful string literals as module-level
+# constants rather than embedding them inline. Advisory and unfitted (ADR-0021).
+id: string-literal-is-named-constant
+language: Python
+kind: noul
+subject: node
+state: local
+threshold: 0.5
+axis: file
+severity: warning
+rule:
+  all:
+    - kind: function_definition
+    - has:
+        kind: string
+        stopBy: end
+        regex: ^[a-zA-Z]?["']{1,3}.{3,}
+        not:
+          inside:
+            kind: expression_statement
+            parent:
+              kind: block
+              nthChild: 1
+ask: >-
+  This function embeds a string literal that carries meaning of its own instead of naming it as a module-level constant.
+criteria:
+  "true": >-
+    The function uses a string literal as a meaningful value that other code or other readers rely on (a key, a
+    command, a status, a format, a URL, a header or environment variable name, a message used in more than one place)
+    inline instead of through a module-level `SCREAMING_SNAKE_CASE` constant.
+  "false": >-
+    The strings are docstrings, log or error message text used once, test data, dictionary keys of a one-off literal,
+    or already refer to a module-level constant.

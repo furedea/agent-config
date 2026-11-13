@@ -1,0 +1,35 @@
+id: py_async_test_anyio_marker
+valid:
+  - |
+    @pytest.mark.anyio
+    async def test_something() -> None:
+        assert await work() == 1
+  - |
+    @pytest.mark.anyio
+    class TestWork:
+        async def test_one(self) -> None:
+            assert await work() == 1
+  - |
+    pytestmark = pytest.mark.anyio
+
+
+    async def test_something() -> None:
+        assert await work() == 1
+  - |
+    async def helper() -> int:
+        return 1
+  - |
+    def test_sync() -> None:
+        assert work() == 1
+invalid:
+  - |
+    async def test_something() -> None:
+        assert await work() == 1
+  - |
+    class TestWork:
+        async def test_one(self) -> None:
+            assert await work() == 1
+  - |
+    @pytest.mark.parametrize("n", [1, 2])
+    async def test_many(n: int) -> None:
+        assert await work(n) == n

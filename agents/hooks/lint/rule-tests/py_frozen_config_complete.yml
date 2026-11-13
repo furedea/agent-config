@@ -1,0 +1,16 @@
+id: py_frozen_config_complete
+valid:
+  - |
+    class FrozenModel(pydantic.BaseModel):
+        model_config = pydantic.ConfigDict(extra="forbid", frozen=True, strict=True, validate_default=True)
+  - |
+    model_config = ConfigDict(validate_default=True, frozen=True, strict=True, extra="forbid")
+  - |
+    model_config = ConfigDict(from_attributes=True)
+invalid:
+  - |
+    model_config = pydantic.ConfigDict(frozen=True)
+  - |
+    model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
+  - |
+    model_config = ConfigDict(extra="ignore", frozen=True, strict=True, validate_default=True)

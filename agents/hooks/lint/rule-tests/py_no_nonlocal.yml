@@ -1,0 +1,26 @@
+id: py_no_nonlocal
+valid:
+  - |
+    def counter() -> int:
+        total = 0
+        total += 1
+        return total
+  - |
+    class Counter:
+        def increment(self) -> None:
+            self.total += 1
+invalid:
+  - |
+    def outer() -> None:
+        total = 0
+
+        def inner() -> None:
+            nonlocal total
+            total += 1
+  - |
+    def outer() -> None:
+        first = second = 0
+
+        def inner() -> None:
+            nonlocal first, second
+            first += 1

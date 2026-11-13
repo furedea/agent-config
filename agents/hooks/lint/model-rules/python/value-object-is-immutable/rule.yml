@@ -1,0 +1,36 @@
+# agents/skills/python-style/references/models.md: value objects are frozen (frozen dataclass or a frozen pydantic
+# model). py_dataclass_slots cannot tell a value object from a mutable record, so the model decides. Advisory and
+# unfitted (ADR-0021).
+id: value-object-is-immutable
+language: Python
+kind: noul
+subject: node
+state: local
+threshold: 0.5
+axis: file
+severity: warning
+rule:
+  all:
+    - kind: class_definition
+    - any:
+        - inside:
+            kind: decorated_definition
+            has:
+              kind: decorator
+              regex: dataclass
+        - has:
+            field: superclasses
+            kind: argument_list
+            has:
+              kind: identifier
+              regex: ^(pydantic\.)?BaseModel$
+ask: >-
+  This class models a value, but it is declared mutable.
+criteria:
+  "true": >-
+    The class represents a value without identity (an amount, an identifier, a range, a configuration, a parsed record)
+    that is compared by its fields and not changed after construction, yet it is not frozen: a dataclass without
+    `frozen=True`, or a pydantic model without `frozen=True` in its config or a frozen base class.
+  "false": >-
+    The class is frozen, or it is a mutable record, entity, builder, accumulator, or state holder whose fields are
+    assigned after construction.

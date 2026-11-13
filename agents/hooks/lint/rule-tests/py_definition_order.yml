@@ -1,0 +1,45 @@
+id: py_definition_order
+valid:
+  - |
+    class Color(StrEnum):
+        RED = "red"
+
+
+    class Palette:
+        pass
+
+
+    def paint() -> None: ...
+  - |
+    def paint() -> None: ...
+
+
+    class Palette:
+        pass
+  - |
+    class Palette:
+        pass
+
+
+    def paint() -> None: ...
+invalid:
+  - |
+    class Palette:
+        pass
+
+
+    class Color(StrEnum):
+        RED = "red"
+  - |
+    def paint() -> None: ...
+
+
+    class Color(Enum):
+        RED = 1
+  - |
+    class Palette:
+        pass
+
+
+    class Level(IntEnum):
+        LOW = 1

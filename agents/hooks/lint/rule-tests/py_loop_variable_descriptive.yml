@@ -1,0 +1,31 @@
+id: py_loop_variable_descriptive
+valid:
+  - |
+    for x in values:
+        total += x
+  - |
+    for row in rows:
+        cleaned = row.strip()
+        save(cleaned)
+        count += 1
+  - |
+    for _ in range(3):
+        a()
+        b()
+        c()
+  - |
+    for key, value in pairs:
+        a(key)
+        b(value)
+        c(key)
+invalid:
+  - |
+    for x in rows:
+        cleaned = x.strip()
+        save(cleaned)
+        count += 1
+  - |
+    for i in range(10):
+        a(i)
+        b(i)
+        c(i)

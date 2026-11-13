@@ -1,0 +1,17 @@
+id: py_logging_dict_message
+valid:
+  - |
+    logger.info({"action": "save", "csv_file": csv_file, "status": "run"})
+  - |
+    self.logger.error({"action": "load", "status": "failed"}, exc_info=True)
+  - |
+    logging.warning({"action": "retry", "attempt": attempt})
+  - |
+    print("saving")
+invalid:
+  - |
+    logger.info("saving %s", csv_file)
+  - |
+    logging.error(f"failed to save {csv_file}")
+  - |
+    self.logger.debug("start")

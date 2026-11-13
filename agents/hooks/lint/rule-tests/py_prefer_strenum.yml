@@ -1,0 +1,18 @@
+id: py_prefer_strenum
+valid:
+  - |
+    class Color(StrEnum):
+        RED = "red"
+  - |
+    class Level(Enum):
+        LOW = 1
+  - |
+    class Kind(int, Enum):
+        A = 1
+invalid:
+  - |
+    class Color(str, Enum):
+        RED = "red"
+  - |
+    class Color(Enum, str):
+        RED = "red"

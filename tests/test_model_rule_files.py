@@ -322,9 +322,10 @@ def test_no_saved_eval_baseline_records_an_absolute_path() -> None:
 def test_python_rules_select_the_functions_they_ask_about(repository: Path) -> None:
     (repository / "sample.py").write_text(PYTHON_SOURCE)
 
-    counts = subjects_by_rule(plan(repository))
+    counts = {rule: n for rule, n in subjects_by_rule(plan(repository)).items() if rule in RULE_IDS}
 
-    # Four functions; only `load` raises; only the decorated test carries a known-defect marker.
+    # Four functions; only `load` raises; only the decorated test carries a known-defect marker. Python rules beyond
+    # RULE_IDS select other subjects (fixtures, imports, value objects) and are judged by their own fixtures.
     assert counts == {
         "command-query-naming": 4,
         "error-message-names-operation": 1,

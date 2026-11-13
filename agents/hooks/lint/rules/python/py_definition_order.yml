@@ -1,0 +1,28 @@
+id: py_definition_order
+language: python
+severity: warning
+message: "Define Enums before the classes and functions of the module; move this definition after the Enum it precedes."
+note: "Only the Enum-first half of `Enum -> class -> function` is judged. A class before a function is common (decorators, helpers a class body calls) and is left to review."
+rule:
+  all:
+    - any:
+        - kind: function_definition
+        - kind: class_definition
+    - inside:
+        kind: module
+    - not:
+        has:
+          field: superclasses
+          kind: argument_list
+          has:
+            kind: identifier
+            regex: ^(Str|Int|Int?Flag)?Enum$
+    - precedes:
+        stopBy: end
+        kind: class_definition
+        has:
+          field: superclasses
+          kind: argument_list
+          has:
+            kind: identifier
+            regex: ^(Str|Int|Int?Flag)?Enum$

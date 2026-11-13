@@ -1,0 +1,30 @@
+# agents/skills/python-style/references/code_style.md: avoid `from ... import ...` unless the name is self-explanatory
+# or the module path is too long, and avoid `as` aliases unless clarity needs them. Advisory and unfitted (ADR-0021).
+id: import-name-self-explanatory
+language: Python
+kind: noul
+subject: node
+state: local
+threshold: 0.5
+axis: file
+severity: warning
+rule:
+  all:
+    - any:
+        - kind: import_from_statement
+        - kind: import_statement
+          has:
+            kind: aliased_import
+    - not:
+        regex: ^from\s+(__future__|typing|collections\.abc|dataclasses|enum|pathlib)\s
+ask: >-
+  This import brings in a name that is not clear without its module at the call site, or aliases a name without need.
+criteria:
+  "true": >-
+    A from-import brings in a generic or ambiguous name (`load`, `run`, `parse`, `get`, `main`, `Config`) whose origin a
+    reader cannot see at the call site, and the module path is short enough to import the module instead; or an `as`
+    alias renames an import for no clarity gain.
+  "false": >-
+    The imported name is self-explanatory on its own (`Enum`, `Path`, `Self`, a distinctive class name); the module
+    path is so long that `module.name` at call sites would be unwieldy; or the alias resolves a real name clash or is
+    a conventional one (`numpy as np`, `pandas as pd`).

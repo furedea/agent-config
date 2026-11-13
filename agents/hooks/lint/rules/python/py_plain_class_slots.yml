@@ -1,0 +1,30 @@
+id: py_plain_class_slots
+language: python
+severity: warning
+message: "Declare `__slots__` on a plain class that sets attributes in `__init__`."
+note: "Classes with a base class or a decorator (dataclass, pydantic, Enum, Protocol, exceptions) are skipped, because `__slots__` is for classes that use neither dataclasses nor pydantic."
+rule:
+  kind: class_definition
+  all:
+    - not:
+        has:
+          field: superclasses
+          kind: argument_list
+    - not:
+        inside:
+          kind: decorated_definition
+    - has:
+        field: body
+        kind: block
+        has:
+          kind: function_definition
+          has:
+            field: name
+            regex: ^__init__$
+    - not:
+        has:
+          field: body
+          kind: block
+          has:
+            kind: expression_statement
+            regex: ^__slots__\s*=

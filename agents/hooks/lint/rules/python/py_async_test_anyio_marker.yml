@@ -1,0 +1,23 @@
+id: py_async_test_anyio_marker
+language: python
+severity: warning
+message: "Mark the async test with `@pytest.mark.anyio` (or a module-level `pytestmark`) so anyio runs it."
+note: "A marker on an enclosing class or a module-level `pytestmark = pytest.mark.anyio` also counts."
+rule:
+  kind: function_definition
+  regex: ^async\s+def\s+test_
+  not:
+    any:
+      - inside:
+          kind: decorated_definition
+          stopBy: end
+          has:
+            kind: decorator
+            regex: pytest\.mark\.anyio
+      - inside:
+          kind: module
+          stopBy: end
+          has:
+            stopBy: end
+            kind: assignment
+            regex: ^pytestmark\s*=.*anyio

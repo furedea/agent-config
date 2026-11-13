@@ -1,0 +1,31 @@
+id: py_plain_class_slots
+valid:
+  - |
+    class Foo:
+        __slots__ = ("name", "age")
+
+        def __init__(self, name: str, age: int) -> None:
+            self.name = name
+            self.age = age
+  - |
+    @dataclass(frozen=True, slots=True)
+    class Age:
+        value: int
+  - |
+    class Foo(Base):
+        def __init__(self, name: str) -> None:
+            self.name = name
+  - |
+    class Namespace:
+        def run(self) -> None: ...
+invalid:
+  - |
+    class Foo:
+        def __init__(self, name: str) -> None:
+            self.name = name
+  - |
+    class Foo:
+        limit = 3
+
+        def __init__(self) -> None:
+            self.items = []

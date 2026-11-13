@@ -1,0 +1,9 @@
+id: rs_literal_to_owned
+language: rust
+severity: warning
+message: "Convert a string literal with `to_owned()` or `String::from`, not `to_string()`."
+rule:
+  pattern: $LIT.to_string()
+constraints:
+  LIT:
+    kind: string_literal

@@ -1,0 +1,13 @@
+id: rs_no_path_from_format
+valid:
+  - |
+    fn f(dir: &Path) -> PathBuf { dir.join("a") }
+  - |
+    fn f(name: &str) -> PathBuf { PathBuf::from(name) }
+  - |
+    fn f(name: &str) -> String { format!("{name}.txt") }
+invalid:
+  - |
+    fn f(dir: &str) -> PathBuf { PathBuf::from(format!("{dir}/a")) }
+  - |
+    fn f(dir: &str) { let p = Path::new(&format!("{}/a", dir)); }

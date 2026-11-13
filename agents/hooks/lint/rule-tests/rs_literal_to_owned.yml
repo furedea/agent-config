@@ -1,0 +1,13 @@
+id: rs_literal_to_owned
+valid:
+  - |
+    fn f() -> String { "x".to_owned() }
+  - |
+    fn f() -> String { String::from("x") }
+  - |
+    fn f(n: u32) -> String { n.to_string() }
+invalid:
+  - |
+    fn f() -> String { "x".to_string() }
+  - |
+    fn f() { let s = "a b".to_string(); }

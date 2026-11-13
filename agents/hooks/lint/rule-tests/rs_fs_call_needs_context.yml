@@ -1,0 +1,32 @@
+id: rs_fs_call_needs_context
+valid:
+  - |
+    fn f(p: &Path) -> Result<String> {
+        std::fs::read_to_string(p).with_context(|| format!("read {}", p.display()))
+    }
+  - |
+    fn f(p: &Path) -> Result<String> {
+        let s = fs::read_to_string(p).map_err(|e| Error::new(p, e))?;
+        Ok(s)
+    }
+  - |
+    fn f(p: &Path) -> Result<String> {
+        let s = fs::read_to_string(p).with_context(|| "read")?;
+        Ok(s)
+    }
+invalid:
+  - |
+    fn f(p: &Path) -> Result<String> {
+        let s = std::fs::read_to_string(p)?;
+        Ok(s)
+    }
+  - |
+    fn f(p: &Path) -> Result<()> {
+        fs::write(p, "x")?;
+        Ok(())
+    }
+  - |
+    fn f(p: &Path) -> Result<()> {
+        let _f = File::open(p)?;
+        Ok(())
+    }

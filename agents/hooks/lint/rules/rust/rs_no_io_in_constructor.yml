@@ -1,0 +1,27 @@
+id: rs_no_io_in_constructor
+language: rust
+severity: warning
+message: "Keep I/O out of constructors and parsers; read the input in a module-level function and pass the value in."
+ignores:
+  - "**/*tests.rs"
+  - "**/fixtures.rs"
+  - "**/tests/**"
+  - "**/test_support.rs"
+  - "**/build.rs"
+  - "**/fixtures/**"
+rule:
+  all:
+    - kind: function_item
+    - has:
+        field: name
+        kind: identifier
+        regex: ^(new|try_new|parse|from_str|try_from|from)$
+    - has:
+        field: body
+        has:
+          kind: call_expression
+          stopBy: end
+          has:
+            field: function
+            kind: scoped_identifier
+            regex: ^((std::)?fs::|(std::fs::)?File::(open|create)|(std::process::)?Command::new|(std::)?net::)

@@ -1,0 +1,33 @@
+id: rs_no_io_in_constructor
+valid:
+  - |
+    impl Name {
+        pub fn parse(value: &str) -> Result<Self, NameError> { Ok(Self(value.to_owned())) }
+    }
+  - |
+    pub fn load(path: &Path) -> Result<String> {
+        std::fs::read_to_string(path).context("read")
+    }
+  - |
+    impl Name {
+        pub fn new(value: String) -> Self { Self(value) }
+    }
+invalid:
+  - |
+    impl Config {
+        pub fn new(path: &Path) -> Self {
+            let text = std::fs::read_to_string(path).unwrap_or_default();
+            Self(text)
+        }
+    }
+  - |
+    impl Name {
+        pub fn parse(path: &Path) -> Self {
+            let file = File::open(path);
+            Self(file)
+        }
+    }
+  - |
+    impl Probe {
+        fn try_new() -> Self { Command::new("git"); Self }
+    }

@@ -1,0 +1,23 @@
+id: rs_no_bool_constructor_arg
+valid:
+  - |
+    impl Cli {
+        pub fn new(mode: Mode) -> Self { Self { mode } }
+    }
+  - |
+    impl Cli {
+        pub fn set_verbose(&mut self, verbose: bool) { self.verbose = verbose; }
+    }
+  - |
+    impl Cli {
+        pub fn new(name: String) -> Self { Self { name } }
+    }
+invalid:
+  - |
+    impl Cli {
+        pub fn new(verbose: bool) -> Self { Self { verbose } }
+    }
+  - |
+    impl Cli {
+        pub fn with_color(name: String, color: bool) -> Self { Self { name, color } }
+    }

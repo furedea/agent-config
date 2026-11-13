@@ -1,0 +1,20 @@
+id: rs_pub_fn_before_private_fn
+language: rust
+severity: warning
+message: "Put public functions before the private helper functions."
+ignores:
+  - "**/fixtures/**"
+rule:
+  all:
+    - kind: function_item
+    - has:
+        kind: visibility_modifier
+        regex: ^pub$
+    - inside:
+        kind: source_file
+    - follows:
+        kind: function_item
+        stopBy: end
+        not:
+          has:
+            kind: visibility_modifier

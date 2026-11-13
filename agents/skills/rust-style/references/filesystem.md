@@ -1,6 +1,6 @@
 # Filesystem Operations
 
-- Use `Path` and `PathBuf` for paths. Do not build paths with string concatenation.
+- Use `Path` and `PathBuf` for paths.
 - Treat source tree traversal and symlink creation as separate behaviors.
 - Do not follow symlinks while traversing source trees unless the behavior is explicitly required and tested.
 - Use `DirEntry::file_type()` instead of `Path::is_dir()` when symlink behavior matters.

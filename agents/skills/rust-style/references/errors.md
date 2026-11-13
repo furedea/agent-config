@@ -6,15 +6,12 @@
 - Add context at I/O, external command, parse, and config boundaries.
 - A low-level error such as "No such file or directory" must include the operation and path.
 - Use `?` for propagation.
-- Do not use `unwrap` or `expect` in production code except for impossible states justified by a nearby invariant.
 
 ## Panic Policy
 
 - Use `Result` for expected failures.
 - Reserve `panic!` for logic bugs and impossible states.
-- Avoid direct indexing when missing data is a normal possibility; use `get()` or explicit validation.
-- Public APIs that can panic must document `# Panics`.
-- Do not leave `todo!`, `unimplemented!`, or debugging `panic!` calls in production code.
+- Do not leave debugging `panic!` calls in production code.
 - Use `unreachable!` only when the type system or previous validation makes the branch impossible.
 
 Application-boundary error:

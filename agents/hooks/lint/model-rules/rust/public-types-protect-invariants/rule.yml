@@ -1,0 +1,35 @@
+# rust-style/references/types.md (Structs) and package_design.md (Public API Design): keep fields private when the type
+# has invariants, validate in a constructor, and do not expose mutable internal collections. Advisory and not fitted.
+id: public-types-protect-invariants
+language: Rust
+kind: noul
+subject: node
+# The constructors, validation and impls that make a field's invariant are elsewhere in the file.
+state: located
+threshold: 0.5
+axis: file
+severity: warning
+rule:
+  all:
+    - kind: struct_item
+    - has:
+        kind: field_declaration_list
+        has:
+          kind: field_declaration
+          all:
+            - has:
+                kind: visibility_modifier
+            - has:
+                field: type
+                regex: ^(Vec|HashMap|HashSet|BTreeMap|BTreeSet|VecDeque)<
+ask: >-
+  This type has a public field that holds a mutable collection, or a public field whose value must satisfy an
+  invariant that the type's own constructor checks.
+criteria:
+  "true": >-
+    A caller can break a rule the type depends on by writing the public field directly: an invariant checked in a
+    constructor or `parse` function (non-empty, sorted, unique, in range) is bypassed, or a collection that the type
+    treats as its own state is exposed for mutation.
+  "false": >-
+    The struct is a plain data carrier with no invariant (a configuration, an options struct, a result record) whose
+    fields can hold any value, or the field is not public outside the crate and has no invariant.

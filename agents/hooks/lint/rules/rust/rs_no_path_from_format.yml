@@ -1,0 +1,9 @@
+id: rs_no_path_from_format
+language: rust
+severity: warning
+message: "Build a path with `Path::join` / `PathBuf::push`, not by formatting a string."
+rule:
+  any:
+    - pattern: PathBuf::from(format!($$$ARGS))
+    - pattern: Path::new(&format!($$$ARGS))
+    - pattern: Path::new(&$A + $B)

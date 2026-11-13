@@ -1,0 +1,28 @@
+# bash-style: "For requested help (`--help`/`-h`), call `usage` and `exit 0`. For missing or invalid arguments, call
+# `usage >&2` and `exit 1`." Advisory; the prose stays until the rule is promoted (ADR-0021).
+id: usage-help-and-error-exits
+language: Bash
+kind: noul
+subject: node
+state: located
+threshold: 0.5
+axis: file
+severity: warning
+# The script's own argument handling: a `case` or `if` that mentions the help flags or calls `usage`.
+rule:
+  all:
+    - any:
+        - kind: case_statement
+        - kind: if_statement
+    - regex: "usage|--help|-h\\b"
+    - has: { kind: command, regex: "^usage\\b", stopBy: end }
+ask: >-
+  This argument handling prints usage for a requested help with a non-zero exit, or for a missing or invalid argument
+  with exit status 0 or on standard output.
+criteria:
+  "true": >-
+    A `--help`/`-h` request calls `usage` and then exits with a non-zero status or does not exit, or a missing or
+    invalid argument calls `usage` without redirecting it to standard error (`usage >&2`) or exits with status 0.
+  "false": >-
+    A requested help calls `usage` and exits 0, and a missing or invalid argument calls `usage >&2` and exits 1, or the
+    branch handles neither case.

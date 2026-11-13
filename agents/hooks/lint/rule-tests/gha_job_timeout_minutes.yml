@@ -1,0 +1,31 @@
+id: gha_job_timeout_minutes
+valid:
+  - |
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        steps:
+          - run: echo hi
+  - |
+    jobs:
+      call:
+        uses: owner/repo/.github/workflows/lint.yml@main
+invalid:
+  - |
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        steps:
+          - run: echo hi
+  - |
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        steps:
+          - run: echo hi
+      test:
+        runs-on: ubuntu-latest
+        steps:
+          - run: echo hi

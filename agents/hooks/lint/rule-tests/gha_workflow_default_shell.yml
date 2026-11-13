@@ -1,0 +1,36 @@
+id: gha_workflow_default_shell
+valid:
+  - |
+    defaults:
+      run:
+        shell: bash
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        steps:
+          - run: echo hi
+  - |
+    defaults:
+      run:
+        shell: nix develop --command bash -eo pipefail {0}
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        steps:
+          - run: echo hi
+invalid:
+  - |
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        steps:
+          - run: echo hi
+  - |
+    defaults:
+      run:
+        working-directory: app
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        steps:
+          - run: echo hi

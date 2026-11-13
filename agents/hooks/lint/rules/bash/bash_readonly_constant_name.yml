@@ -1,0 +1,23 @@
+id: bash_readonly_constant_name
+language: bash
+severity: warning
+message: "Name constants in `SCREAMING_SNAKE_CASE`."
+note: "Only `readonly` declarations at script level are checked: inside a function, `local -r` and `readonly` name a local value."
+rule:
+  any:
+    - all:
+        - kind: variable_assignment
+        - has:
+            field: name
+            kind: variable_name
+            regex: ^[^A-Z]|[^A-Z0-9_]
+    - all:
+        - kind: variable_name
+        - regex: ^[^A-Z]|[^A-Z0-9_]
+  inside:
+    kind: declaration_command
+    regex: ^readonly\b
+    not:
+      inside:
+        kind: function_definition
+        stopBy: end

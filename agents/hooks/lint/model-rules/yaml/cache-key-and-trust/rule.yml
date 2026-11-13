@@ -1,0 +1,27 @@
+# github-actions-style section 7, Cache Design: key covers every compatibility boundary, a correct miss fallback, and no
+# credentials in cached paths. Advisory; the prose stays until the rule is promoted (ADR-0021).
+id: cache-key-and-trust
+language: Yaml
+kind: noul
+subject: node
+state: located
+threshold: 0.5
+axis: file
+severity: warning
+rule:
+  all:
+    - kind: block_mapping_pair
+    - has: { field: key, regex: "^uses$" }
+    - has: { field: value, regex: "^actions/cache(/(restore|save))?@" }
+ask: >-
+  This cache step uses a key that omits a compatibility boundary of its contents, relies on `restore-keys` partial
+  matches that nothing validates, or caches a path that can hold credentials.
+criteria:
+  "true": >-
+    The key leaves out something that changes the cached contents (the operating system, the tool or language version,
+    the lock file hash), or `restore-keys` restores stale contents into a step that does not validate them, or a path
+    such as the home directory, a credentials file, or `.git` is cached.
+  "false": >-
+    The key includes the operating system and the hash of the files that determine the contents, partial matches are
+    used only where the consumer validates the stale contents, and the cached paths hold build artifacts and no
+    credentials.

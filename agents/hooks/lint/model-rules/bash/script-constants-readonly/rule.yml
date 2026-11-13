@@ -1,0 +1,25 @@
+# bash-style: "Declare constants with `readonly`" (the name's case is checked by the ast-grep rule
+# bash_readonly_constant_name). Advisory; the prose stays until the rule is promoted (ADR-0021).
+id: script-constants-readonly
+language: Bash
+kind: noul
+subject: node
+state: local
+threshold: 0.5
+axis: file
+severity: warning
+# A top-level assignment: the script's own configuration and paths, which are constants unless the script changes them.
+rule:
+  all:
+    - kind: variable_assignment
+    - inside: { kind: program, stopBy: neighbor }
+ask: >-
+  This script-level value is a constant that the script never reassigns, yet it is not declared `readonly`.
+criteria:
+  "true": >-
+    The value is assigned once at the top level, no later statement in the file assigns, unsets or appends to it, and no
+    `readonly NAME` or `declare -r NAME` for it follows (the two-step `NAME=$(cmd)` then `readonly NAME` is a
+    declaration).
+  "false": >-
+    The value is declared `readonly`, or the script reassigns, appends to, or unsets it, or it is a loop counter, an
+    accumulator, or a variable that the environment or an option parser sets, so it is not a constant.

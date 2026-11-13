@@ -1,0 +1,26 @@
+# bash-style: "Choose the working directory by responsibility." Advisory; the prose stays until the rule is promoted
+# (ADR-0021).
+id: working-directory-by-responsibility
+language: Bash
+kind: noul
+subject: node
+state: located
+threshold: 0.5
+axis: file
+severity: warning
+rule:
+  all:
+    - kind: command
+    - has: { field: name, regex: "^(cd|pushd)$" }
+ask: >-
+  This script changes into its own directory although some of its work operates on the target project, or it works on
+  bundled resources through paths relative to a working directory that is not the script's location.
+criteria:
+  "true": >-
+    The script changes the working directory to its own location (`cd "$(dirname "$0")"`) and then runs commands that
+    should act on the caller's project or the current directory, or the script keeps the caller's working directory and
+    then opens bundled files through relative paths that only resolve from the script's location.
+  "false": >-
+    Every command after the change works on the location it changed to, or the script resolves bundled resources from
+    the script's own location without changing directory, or the change is confined to a subshell or a `pushd`/`popd`
+    pair around one operation.

@@ -1,0 +1,22 @@
+id: bash_strict_mode_header
+valid:
+  - |
+    #!/usr/bin/env bash
+    set -euCo pipefail
+    echo hi
+  - |
+    # sourced library without a shebang
+    helper() { :; }
+invalid:
+  - |
+    #!/usr/bin/env bash
+    echo hi
+  - |
+    #!/usr/bin/env bash
+    set -eu
+    echo hi
+  - |
+    #!/usr/bin/env bash
+    main() {
+      set -euCo pipefail
+    }

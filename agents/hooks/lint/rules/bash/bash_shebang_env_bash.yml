@@ -1,0 +1,13 @@
+id: bash_shebang_env_bash
+language: bash
+severity: warning
+message: "Start executable Bash scripts with `#!/usr/bin/env bash`."
+note: "`env` resolves Bash from PATH, and naming `bash` runs the script with Bash and not with `sh`."
+rule:
+  kind: comment
+  regex: ^#!
+  not:
+    regex: ^#!/usr/bin/env bash$
+  inside:
+    kind: program
+    stopBy: neighbor

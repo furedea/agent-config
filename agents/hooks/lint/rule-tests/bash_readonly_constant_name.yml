@@ -1,0 +1,21 @@
+id: bash_readonly_constant_name
+valid:
+  - |
+    readonly MAX_RETRY=3
+  - |
+    readonly -a TARGET_DIRS=(a b)
+  - |
+    SCRIPT_DIR="$(pwd)"
+    readonly SCRIPT_DIR
+  - |
+    build() {
+      readonly local_value=1
+    }
+invalid:
+  - |
+    readonly max_retry=3
+  - |
+    readonly MaxRetry=3
+  - |
+    value=1
+    readonly value

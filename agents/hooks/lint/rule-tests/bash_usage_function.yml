@@ -1,0 +1,22 @@
+id: bash_usage_function
+valid:
+  - |
+    #!/usr/bin/env bash
+    function usage() {
+      cat <<EOT
+    Usage: $0
+    EOT
+    }
+  - |
+    #!/usr/bin/env bash
+    usage() { echo "Usage: $0"; }
+  - |
+    # sourced library without a shebang
+    helper() { :; }
+invalid:
+  - |
+    #!/usr/bin/env bash
+    echo hi
+  - |
+    #!/usr/bin/env bash
+    show_usage() { echo "Usage: $0"; }

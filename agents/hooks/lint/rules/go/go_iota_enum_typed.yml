@@ -18,7 +18,7 @@ rule:
           regex: .+
       - has:
           field: value
-          regex: ^[A-Za-z_][\w.]*\(.*\biota\b
+          regex: ^[A-Za-z_][\w.]*\(\s*[^,()]*\biota\b[^,()]*\)$
           not:
             regex: ^(min|max|len|cap|complex|real|imag|unsafe\.\w+)\(
       - all:
@@ -26,9 +26,16 @@ rule:
               field: name
               regex: ^_$
           - precedes:
-              kind: const_spec
               stopBy:
                 kind: const_spec
-              has:
-                field: type
-                regex: .+
+              all:
+                - kind: const_spec
+                - any:
+                    - has:
+                        field: type
+                        regex: .+
+                    - has:
+                        field: value
+                        regex: ^[A-Za-z_][\w.]*\(\s*[^,()]*\biota\b[^,()]*\)$
+                        not:
+                          regex: ^(min|max|len|cap|complex|real|imag|unsafe\.\w+)\(

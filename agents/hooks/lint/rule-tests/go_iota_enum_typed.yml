@@ -25,7 +25,15 @@ valid:
         StatePending = State(iota)
         StateDone
     )
+  - |
+    const (
+        _ = iota
+        StateReady = State(iota)
+        StateDone
+    )
 invalid:
+  - |
+    const First, Second = State(iota), iota
   - |
     const (
         StateReady = max(iota, 1)

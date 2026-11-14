@@ -2,7 +2,7 @@ id: go_context_param_named_ctx
 language: go
 severity: error
 message: "Name a `context.Context` parameter `ctx`."
-note: "Only a file that imports the standard `context` package without an alias is judged. The position of the parameter is judged by revive `context-as-argument`."
+note: "Named results are not judged. Only a file that imports the standard `context` package without an alias is judged. The position of the parameter is judged by revive `context-as-argument`."
 rule:
   kind: identifier
   not:
@@ -13,6 +13,14 @@ rule:
       field: type
       kind: qualified_type
       regex: ^context\.Context$
+    inside:
+      kind: parameter_list
+      inside:
+        any:
+          - kind: function_declaration
+          - kind: method_declaration
+          - kind: func_literal
+        field: parameters
   all:
     - inside:
           kind: source_file

@@ -18,6 +18,10 @@ valid:
     func fetch(c context.Context) error { return nil }
   - |
     func fetch(c context.Context) error { return nil }
+  - |
+    import "context"
+
+    func detach() (parent context.Context, cancel context.CancelFunc) { return }
 invalid:
   - |
     import "context"

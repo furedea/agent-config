@@ -16,6 +16,9 @@ rule:
         any:
           - kind: variable_assignment
           - kind: for_statement
+          # Builtins that assign without an assignment node.
+          - kind: command
+            regex: "^(read|mapfile|readarray|printf\\s+-v)\\b"
         stopBy: end
 ask: >-
   A variable that this function assigns is not declared with `local`, or is declared and assigned far above the place

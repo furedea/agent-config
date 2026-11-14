@@ -11,7 +11,7 @@ severity: warning
 rule:
   all:
     - kind: block_mapping_pair
-    - has: { field: key, regex: "^uses$" }
+    - has: { field: key, regex: "^[\"']?uses[\"']?$" }
     - has: { field: value, regex: "^[\"']?actions/cache(/(restore|save))?@" }
 ask: >-
   This cache step uses a key that omits a compatibility boundary of its contents, relies on `restore-keys` partial

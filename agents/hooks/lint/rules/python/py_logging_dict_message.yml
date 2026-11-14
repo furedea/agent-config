@@ -2,7 +2,7 @@ id: py_logging_dict_message
 language: python
 severity: warning
 message: "Log a dictionary such as `{\"action\": \"save\", \"status\": \"run\"}` instead of a format string."
-note: "A `msg=` keyword is judged like the first positional argument. Only calls on a receiver named `logger`, `log` or `logging` (or such a field) are judged. A call without arguments is skipped."
+note: "Only a call whose message is a string literal (also `msg=`) is judged, so a variable that already holds a dictionary passes. Only calls on a receiver named `logger`, `log` or `logging` (or such a field) are judged."
 rule:
   kind: call
   all:
@@ -15,13 +15,9 @@ rule:
         kind: argument_list
         has:
           nthChild: 1
-          not:
-            any:
-              - kind: dictionary
-              - all:
-                  - kind: keyword_argument
-                  - not:
-                      regex: ^msg\s*=
-              - all:
-                  - kind: keyword_argument
-                  - regex: ^msg\s*=\s*\{
+          any:
+            - kind: string
+            - kind: concatenated_string
+            - all:
+                - kind: keyword_argument
+                - regex: ^msg\s*=\s*[A-Za-z]{0,2}["']

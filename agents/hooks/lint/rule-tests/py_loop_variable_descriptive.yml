@@ -2,6 +2,10 @@ id: py_loop_variable_descriptive
 valid:
   - |
     for x in values:
+        a(x)
+        b(x)
+  - |
+    for x in values:
         total += x
   - |
     for row in rows:

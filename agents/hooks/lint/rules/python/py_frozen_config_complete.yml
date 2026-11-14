@@ -2,7 +2,7 @@ id: py_frozen_config_complete
 language: python
 severity: warning
 message: "A frozen model config sets `extra=\"forbid\"`, `frozen=True`, `strict=True` and `validate_default=True`."
-note: "Only a `ConfigDict` that already sets `frozen=True` is judged; a config that is not frozen is a different decision."
+note: "A model that inherits a class other than `BaseModel` is skipped, because pydantic merges `model_config` from its parents. Only a `ConfigDict` that already sets `frozen=True` is judged; a config that is not frozen is a different decision."
 rule:
   kind: call
   all:
@@ -14,6 +14,19 @@ rule:
         has:
           kind: keyword_argument
           regex: ^frozen\s*=\s*True$
+    - not:
+        inside:
+          kind: class_definition
+          stopBy: end
+          has:
+            field: superclasses
+            kind: argument_list
+            has:
+              any:
+                - kind: identifier
+                - kind: attribute
+              not:
+                regex: ^(pydantic\.)?BaseModel$
     - any:
         - not:
             has:

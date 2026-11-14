@@ -1,6 +1,9 @@
 id: py_async_test_anyio_marker
 valid:
   - |
+    async def test_something(anyio_backend: str) -> None:
+        assert await work() == 1
+  - |
     @pytest.mark.anyio
     async def test_something() -> None:
         assert await work() == 1

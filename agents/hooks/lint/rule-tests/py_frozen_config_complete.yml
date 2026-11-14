@@ -1,6 +1,9 @@
 id: py_frozen_config_complete
 valid:
   - |
+    class Money(FrozenModel):
+        model_config = ConfigDict(frozen=True, strict=True)
+  - |
     class FrozenModel(pydantic.BaseModel):
         model_config = pydantic.ConfigDict(extra="forbid", frozen=True, strict=True, validate_default=True)
   - |

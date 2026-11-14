@@ -77,7 +77,9 @@ def _advise(record: SessionRecord, stop_hook_active: bool, deadline: model_rules
     details = model_rules_report.describe_details(outcome)
     blocking = bool(outcome.findings) and not stop_hook_active
     state = CLEAN if not outcome.findings else SHOWN if blocking else UNSHOWN
-    _save(record, _receipt(inputs, outcome, state))
+    if not outcome.failed_reviews:
+        # A review that failed is not a result to reuse: the next Stop on the same inputs runs it again.
+        _save(record, _receipt(inputs, outcome, state))
     return Advice(message, blocking, details if blocking else "")
 
 

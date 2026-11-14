@@ -176,8 +176,8 @@ def review_all(reviews: tuple[Review, ...], credentials: Credentials, deadline: 
 
 
 def _failed_review(prevented: Prevented, position: int, combined: Judgement) -> Judgement | Prevented:
-    """The first review failing prevents the run; a later one keeps the earlier findings, as one skipped file."""
-    return prevented if position == 0 else combined.combined(Judgement((), skipped_files=1))
+    """The first review failing prevents the run; a later one keeps the earlier findings and is retried next Stop."""
+    return prevented if position == 0 else combined.combined(Judgement((), skipped_files=1, failed_reviews=1))
 
 
 def cache_path(state_directory: Path) -> Path:

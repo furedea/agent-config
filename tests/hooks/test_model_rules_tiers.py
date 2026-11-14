@@ -102,6 +102,7 @@ def test_a_later_review_that_fails_keeps_what_the_first_one_found() -> None:
     assert isinstance(outcome, Judgement)
     assert outcome.findings == (finding,)
     assert outcome.skipped_files == 1
+    assert outcome.failed_reviews == 1
 
 
 def test_the_first_review_that_fails_still_prevents_the_run() -> None:
@@ -124,3 +125,25 @@ def test_adding_a_baseline_changes_the_input_fingerprint(
     (folder / "baseline.json").write_text("{}")
 
     assert model_rules_gate._inputs(record) != before
+
+
+def advise_with(outcome: Judgement, monkeypatch: pytest.MonkeyPatch) -> dict:
+    """The results a record holds after one Stop whose judgement was `outcome`."""
+    saved: dict = {}
+    record = SimpleNamespace(results=lambda: saved, save_results=saved.update)
+    monkeypatch.setattr(model_rules_gate, "_inputs", lambda _record: "same-inputs")
+    monkeypatch.setattr(model_rules_gate, "_judge", lambda _record, _deadline: outcome)
+
+    model_rules_gate._advise(cast(Any, record), False, cast(Any, None))
+
+    return saved
+
+
+def test_a_run_with_a_failed_review_saves_no_receipt_so_the_next_stop_retries_it(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    assert advise_with(Judgement((), failed_reviews=1), monkeypatch) == {}
+
+
+def test_a_complete_run_saves_its_receipt(monkeypatch: pytest.MonkeyPatch) -> None:
+    assert model_rules_gate.RECEIPT_KEY in advise_with(Judgement(()), monkeypatch)

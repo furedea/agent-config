@@ -21,4 +21,6 @@
 
 ## Logging and Diagnostics
 
+- Use `log/slog` for logging.
 - Keep human diagnostics on stderr and machine-readable command output on stdout.
+- Libraries must not configure the global logger.

@@ -14,6 +14,8 @@ valid:
     print("saving")
 invalid:
   - |
+    request.logger.info("saving")
+  - |
     logger.info(extra={"request": request_id}, msg="saving")
   - |
     logger.info(msg="saving")

@@ -33,6 +33,12 @@ valid:
   - |
     def test_sync() -> None:
         assert work() == 1
+  - |
+    pytestmark = [pytest.mark.filterwarnings("ignore::DeprecationWarning"), pytest.mark.anyio]
+
+
+    async def test_something() -> None:
+        assert await work() == 1
 invalid:
   - |
     pytestmark = pytest.mark.filterwarnings("ignore:anyio")

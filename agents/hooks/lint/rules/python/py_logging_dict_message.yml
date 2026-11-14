@@ -9,7 +9,7 @@ rule:
     - has:
         field: function
         kind: attribute
-        regex: ^(self\.)?_?(logger|log|logging)\.(debug|info|warning|warn|error|exception|critical)$
+        regex: ^([A-Za-z_][A-Za-z0-9_]*\.)*_?(logger|log|logging)\.(debug|info|warning|warn|error|exception|critical)$
     - has:
         field: arguments
         kind: argument_list

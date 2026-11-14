@@ -12,6 +12,13 @@ rule:
   all:
     - any:
         - kind: import_from_statement
+          has:
+            field: name
+            kind: dotted_name
+            regex: ^(load|loads|dump|dumps|run|main|parse|get|set|read|write|open|create|make|build|update|save|send|start|stop|check|find|render|format|handle|process|execute|call|setup|init|Config|Settings|Client|Result|Error|Model|Base|Manager|Handler)$
+        - kind: import_from_statement
+          has:
+            kind: aliased_import
         - kind: import_statement
           has:
             kind: aliased_import

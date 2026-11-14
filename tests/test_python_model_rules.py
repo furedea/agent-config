@@ -51,6 +51,10 @@ def say():
     print("hello world")
 
 
+def env():
+    return os.environ.get("SOME_HOME_DIR")
+
+
 @pytest.fixture
 def one():
     return 1
@@ -81,15 +85,16 @@ def test_python_style_model_rules_select_the_subjects_they_ask_about(repository:
     counts = subjects_by_rule(plan(repository))
 
     # `Age` and `Money` are value-object candidates (a dataclass and a pydantic model, written qualified); `Token`
-    # has another base. `make_age` is a constructor by name. Only `mode` compares a string literal, and the strings
-    # in `label` and `say` count but a docstring does not (`only_doc`). `pytest.fixture`, the bare `@fixture` and an
-    # aliased `@pytest_fixture` all select a fixture. The module has test functions, so the parametrize rule asks
+    # has another base. `make_age` is a constructor by name. Only `mode` compares a string literal, and `env` looks one
+    # up by key; plain strings in `label` and `say`, and a docstring (`only_doc`), are not subjects. `pytest.fixture`,
+    # the bare `@fixture` and an aliased `@pytest_fixture` all select a fixture. The module has test functions, so
+    # the parametrize rule asks
     # about it. The aliased import is asked about.
     assert {rule: n for rule, n in counts.items() if rule not in RULE_IDS} == {
         "value-object-is-immutable": 2,
         "construction-placement-by-purity": 1,
         "fixed-choices-use-enum": 1,
-        "string-literal-is-named-constant": 3,
+        "string-literal-is-named-constant": 2,
         "fixture-justified": 3,
         "repeated-tests-use-parametrize": 1,
         "import-name-self-explanatory": 1,

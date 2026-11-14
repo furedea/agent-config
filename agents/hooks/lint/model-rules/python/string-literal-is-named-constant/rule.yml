@@ -12,13 +12,19 @@ rule:
   all:
     - kind: function_definition
     - has:
-        kind: string
         stopBy: end
-        regex: (?s)^[a-zA-Z]?["']{1,3}.{3,}
-        not:
-          inside:
-            kind: expression_statement
-            nthChild: 1
+        any:
+          - kind: comparison_operator
+          - kind: subscript
+          - kind: call
+            has:
+              field: function
+              kind: attribute
+              regex: (\.get|\.getenv|\.environ\.get)$
+        has:
+          stopBy: end
+          kind: string
+          regex: (?s)^[a-zA-Z]?["']{1,3}.{3,}
 ask: >-
   This function embeds a string literal that carries meaning of its own instead of naming it as a module-level constant.
 criteria:

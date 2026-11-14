@@ -31,4 +31,17 @@ rule:
             kind: expression_statement
             has:
               kind: assignment
-              regex: (?s)^pytestmark\s*=[^"']*pytest\.mark\.anyio\b
+              all:
+                - has:
+                    field: left
+                    kind: identifier
+                    regex: ^pytestmark$
+                - has:
+                    field: right
+                    any:
+                      - kind: attribute
+                        regex: ^pytest\.mark\.anyio$
+                      - has:
+                          stopBy: end
+                          kind: attribute
+                          regex: ^pytest\.mark\.anyio$

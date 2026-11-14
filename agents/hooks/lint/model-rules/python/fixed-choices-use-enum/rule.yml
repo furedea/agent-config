@@ -21,11 +21,14 @@ rule:
             kind: match_statement
             stopBy: end
         - has:
-            kind: pair
+            kind: dictionary
             stopBy: end
             has:
-              field: key
-              kind: string
+              kind: pair
+              nthChild: 2
+              has:
+                field: key
+                kind: string
 ask: >-
   This function selects behavior among a fixed set of choices by raw string literals instead of an Enum.
 criteria:

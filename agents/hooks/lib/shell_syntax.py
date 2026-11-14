@@ -10,6 +10,7 @@ from functools import partial
 from pathlib import Path
 from typing import Self
 
+import code_text
 import fish_script
 import powershell_options
 import shell_input
@@ -18,12 +19,12 @@ from shell_wrappers import ASSIGNMENT, WRAPPERS, OptionScan, script_index, wrapp
 
 COMMAND_PREVIEW_LIMIT = 200
 RUN_TIME_PLACEHOLDER = "_"
-# Statements, words, arithmetic, loops and branches, and tests that the inspection understands.
+# Statements, words, arithmetic, loops and branches, functions (judged where defined), and tests it understands.
 ALLOWED_NODES = frozenset(
     {
         None,
         *(
-            "File CallExpr BinaryCmd Subshell Block TimeClause DeclClause "
+            "File CallExpr BinaryCmd Subshell Block TimeClause DeclClause FuncDecl "
             "Word Lit SglQuoted DblQuoted ParamExp CmdSubst ProcSubst "
             "ArithmExp ArithmCmd BinaryArithm UnaryArithm ParenArithm "
             "ForClause WordIter CStyleLoop WhileClause IfClause CaseClause CaseItem "
@@ -32,23 +33,7 @@ ALLOWED_NODES = frozenset(
     }
 )
 DIRECTORY_CHANGES = frozenset({"cd", "pushd", "popd"})
-SHELLS = frozenset(
-    {
-        "ash",
-        "bash",
-        "dash",
-        "hush",
-        "ksh",
-        "mksh",
-        "oksh",
-        "pdksh",
-        "posh",
-        "rbash",
-        "sh",
-        "yash",
-        "zsh",
-    }
-)
+SHELLS = frozenset("ash bash dash hush ksh mksh oksh pdksh posh rbash sh yash zsh".split())
 # Shells whose syntax is not bash's. However one is invoked, the call asks: the inspection cannot tell
 # what such a shell would run, and each option or syntax it adds is another way to hand it a script.
 # Its script text, where visible, is read as bash only to find commands to deny.
@@ -206,7 +191,7 @@ def parse(source: str, depth: int = 0, directories: tuple[Path | None, ...] = ()
     owners = {id(node["Cmd"]): node for node in records if isinstance(node.get("Cmd"), dict)}
     if any(node.get("Type") not in ALLOWED_NODES for node in records):
         raise UnsupportedSyntaxError("dynamic or unsupported shell syntax requires explicit review", "expansion")
-    hidden_calls = hidden_from_provider(records)
+    hidden_calls, in_functions = hidden_from_provider(records), function_calls(records)
     data = source.encode()
     sources = shell_input.InputSources.of(records, data)
     commands: list[Command] = []
@@ -218,20 +203,21 @@ def parse(source: str, depth: int = 0, directories: tuple[Path | None, ...] = ()
         layers = [command, *unwrapped(command)]
         for layer in layers:
             directories = reached_directories(directories, layer)
+        reachable = (*directories, None) if id(node) in in_functions else directories
         innermost = layers[-1]
         name = shell_name(Path(innermost.arguments[0]).name)
         scripts = [(script, layer.wrapper_depth + 1) for layer in layers for script in shell_scripts(layer)]
         unreviewed = name in FOREIGN_SHELLS or any(takes_foreign_option(layer) for layer in layers)
         if (name in SHELLS and not scripts) or _is_foreign_shell(name):
-            inputs = input_scripts(partial(sources.scripts, owner, directories), tolerant=bool(scripts))
+            inputs = input_scripts(partial(sources.scripts, owner, reachable), tolerant=bool(scripts))
             scripts += [(script, innermost.wrapper_depth + 1) for script in inputs]
             unreviewed = unreviewed or (name not in SHELLS and bool(inputs))
         if name == "fish":
-            commands += fish_file_commands(innermost, directories)
+            commands += fish_file_commands(innermost, reachable)
         if unreviewed:
             layers[-1] = replace(innermost, unreviewed=True)
         commands += layers
-        commands += [nested for script, nested_depth in scripts for nested in parse(script, nested_depth, directories)]
+        commands += [nested for script, nested_depth in scripts for nested in parse(script, nested_depth, reachable)]
     return tuple(commands)
 
 
@@ -255,10 +241,18 @@ def input_scripts(read: Callable[[], list[str]], tolerant: bool) -> list[str]:
 
 
 def hidden_from_provider(records: tuple[dict, ...]) -> set[int]:
-    """The calls under a time keyword or a negation, which the provider's permission rules do not look through."""
+    """The calls under a time keyword or a negation, or in a function body, which the provider's rules skip."""
     covered = [node["Stmt"] for node in records if node.get("Type") == "TimeClause" and node.get("Stmt")]
-    covered += [node for node in records if node.get("Negated")]
-    return {id(call) for node in covered for call in nodes(node) if call.get("Type") == "CallExpr"}
+    return _calls_under(covered + [node for node in records if node.get("Negated")]) | function_calls(records)
+
+
+def function_calls(records: tuple[dict, ...]) -> set[int]:
+    """The calls in function bodies, which run wherever the function is called, after any later cd."""
+    return _calls_under([node["Body"] for node in records if node.get("Type") == "FuncDecl"])
+
+
+def _calls_under(roots: list[dict]) -> set[int]:
+    return {id(call) for root in roots for call in nodes(root) if call.get("Type") == "CallExpr"}
 
 
 def reached_directories(directories: tuple[Path | None, ...], command: Command) -> tuple[Path | None, ...]:
@@ -391,13 +385,11 @@ def unwrapped(command: Command) -> list[Command]:
 
 
 def shell_scripts(command: Command) -> list[str]:
-    """Return each literal script that eval, a shell -c invocation, or a script-running wrapper may run."""
+    """Return each literal script that eval, trap, alias, a shell -c call, or a script-running wrapper may run."""
     arguments = command.arguments
     executable = Path(arguments[0]).name
-    if executable == "eval":
-        if any(command.dynamic[1:]):
-            raise UnsupportedSyntaxError("eval of a computed script requires explicit review", "wrapper")
-        return [" ".join(arguments[1:])]
+    if (code := code_text.scripts((executable, *arguments[1:]), command.dynamic)) is not None:
+        return code
     if executable in WRAPPERS:
         return wrapper_scripts(command, executable)
     if _is_foreign_shell(executable):

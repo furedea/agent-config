@@ -284,9 +284,6 @@ def test_global_prefix_rejects_home_manager_activation(capsys: pytest.CaptureFix
     [
         "bash <<EOF\necho $X\nEOF",
         "echo $'\\x41'",
-        "f(){ git add -A; }",
-        "f() { git commit --no-verify -m x; }; f",
-        "function f { bash -c 'echo hi'; }",
         "cat script.sh | sh",
         'sh <<< "$SCRIPT"',
         'sh <(echo "rm -rf build")',

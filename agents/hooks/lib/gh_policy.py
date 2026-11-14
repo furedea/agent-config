@@ -8,7 +8,7 @@ call the guard cannot classify. What a granted call sends to GitHub is scanned f
 import os
 import re
 import subprocess
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 import gh_catalog
@@ -33,7 +33,13 @@ REMOTE_LOOKUP_TIMEOUT_SECONDS = 5
 GITHUB_HOST = "github.com"
 # Variables through which gh picks another host or repository than its words show; the hook's own
 # environment is the harness's, but one set on the line comes from the agent.
-HOST_VARIABLES = re.compile(r"\bGH_(?:HOST|REPO|ENTERPRISE_TOKEN)\b")
+GH_VARIABLE = r"(?:(?:GH|GITHUB|GIT)_[A-Z_]+|XDG_CONFIG_HOME)"
+# An assignment in the source, or an argument that is the variable itself or assigns it after quote
+# removal, as `export`, `read`, or `env` take it; a name inside prose is neither.
+ASSIGNED_VARIABLE = re.compile(rf"(?:^|[\s;&|(]){GH_VARIABLE}\+?=")
+VARIABLE_ARGUMENT = re.compile(rf"{GH_VARIABLE}(?:\+?=.*)?", re.DOTALL)
+# Standard input read from a file: `<`, `0<`, or `<>`, not a heredoc, herestring, or descriptor copy.
+STDIN_FILE = re.compile(r"(?:^|\s)0?<>?(?![<&(])\s*(\S+)")
 # Programs a body substitution may run without changing anything gh reads: the directory, remotes, or files.
 PRINTING_PROGRAMS = frozenset({"cat", "echo", "printf"})
 IRREVERSIBLE_REASON = "cannot be taken back or promotes work (class D)"
@@ -60,19 +66,42 @@ class CommandLine:
 
     `single_call` says the line is one call with no assignment or wrapper, so every variable comes
     from the harness environment and nothing changes the directory, remotes, or files before gh runs.
-    `hides_code` says zsh may run a command substitution inside a subscript or arithmetic assignment.
+    `hides_code` says zsh may run a command substitution inside a subscript or arithmetic assignment,
+    and `redirects_gh` that the line names a variable through which gh or git picks another host,
+    repository, or configuration, in its source or in any argument after quote removal.
     """
 
     source: str
     single_call: bool
     hides_code: bool
+    redirects_gh: bool
 
 
 def command_line(source: str, commands: tuple[shell_syntax.Command, ...]) -> CommandLine:
     """Read the line's shape once; it parses the source again, so build it only for a line holding gh."""
     outside = shell_inspection.text_outside_single_quotes(source)
     hides_code = bool(SUBSCRIPT.search(outside) or ARITHMETIC_ASSIGNMENT.search(source))
-    return CommandLine(source, _is_single_call(source, commands), hides_code)
+    redirects_gh = (
+        bool(ASSIGNED_VARIABLE.search(source))
+        or any(VARIABLE_ARGUMENT.fullmatch(argument) for item in commands for argument in item.arguments[1:])
+        or any(_declares_gh_variable(clause) for clause in _declarations(source))
+    )
+    return CommandLine(source, _is_single_call(source, commands), hides_code, redirects_gh)
+
+
+def _declarations(source: str) -> list[str]:
+    """The text of each export, declare, local, readonly, or typeset clause, which parse does not list as a command."""
+    data = source.encode()
+    return [
+        data[node["Pos"]["Offset"] : node["End"]["Offset"]].decode()
+        for node in shell_syntax.nodes(shell_syntax.syntax_tree(source))
+        if node.get("Type") == "DeclClause"
+    ]
+
+
+def _declares_gh_variable(clause: str) -> bool:
+    """Whether a declaration names a gh variable once its quotes and escapes are removed."""
+    return any(VARIABLE_ARGUMENT.fullmatch(word) for word in re.sub(r"[\"'\\]", "", clause).split())
 
 
 def _is_single_call(source: str, commands: tuple[shell_syntax.Command, ...]) -> bool:
@@ -94,9 +123,11 @@ def _is_single_call(source: str, commands: tuple[shell_syntax.Command, ...]) -> 
 
 
 def _only_prints(command: shell_syntax.Command) -> bool:
-    """Whether a command inside a substitution only prints text, such as a body through a quoted heredoc."""
+    """Whether a command inside a substitution prints only literal text or its heredoc, never a file."""
     name = Path(command.arguments[0]).name
-    return name in PRINTING_PROGRAMS and not (command.wrapper_depth or command.writes or command.program_is_dynamic)
+    if name not in PRINTING_PROGRAMS or command.wrapper_depth or command.writes or command.has_dynamic_words:
+        return False
+    return name != "cat" or all(argument.startswith("-") for argument in command.arguments[1:])
 
 
 def load(path: Path, trusted: Path, secret_patterns: Path) -> GhRules:
@@ -114,11 +145,12 @@ def verdict(candidate: shell_syntax.Command, line: CommandLine, rules: GhRules) 
     preview = shell_syntax.command_preview(candidate.raw)
     if line.hides_code:
         return _ask("zsh may evaluate a subscript or assignment on this line as code the guard cannot see", preview)
-    if HOST_VARIABLES.search(line.source):
+    if line.redirects_gh:
         return _ask("the line names a variable that sends gh to another host or repository", preview)
     call = gh_invocation.classify(candidate, rules.catalog, single_call=line.single_call)
     if isinstance(call, Unclassified):
         return _ask(f"cannot classify this gh call: {call.reason}", preview)
+    call = _with_stdin(call, candidate)
     if problem := _ungranted(call, line, rules):
         return _ask(f"'{call.label}' {problem}", preview, call.label)
     match = secret_content.first_match(_sent_text(call, line), rules.secret_patterns)
@@ -138,7 +170,20 @@ def _ungranted(call: GhCall, line: CommandLine, rules: GhRules) -> str:
         return IRREVERSIBLE_REASON if call.effect is Effect.IRREVERSIBLE else TARGET_REASONS[target]
     if (call.files or call.unscanned_files) and not line.single_call:
         return "sends a file another command on the line may write after the guard reads it"
+    if call.unscanned_files and target is not TargetClass.TRUSTED:
+        return "sends a file named only at run time to a target outside the trusted owners"
     return ""
+
+
+def _with_stdin(call: GhCall, candidate: shell_syntax.Command) -> GhCall:
+    """The call with the file its standard input reads, when it sends that input; a heredoc is in the line."""
+    match = STDIN_FILE.search(candidate.trailer) if call.reads_stdin else None
+    if match is None:
+        return call
+    path = match[1]
+    if re.search(r"[$`'\"\\*?\[~]", path):
+        return replace(call, unscanned_files=True)
+    return replace(call, files=(*call.files, path))
 
 
 def _target(call: GhCall, line: CommandLine, trusted: trusted_owners.TrustedOwners) -> TargetClass:
@@ -163,13 +208,17 @@ def _target(call: GhCall, line: CommandLine, trusted: trusted_owners.TrustedOwne
 
 
 def _working_repositories() -> tuple[Repository, ...]:
-    """Every GitHub repository gh may pick for the working directory: GH_REPO, or each GitHub remote."""
+    """Every repository gh may pick for the working directory: GH_REPO, or each remote as git resolves it.
+
+    A remote whose URL does not name a github.com repository leaves the target unresolved, since gh
+    may still map it to one through an ssh alias or a URL rewrite the guard does not follow.
+    """
     if configured := os.environ.get("GH_REPO"):
         repository = gh_invocation.repository(configured)
         return (repository,) if repository else ()
     try:
         output = subprocess.run(
-            ["git", "config", "--get-regexp", r"^remote\..*\.url$"],
+            ["git", "remote", "-v"],
             capture_output=True,
             text=True,
             timeout=REMOTE_LOOKUP_TIMEOUT_SECONDS,
@@ -177,7 +226,10 @@ def _working_repositories() -> tuple[Repository, ...]:
         ).stdout
     except OSError, subprocess.SubprocessError:
         return ()
-    origins = (trusted_owners.parse_origin(line.split(" ", 1)[-1]) for line in output.splitlines())
+    urls = {line.split()[1] for line in output.splitlines() if len(line.split()) >= 2}
+    origins = [trusted_owners.parse_origin(url) for url in urls]
+    if None in origins:
+        return ()
     return tuple(Repository(owner, name) for owner, name in filter(None, origins))
 
 

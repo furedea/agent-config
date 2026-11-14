@@ -38,7 +38,6 @@ def decide(command: str) -> str:
             id="a logged deferral reply",
         ),
         pytest.param(f"{REPLY} -f body='Fixed.' --jq id", id="a bare jq word without a leading dot"),
-        pytest.param(f'{REPLY} -f body="Fixed `id`." --jq .id', id="a command substitution whose text is visible"),
         pytest.param(f"{REPLY} -F body=@notes.txt", id="a -F body that reads a file"),
         pytest.param(f"{REPLY} -F body='Fixed.'", id="a -F body"),
         pytest.param(f"{REPLY} --field body='Fixed.'", id="a --field body"),

@@ -42,10 +42,6 @@ def decide(command: str) -> str:
         pytest.param("gh api graphql -f query='query Q { x }' -f operationName=Q", id="an operation name"),
         pytest.param("gh api graphql -f query='query { x }' -X POST", id="an explicit POST"),
         pytest.param(
-            'gh api graphql -f query=\'query($o:String!){repository(owner:$o,name:"r"){id}}\' -f o="$OWNER"',
-            id="a variable value known at run time",
-        ),
-        pytest.param(
             'gh api graphql -f query=\'{ a: repository(owner:"h0x91b",name:"dev-3.0"){pullRequest(number:272)'
             "{title}} }' --jq '.data[].pullRequest.title'",
             id="a logged aliased query of another owner",

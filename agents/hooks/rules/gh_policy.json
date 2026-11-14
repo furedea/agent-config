@@ -15,9 +15,9 @@
     },
     {
       "target": "node",
-      "operations": ["review_thread.resolve", "review_thread.unresolve", "review_thread.reply"],
+      "operations": ["review_thread.resolve", "review_thread.unresolve"],
       "decision": "allow",
-      "justification": "A review thread named by node ID cannot be traced to its repository before the call; resolving, unresolving, and replying are reversible, and the agent token reaches only the repositories its GitHub App is installed on."
+      "justification": "A review thread named by node ID cannot be traced to its repository before the call; resolving and unresolving are reversible, and GitHub lets only an account with write access to that repository do either, whatever token gh holds."
     }
   ],
   "commands": {

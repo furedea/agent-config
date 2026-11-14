@@ -5,7 +5,8 @@ id: serde-types-follow-config-conventions
 language: Rust
 kind: noul
 subject: node
-state: local
+# The type's own `#[serde(..)]` attributes are sibling nodes, so the whole file is sent.
+state: located
 threshold: 0.5
 axis: file
 severity: warning

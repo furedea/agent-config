@@ -17,3 +17,7 @@ invalid:
     trait FileHelper {}
   - |
     mod helper {}
+  - |
+    struct TestHelpers;
+  - |
+    struct ConnectionManagers;

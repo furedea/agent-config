@@ -2104,30 +2104,30 @@
       "justification": "Allow read-only checks of the esa session; publishing asks first."
     },
     {
-      "decision": "ask",
+      "decision": "allow",
       "prefix": [
         "uv",
         "add"
       ],
-      "justification": "Ask before changing dependencies or lock files; the request should name the change."
+      "justification": "Allow dependency changes; they edit only manifests and lock files Git restores, and the package-age limits still apply."
     },
     {
-      "decision": "ask",
+      "decision": "allow",
       "prefix": [
         "uv",
         "lock",
         "--upgrade-package"
       ],
-      "justification": "Ask before changing dependencies or lock files; the request should name the change."
+      "justification": "Allow dependency changes; they edit only manifests and lock files Git restores, and the package-age limits still apply."
     },
     {
-      "decision": "ask",
+      "decision": "allow",
       "prefix": [
         "uv",
         "lock",
         "--upgrade"
       ],
-      "justification": "Ask before changing dependencies or lock files; the request should name the change."
+      "justification": "Allow dependency changes; they edit only manifests and lock files Git restores, and the package-age limits still apply."
     },
     {
       "decision": "ask",
@@ -2146,45 +2146,45 @@
       "justification": "Ask before running scripts or fetched packages that policy cannot inspect."
     },
     {
-      "decision": "ask",
+      "decision": "allow",
       "prefix": [
         "cargo",
         "add"
       ],
-      "justification": "Ask before changing dependencies or lock files; the request should name the change."
+      "justification": "Allow dependency changes; they edit only manifests and lock files Git restores, and the package-age limits still apply."
     },
     {
-      "decision": "ask",
+      "decision": "allow",
       "prefix": [
         "cargo",
         "update"
       ],
-      "justification": "Ask before changing dependencies or lock files; the request should name the change."
+      "justification": "Allow dependency changes; they edit only manifests and lock files Git restores, and the package-age limits still apply."
     },
     {
-      "decision": "ask",
+      "decision": "allow",
       "prefix": [
         "go",
         "get"
       ],
-      "justification": "Ask before changing dependencies or lock files; the request should name the change."
+      "justification": "Allow dependency changes; they edit only manifests and lock files Git restores, and the package-age limits still apply."
     },
     {
-      "decision": "ask",
+      "decision": "allow",
       "prefix": [
         "go",
         "mod",
         "tidy"
       ],
-      "justification": "Ask before changing dependencies or lock files; the request should name the change."
+      "justification": "Allow dependency changes; they edit only manifests and lock files Git restores, and the package-age limits still apply."
     },
     {
-      "decision": "ask",
+      "decision": "allow",
       "prefix": [
         "pnpm",
         "add"
       ],
-      "justification": "Ask before changing dependencies or lock files; the request should name the change."
+      "justification": "Allow dependency changes; they edit only manifests and lock files Git restores, and the package-age limits still apply."
     },
     {
       "decision": "ask",
@@ -2195,13 +2195,13 @@
       "justification": "Ask before changing dependencies or lock files; the request should name the change."
     },
     {
-      "decision": "ask",
+      "decision": "allow",
       "prefix": [
         "nix",
         "flake",
         "update"
       ],
-      "justification": "Ask before changing dependencies or lock files; the request should name the change."
+      "justification": "Allow dependency changes; they edit only manifests and lock files Git restores, and the package-age limits still apply."
     },
     {
       "decision": "allow",
@@ -2259,11 +2259,11 @@
       "justification": "Ask before running scripts or fetched packages that policy cannot inspect."
     },
     {
-      "decision": "ask",
+      "decision": "allow",
       "prefix": [
         "rm"
       ],
-      "justification": "Ask before removing files that Git cannot restore; recursive removal stays denied."
+      "justification": "Allow removing files; the command guard asks for Git metadata, paths outside the worktree and temporary directories, and run-time paths."
     },
     {
       "decision": "allow",
@@ -2390,40 +2390,31 @@
       "justification": "Ask before publishing or triggering work that is visible to others."
     },
     {
-      "decision": "ask",
+      "decision": "allow",
       "prefix": [
         "herdr",
         "pane",
         "send-text"
       ],
-      "justification": "Ask before controlling other panes; their commands run outside this policy."
+      "justification": "Allow driving panes of agents this session started; the hooks ask for every other pane, which may run outside the sandbox."
     },
     {
-      "decision": "ask",
+      "decision": "allow",
       "prefix": [
         "herdr",
         "pane",
         "send-keys"
       ],
-      "justification": "Ask before controlling other panes; their commands run outside this policy."
+      "justification": "Allow driving panes of agents this session started; the hooks ask for every other pane, which may run outside the sandbox."
     },
     {
-      "decision": "ask",
+      "decision": "allow",
       "prefix": [
         "herdr",
         "pane",
         "run"
       ],
-      "justification": "Ask before controlling other panes; their commands run outside this policy."
-    },
-    {
-      "decision": "ask",
-      "prefix": [
-        "herdr",
-        "pane",
-        "create"
-      ],
-      "justification": "Ask before controlling other panes; their commands run outside this policy."
+      "justification": "Allow driving panes of agents this session started; the hooks ask for every other pane, which may run outside the sandbox."
     },
     {
       "decision": "allow",
@@ -2453,13 +2444,13 @@
       "justification": "Allow handing work to a new Herdr session; the hooks limit prompts to agents this session started."
     },
     {
-      "decision": "ask",
+      "decision": "allow",
       "prefix": [
         "herdr",
         "agent",
         "send-keys"
       ],
-      "justification": "Ask before controlling other panes; their commands run outside this policy."
+      "justification": "Allow driving panes of agents this session started; the hooks ask for every other pane, which may run outside the sandbox."
     },
     {
       "decision": "allow",

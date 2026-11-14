@@ -97,7 +97,7 @@ def test_ask_prefixes_apply_inside_command_strings(command: str) -> None:
     assert verdict("allowed", command) == "ask"
 
 
-@pytest.mark.parametrize("command", ["gh pr merge 76 --merge", "docker run alpine", "rm -r build"])
+@pytest.mark.parametrize("command", ["gh pr merge 76 --merge", "docker run alpine", "kill 1234"])
 def test_direct_ask_prefixes_stay_with_the_provider(command: str) -> None:
     assert verdict("allowed", command) == "allow"
 

@@ -1,9 +1,55 @@
 id: py_frozen_base_model_no_override
 language: python
 severity: error
-message: "A subclass of `FrozenBaseModel` must not change `frozen`, `extra`, `strict`, `validate_default` or `revalidate_instances` in its own `model_config`."
-note: "Other keys such as `alias_generator` are fine. Both `ConfigDict(...)` and a dict literal are judged."
+message: "A subclass of `FrozenBaseModel` must not change `frozen`, `extra`, `strict`, `validate_default` or `revalidate_instances` in its own `model_config` or class keywords."
+note: "Other keys such as `alias_generator` are fine. `ConfigDict(...)`, a dict literal, a merge with `|` and class keyword arguments are judged. Only a direct subclass is judged; a subclass of another subclass cannot be resolved from one file."
 utils:
+  bad_keyword:
+    kind: keyword_argument
+    any:
+      - all:
+          - regex: ^frozen\s*=
+          - not:
+              regex: ^frozen\s*=\s*True$
+      - all:
+          - regex: ^extra\s*=
+          - not:
+              regex: ^extra\s*=\s*["']forbid["']$
+      - all:
+          - regex: ^strict\s*=
+          - not:
+              regex: ^strict\s*=\s*True$
+      - all:
+          - regex: ^validate_default\s*=
+          - not:
+              regex: ^validate_default\s*=\s*True$
+      - all:
+          - regex: ^revalidate_instances\s*=
+          - not:
+              regex: ^revalidate_instances\s*=\s*["']always["']$
+  bad_pair:
+    kind: pair
+    any:
+      - all:
+          - regex: '^["'']frozen["'']\s*:'
+          - not:
+              regex: '^["'']frozen["'']\s*:\s*True$'
+      - all:
+          - regex: '^["'']extra["'']\s*:'
+          - not:
+              regex: '^["'']extra["'']\s*:\s*["'']forbid["'']$'
+      - all:
+          - regex: '^["'']strict["'']\s*:'
+          - not:
+              regex: '^["'']strict["'']\s*:\s*True$'
+      - all:
+          - regex: '^["'']validate_default["'']\s*:'
+          - not:
+              regex: '^["'']validate_default["'']\s*:\s*True$'
+      - all:
+          - regex: '^["'']revalidate_instances["'']\s*:'
+          - not:
+              regex: '^["'']revalidate_instances["'']\s*:\s*["'']always["'']$'
   config_override:
     kind: assignment
     all:
@@ -18,52 +64,16 @@ utils:
               has:
                 kind: argument_list
                 has:
-                  kind: keyword_argument
-                  any:
-                      - all:
-                          - regex: ^frozen\s*=
-                          - not:
-                              regex: ^frozen\s*=\s*True$
-                      - all:
-                          - regex: ^extra\s*=
-                          - not:
-                              regex: ^extra\s*=\s*["']forbid["']$
-                      - all:
-                          - regex: ^strict\s*=
-                          - not:
-                              regex: ^strict\s*=\s*True$
-                      - all:
-                          - regex: ^validate_default\s*=
-                          - not:
-                              regex: ^validate_default\s*=\s*True$
-                      - all:
-                          - regex: ^revalidate_instances\s*=
-                          - not:
-                              regex: ^revalidate_instances\s*=\s*["']always["']$
+                  matches: bad_keyword
             - kind: dictionary
               has:
-                kind: pair
+                matches: bad_pair
+            - kind: binary_operator
+              has:
+                stopBy: end
                 any:
-                      - all:
-                          - regex: '^["'']frozen["'']\s*:'
-                          - not:
-                              regex: '^["'']frozen["'']\s*:\s*True$'
-                      - all:
-                          - regex: '^["'']extra["'']\s*:'
-                          - not:
-                              regex: '^["'']extra["'']\s*:\s*["'']forbid["'']$'
-                      - all:
-                          - regex: '^["'']strict["'']\s*:'
-                          - not:
-                              regex: '^["'']strict["'']\s*:\s*True$'
-                      - all:
-                          - regex: '^["'']validate_default["'']\s*:'
-                          - not:
-                              regex: '^["'']validate_default["'']\s*:\s*True$'
-                      - all:
-                          - regex: '^["'']revalidate_instances["'']\s*:'
-                          - not:
-                              regex: '^["'']revalidate_instances["'']\s*:\s*["'']always["'']$'
+                  - matches: bad_keyword
+                  - matches: bad_pair
 rule:
   kind: class_definition
   all:
@@ -76,10 +86,16 @@ rule:
               regex: ^FrozenBaseModel$
             - kind: attribute
               regex: \.FrozenBaseModel$
-    - has:
-        field: body
-        kind: block
-        has:
-          kind: expression_statement
-          has:
-            matches: config_override
+    - any:
+        - has:
+            field: superclasses
+            kind: argument_list
+            has:
+              matches: bad_keyword
+        - has:
+            field: body
+            kind: block
+            has:
+              kind: expression_statement
+              has:
+                matches: config_override

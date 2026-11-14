@@ -1,6 +1,13 @@
 id: py_async_test_anyio_marker
 valid:
   - |
+    from pytest import mark
+
+
+    @mark.anyio
+    async def test_something() -> None:
+        assert await work() == 1
+  - |
     @pytest.mark.anyio()
     async def test_something() -> None:
         assert await work() == 1
@@ -56,11 +63,11 @@ valid:
 
         async def test_one(self) -> None:
             assert await work() == 1
+invalid:
   - |
-    @mark.anyio
+    @app.mark.anyio
     async def test_something() -> None:
         assert await work() == 1
-invalid:
   - |
     @pytest.mark.anyio_slow
     async def test_something() -> None:

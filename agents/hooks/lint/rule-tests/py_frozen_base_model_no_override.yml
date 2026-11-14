@@ -1,6 +1,12 @@
 id: py_frozen_base_model_no_override
 valid:
   - |
+    class Money(FrozenBaseModel, frozen=True):
+        amount: int
+  - |
+    class Money(FrozenBaseModel):
+        model_config = FrozenBaseModel.model_config | {"alias_generator": to_camel}
+  - |
     class Money(FrozenBaseModel):
         model_config = pydantic.ConfigDict(alias_generator=to_camel)
   - |
@@ -19,6 +25,15 @@ valid:
         def helper(self) -> None:
             model_config = ConfigDict(frozen=False)
 invalid:
+  - |
+    class Money(FrozenBaseModel, frozen=False):
+        amount: int
+  - |
+    class Money(FrozenBaseModel, extra="allow"):
+        amount: int
+  - |
+    class Money(FrozenBaseModel):
+        model_config = FrozenBaseModel.model_config | {"frozen": False}
   - |
     class Money(FrozenBaseModel):
         model_config = {"frozen": False}

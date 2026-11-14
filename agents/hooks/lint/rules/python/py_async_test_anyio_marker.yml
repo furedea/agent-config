@@ -15,11 +15,11 @@ utils:
           field: right
           any:
             - kind: attribute
-              regex: ^(\w+\.)?mark\.anyio$
+              regex: ^(pytest\.)?mark\.anyio$
             - has:
                 stopBy: end
                 kind: attribute
-                regex: ^(\w+\.)?mark\.anyio$
+                regex: ^(pytest\.)?mark\.anyio$
 rule:
   kind: function_definition
   regex: ^async\s+def\s+test_
@@ -40,7 +40,45 @@ rule:
           stopBy: end
           has:
             kind: decorator
-            regex: ^@(\w+\.)?mark\.anyio(\(\))?$
+            regex: ^@pytest\.mark\.anyio(\(\))?$
+      - all:
+          - inside:
+              kind: decorated_definition
+              stopBy: end
+              has:
+                kind: decorator
+                regex: ^@mark\.anyio(\(\))?$
+          - inside:
+              kind: module
+              stopBy: end
+              has:
+                kind: import_from_statement
+                regex: (?s)^from\s+pytest\s+import\b.*\bmark\b
+      - all:
+          - inside:
+              kind: module
+              stopBy: end
+              has:
+                pattern: import pytest as $ALIAS
+          - inside:
+              kind: decorated_definition
+              stopBy: end
+              has:
+                kind: decorator
+                has:
+                  pattern: $ALIAS.mark.anyio
+      - all:
+          - inside:
+              kind: module
+              stopBy: end
+              has:
+                pattern: import pytest as $ALIAS
+          - inside:
+              kind: module
+              stopBy: end
+              has:
+                kind: expression_statement
+                regex: ^pytestmark\s*=\s*\w+\.mark\.anyio$
       - inside:
           any:
             - kind: module

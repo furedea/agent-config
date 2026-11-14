@@ -211,3 +211,15 @@ Without the items, the hook reports `Model rules skipped` at every Stop and does
 - The supplementary guards judge only statically determinable shell text and ask for the rest; see
     [ADR-0015](adr/0015_judge_only_statically_determinable_shell_text_in_the_guards.md) and
     [ADR-0016](adr/0016_inspect_shell_syntax_in_the_supplementary_command_guards.md).
+- The provider's own `ask` prefixes are kept for commands that widen authority (fetched or
+    unpinned code, containers, other people's workspaces, outside hosts) or promote work and cannot be
+    undone (merge, release, stash drop, remote changes, signals, the Herdr server); an `ask` rule still
+    prompts in Claude Code's auto mode. Dependency changes run unprompted.
+- `rm` runs unprompted for files inside the worktree and the session's temporary directories. The
+    command guard asks for Git metadata, any other path (resolved through links in its parent
+    directories), a path known only at run time, xargs operands, recursive forms the deny prefixes
+    do not list, and rm beside any program other than a listed read-only one (`ls`, `cat`, `echo`,
+    ...), since it may change the working directory or create a link first.
+- Typing into a Herdr pane (`pane send-text`, `pane send-keys`, `pane run`, `agent send-keys`)
+    runs unprompted only while the target is the pane of an agent this session started and that
+    agent still runs there; any other pane asks.

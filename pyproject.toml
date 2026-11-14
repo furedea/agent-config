@@ -55,6 +55,7 @@ known_first_party = [
   "model_rules_run",
   "patch_input",
   "provider_adapter",
+  "removal_paths",
   "rust_targets",
   "secret_path_policy",
   "shell_input",

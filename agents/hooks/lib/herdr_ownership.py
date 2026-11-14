@@ -1,8 +1,8 @@
-"""Let a session prompt only the Herdr agents it started.
+"""Let a session prompt and type into only the Herdr agents it started.
 
 Herdr runs outside the sandbox, so text sent to a pane runs there too. An agent this session
-started carries the same sandbox and hooks, so prompting it is safe; any other target may be the
-user's own shell or session, and prompting it needs the user's judgment.
+started carries the same sandbox and hooks, so prompting it or typing into its pane is safe; any
+other target may be the user's own shell or session, and driving it needs the user's judgment.
 """
 
 import json
@@ -17,6 +17,13 @@ from herdr_grammar import has_global_option
 from session_store import ScopeError, SessionRecord, atomic_json, file_lock, read_json
 
 AGENTS_FILE = "herdr_agents.json"
+AGENT_INPUTS = frozenset({("agent", "prompt"), ("agent", "send-keys")})
+PANE_INPUTS = frozenset({("pane", "send-text"), ("pane", "send-keys"), ("pane", "run")})
+OWNERSHIP_ACTIONS = frozenset(
+    {("agent", "start"), ("workspace", "close"), ("worktree", "remove"), ("agent", "rename")}
+    | AGENT_INPUTS
+    | PANE_INPUTS
+)
 LIST_TIMEOUT_SECONDS = 5
 
 
@@ -33,14 +40,7 @@ def check(record: SessionRecord, command: str) -> None:
             or Path(parsed.arguments[0]).name != "herdr"
             or (
                 not has_global_option(parsed.arguments)
-                and action
-                not in {
-                    ("agent", "start"),
-                    ("agent", "prompt"),
-                    ("workspace", "close"),
-                    ("worktree", "remove"),
-                    ("agent", "rename"),
-                }
+                and (action not in OWNERSHIP_ACTIONS or parsed.arguments[3:] == ("--help",))
             )
         ):
             continue
@@ -49,8 +49,10 @@ def check(record: SessionRecord, command: str) -> None:
             raise ScopeError("Herdr ownership actions need one simple direct Herdr call")
         if action == ("agent", "start"):
             _claim(_target(parsed))
-        elif action == ("agent", "prompt"):
+        elif action in AGENT_INPUTS:
             _require_owned(record, _target(parsed))
+        elif action in PANE_INPUTS:
+            _require_owned_pane(record, _target(parsed))
         elif action == ("workspace", "close"):
             _require_closable(record, parsed)
         elif action == ("worktree", "remove"):
@@ -260,6 +262,16 @@ def _require_owned(record: SessionRecord, name: str) -> None:
         return
     shown = name or "chosen at run time"
     raise ScopeError(f"Herdr agent {shown} was not started by this session; its pane may run outside the sandbox")
+
+
+def _require_owned_pane(record: SessionRecord, pane: str) -> None:
+    """A pane is owned while the agent this session started there still runs in it."""
+    owned = [entry for entry in entries(record, "agents").values() if pane and entry["pane_id"] == pane]
+    live = _live_agents() if owned else []
+    if any(agent.get("pane_id") == pane and _matches_agent(agent, entry) for entry in owned for agent in live):
+        return
+    shown = pane or "chosen at run time"
+    raise ScopeError(f"Herdr pane {shown} was not started by this session; it may run outside the sandbox")
 
 
 def _agent_session(agent: dict) -> str:

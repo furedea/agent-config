@@ -5,9 +5,8 @@ verification level. The conventions below govern Go test tooling and structure.
 
 - Use the standard `testing` package with testify.
 - Run tests with `go test -race -cover ./...`.
-- Use `require` for preconditions that make the rest of the test meaningless, and `assert` for outcomes.
-- Use table-driven tests with `t.Run`; call `t.Parallel()` when cases share no state.
-- Use `t.TempDir()` for files and `t.Setenv()` for environment; never touch the real home directory.
+- Use table-driven tests with `t.Run`.
+- Never touch the real home directory in tests.
 - Keep golden files under `testdata/`, and use them only when exact output is part of the behavior.
 - Go's `testing` package has no strict expected-failure marker; do not use a stacked PR to record
   a reproduced defect.
@@ -28,7 +27,7 @@ testing; it is pre-1.0, so flags and configuration can change between minor rele
 
 - **Black-box test**: `package foo_test` for public API.
 - **White-box test**: `package foo` only when internals are needed.
-- **Helper function**: call `t.Helper()` first; keep helpers local unless several test files share them.
+- **Helper function**: keep helpers local unless several test files share them.
 - **Fake implementation**: an explicit type implementing the consumer's small interface.
 
 ```go

@@ -5,7 +5,7 @@
 - Keep fields unexported when the type has invariants, and construct it with
   `NewX(...) (X, error)` that validates once.
 - Prefer a useful zero value when no invariant requires construction.
-- Avoid boolean parameters; use typed constants.
+- Replace a boolean flag parameter with typed constants.
 
 ```go
 type Port struct{ value int }
@@ -21,7 +21,6 @@ func NewPort(value int) (Port, error) {
 ## Enums
 
 - Declare enums as a constant block with `iota` and give the type a `String()` method.
-- Handle them with a `switch`; the `exhaustive` linter reports missing cases.
 
 ```go
 type State int
@@ -61,5 +60,4 @@ func (Cash) isPayment() {}
 ## Interfaces
 
 - Keep interfaces small and define them in the consuming package, not next to the implementation.
-- Accept interfaces, return concrete types.
 - Do not introduce an interface until there is a second implementation or a test fake needs it.

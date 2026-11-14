@@ -1,6 +1,5 @@
 # Concurrency
 
-- Pass `context.Context` as the first parameter.
 - Give every goroutine a defined owner and a termination path (context cancellation, closed
   channel, or `WaitGroup`). Do not start a goroutine whose end nobody waits for.
 - Use `errgroup` for parallel work that returns errors; it propagates the first error and cancels the context.

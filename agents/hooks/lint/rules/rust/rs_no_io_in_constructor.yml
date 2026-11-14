@@ -21,7 +21,20 @@ rule:
         has:
           kind: call_expression
           stopBy: end
-          has:
-            field: function
-            kind: scoped_identifier
-            regex: ^((std::)?fs::|((std::)?fs::)?File::(open|create)|(std::process::)?Command::new|((std::)?net::)?(TcpStream|TcpListener|UdpSocket)::)
+          any:
+            - has:
+                field: function
+                kind: scoped_identifier
+                regex: ^((std::)?fs::|((std::)?fs::)?File::(open|create)|((std::)?net::)?(TcpStream|TcpListener|UdpSocket)::)
+            # `Command::new` and `OpenOptions::new` only build a value; the I/O is the call that runs or opens it.
+            - all:
+                - has:
+                    field: function
+                    kind: field_expression
+                    has:
+                      field: field
+                      regex: ^(spawn|output|status|open)$
+                - has:
+                    kind: scoped_identifier
+                    regex: (Command|OpenOptions)::new$
+                    stopBy: end

@@ -16,6 +16,14 @@ valid:
     impl Endpoint {
         pub fn new(ip: Ipv4Addr, port: u16) -> Self { Self(std::net::SocketAddr::new(ip.into(), port)) }
     }
+  - |
+    impl Git {
+        pub fn new(dir: &Path) -> Self {
+            let mut cmd = Command::new("git");
+            cmd.current_dir(dir);
+            Self { cmd }
+        }
+    }
 invalid:
   - |
     impl Config {
@@ -33,7 +41,11 @@ invalid:
     }
   - |
     impl Probe {
-        fn try_new() -> Self { Command::new("git"); Self }
+        fn try_new() -> Self { let out = Command::new("git").output(); Self(out) }
+    }
+  - |
+    impl Reader {
+        pub fn new(path: &Path) -> Self { Self(OpenOptions::new().read(true).open(path)) }
     }
   - |
     impl Client {

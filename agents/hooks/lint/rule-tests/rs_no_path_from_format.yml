@@ -13,3 +13,7 @@ invalid:
     fn f(dir: &str) { let p = Path::new(&format!("{}/a", dir)); }
   - |
     fn f(dir: String) { let p = Path::new(&(dir + "/a")); }
+  - |
+    fn f(root: &str) -> PathBuf { std::path::PathBuf::from(format!("{root}/child")) }
+  - |
+    fn f(root: String) -> PathBuf { PathBuf::from(root + "/child") }

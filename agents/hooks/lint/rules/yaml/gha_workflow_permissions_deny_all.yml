@@ -3,7 +3,7 @@ language: yaml
 severity: warning
 message: "Declare `permissions: {}` at the workflow level and grant each job only what it needs."
 files:
-  - .github/workflows/**
+  - "**/.github/workflows/**"
 rule:
   kind: block_mapping
   inside:

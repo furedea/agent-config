@@ -4,7 +4,7 @@ severity: warning
 message: "Set `defaults.run.shell` to `bash` (or a shell command that enables `pipefail`) so steps fail on a broken pipe."
 note: "Only workflows with a `run:` step are checked: a workflow of reusable-workflow calls has none, and a caller's `defaults` do not reach the called workflow."
 files:
-  - .github/workflows/**
+  - "**/.github/workflows/**"
 rule:
   kind: block_mapping
   inside:

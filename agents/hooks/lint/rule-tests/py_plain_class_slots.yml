@@ -8,6 +8,12 @@ valid:
             self.name = name
             self.age = age
   - |
+    class Foo:
+        __slots__: tuple[str, ...] = ("name",)
+
+        def __init__(self, name: str) -> None:
+            self.name = name
+  - |
     @dataclass(frozen=True, slots=True)
     class Age:
         value: int

@@ -27,4 +27,4 @@ rule:
           kind: block
           has:
             kind: expression_statement
-            regex: ^__slots__\s*=
+            regex: ^__slots__\s*(:[^=]*)?=

@@ -18,6 +18,8 @@ invalid:
   - |
     from pytest_asyncio import fixture
   - |
+    import pytest_asyncio as pa
+  - |
     @pytest_asyncio.fixture
     async def client():
         yield make()

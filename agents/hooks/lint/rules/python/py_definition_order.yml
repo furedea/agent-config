@@ -15,8 +15,10 @@ rule:
           field: superclasses
           kind: argument_list
           has:
-            kind: identifier
-            regex: ^(Str|Int|Int?Flag)?Enum$
+            any:
+              - kind: identifier
+              - kind: attribute
+            regex: ^(enum\.)?(Enum|IntEnum|StrEnum|Flag|IntFlag)$
     - precedes:
         stopBy: end
         kind: class_definition
@@ -24,5 +26,7 @@ rule:
           field: superclasses
           kind: argument_list
           has:
-            kind: identifier
-            regex: ^(Str|Int|Int?Flag)?Enum$
+            any:
+              - kind: identifier
+              - kind: attribute
+            regex: ^(enum\.)?(Enum|IntEnum|StrEnum|Flag|IntFlag)$

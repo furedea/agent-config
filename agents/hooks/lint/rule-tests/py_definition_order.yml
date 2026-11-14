@@ -24,6 +24,19 @@ valid:
     def paint() -> None: ...
 invalid:
   - |
+    def paint() -> None: ...
+
+
+    class Permissions(enum.IntFlag):
+        READ = 1
+  - |
+    class Palette:
+        pass
+
+
+    class Perm(Flag):
+        READ = 1
+  - |
     class Palette:
         pass
 

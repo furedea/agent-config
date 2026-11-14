@@ -6,5 +6,6 @@ rule:
   any:
     - pattern: pytest.mark.asyncio
     - pattern: import pytest_asyncio
+    - pattern: import pytest_asyncio as $ALIAS
     - pattern: from pytest_asyncio import $$$NAMES
     - pattern: pytest_asyncio.fixture

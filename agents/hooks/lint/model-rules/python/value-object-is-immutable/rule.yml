@@ -22,7 +22,9 @@ rule:
             field: superclasses
             kind: argument_list
             has:
-              kind: identifier
+              any:
+                - kind: identifier
+                - kind: attribute
               regex: ^(pydantic\.)?BaseModel$
 ask: >-
   This class models a value, but it is declared mutable.

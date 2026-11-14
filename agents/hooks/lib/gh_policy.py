@@ -78,8 +78,10 @@ class CommandLine:
     `single_call` says the line is one call with no assignment or wrapper, so every variable comes
     from the harness environment and nothing changes the directory, remotes, or files before gh runs.
     `hides_code` says zsh may run a command substitution inside a subscript or arithmetic assignment,
-    and `changes_environment` that the line assigns a variable, before a call or anywhere else, or runs
-    a program through env with a changed environment, so gh may not see the harness environment.
+    and `changes_environment` that the line assigns a variable, before a call or anywhere else, runs a
+    program through env with a changed environment, or runs any command behind a wrapper or inside a
+    script another program reads, whose assignments the line's own syntax does not show; gh may then
+    not see the harness environment.
     """
 
     source: str
@@ -95,7 +97,7 @@ def command_line(source: str, commands: tuple[shell_syntax.Command, ...]) -> Com
     changes = (
         _assigns_in_syntax(source)
         or any(_changes_environment(item) for item in commands)
-        or _runs_shell_script(commands)
+        or any(item.wrapper_depth for item in commands)
     )
     return CommandLine(source, _is_single_call(source, commands), hides_code, changes)
 
@@ -116,14 +118,9 @@ def _changes_environment(command: shell_syntax.Command) -> bool:
     name = Path(name).name
     if name in ASSIGNING_PROGRAMS:
         return True
-    if name in {"print", "printf"} and any(re.fullmatch(r"-[A-Za-z]*v[A-Za-z]*", argument) for argument in arguments):
+    if name in {"print", "printf"} and any(re.match(r"-[A-Za-z]*v", argument) for argument in arguments):
         return True
     return name == "env" and bool(arguments) and ("=" in arguments[0] or arguments[0].startswith("-"))
-
-
-def _runs_shell_script(commands: tuple[shell_syntax.Command, ...]) -> bool:
-    """Whether a shell runs a script on the line, whose assignments the line's own syntax does not show."""
-    return any(Path(item.arguments[0]).name in shell_syntax.SHELLS for item in commands)
 
 
 def _is_single_call(source: str, commands: tuple[shell_syntax.Command, ...]) -> bool:

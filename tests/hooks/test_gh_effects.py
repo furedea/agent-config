@@ -169,8 +169,6 @@ def test_reversible_writes_to_a_trusted_owner_are_allowed(command: str) -> None:
                 ("in a pipeline", "gh api -H 'Accept: x' repos/o/r | cat"),
                 ("in the background", "gh api -H 'Accept: x' repos/o/r &"),
                 ("in a subshell", "( gh api -H 'Accept: x' repos/o/r )"),
-                ("through env", "env gh api -H 'Accept: x' repos/o/r"),
-                ("through timeout", "timeout 5 gh api -H 'Accept: x' repos/o/r"),
                 ("with a redirect to a file", "gh api -H 'Accept: x' repos/o/r > out.txt"),
             )
         ),
@@ -287,7 +285,7 @@ def test_reads_and_local_changes_are_allowed_in_any_form(command: str) -> None:
         pytest.param('gh stack add "$NAME"', "may become an option", id="a run-time stack branch"),
         pytest.param("GH_REPO=other/r gh issue comment 1 -b x", "environment", id="GH_REPO on the line"),
         pytest.param("env GH_REPO=other/r gh issue comment 1 -b x", "environment", id="GH_REPO through env"),
-        pytest.param("timeout 9 gh issue comment 1 -b x", "class C", id="a wrapper hiding the environment"),
+        pytest.param("timeout 9 gh issue comment 1 -b x", "environment", id="a wrapper hiding the environment"),
         pytest.param("gh pr review 42 --approve", "class D", id="an approval"),
         pytest.param("gh pr review 42 -ca", "class D", id="an approval in a short bundle"),
         pytest.param("gh pr close 42 -d", "class D", id="a close that deletes the branch"),
@@ -335,7 +333,7 @@ def test_reads_and_local_changes_are_allowed_in_any_form(command: str) -> None:
             "split",
             id="logged issue edit with a lone unquoted body file variable",
         ),
-        pytest.param("echo 1 | xargs gh pr close", "xargs", id="arguments from xargs"),
+        pytest.param("echo 1 | xargs gh pr close", "environment", id="arguments from xargs"),
         pytest.param(
             "idx='pipestatus[1$(gh pr merge 1)]'; gh pr view \"$HOME[idx]\"",
             "zsh",

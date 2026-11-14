@@ -19,11 +19,25 @@ rule:
         - any:
             - kind: arrow_function
             - kind: function_expression
-        - inside: { kind: variable_declarator }
+        - inside:
+            any:
+              - kind: variable_declarator
+              - kind: public_field_definition
         - has: { kind: comment, stopBy: end }
+    - all:
+        - kind: comment
+        - not: { regex: '^(/\*\*|//\s*(TODO|FIXME))' }
+        - not:
+            inside:
+              any:
+                - kind: function_declaration
+                - kind: method_definition
+                - kind: arrow_function
+                - kind: function_expression
+              stopBy: end
 ask: >-
-  A comment in this function restates what the next lines do, where a clearer name, type or function boundary would say it
-  without the comment.
+  A comment (in this function, or outside any function) restates what the next lines do, where a clearer name, type or
+  function boundary would say it without the comment.
 criteria:
   "true": >-
     A comment only narrates the statement beside it (for example "loop over the items" or "increment the counter"), or

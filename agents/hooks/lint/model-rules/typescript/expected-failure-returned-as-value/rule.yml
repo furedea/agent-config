@@ -20,7 +20,10 @@ rule:
         - any:
             - kind: arrow_function
             - kind: function_expression
-        - inside: { kind: variable_declarator }
+        - inside:
+            any:
+              - kind: variable_declarator
+              - kind: public_field_definition
         - has: { kind: throw_statement, stopBy: end }
 ask: >-
   This function throws for a failure that its caller can legitimately expect, such as invalid input, a missing item, or a

@@ -13,7 +13,9 @@ rule:
     - pattern: (await $RESPONSE.json()) as unknown as $TYPE
     - pattern: $RESPONSE.json() as $TYPE
     - all:
-        - kind: variable_declarator
+        - any:
+            - kind: variable_declarator
+            - kind: public_field_definition
         - has:
             field: type
             kind: type_annotation

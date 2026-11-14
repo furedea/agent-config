@@ -18,6 +18,10 @@ valid:
     function load(text: string) {
       return JSON.parse(text);
     }
+  - |
+    class Cache {
+      config: unknown = JSON.parse(text);
+    }
 invalid:
   - |
     const config = JSON.parse(text) as Config;
@@ -29,6 +33,14 @@ invalid:
     const body: Promise<Body> = response.json();
   - |
     const body = await response.json() as Body;
+  - |
+    class Cache {
+      config: Config = JSON.parse(text);
+    }
+  - |
+    class Client {
+      body: Promise<Body> = response.json();
+    }
   - |
     const body = await response.json() as unknown as Body;
   - |

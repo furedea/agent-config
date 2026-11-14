@@ -376,3 +376,19 @@ def test_denials_follow_redefined_quoted_and_copied_function_arguments(command: 
 )
 def test_function_arguments_or_parameter_names_the_respelling_cannot_follow_ask(kind: str, command: str) -> None:
     assert decide(kind, command).decision == "ask"
+
+
+@pytest.mark.parametrize("kind", ["allowed", "forbidden"])
+@pytest.mark.parametrize(
+    "command",
+    [
+        "f(){ find . $1; }; f '-delet?'",
+        "f(){ find . $1; }; f '-del[e]te'",
+        "IFS=x; f(){ find . $1; }; f 'ax-delete'",
+        "f(){ local IFS=x; find . $1; }; f 'ax-delete'",
+    ],
+)
+def test_an_unquoted_argument_whose_globbing_or_splitting_the_respelling_cannot_follow_asks(
+    kind: str, command: str
+) -> None:
+    assert decide(kind, command).decision == "ask"

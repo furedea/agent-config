@@ -8,6 +8,8 @@ from shell_words import PARAMETER_MODIFIERS, UnsupportedSyntaxError, literal_wor
 
 # $1, ${12}, $@, and $*, which take the words a function is called with.
 POSITIONAL = re.compile(r"[1-9][0-9]*|[@*]")
+# A caller's word that an unquoted expansion splits and globs no differently from its plain text.
+PLAIN_FIELDS = re.compile(r"[A-Za-z0-9_./:=@%+,\s-]*")
 
 
 def with_definitions(records: tuple[dict, ...], data: bytes, script: str) -> str:
@@ -33,6 +35,8 @@ def respelled_calls(records: tuple[dict, ...], data: bytes) -> list[str]:
     bodies: dict[str, list[dict]] = {}
     for node in (node for node in records if node.get("Type") == "FuncDecl"):
         bodies.setdefault(node["Name"]["Value"], []).append(_followed(node["Body"], data))
+    if any(_names_ifs(node) for node in records) and bodies:
+        raise UnsupportedSyntaxError("calling a function after changing IFS requires explicit review", "expansion")
     respelled = []
     for call in (node for node in records if node.get("Type") == "CallExpr" and node.get("Args")):
         name, dynamic = literal_word(call["Args"][0], data)
@@ -47,6 +51,11 @@ def respelled_calls(records: tuple[dict, ...], data: bytes) -> list[str]:
                 for shift in shifts
             ]
     return respelled
+
+
+def _names_ifs(record: dict) -> bool:
+    name = record.get("Name") or record.get("Param")
+    return isinstance(name, dict) and name.get("Value") == "IFS"
 
 
 def _followed(body: dict, data: bytes) -> dict:
@@ -133,4 +142,6 @@ class _Respelling:
         value, dynamic = literal_word(word, self.data)
         if quoted or dynamic:
             return source_text(word, self.data)
+        if not PLAIN_FIELDS.fullmatch(value):
+            raise UnsupportedSyntaxError("passing a glob to an unquoted function argument requires explicit review")
         return " ".join(map(shlex.quote, value.split())) or "''"

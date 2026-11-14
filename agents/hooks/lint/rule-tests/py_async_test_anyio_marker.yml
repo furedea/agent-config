@@ -1,6 +1,10 @@
 id: py_async_test_anyio_marker
 valid:
   - |
+    @pytest.mark.anyio()
+    async def test_something() -> None:
+        assert await work() == 1
+  - |
     import pytest as pt
 
 

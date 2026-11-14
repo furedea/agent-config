@@ -40,7 +40,7 @@ rule:
           stopBy: end
           has:
             kind: decorator
-            regex: ^@(\w+\.)?mark\.anyio$
+            regex: ^@(\w+\.)?mark\.anyio(\(\))?$
       - inside:
           any:
             - kind: module

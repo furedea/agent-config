@@ -153,6 +153,8 @@ def _classify_words(words: tuple[Word, ...], catalog: Catalog, single_call: bool
         raise UnclassifiableError(f"'gh {words[0].value} {words[1].value}' is not in the gh operation table")
     if spec.effect is Effect.READ:
         _check_read_repositories(words[2:])
+        if spec.operation == "repo.view":
+            _check_repository_arguments(words[2:])
         return GhCall((spec.operation,), spec.effect)
     if spec.effect is Effect.LOCAL:
         return _classify_local(words[2:], spec)
@@ -168,11 +170,22 @@ def _check_read_repositories(words: tuple[Word, ...]) -> None:
     for word in words:
         if word.dynamic and (word.source.startswith("-") or _may_name_url(word) or not _plain_parameters(word)):
             raise UnclassifiableError("a read takes an option value, URL, or computed word known only at run time")
+        if word.dynamic and "/" in word.source and not OWNER_PREFIX.match(word.source):
+            raise UnclassifiableError("a read takes a path whose host part is known only at run time")
     for word in _repository_words(words):
         if word.dynamic and not OWNER_PREFIX.match(word.source):
             raise UnclassifiableError("a read names its repository only at run time")
         if not word.dynamic and repository(word.value) is None:
             raise UnclassifiableError("a read names another host than github.com")
+
+
+def _check_repository_arguments(words: tuple[Word, ...]) -> None:
+    """Refuse a repository argument gh would read as HOST/OWNER/REPO, or as a URL, on another host than github.com."""
+    for word in words:
+        if word.value.startswith("-"):
+            continue
+        if (word.value.count("/") >= 2 or _is_url(word.value)) and repository(word.value) is None:
+            raise UnclassifiableError("a repository argument names another host than github.com")
 
 
 def _repository_words(words: tuple[Word, ...]) -> list[Word]:
@@ -202,9 +215,8 @@ def _classify_local(words: tuple[Word, ...], spec: CommandSpec) -> GhCall:
         raise UnclassifiableError("a local change takes a word known only at run time")
     _check_read_repositories(words)
     scan = gh_options.scan(words, OptionTable(spec.value_options, spec.flags))
-    clone_source = scan.positionals[:1] if spec.operation == "repo.clone" else ()
-    if any("/" in word.value and repository(word.value) is None for word in clone_source):
-        raise UnclassifiableError("a clone names another host than github.com")
+    if spec.operation == "repo.clone":
+        _check_repository_arguments(scan.positionals[:1])
     return GhCall((spec.operation,), spec.effect)
 
 
@@ -477,4 +489,5 @@ def repository(spec: str) -> Repository | None:
 
 
 def _is_url(value: str) -> bool:
-    return "://" in value or value.lower().startswith(GITHUB_HOST + "/")
+    lowered = value.lower()
+    return "://" in value or lowered.startswith((GITHUB_HOST + "/", "git@", "ssh:"))

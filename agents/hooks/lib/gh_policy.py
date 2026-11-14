@@ -189,7 +189,26 @@ def _judged_call(candidate: shell_syntax.Command, line: CommandLine, rules: GhRu
     stdin = _with_stdin(call, candidate)
     if isinstance(stdin, str):
         return f"this gh call {stdin or 'reads its body from a pipe or terminal'}"
-    return stdin
+    return _with_expanded_paths(stdin) if line.single_call else stdin
+
+
+def _with_expanded_paths(call: GhCall) -> GhCall:
+    """Scan each run-time path the harness environment expands to a readable file; the rest stay unscanned.
+
+    On a line that is one call nothing assigns a variable, so the hook's environment gives the shell's.
+    """
+    expanded = {source: _expanded_path(source) for source in call.unscanned_files}
+    readable = tuple(path for path in expanded.values() if path is not None)
+    unscanned = tuple(source for source, path in expanded.items() if path is None)
+    return replace(call, files=(*call.files, *readable), unscanned_files=unscanned)
+
+
+def _expanded_path(source: str) -> str | None:
+    """The file a run-time path names after quote removal and plain parameter expansion, when it exists."""
+    if re.search(r"[`*?\[]|\$\(|\$\{[^}]*[^A-Za-z0-9_}]", source):
+        return None
+    path = Path(os.path.expandvars(re.sub(r"[\"']", "", source))).expanduser()
+    return str(path) if "$" not in str(path) and path.exists() else None
 
 
 def _ask(reason: str, preview: str, operation: str = "") -> Verdict:
@@ -203,6 +222,8 @@ def _ungranted(call: GhCall, line: CommandLine, rules: GhRules) -> str:
         return IRREVERSIBLE_REASON if call.effect is Effect.IRREVERSIBLE else TARGET_REASONS[target]
     if (call.files or call.unscanned_files) and not line.single_call:
         return "sends a file another command on the line may write after the guard reads it"
+    if any(_is_irregular(Path(name).expanduser()) for name in call.files):
+        return "sends a FIFO, device, or other file that is not a regular file"
     if call.unscanned_files and (call.effect is Effect.READ or target is not TargetClass.TRUSTED):
         return "sends input the guard cannot read to a target outside the trusted owners"
     return ""
@@ -227,7 +248,7 @@ def _with_stdin(call: GhCall, candidate: shell_syntax.Command) -> GhCall | str:
     if match := INPUT_FILE.match(redirect):
         return replace(call, files=(*call.files, match[1]))
     if RUN_TIME_FILE.match(redirect):
-        return replace(call, unscanned_files=True)
+        return replace(call, unscanned_files=(*call.unscanned_files, redirect.removeprefix("<").strip()))
     return "reads its body from input the guard cannot see"
 
 
@@ -278,9 +299,26 @@ def _working_repositories() -> tuple[Repository, ...]:
         return ()
     urls = {line.split()[1] for line in output.splitlines() if len(line.split()) >= 2}
     origins = [trusted_owners.parse_origin(url) for url in urls]
-    if None in origins:
+    resolved = [gh_invocation.repository(value) for value in _resolved_defaults()]
+    if None in origins or None in resolved:
         return ()
-    return tuple(Repository(owner, name) for owner, name in filter(None, origins))
+    return (*(Repository(owner, name) for owner, name in filter(None, origins)), *filter(None, resolved))
+
+
+def _resolved_defaults() -> list[str]:
+    """Each repository `gh repo set-default` named in a remote's gh-resolved setting, other than `base`."""
+    try:
+        output = subprocess.run(
+            ["git", "config", "--get-regexp", r"^remote\..*\.gh-resolved$"],
+            capture_output=True,
+            text=True,
+            timeout=REMOTE_LOOKUP_TIMEOUT_SECONDS,
+            check=False,
+        ).stdout
+    except OSError, subprocess.SubprocessError:
+        return ["unreadable"]
+    values = [line.split(" ", 1)[-1].strip() for line in output.splitlines()]
+    return [value for value in values if value != "base"]
 
 
 def _sent_text(call: GhCall, line: CommandLine) -> str:
@@ -288,7 +326,14 @@ def _sent_text(call: GhCall, line: CommandLine) -> str:
     return "\n".join([line.source, *(_file_head(Path(name).expanduser()) for name in call.files)])
 
 
+def _is_irregular(path: Path) -> bool:
+    """Whether a path exists but is not a regular file; opening a FIFO would block the hook and drain gh's input."""
+    return path.exists() and not path.is_file()
+
+
 def _file_head(path: Path) -> str:
+    if not path.is_file():
+        return ""
     try:
         with path.open("rb") as stream:
             return stream.read(SENT_FILE_LIMIT_BYTES).decode(errors="replace")

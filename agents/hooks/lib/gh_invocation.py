@@ -66,7 +66,7 @@ class GhCall:
     repository gh picks from the working directory. `unknown_target` marks a repository or host
     known only at run time or outside github.com, and `node` a target named by GraphQL node ID.
     `files` are local files, named by literal paths, whose content the call sends, and
-    `unscanned_files` marks a sent file whose path is known only at run time, and `reads_stdin` a
+    `unscanned_files` are the source texts of sent file paths known only at run time, and `reads_stdin` a
     body read from standard input.
     """
 
@@ -76,7 +76,7 @@ class GhCall:
     unknown_target: bool = False
     node: bool = False
     files: tuple[str, ...] = ()
-    unscanned_files: bool = False
+    unscanned_files: tuple[str, ...] = ()
     reads_stdin: bool = False
 
     @property
@@ -105,7 +105,7 @@ class ApiRequest:
     endpoint: Word
     fields: tuple[tuple[str, Word], ...]
     files: tuple[str, ...]
-    unscanned_files: bool
+    unscanned_files: tuple[str, ...]
     reads_stdin: bool
     sends_input: bool
 
@@ -218,7 +218,7 @@ def _classify_write(words: tuple[Word, ...], spec: CommandSpec, single_call: boo
         tuple(repository for repository in repositories if repository),
         None in repositories,
         files=tuple(path for path in paths if path != "-"),
-        unscanned_files=any(word.dynamic for word in files),
+        unscanned_files=tuple(word.source for word in files if word.dynamic),
         reads_stdin="-" in paths,
     )
 
@@ -248,7 +248,10 @@ def _check_sent_values(words: tuple[Word, ...], single_call: bool) -> None:
 
 def _classify_api(words: tuple[Word, ...], catalog: Catalog, single_call: bool) -> GhCall:
     request = _api_request(words)
-    _check_sent_values(tuple(word for _, word in request.fields if not _names_file(word)), single_call)
+    texts = tuple(
+        word for option, word in request.fields if option not in TYPED_FIELD_OPTIONS or not _names_file(word)
+    )
+    _check_sent_values(texts, single_call)
     if not request.endpoint.dynamic and request.path in GRAPHQL_PATHS:
         return _classify_graphql(request, catalog)
     if request.method in READ_METHODS:
@@ -305,7 +308,7 @@ def _api_request(words: tuple[Word, ...]) -> ApiRequest:
         scan.positionals[0],
         fields,
         _sent_files(scan),
-        any(word.dynamic for word in _file_words(scan)),
+        tuple(_file_source(word) for word in _file_words(scan) if word.dynamic),
         any(_file_path(word) == "-" for word in _file_words(scan)),
         bool(scan.values_of(frozenset({"--input"}))),
     )
@@ -346,7 +349,7 @@ def _may_name_url(word: Word) -> bool:
     """
     if not word.dynamic:
         return False
-    lead = re.split(r"[$`]", word.source, maxsplit=1)[0].strip("\"'").lower()
+    lead = re.sub(r"[\"'\\]", "", re.split(r"[$`]", word.source, maxsplit=1)[0]).lower()
     return ":" in word.source or (bool(lead) and any(scheme.startswith(lead) for scheme in ("https://", "http://")))
 
 
@@ -361,6 +364,11 @@ def _stdin_path(path: str) -> str:
     if str(resolved).startswith(("/dev/", "/proc/")) or (resolved.exists() and not resolved.is_file()):
         raise UnclassifiableError("a sent file is a device, process, or other non-regular file")
     return path
+
+
+def _file_source(word: Word) -> str:
+    """The source text of the path a run-time file word names, after a key=@ prefix."""
+    return word.source.partition("=")[2].removeprefix("@") if _names_file(word) else word.source
 
 
 def _file_path(word: Word) -> str:

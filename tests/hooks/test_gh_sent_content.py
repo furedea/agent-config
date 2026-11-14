@@ -1,5 +1,6 @@
 """What a granted gh call sends to GitHub, inline, from a file, or on standard input, is scanned or asks."""
 
+import os
 from pathlib import Path
 
 import pytest
@@ -39,6 +40,12 @@ def decide(command: str) -> str:
         pytest.param("gh pr comment 12 -R furedea/r -F /dev/fd/3", "device", id="another descriptor file"),
         pytest.param("gh pr comment 12 -R furedea/r -F /dev/../dev/fd/3", "device", id="a descriptor file through .."),
         pytest.param("gh pr comment 12 -R furedea/r -F .", "non-regular", id="a directory"),
+        pytest.param(
+            "gh api repos/furedea/agent-config/issues/1/comments -f body=@$GH_TOKEN",
+            "parameter",
+            id="a raw field value starting with @",
+        ),
+        pytest.param("gh pr create -R furedea/r -t x --fill", "operation table", id="a body filled from commits"),
         pytest.param('gh api -X GET search/issues --raw-field="q=$GH_TOKEN"', "endpoint", id="an attached raw field"),
         pytest.param("cat notes.txt | gh issue comment 1 -R furedea/r -F -", "pipe", id="a body from a pipe"),
         pytest.param(
@@ -125,3 +132,22 @@ def test_a_secret_in_a_heredoc_body_asks(secret_samples: dict[str, str]) -> None
 def test_a_body_file_without_secrets_is_allowed() -> None:
     Path("body.md").write_text("## Summary\n\nNo secrets here.\n")
     assert decide("gh pr create --head x -t y --body-file body.md") == "allow"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_fifo_the_call_sends_asks_without_being_opened() -> None:
+    os.mkfifo("body.fifo")
+    assert decide("gh pr comment 1 -R furedea/r --body-file body.fifo") == "ask"
+    assert decide("gh pr comment 1 -R furedea/r -F - < body.fifo") == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_run_time_path_the_environment_expands_is_scanned(
+    secret_samples: dict[str, str], tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("BODY_DIR", str(tmp_path))
+    (tmp_path / "body.md").write_text(f"config = {secret_samples['aws_key']}\n")
+    assert decide('gh pr comment 1 -R furedea/r --body-file "$BODY_DIR/body.md"') == "ask"
+    assert decide('gh api repos/furedea/r/issues/1/comments -F body=@"$BODY_DIR/body.md"') == "ask"
+    (tmp_path / "clean.md").write_text("No secrets.\n")
+    assert decide('gh pr comment 1 -R furedea/r --body-file "$BODY_DIR/clean.md"') == "allow"

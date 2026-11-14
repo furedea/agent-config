@@ -267,7 +267,7 @@ def test_reads_and_local_changes_are_allowed_in_any_form(command: str) -> None:
             id="a thread reply by node ID, which may reach any repository",
         ),
         pytest.param(
-            "gh api graphql -f query='mutation{" + RESOLVE + "}' -F b=@$TMPDIR/x",
+            "gh api graphql -f query='mutation{" + RESOLVE + "}' -F b=@$UNSET_BODY_DIR/x",
             "outside the trusted owners",
             id="a run-time file sent to a node target",
         ),
@@ -345,6 +345,16 @@ def test_reads_and_local_changes_are_allowed_in_any_form(command: str) -> None:
             'gh pr comment h"$(printf ttps)"//github.com/other/r/pull/1 -b x', "URL", id="a scheme built at run time"
         ),
         pytest.param(
+            'gh pr comment h"t"tp\\s"$(printf :)"//github.com/other/r/pull/1 -b x',
+            "URL",
+            id="a scheme split by quotes and escapes",
+        ),
+        pytest.param(
+            "gh pr comment h't'tps\"$(printf x)\"//github.com/other/r/pull/1 -b x",
+            "URL",
+            id="a scheme split by single quotes",
+        ),
+        pytest.param(
             'gh api "$(printf x)repos/o/r"', "cannot become an option", id="an endpoint starting with a substitution"
         ),
         pytest.param("gh issue comment 1 -R= -b x other/r", "class C", id="an empty repository after an equals sign"),
@@ -391,6 +401,14 @@ def test_a_write_to_the_working_repository_follows_every_github_remote(remotes: 
     subprocess.run(["git", "init", "--quiet"], check=True)
     for name, url in remotes.items():
         subprocess.run(["git", "remote", "add", name, url], check=True, capture_output=True)
+    assert decide("gh issue comment 1 -b ok") == expected
+
+
+@pytest.mark.parametrize(("resolved", "expected"), [("other/project", "ask"), ("furedea/agent-config", "allow")])
+def test_a_default_repository_set_by_gh_names_the_working_repository(
+    furedea_checkout: Path, resolved: str, expected: str
+) -> None:
+    subprocess.run(["git", "config", "remote.origin.gh-resolved", resolved], check=True, cwd=furedea_checkout)
     assert decide("gh issue comment 1 -b ok") == expected
 
 

@@ -141,10 +141,6 @@
         "--dry-run",
         "-e",
         "--editor",
-        "-f",
-        "--fill",
-        "--fill-first",
-        "--fill-verbose",
         "--no-maintainer-edit",
         "-w",
         "--web"

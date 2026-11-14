@@ -5,6 +5,7 @@ message: "Use `@pytest.mark.anyio` with the `anyio_backend` fixture instead of p
 rule:
   any:
     - pattern: pytest.mark.asyncio
+    - pattern: $MODULE.mark.asyncio
     - all:
         - pattern: mark.asyncio
         - inside:

@@ -23,6 +23,7 @@ rule:
             any:
               - kind: variable_declarator
               - kind: public_field_definition
+              - kind: arguments
         - has: { kind: comment, stopBy: end }
     - all:
         - kind: comment

@@ -101,6 +101,10 @@ class Loader {
   };
 }
 
+register("/item", () => {
+  throw new Error("missing");
+});
+
 const loadLater = function (path: string): string {
   if (!path) {
     throw new Error("missing");
@@ -382,16 +386,16 @@ def test_typescript_rules_select_the_functions_they_ask_about(repository: Path) 
 
     # `stamp` is a fourth function and the only one that holds a comment, and the comment above `test.fails` stands
     # outside any function; `stamp` and the arrow function `expiresAt` read the clock; `as const` is not an
-    # assertion to judge, and the angle-bracket form `<Request>` has its own rule; `load`, the field arrow function
-    # `Loader.load` and the function expression `loadLater` throw; the `describe` and `describe.concurrent` blocks
-    # and the top level of the file, which holds two `it.concurrent` calls, are the groups of tests; `vi.mock` and
-    # `vi.doMock` are both mocks.
+    # assertion to judge, and the angle-bracket form `<Request>` has its own rule; `load`, the field arrow
+    # function `Loader.load`, the callback passed to `register` and the function expression `loadLater` throw; the
+    # `describe` and `describe.concurrent` blocks and the top level of the file, which holds two `it.concurrent`
+    # calls, are the groups of tests; `vi.mock` and `vi.doMock` are both mocks.
     assert counts == {
         "angle-bracket-assertion-follows-validation": 1,
         "command-query-naming": 4,
         "comment-explains-why": 2,
         "error-message-names-operation": 1,
-        "expected-failure-returned-as-value": 3,
+        "expected-failure-returned-as-value": 4,
         "inject-time-and-randomness": 2,
         "known-defect-marker-names-removal": 1,
         "mock-only-external-boundaries": 2,

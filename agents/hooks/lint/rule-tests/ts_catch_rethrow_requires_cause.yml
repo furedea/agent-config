@@ -33,6 +33,18 @@ invalid:
     try {
       run();
     } catch (error) {
+      throw new Error("read config", {});
+    }
+  - |
+    try {
+      run();
+    } catch (error) {
+      throw new Error("read config", { retries: 1 });
+    }
+  - |
+    try {
+      run();
+    } catch (error) {
       if (retried) {
         throw new TypeError(`read ${path}`);
       }

@@ -22,6 +22,8 @@ valid:
     class Cache {
       config: unknown = JSON.parse(text);
     }
+  - |
+    const load = (text: string): unknown => JSON.parse(text);
 invalid:
   - |
     const config = JSON.parse(text) as Config;
@@ -33,6 +35,14 @@ invalid:
     const body: Promise<Body> = response.json();
   - |
     const body = await response.json() as Body;
+  - |
+    const config = JSON.parse(text) satisfies Config;
+  - |
+    const body = (await response.json()) satisfies Body;
+  - |
+    const load = (text: string): Config => JSON.parse(text);
+  - |
+    const fetchBody = async (): Promise<Body> => response.json();
   - |
     class Cache {
       config: Config = JSON.parse(text);

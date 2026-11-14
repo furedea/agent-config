@@ -8,6 +8,9 @@ rule:
     - pattern: JSON.parse($$$ARGS) as $TYPE
     - pattern: (await $RESPONSE.json()) as $TYPE
     - pattern: JSON.parse($$$ARGS) as unknown as $TYPE
+    - pattern: JSON.parse($$$ARGS) satisfies $TYPE
+    - pattern: (await $RESPONSE.json()) satisfies $TYPE
+    - pattern: await $RESPONSE.json() satisfies $TYPE
     - pattern: await $RESPONSE.json() as $TYPE
     - pattern: await $RESPONSE.json() as unknown as $TYPE
     - pattern: (await $RESPONSE.json()) as unknown as $TYPE
@@ -24,6 +27,18 @@ rule:
             not: { regex: ':\s*(Promise<unknown>|unknown)$' }
         - has:
             field: value
+            any:
+              - pattern: JSON.parse($$$ARGS)
+              - pattern: await $RESPONSE.json()
+              - pattern: $RESPONSE.json()
+    - all:
+        - kind: arrow_function
+        - has:
+            field: return_type
+            kind: type_annotation
+            not: { regex: ':\s*(Promise<unknown>|unknown)$' }
+        - has:
+            field: body
             any:
               - pattern: JSON.parse($$$ARGS)
               - pattern: await $RESPONSE.json()

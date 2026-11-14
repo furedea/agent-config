@@ -21,6 +21,7 @@ rule:
                 any:
                   - kind: variable_declarator
                   - kind: public_field_definition
+                  - kind: arguments
     - has:
         stopBy: end
         any:

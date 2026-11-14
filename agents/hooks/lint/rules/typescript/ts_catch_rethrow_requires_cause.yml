@@ -5,7 +5,9 @@ message: "Pass the caught error as `cause`: `new Error(message, { cause })`."
 note: "Only a one-argument `new XError(message)` thrown inside a `catch` is reported; a function declared inside the `catch` is a new scope."
 rule:
   all:
-    - pattern: new $ERROR($MESSAGE)
+    - any:
+        - pattern: new $ERROR($MESSAGE)
+        - pattern: new $ERROR($MESSAGE, $OPTIONS)
     - inside:
         kind: throw_statement
         inside:
@@ -18,3 +20,6 @@ rule:
               - kind: method_definition
 constraints:
   ERROR: { regex: Error$ }
+  OPTIONS:
+    kind: object
+    not: { regex: '\bcause\b' }

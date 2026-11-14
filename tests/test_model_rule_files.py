@@ -69,6 +69,7 @@ type Request = { readonly url: string; readonly retries?: number };
 
 const parsed = JSON.parse("{}") as Request;
 const levels = ["low", "high"] as const;
+const typed = <Request>JSON.parse("{}");
 
 function stamp(): number {
   // The clock is read here on purpose.
@@ -79,7 +80,12 @@ describe("stamp", () => {
   it("returns a number", () => {});
 });
 
+describe.concurrent("stamp again", () => {
+  it("returns a number", () => {});
+});
+
 vi.mock("./sibling");
+vi.doMock("./other");
 
 it.concurrent("first case", () => {});
 it.concurrent("second case", () => {});
@@ -366,18 +372,20 @@ def test_typescript_rules_select_the_functions_they_ask_about(repository: Path) 
     counts = subjects_by_rule(plan(repository))
 
     # `stamp` is a fourth function and the only one that holds a comment; `stamp` and the arrow function
-    # `expiresAt` read the clock; `as const` is not an assertion to judge; `load` and the function expression
-    # `loadLater` are the functions that throw; the `describe` block and the top level of the file, which holds
-    # two `it.concurrent` calls, are the groups of tests.
+    # `expiresAt` read the clock; `as const` is not an assertion to judge, and the angle-bracket form
+    # `<Request>` has its own rule; `load` and the function expression `loadLater` are the functions that throw; the
+    # `describe` and `describe.concurrent` blocks and the top level of the file, which holds two
+    # `it.concurrent` calls, are the groups of tests; `vi.mock` and `vi.doMock` are both mocks.
     assert counts == {
+        "angle-bracket-assertion-follows-validation": 1,
         "command-query-naming": 4,
         "comment-explains-why": 1,
         "error-message-names-operation": 1,
         "expected-failure-returned-as-value": 2,
         "inject-time-and-randomness": 2,
         "known-defect-marker-names-removal": 1,
-        "mock-only-external-boundaries": 1,
-        "repeated-cases-use-it-each": 2,
+        "mock-only-external-boundaries": 2,
+        "repeated-cases-use-it-each": 3,
         "states-modeled-as-discriminated-union": 1,
         "type-assertion-follows-validation": 1,
     }

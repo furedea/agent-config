@@ -14,7 +14,7 @@ rule:
     - has:
         field: function
         kind: member_expression
-        regex: '^vi\.(mock|spyOn)$'
+        regex: '^vi\.(mock|doMock|spyOn)$'
 ask: >-
   This test mocks or spies on code that the project owns, or on something that is not a dependency at a module boundary,
   where a simple fake implementation passed in would do.

@@ -8,6 +8,8 @@ rule:
     - pattern: JSON.parse($$$ARGS) as $TYPE
     - pattern: (await $RESPONSE.json()) as $TYPE
     - pattern: JSON.parse($$$ARGS) as unknown as $TYPE
+    - pattern: await $RESPONSE.json() as $TYPE
+    - pattern: await $RESPONSE.json() as unknown as $TYPE
     - pattern: (await $RESPONSE.json()) as unknown as $TYPE
     - pattern: <$TYPE>JSON.parse($$$ARGS)
     - pattern: <$TYPE>(await $RESPONSE.json())
@@ -24,6 +26,29 @@ rule:
               - pattern: JSON.parse($$$ARGS)
               - pattern: await $RESPONSE.json()
               - pattern: $RESPONSE.json()
+    - all:
+        - kind: return_statement
+        - has:
+            any:
+              - pattern: JSON.parse($$$ARGS)
+              - pattern: await $RESPONSE.json()
+              - pattern: $RESPONSE.json()
+        - inside:
+            any:
+              - kind: function_declaration
+              - kind: function_expression
+              - kind: arrow_function
+              - kind: method_definition
+            has:
+              field: return_type
+              kind: type_annotation
+              not: { regex: ':\s*(Promise<unknown>|unknown)$' }
+            stopBy:
+              any:
+                - kind: function_declaration
+                - kind: function_expression
+                - kind: arrow_function
+                - kind: method_definition
 constraints:
   TYPE:
     not:

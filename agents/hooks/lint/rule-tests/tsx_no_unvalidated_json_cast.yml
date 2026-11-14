@@ -10,6 +10,14 @@ valid:
     const body: unknown = await response.json();
   - |
     const body: Promise<unknown> = response.json();
+  - |
+    function load(text: string): unknown {
+      return JSON.parse(text);
+    }
+  - |
+    function load(text: string) {
+      return JSON.parse(text);
+    }
 invalid:
   - |
     const config = JSON.parse(text) as Config;
@@ -19,6 +27,18 @@ invalid:
     let config: Config = JSON.parse(text);
   - |
     const body: Promise<Body> = response.json();
+  - |
+    const body = await response.json() as Body;
+  - |
+    const body = await response.json() as unknown as Body;
+  - |
+    function load(text: string): Config {
+      return JSON.parse(text);
+    }
+  - |
+    async function load(): Promise<Body> {
+      return response.json();
+    }
   - |
     const config = JSON.parse(text) as unknown as Config;
   - |

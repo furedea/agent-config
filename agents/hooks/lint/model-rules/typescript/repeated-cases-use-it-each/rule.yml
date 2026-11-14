@@ -11,7 +11,7 @@ rule:
   any:
     - all:
         - kind: call_expression
-        - has: { field: function, kind: identifier, regex: '^describe$' }
+        - has: { field: function, regex: '^describe(\.|$)' }
     - all:
         - kind: program
         - has:

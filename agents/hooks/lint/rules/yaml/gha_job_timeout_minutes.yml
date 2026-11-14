@@ -4,7 +4,7 @@ severity: warning
 message: "Set `timeout-minutes` on the job; the default is 6 hours."
 note: "A job that calls a reusable workflow (`uses:`) has no `runs-on` and cannot set it, so it is not checked."
 files:
-  - .github/workflows/**
+  - "**/.github/workflows/**"
 rule:
   kind: block_mapping
   has:

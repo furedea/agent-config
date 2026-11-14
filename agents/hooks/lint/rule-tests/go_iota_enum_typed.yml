@@ -31,6 +31,14 @@ valid:
         StateReady = State(iota)
         StateDone
     )
+  - |
+    const (
+        _  = iota
+        KB = 1 << (10 * iota)
+        MB
+    )
+  - |
+    const StateReady = State(max(iota, 1))
 invalid:
   - |
     const First, Second = State(iota), iota

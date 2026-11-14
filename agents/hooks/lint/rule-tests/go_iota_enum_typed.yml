@@ -12,24 +12,8 @@ valid:
     )
   - |
     const (
-        _  = iota
-        KB ByteSize = 1 << (10 * iota)
-    )
-  - |
-    const (
         _           = iota // ignore first value by assigning to blank identifier
         KB ByteSize = 1 << (10 * iota)
-    )
-  - |
-    const (
-        StatePending = State(iota)
-        StateDone
-    )
-  - |
-    const (
-        _ = iota
-        StateReady = State(iota)
-        StateDone
     )
   - |
     const (
@@ -38,35 +22,18 @@ valid:
         MB
     )
   - |
+    const (
+        _ = iota
+        StateReady = State(iota)
+        StateDone
+    )
+  - |
     const StateReady = State(max(iota, 1))
   - |
-    const StateReady = max(State(iota), 1)
+    const StateReady = State[int](iota)
+  - |
+    const First, Second = State(iota), State(iota)
 invalid:
-  - |
-    const First, Second = State(iota), iota
-  - |
-    const (
-        StateReady = max(iota, 1)
-        StateDone
-    )
-  - |
-    const (
-        _ = iota
-        StateReady
-        StateDone
-        Other OtherType = 10
-    )
-  - |
-    const (
-        _ = iota
-        StateReady
-        StateDone
-    )
-  - |
-    const (
-        StateReady = iota + 1
-        StateDone
-    )
   - |
     const (
         StatePending = iota
@@ -75,4 +42,15 @@ invalid:
   - |
     const (
         Zero = iota
+    )
+  - |
+    const (
+        StateReady = iota + 1
+        StateDone
+    )
+  - |
+    const (
+        _ = iota
+        StateReady
+        StateDone
     )

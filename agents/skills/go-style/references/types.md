@@ -44,4 +44,5 @@ func (s State) String() string {
 ## Interfaces
 
 - Keep interfaces small and define them in the consuming package, not next to the implementation.
+- Accept an interface as a parameter.
 - Do not introduce an interface until there is a second implementation or a test fake needs it.

@@ -2,28 +2,18 @@ id: go_iota_enum_typed
 language: go
 severity: error
 message: "Declare the `iota` constant with its own type, e.g. `StatePending State = iota`."
-note: "A conversion such as `State(iota)` counts as typed; a call of a builtin such as `max(iota, 1)` does not unless an argument converts `iota`, as in `max(State(iota), 1)`. Whether the type has a `String()` method is not judged. A shift such as `1 << iota` and a blank `_ = iota` that is followed by a typed, converted or shifted constant are skipped; the specs that inherit an untyped `iota` are reported through it."
+note: "Only the plain forms `X = iota` and `X = iota + N` are judged; any other value (a conversion, a builtin call, a shift, a list of values) is skipped, so the rule has no false positive on them. A blank `_ = iota` is judged only when the next spec writes neither a type nor a value of its own. Whether the type has a `String()` method is not judged."
 rule:
   kind: const_spec
   has:
     field: value
     kind: expression_list
-    regex: \biota\b
-    not:
-      regex: <<
+    regex: ^iota(\s*[-+*/]\s*\w+)?$
   not:
     any:
       - has:
           field: type
           regex: .+
-      - has:
-          field: value
-          regex: ^[A-Za-z_][\w.]*\(.*\biota\b.*\)$
-          not:
-            regex: ^(min|max|len|cap|complex|real|imag|unsafe\.\w+)\(
-      - has:
-          field: value
-          regex: ^(min|max)\(.*\b[A-Za-z_][\w.]*\(\s*iota\b
       - all:
           - has:
               field: name
@@ -39,9 +29,4 @@ rule:
                         regex: .+
                     - has:
                         field: value
-                        regex: <<
-                    - has:
-                        field: value
-                        regex: ^[A-Za-z_][\w.]*\(.*\biota\b.*\)$
-                        not:
-                          regex: ^(min|max|len|cap|complex|real|imag|unsafe\.\w+)\(
+                        regex: .+

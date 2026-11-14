@@ -11,19 +11,12 @@ Let `ruff format` decide quotes and operator spacing; do not hand-format against
 
 ## Logging
 
-Log dictionaries, not format strings. Add extensive logging at critical system points where failures would be hard to diagnose (CSV file references, before/after raise statements, etc.).
-
-```python
-logger.info({"action": "save", "csv_file": self.csv_file, "status": "run"})
-```
+Add extensive logging at critical system points where failures would be hard to diagnose (CSV file references, before/after raise statements, etc.).
 
 ## Naming Conventions
 
 - Constants: `SCREAMING_SNAKE_CASE` — define semantically meaningful string literals as module-level constants (two blank lines after imports) rather than embedding them inline
 - Getters: name of the output variable
-- Iterator arguments:
-    - Loop body ≤ 2 lines: single character (`x`, `i`)
-    - Loop body ≥ 3 lines: descriptive name
 
 ### File Naming
 

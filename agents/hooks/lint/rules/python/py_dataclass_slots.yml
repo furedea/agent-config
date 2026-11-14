@@ -1,6 +1,6 @@
 id: py_dataclass_slots
 language: python
-severity: warning
+severity: error
 message: "Declare the dataclass with `slots=True`."
 note: "Classes that use `cached_property` need `__dict__` and are skipped. Whether a dataclass is also `frozen=True` depends on it being a value object, which a syntax rule cannot tell."
 rule:

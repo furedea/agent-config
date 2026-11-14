@@ -1,6 +1,6 @@
 id: py_xfail_requires_strict
 language: python
-severity: warning
+severity: error
 message: "Add `strict=True` so the run fails when the test unexpectedly passes."
 rule:
   any:

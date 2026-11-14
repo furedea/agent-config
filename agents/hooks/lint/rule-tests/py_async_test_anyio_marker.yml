@@ -51,6 +51,10 @@ valid:
         assert await work() == 1
 invalid:
   - |
+    @pytest.mark.anyio_slow
+    async def test_something() -> None:
+        assert await work() == 1
+  - |
     pytestmark = pytest.mark.filterwarnings("ignore:anyio")
 
 

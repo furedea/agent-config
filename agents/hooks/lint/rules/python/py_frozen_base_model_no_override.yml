@@ -1,0 +1,58 @@
+id: py_frozen_base_model_no_override
+language: python
+severity: error
+message: "A subclass of `FrozenBaseModel` must not change `frozen`, `extra`, `strict`, `validate_default` or `revalidate_instances` in its own `model_config`."
+note: "Other keys such as `alias_generator` are fine."
+utils:
+  config_override:
+    kind: assignment
+    all:
+      - has:
+          field: left
+          kind: identifier
+          regex: ^model_config$
+      - has:
+          field: right
+          kind: call
+          has:
+            kind: argument_list
+            has:
+              kind: keyword_argument
+              any:
+                - all:
+                    - regex: ^frozen\s*=
+                    - not:
+                        regex: ^frozen\s*=\s*True$
+                - all:
+                    - regex: ^extra\s*=
+                    - not:
+                        regex: ^extra\s*=\s*["']forbid["']$
+                - all:
+                    - regex: ^strict\s*=
+                    - not:
+                        regex: ^strict\s*=\s*True$
+                - all:
+                    - regex: ^validate_default\s*=
+                    - not:
+                        regex: ^validate_default\s*=\s*True$
+                - all:
+                    - regex: ^revalidate_instances\s*=
+                    - not:
+                        regex: ^revalidate_instances\s*=\s*["']always["']$
+rule:
+  kind: class_definition
+  all:
+    - has:
+        field: superclasses
+        kind: argument_list
+        has:
+          any:
+            - kind: identifier
+              regex: ^FrozenBaseModel$
+            - kind: attribute
+              regex: \.FrozenBaseModel$
+    - has:
+        stopBy: end
+        kind: expression_statement
+        has:
+          matches: config_override

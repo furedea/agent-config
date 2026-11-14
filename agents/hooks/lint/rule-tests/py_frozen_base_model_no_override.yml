@@ -1,0 +1,27 @@
+id: py_frozen_base_model_no_override
+valid:
+  - |
+    class Money(FrozenBaseModel):
+        model_config = pydantic.ConfigDict(alias_generator=to_camel)
+  - |
+    class Money(FrozenBaseModel):
+        model_config = ConfigDict(frozen=True, alias_generator=to_camel)
+  - |
+    class Money(FrozenBaseModel):
+        amount: int
+  - |
+    class Money(Other):
+        model_config = ConfigDict(frozen=False)
+invalid:
+  - |
+    class Money(FrozenBaseModel):
+        model_config = pydantic.ConfigDict(frozen=False)
+  - |
+    class Money(schemas.FrozenBaseModel):
+        model_config = ConfigDict(extra="allow")
+  - |
+    class Money(FrozenBaseModel):
+        model_config = ConfigDict(strict=False, alias_generator=to_camel)
+  - |
+    class Money(FrozenBaseModel):
+        model_config = ConfigDict(revalidate_instances="never")

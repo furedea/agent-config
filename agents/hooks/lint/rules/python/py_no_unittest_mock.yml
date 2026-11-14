@@ -1,6 +1,6 @@
 id: py_no_unittest_mock
 language: python
-severity: warning
+severity: error
 message: "Use the `mocker` fixture from pytest-mock instead of importing `unittest.mock`."
 rule:
   any:

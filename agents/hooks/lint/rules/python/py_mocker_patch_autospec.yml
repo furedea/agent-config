@@ -1,6 +1,6 @@
 id: py_mocker_patch_autospec
 language: python
-severity: warning
+severity: error
 message: "Pass `autospec=True` so the mock enforces the real signature."
 note: "Calls that pass `new` positionally (`mocker.patch(target, fake)`) are skipped because `autospec` cannot be combined with `new`."
 rule:

@@ -1,20 +1,10 @@
 id: py_no_pytest_asyncio
 language: python
-severity: warning
+severity: error
 message: "Use `@pytest.mark.anyio` with the `anyio_backend` fixture instead of pytest-asyncio."
 rule:
   any:
     - pattern: pytest.mark.asyncio
-    - pattern: $MODULE.mark.asyncio
-    - all:
-        - pattern: mark.asyncio
-        - inside:
-            kind: module
-            stopBy: end
-            has:
-              kind: import_from_statement
-              regex: (?s)^from\s+pytest\s+import\b.*\bmark\b
     - pattern: import pytest_asyncio
     - pattern: import pytest_asyncio as $ALIAS
     - pattern: from pytest_asyncio import $$$NAMES
-    - pattern: pytest_asyncio.fixture

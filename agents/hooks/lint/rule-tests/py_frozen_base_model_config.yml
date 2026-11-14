@@ -1,0 +1,27 @@
+id: py_frozen_base_model_config
+valid:
+  - |
+    class FrozenBaseModel(pydantic.BaseModel):
+        model_config = pydantic.ConfigDict(
+            frozen=True, extra="forbid", strict=True, validate_default=True, revalidate_instances="always"
+        )
+  - |
+    class FrozenBaseModel(pydantic.BaseModel):
+        model_config = ConfigDict(
+            revalidate_instances="always", validate_default=True, strict=True, extra="forbid", frozen=True
+        )
+  - |
+    class Money(FrozenBaseModel):
+        amount: int
+invalid:
+  - |
+    class FrozenBaseModel(pydantic.BaseModel):
+        model_config = pydantic.ConfigDict(frozen=True, extra="forbid", strict=True, validate_default=True)
+  - |
+    class FrozenBaseModel(pydantic.BaseModel):
+        pass
+  - |
+    class FrozenBaseModel(pydantic.BaseModel):
+        model_config = pydantic.ConfigDict(
+            frozen=False, extra="forbid", strict=True, validate_default=True, revalidate_instances="always"
+        )

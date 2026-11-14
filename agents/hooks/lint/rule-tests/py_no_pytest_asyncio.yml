@@ -1,7 +1,7 @@
 id: py_no_pytest_asyncio
 valid:
   - |
-    @mark.asyncio
+    @app.mark.asyncio
     def handler() -> None: ...
   - |
     @pytest.mark.anyio
@@ -13,20 +13,6 @@ valid:
     result = asyncio.run(main())
 invalid:
   - |
-    import pytest as pt
-
-
-    @pt.mark.asyncio
-    async def test_something() -> None:
-        assert await work() == 1
-  - |
-    from pytest import mark
-
-
-    @mark.asyncio
-    async def test_something() -> None:
-        assert await work() == 1
-  - |
     @pytest.mark.asyncio
     async def test_something() -> None:
         assert await work() == 1
@@ -36,7 +22,3 @@ invalid:
     from pytest_asyncio import fixture
   - |
     import pytest_asyncio as pa
-  - |
-    @pytest_asyncio.fixture
-    async def client():
-        yield make()

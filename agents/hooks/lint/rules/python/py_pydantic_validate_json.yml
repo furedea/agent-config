@@ -1,0 +1,6 @@
+id: py_pydantic_validate_json
+language: python
+severity: error
+message: "Use `Model.model_validate_json(...)` instead of `Model.model_validate(json.loads(...))`; strict mode rejects JSON-natural conversions (for example ISO strings to datetime) otherwise."
+rule:
+  pattern: $MODEL.model_validate(json.loads($$$ARGS))

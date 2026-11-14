@@ -11,9 +11,7 @@ GH_READ_FORMS = frozenset(
     {
         "a backtick anywhere",
         "a glob character anywhere",
-        "a plain assignment prefix",
         "a redirect to a file",
-        "eval of a single-quoted script",
     }
 )
 

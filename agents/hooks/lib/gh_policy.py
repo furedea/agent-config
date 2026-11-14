@@ -31,13 +31,16 @@ ARITHMETIC_ASSIGNMENT = re.compile(r"[A-Za-z_][A-Za-z0-9_]*=\S*\[[^\]]*\$\(")
 SENT_FILE_LIMIT_BYTES = 100000
 REMOTE_LOOKUP_TIMEOUT_SECONDS = 5
 GITHUB_HOST = "github.com"
-# Variables through which gh picks another host or repository than its words show; the hook's own
-# environment is the harness's, but one set on the line comes from the agent.
-GH_VARIABLE = r"(?:(?:GH|GITHUB|GIT)_[A-Z_]+|XDG_CONFIG_HOME)"
-# An assignment in the source, or an argument that is the variable itself or assigns it after quote
-# removal, as `export`, `read`, or `env` take it; a name inside prose is neither.
-ASSIGNED_VARIABLE = re.compile(rf"(?:^|[\s;&|(]){GH_VARIABLE}\+?=")
-VARIABLE_ARGUMENT = re.compile(rf"{GH_VARIABLE}(?:\+?=.*)?", re.DOTALL)
+# Programs that set shell variables, or run code that may: on a line holding one, a variable gh reads,
+# such as GH_REPO, GH_HOST, GH_TOKEN, HTTPS_PROXY, SSL_CERT_FILE, or HOME, may differ from the
+# harness environment the guard judged. The hook's own environment is the harness's.
+ASSIGNING_PROGRAMS = frozenset(
+    {"declare", "eval", "export", "getopts", "let", "local", "mapfile", "read", "readarray", "readonly"}
+    | {"set", "source", ".", "typeset", "unset", "vared", "zparseopts"}
+)
+# Syntax that assigns: a declaration, a loop variable, arithmetic, or a ${name:=value} default.
+ASSIGNING_NODES = frozenset({"DeclClause", "ForClause", "CStyleLoop", "ArithmCmd", "ArithmExp"})
+DEFAULT_ASSIGNMENT = re.compile(r"\$\{[^}]*?:?=")
 # Input redirections in a call's trailer: a heredoc whose delimiter is quoted keeps its body literal
 # and in the line; a file is read at run time; anything else, a herestring, an unquoted heredoc, or a
 # descriptor copy, may carry text the guard cannot read.
@@ -75,41 +78,41 @@ class CommandLine:
     `single_call` says the line is one call with no assignment or wrapper, so every variable comes
     from the harness environment and nothing changes the directory, remotes, or files before gh runs.
     `hides_code` says zsh may run a command substitution inside a subscript or arithmetic assignment,
-    and `redirects_gh` that the line names a variable through which gh or git picks another host,
-    repository, or configuration, in its source or in any argument after quote removal.
+    and `changes_environment` that the line assigns a variable, before a call or anywhere else, or runs
+    a program through env with a changed environment, so gh may not see the harness environment.
     """
 
     source: str
     single_call: bool
     hides_code: bool
-    redirects_gh: bool
+    changes_environment: bool
 
 
 def command_line(source: str, commands: tuple[shell_syntax.Command, ...]) -> CommandLine:
     """Read the line's shape once; it parses the source again, so build it only for a line holding gh."""
     outside = shell_inspection.text_outside_single_quotes(source)
     hides_code = bool(SUBSCRIPT.search(outside) or ARITHMETIC_ASSIGNMENT.search(source))
-    redirects_gh = (
-        bool(ASSIGNED_VARIABLE.search(source))
-        or any(VARIABLE_ARGUMENT.fullmatch(argument) for item in commands for argument in item.arguments[1:])
-        or any(_declares_gh_variable(clause) for clause in _declarations(source))
-    )
-    return CommandLine(source, _is_single_call(source, commands), hides_code, redirects_gh)
+    changes = _assigns_in_syntax(source) or any(_changes_environment(item) for item in commands)
+    return CommandLine(source, _is_single_call(source, commands), hides_code, changes)
 
 
-def _declarations(source: str) -> list[str]:
-    """The text of each export, declare, local, readonly, or typeset clause, which parse does not list as a command."""
-    data = source.encode()
-    return [
-        data[node["Pos"]["Offset"] : node["End"]["Offset"]].decode()
+def _assigns_in_syntax(source: str) -> bool:
+    """Whether the line's syntax assigns a variable: a prefix assignment, declaration, loop, or arithmetic."""
+    if DEFAULT_ASSIGNMENT.search(source):
+        return True
+    return any(
+        node.get("Type") in ASSIGNING_NODES or (node.get("Type") == "CallExpr" and node.get("Assigns"))
         for node in shell_syntax.nodes(shell_syntax.syntax_tree(source))
-        if node.get("Type") == "DeclClause"
-    ]
+    )
 
 
-def _declares_gh_variable(clause: str) -> bool:
-    """Whether a declaration names a gh variable once its quotes and escapes are removed."""
-    return any(VARIABLE_ARGUMENT.fullmatch(word) for word in re.sub(r"[\"'\\]", "", clause).split())
+def _changes_environment(command: shell_syntax.Command) -> bool:
+    """Whether a command sets variables, or runs another through env with assignments or options."""
+    name, *arguments = command.arguments
+    name = Path(name).name
+    if name in ASSIGNING_PROGRAMS or (name == "printf" and "-v" in arguments):
+        return True
+    return name == "env" and bool(arguments) and ("=" in arguments[0] or arguments[0].startswith("-"))
 
 
 def _is_single_call(source: str, commands: tuple[shell_syntax.Command, ...]) -> bool:
@@ -170,8 +173,8 @@ def _judged_call(candidate: shell_syntax.Command, line: CommandLine, rules: GhRu
     """The classified call with its standard input resolved, or why the guard cannot judge it."""
     if line.hides_code:
         return "zsh may evaluate a subscript or assignment on this line as code the guard cannot see"
-    if line.redirects_gh:
-        return "the line names a variable that sends gh to another host or repository"
+    if line.changes_environment:
+        return "the line sets variables or an environment that may change where gh goes"
     call = gh_invocation.classify(candidate, rules.catalog, single_call=line.single_call)
     if isinstance(call, Unclassified):
         return f"cannot classify this gh call: {call.reason}"

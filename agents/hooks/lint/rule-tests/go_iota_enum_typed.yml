@@ -39,6 +39,8 @@ valid:
     )
   - |
     const StateReady = State(max(iota, 1))
+  - |
+    const StateReady = max(State(iota), 1)
 invalid:
   - |
     const First, Second = State(iota), iota

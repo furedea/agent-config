@@ -5,6 +5,10 @@ valid:
   - |
     const raw = JSON.parse(text) as unknown;
   - |
+    const body = response.json() as Promise<unknown>;
+  - |
+    this.config = parseConfig(JSON.parse(text));
+  - |
     const config = parseConfig(JSON.parse(text));
   - |
     const body: unknown = await response.json();
@@ -37,6 +41,11 @@ invalid:
     const body = await response.json() as Body;
   - |
     const config = JSON.parse(text) satisfies Config;
+  - |
+    let config: Config;
+    config = JSON.parse(text);
+  - |
+    this.config = JSON.parse(text);
   - |
     const config = JSON.parse(text)! as Config;
   - |

@@ -8,6 +8,9 @@ rule:
     - pattern: JSON.parse($$$ARGS) as $TYPE
     - pattern: (await $RESPONSE.json()) as $TYPE
     - pattern: JSON.parse($$$ARGS) as unknown as $TYPE
+    - pattern: $TARGET = JSON.parse($$$ARGS)
+    - pattern: $TARGET = await $RESPONSE.json()
+    - pattern: $TARGET = $RESPONSE.json()
     - pattern: JSON.parse($$$ARGS)! as $TYPE
     - pattern: (await $RESPONSE.json())! as $TYPE
     - pattern: JSON.parse($$$ARGS) satisfies $TYPE
@@ -71,4 +74,4 @@ rule:
 constraints:
   TYPE:
     not:
-      regex: ^unknown$
+      regex: ^(Promise<unknown>|unknown)$

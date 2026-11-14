@@ -26,4 +26,8 @@ invalid:
   - |
     const home = process.env["HOME"];
   - |
+    process.env.HOME ??= temporary;
+  - |
+    process.env.HOME ||= temporary;
+  - |
     const profile = process.env['USERPROFILE'];

@@ -29,4 +29,5 @@ criteria:
     or intent.
   "false": >-
     Every comment states a reason, a non-obvious constraint, a workaround, a link or an issue number, a TODO, or an
-    intent the code cannot express; directives to tools (lint, type, license, build tags) are not violations.
+    intent the code cannot express; directives to tools (lint, type, license, build tags) and the documentation of a
+    public function, class or module API are not violations.

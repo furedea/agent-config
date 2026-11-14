@@ -61,6 +61,10 @@ def label(self):
     return self.text
 
 
+def make():
+    return Money(1)
+
+
 def fail():
     raise ValueError("bad")
 

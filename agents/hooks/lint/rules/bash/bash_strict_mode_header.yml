@@ -1,8 +1,8 @@
 id: bash_strict_mode_header
 language: bash
 severity: warning
-message: "Add `set -euCo pipefail` at the top level of the script."
-note: "Only files that start with a shebang are checked; a sourced library has none."
+message: "Put `set -euCo pipefail` at the top level, before any command that runs."
+note: "Only files that start with a shebang are checked; a sourced library has none. Comments and function definitions may come first, since defining a function runs nothing."
 rule:
   kind: program
   has:
@@ -12,3 +12,10 @@ rule:
     has:
       kind: command
       regex: ^set\s+-euCo\s+pipefail$
+      not:
+        follows:
+          stopBy: end
+          not:
+            any:
+              - kind: comment
+              - kind: function_definition

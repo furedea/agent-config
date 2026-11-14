@@ -18,6 +18,10 @@ valid:
         runs-on: ubuntu-latest
         steps:
           - run: echo hi
+  - |
+    jobs:
+      call:
+        uses: owner/repo/.github/workflows/lint.yml@main
 invalid:
   - |
     jobs:
@@ -34,3 +38,19 @@ invalid:
         runs-on: ubuntu-latest
         steps:
           - run: echo hi
+  - |
+    defaults:
+      run:
+        shell: sh
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        steps:
+          - run: echo hi
+  - |
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        steps:
+          - run: |
+              echo hi

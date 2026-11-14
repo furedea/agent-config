@@ -1,8 +1,8 @@
 id: gha_workflow_concurrency
 language: yaml
 severity: warning
-message: "Add a top-level `concurrency` group so stale runs on the same ref are cancelled."
-note: "Only workflows triggered by `push` or `pull_request` are checked; a workflow that is only called or dispatched has no burst of runs per ref."
+message: "Add a top-level `concurrency` with `group` and `cancel-in-progress` so stale runs on the same ref are cancelled."
+note: "Only workflows triggered by `push` or `pull_request` are checked. The value of `cancel-in-progress` is not judged, because a deploy workflow that must run in order sets it to false, and a workflow that is only called or dispatched has no burst of runs per ref."
 files:
   - .github/workflows/**
 rule:
@@ -23,6 +23,15 @@ rule:
   not:
     has:
       kind: block_mapping_pair
-      has:
-        field: key
-        regex: ^concurrency$
+      all:
+        - has:
+            field: key
+            regex: ^concurrency$
+        - has:
+            field: value
+            has:
+              stopBy: end
+              kind: block_mapping_pair
+              has:
+                field: key
+                regex: ^cancel-in-progress$

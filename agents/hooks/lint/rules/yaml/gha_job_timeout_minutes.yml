@@ -24,10 +24,10 @@ rule:
     kind: block_mapping_pair
     has:
       field: key
-      regex: ^runs-on$
+      regex: ^["']?runs-on["']?$
   not:
     has:
       kind: block_mapping_pair
       has:
         field: key
-        regex: ^timeout-minutes$
+        regex: ^["']?timeout-minutes["']?$

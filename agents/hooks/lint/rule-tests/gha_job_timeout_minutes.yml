@@ -24,6 +24,12 @@ invalid:
   - |
     jobs:
       build:
+        "runs-on": ubuntu-latest
+        steps:
+          - run: echo hi
+  - |
+    jobs:
+      build:
         runs-on: ubuntu-latest
         steps:
           - run: echo hi

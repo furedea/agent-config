@@ -24,8 +24,11 @@ rule:
           field: key
           regex: ^run$
         inside:
-          stopBy: end
-          kind: block_sequence_item
+          kind: block_mapping
+          inside:
+            kind: block_node
+            inside:
+              kind: block_sequence_item
     - not:
         has:
           stopBy: end
@@ -45,4 +48,4 @@ rule:
                         regex: ^shell$
                     - has:
                         field: value
-                        regex: bash|pipefail
+                        regex: ^["']?bash["']?$|pipefail

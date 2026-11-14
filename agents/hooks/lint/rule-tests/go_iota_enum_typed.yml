@@ -18,6 +18,12 @@ valid:
 invalid:
   - |
     const (
+        _ = iota
+        StateReady
+        StateDone
+    )
+  - |
+    const (
         StateReady = iota + 1
         StateDone
     )

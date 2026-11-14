@@ -2,13 +2,27 @@ id: go_mutex_field_documented
 language: go
 severity: warning
 message: "Document the fields the mutex guards in a comment above it."
-note: "Only the presence of a preceding comment is judged: its content, a trailing comment on the previous field (which counts as a comment), and whether the mutex sits directly above the fields it guards are not."
+note: "Only a file that imports the standard `sync` package without an alias is judged. Only the presence of a preceding comment is judged: its content, a trailing comment on the previous field (which counts as a comment), and whether the mutex sits directly above the fields it guards are not."
 rule:
   kind: field_declaration
   has:
     field: type
     kind: qualified_type
     regex: ^sync\.(RW)?Mutex$
-  not:
-    follows:
-      kind: comment
+  all:
+    - inside:
+        kind: source_file
+        has:
+          kind: import_spec
+          not:
+            has:
+              field: name
+              regex: .+
+          has:
+            field: path
+            regex: ^"sync"$
+          stopBy: end
+        stopBy: end
+    - not:
+        follows:
+          kind: comment

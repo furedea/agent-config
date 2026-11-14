@@ -39,6 +39,16 @@ valid:
 
     async def test_something() -> None:
         assert await work() == 1
+  - |
+    class TestWork:
+        pytestmark = pytest.mark.anyio
+
+        async def test_one(self) -> None:
+            assert await work() == 1
+  - |
+    @mark.anyio
+    async def test_something() -> None:
+        assert await work() == 1
 invalid:
   - |
     pytestmark = pytest.mark.filterwarnings("ignore:anyio")

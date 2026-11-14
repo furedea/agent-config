@@ -5,7 +5,7 @@ id: value-object-is-immutable
 language: Python
 kind: noul
 subject: node
-state: local
+state: located
 threshold: 0.5
 axis: file
 severity: warning

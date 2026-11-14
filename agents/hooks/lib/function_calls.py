@@ -3,7 +3,7 @@
 import re
 from dataclasses import dataclass
 
-from shell_words import nodes, source_text
+from shell_words import PARAMETER_MODIFIERS, UnsupportedSyntaxError, literal_word, nodes, source_text
 
 # $1, ${12}, $@, and $*, which take the words a function is called with.
 POSITIONAL = re.compile(r"[1-9][0-9]*|[@*]")
@@ -23,32 +23,75 @@ def with_definitions(records: tuple[dict, ...], data: bytes, script: str) -> str
 def respelled_calls(records: tuple[dict, ...], data: bytes) -> list[str]:
     """Each body call that reads its function's arguments, with the words of each call of that function.
 
-    A body that shifts its arguments is respelled once for every shift, so a word may land in any position.
+    Every definition of a name counts. A body that shifts its arguments is respelled once for every
+    shift, so a word may land in any position.
+
+    Raises:
+        UnsupportedSyntaxError: A body reads its arguments in a way the respelling cannot follow.
     """
-    bodies = {node["Name"]["Value"]: node["Body"] for node in records if node.get("Type") == "FuncDecl"}
+    bodies: dict[str, list[dict]] = {}
+    for node in (node for node in records if node.get("Type") == "FuncDecl"):
+        bodies.setdefault(node["Name"]["Value"], []).append(_followed(node["Body"], data))
     respelled = []
     for call in (node for node in records if node.get("Type") == "CallExpr" and node.get("Args")):
-        body = bodies.get(source_text(call["Args"][0], data))
-        if body is None:
-            continue
+        name, dynamic = literal_word(call["Args"][0], data)
         words = [source_text(word, data) for word in call["Args"][1:]]
-        shifts = range(len(words) + 1) if _shifts(body, data) else range(1)
-        respelled += [
-            " ".join(map(_Respelling(words[shift:], data).word, inner["Args"]))
-            for inner in _reading_calls(body)
-            for shift in shifts
-        ]
+        for body in [] if dynamic else bodies.get(name, []):
+            copies = _copies(body)
+            shifts = range(len(words) + 1) if _calls(body, data, "shift") else range(1)
+            respelled += [
+                " ".join(map(_Respelling(words[shift:], data, copies).word, inner["Args"]))
+                for inner in _calls(body, data)
+                if any(_Respelling.reads(part, copies) for part in nodes(inner["Args"]))
+                for shift in shifts
+            ]
     return respelled
 
 
-def _reading_calls(body: dict) -> list[dict]:
-    calls = (node for node in nodes(body) if node.get("Type") == "CallExpr" and node.get("Args"))
-    return [call for call in calls if any(_is_positional(part) for part in nodes(call["Args"]))]
+def _followed(body: dict, data: bytes) -> dict:
+    """The body, once it is known to read its arguments only plainly, directly or through a plain copy."""
+    copies = _copies(body)
+    unfollowed = (
+        any(_Respelling.reads(part, copies) and any(map(part.get, PARAMETER_MODIFIERS)) for part in nodes(body))
+        or any(part.get("Param", {}).get("Value") == "argv" for part in nodes(body))
+        or any(node.get("Type") == "WordIter" and not node.get("InPos") for node in nodes(body))
+        or any(_reassigns(call["Args"], data) for call in _calls(body, data))
+        or any(_copied(node) is None for node in _assignments(body) if any(map(_is_positional, nodes(node["Value"]))))
+    )
+    if unfollowed:
+        raise UnsupportedSyntaxError("a function reading its arguments this way requires explicit review", "expansion")
+    return body
 
 
-def _shifts(body: dict, data: bytes) -> bool:
+def _reassigns(arguments: list[dict], data: bytes) -> bool:
+    """Whether a call replaces the arguments: getopts, or set with an operand or --."""
+    words = [source_text(word, data) for word in arguments]
+    return words[0] == "getopts" or (
+        words[0] == "set" and any(word[:1] not in {"-", "+"} or word == "--" for word in words[1:])
+    )
+
+
+def _assignments(body: dict) -> list[dict]:
+    return [
+        node for node in nodes(body) if "Type" not in node and "Name" in node and isinstance(node.get("Value"), dict)
+    ]
+
+
+def _copied(assignment: dict) -> str | None:
+    """The positional parameter a plain copy such as id=$1 or id="$1" takes, or None."""
+    parts = assignment["Value"].get("Parts", [])
+    if len(parts) == 1 and parts[0].get("Type") == "DblQuoted":
+        parts = parts[0].get("Parts", [])
+    return parts[0]["Param"]["Value"] if len(parts) == 1 and _is_positional(parts[0]) else None
+
+
+def _copies(body: dict) -> dict[str, str]:
+    return {node["Name"]["Value"]: name for node in _assignments(body) if (name := _copied(node)) is not None}
+
+
+def _calls(body: dict, data: bytes, name: str | None = None) -> list[dict]:
     calls = (node for node in nodes(body) if node.get("Type") == "CallExpr" and node.get("Args"))
-    return any(source_text(call["Args"][0], data) in {"shift", "set"} for call in calls)
+    return [call for call in calls if name is None or source_text(call["Args"][0], data) == name]
 
 
 def _is_positional(part: dict) -> bool:
@@ -57,17 +100,26 @@ def _is_positional(part: dict) -> bool:
 
 @dataclass(frozen=True, slots=True)
 class _Respelling:
-    """A call's words, standing in for each positional parameter; inside quotes, the quotes close around them."""
+    """A call's words, standing in for each positional parameter or plain copy of one.
+
+    Inside quotes, the quotes close around the words.
+    """
 
     words: list[str]
     data: bytes
+    copies: dict[str, str]
+
+    @staticmethod
+    def reads(part: dict, copies: dict[str, str]) -> bool:
+        """Whether a part expands a positional parameter or a plain copy of one."""
+        return _is_positional(part) or (part.get("Type") == "ParamExp" and part["Param"]["Value"] in copies)
 
     def word(self, word: dict) -> str:
         return "".join(self._part(part, quoted=False) for part in word.get("Parts", []))
 
     def _part(self, part: dict, *, quoted: bool) -> str:
-        if _is_positional(part):
-            name, words = part["Param"]["Value"], self.words
+        if self.reads(part, self.copies):
+            name, words = self.copies.get(part["Param"]["Value"], part["Param"]["Value"]), self.words
             value = (
                 " ".join(words) if name in {"@", "*"} else (words[int(name) - 1] if int(name) <= len(words) else "''")
             )

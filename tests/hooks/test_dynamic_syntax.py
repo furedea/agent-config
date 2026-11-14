@@ -341,3 +341,36 @@ def test_a_shell_in_a_function_body_trusts_no_input_from_outside_the_body(kind: 
     (isolated_project / "evil.sh").write_text("git commit --no-verify -m x\n")
     command = f"{{ f(){{ sh; }}; }} < {isolated_project / 'script.sh'}; f < {isolated_project / 'evil.sh'}"
     assert decide(kind, command).decision == "ask"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        'f(){ find . "$@"; }; f -delete; f(){ :; }',
+        "f(){ find . \"$@\"; }; 'f' -delete",
+        "f(){ id=$1; find . $id; }; f -delete",
+        'f(){ local id="$1"; find . "$id"; }; f -delete',
+    ],
+)
+def test_denials_follow_redefined_quoted_and_copied_function_arguments(command: str) -> None:
+    assert decide("forbidden", command).decision == "deny"
+
+
+@pytest.mark.parametrize("kind", ["allowed", "forbidden"])
+@pytest.mark.parametrize(
+    "command",
+    [
+        'f(){ find . "${1/x/-delete}"; }; f xx',
+        'f(){ id=$1; find . "${id/x/-delete}"; }; f xx',
+        'f(){ find . "${@:1}"; }; f -delete',
+        'f(){ x="-$1"; find . "$x"; }; f delete',
+        "f(){ for a; do find . $a; done; }; f -delete",
+        'f(){ set -- -delete; find . "$1"; }; f',
+        'f(){ getopts d: o; find . -"$OPTARG"; }; f -d elete',
+        "f(){ find . $argv; }; f -delete",
+        'printf -v"$x" gh',
+        'read -r "$name"',
+    ],
+)
+def test_function_arguments_or_parameter_names_the_respelling_cannot_follow_ask(kind: str, command: str) -> None:
+    assert decide(kind, command).decision == "ask"

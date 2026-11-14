@@ -14,6 +14,8 @@ CODE_PARAMETERS = frozenset(
 CODE_ELEMENT = re.compile(rf"(?:^-[A-Za-z]*|(?<![A-Za-z0-9_]))(?:{'|'.join(CODE_PARAMETERS)})\[")
 # Builtins that assign a whole parameter given by name, such as set -A or read -A.
 ASSIGNING_BUILTINS = frozenset({"set", "read", "vared", "print", "printf", "getopts", "mapfile", "readarray"})
+# Builtins whose operands all name parameters to assign.
+NAME_OPERAND_BUILTINS = frozenset({"read", "vared", "mapfile", "readarray", "getopts"})
 # An option whose next word names the parameter to assign: -v, -A, or -a, alone or ending a bundle.
 NAME_OPTION = re.compile(r"-[A-Za-z]*[vAa]")
 # The options trap takes; any other word before the signals is the action, as zsh reads it.
@@ -53,10 +55,16 @@ def names_code_parameter(arguments: tuple[str, ...], dynamic: tuple[bool, ...]) 
         return True
     if arguments[0] not in ASSIGNING_BUILTINS:
         return False
-    computed = any(
-        dynamic[index] and NAME_OPTION.fullmatch(arguments[index - 1]) for index in range(2, len(arguments))
-    )
+    computed = any(dynamic[index] and _names_by(arguments, index) for index in range(1, len(arguments)))
     return computed or any(argument in CODE_PARAMETERS for argument in arguments[1:])
+
+
+def _names_by(arguments: tuple[str, ...], index: int) -> bool:
+    """Whether the word at the index names a parameter: any operand of read and its kind, an option, or a -v value."""
+    word = arguments[index]
+    return (
+        arguments[0] in NAME_OPERAND_BUILTINS or word[:1] == "-" or bool(NAME_OPTION.fullmatch(arguments[index - 1]))
+    )
 
 
 def _eval_scripts(arguments: tuple[str, ...], dynamic: tuple[bool, ...]) -> list[str]:

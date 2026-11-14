@@ -282,7 +282,7 @@ def test_reads_and_local_changes_are_allowed_in_any_form(command: str) -> None:
             'export GH_"HOST"=evil.example; gh api -X GET user', "environment", id="a quoted variable name exported"
         ),
         pytest.param("gh pr checkout 1 --foo", "operation table", id="an unlisted checkout option"),
-        pytest.param('gh stack add "$NAME"', "may become an option", id="a run-time stack branch"),
+        pytest.param('gh stack add "$NAME"', "run time", id="a run-time stack branch"),
         pytest.param("GH_REPO=other/r gh issue comment 1 -b x", "environment", id="GH_REPO on the line"),
         pytest.param("env GH_REPO=other/r gh issue comment 1 -b x", "environment", id="GH_REPO through env"),
         pytest.param("timeout 9 gh issue comment 1 -b x", "environment", id="a wrapper hiding the environment"),
@@ -292,6 +292,18 @@ def test_reads_and_local_changes_are_allowed_in_any_form(command: str) -> None:
         pytest.param("gh issue create -R furedea/r -b safe", "needs one of", id="an issue without a title"),
         pytest.param("gh pr create -R furedea/r -H topic -b safe", "needs one of", id="a PR without a title"),
         pytest.param("gh stack submit", "needs one of", id="an interactive stack submit"),
+        pytest.param(
+            "gh pr create -R furedea/r -H topic --head '' -t x -b y",
+            "needs one of",
+            id="a later empty head overriding",
+        ),
+        pytest.param("gh repo clone https://evil.example/o/r", "another host", id="a clone from a foreign URL"),
+        pytest.param("gh repo clone evil.example/o/r", "another host", id="a clone from a foreign host"),
+        pytest.param("gh repo clone furedea/$X", "run time", id="a clone named at run time"),
+        pytest.param("gh pr checkout 1 -R evil.example/o/r", "another host", id="a checkout from a foreign host"),
+        pytest.param(
+            "gh pr checkout https://evil.example/o/r/pull/1", "another host", id="a checkout of a foreign URL"
+        ),
         pytest.param("gh pr review 42 -b 'Looks good'", "needs one of", id="a review body without an action"),
         pytest.param("gh pr close 42 -d", "class D", id="a close that deletes the branch"),
         pytest.param("gh pr comment 42 --delete-last --yes", "needs one of", id="a comment deletion"),

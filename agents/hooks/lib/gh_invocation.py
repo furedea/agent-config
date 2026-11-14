@@ -193,9 +193,12 @@ def _classify_local(words: tuple[Word, ...], spec: CommandSpec) -> GhCall:
     """A change to the local checkout, whose every option must be listed; `--` would pass options to git."""
     if any(word.value == "--" for word in words):
         raise UnclassifiableError("arguments after -- reach another program")
+    if any(word.dynamic for word in words):
+        raise UnclassifiableError("a local change takes a word known only at run time")
+    _check_read_repositories(words)
     scan = gh_options.scan(words, OptionTable(spec.value_options, spec.flags))
-    if any(word.may_be_option for word in scan.positionals):
-        raise UnclassifiableError("an argument may become an option at run time")
+    if any("/" in word.value and repository(word.value) is None for word in scan.positionals[:1]):
+        raise UnclassifiableError("a local change names another host than github.com")
     return GhCall((spec.operation,), spec.effect)
 
 
@@ -210,7 +213,8 @@ def _classify_write(words: tuple[Word, ...], spec: CommandSpec, single_call: boo
     data_options = spec.texts | spec.files
     for group in spec.required:
         # A body may be computed text or a run-time file the scan judges; any other required value must be literal.
-        given = [(option, word) for option, word in scan.options if option in group]
+        # pflag keeps the last value an option is given, so only the last one counts.
+        given = [(option, word) for option, word in scan.options if option in group][-1:]
         literal = any(
             word.value.strip("\"'") and (option in data_options or not word.dynamic) for option, word in given
         )
@@ -274,9 +278,8 @@ def _classify_api(words: tuple[Word, ...], catalog: Catalog, single_call: bool) 
     if route is None:
         return GhCall((f"api.{request.method.lower()}",), Effect.IRREVERSIBLE, unknown_target=True)
     match = REPOSITORY_PATH.match(request.path)
-    placeholder = match is not None and "{" in match["owner"] + match["name"]
-    repositories = (Repository(match["owner"], match["name"]),) if match and not placeholder else ()
-    unknown = not (repositories or placeholder)
+    repositories = (Repository(match["owner"], match["name"]),) if match else ()
+    unknown = not repositories
     return GhCall(
         (route.operation,),
         route.effect,

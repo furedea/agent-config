@@ -57,7 +57,7 @@ def run(path):
         total += row
     client.flush()
     client.close()
-    return total
+{PAD}    return total
 """,
     ),
     "typescript": (
@@ -96,7 +96,7 @@ function run(path: string): number {
   for (const row of rows) {
     total += row;
   }
-  return total;
+{PAD}  return total;
 }
 """,
     ),
@@ -134,7 +134,7 @@ func Run(path string) int {
 	for _, row := range rows {
 		total += row
 	}
-	return total
+{PAD}	return total
 }
 """,
     ),
@@ -164,6 +164,10 @@ pub fn local() -> usize {
     Vec::<i32>::new().len()
 }
 
+pub fn shared() -> usize {
+    std::sync::Arc::new(1).clone().max(1)
+}
+
 pub fn run(path: &str) -> i32 {
     let client = Client::new(path);
     client.connect();
@@ -172,16 +176,23 @@ pub fn run(path: &str) -> i32 {
     for row in rows {
         total += row;
     }
-    total
+{PAD}    total
 }
 """,
     ),
 }
 
+PADDING = {
+    "python": "    total += 1\n",
+    "typescript": "  total += 1;\n",
+    "go": "\ttotal++\n",
+    "rust": "    total += 1;\n",
+}
+
 # Standard collections and errors (`ValueError`, `new Map`, `errors.New`, `Vec::new`) are not constructions.
-# Each sample has three methods, a plain function, and `run`, the only function of ten lines or more and the only one
-# that constructs an object (TypeScript adds an arrow function bound to a name, which no rule selects here). Only
-# `items` returns its own collection, only `total` has a comment, only `city` chains three member accesses into a call.
+# Each sample has three methods, a plain function, and `run`, the only function of thirty lines or more and the
+# only one that constructs an object (TypeScript adds a named arrow function, which no rule selects here). Only
+# `items` returns its own collection, only `total` has a comment, only `city` chains three member accesses.
 EXPECTED = {
     "function-single-purpose": 1,
     "construction-separate-from-execution": 1,
@@ -211,6 +222,7 @@ def repository(tmp_path: Path) -> Path:
 @pytest.mark.parametrize("language", sorted(SAMPLES))
 def test_each_rule_selects_the_functions_it_asks_about(language: str, repository: Path) -> None:
     name, source = SAMPLES[language]
+    source = source.replace("{PAD}", PADDING[language] * 25)
     (repository / name).write_text(source)
 
     result = subprocess.run(

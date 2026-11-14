@@ -18,7 +18,7 @@ rule:
         stopBy: end
         all:
           - regex: "^[A-Za-z_][A-Za-z0-9_:<>]*::(new|builder|default|from|with_\\w+)\\("
-          - not: { regex: "^(Vec|String|HashMap|HashSet|BTreeMap|BTreeSet|VecDeque|BinaryHeap|Box|Rc|Arc|Cell|RefCell|Mutex|RwLock|PathBuf|Duration|Option|Result)(<[^>]*>)?::" }
+          - not: { regex: "(^|::)(Vec|String|HashMap|HashSet|BTreeMap|BTreeSet|VecDeque|BinaryHeap|Box|Rc|Arc|Cell|RefCell|Mutex|RwLock|PathBuf|Duration|Option|Result)(<[^>]*>)?::" }
 ask: >-
   This function creates and configures its own collaborators and then also runs the logic that uses them.
 criteria:

@@ -1,0 +1,36 @@
+# M-33 minimal comments (agents/AGENTS.md: "minimize comments and docstrings; use them for public APIs, TODOs,
+# non-obvious constraints, and intent that code cannot express"). Advisory: the Stop hook reports findings and never
+# promotes this rule to a gate (ADR-0021). Selected by a comment or docstring inside the function that is not a tool
+# directive or TODO; a comment that restates the next line is the violation.
+id: no-comment-restating-code
+language: Python
+kind: noul
+subject: node
+state: local
+threshold: 0.5
+axis: file
+severity: warning
+rule:
+  all:
+    - kind: function_definition
+    - any:
+        - has:
+            kind: comment
+            stopBy: end
+            not: { regex: "^#\\s*(TODO|FIXME|XXX|HACK|SAFETY|noqa|type:|pragma|pylint|ruff|nosec|nolint|clippy|rustfmt|eslint|oxlint|ts-|prettier|biome|@ts|go:|#!)" }
+        - has:
+            kind: expression_statement
+            nthChild: 1
+            has: { kind: string }
+            inside: { kind: block, inside: { kind: function_definition } }
+            stopBy: end
+ask: >-
+  A comment in this function restates what the code beside it already says.
+criteria:
+  "true": >-
+    A comment only paraphrases the statement it precedes ("increment the counter", "loop over users"), narrates the
+    control flow, or marks a section that a named function would make unnecessary, and it states no reason, constraint
+    or intent.
+  "false": >-
+    Every comment states a reason, a non-obvious constraint, a workaround, a link or an issue number, a TODO, or an
+    intent the code cannot express; directives to tools (lint, type, license, build tags) are not violations.

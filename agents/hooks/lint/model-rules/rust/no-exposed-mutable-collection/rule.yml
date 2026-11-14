@@ -1,0 +1,29 @@
+# M-34 collection objects (agents/AGENTS.md: "do not expose mutable raw collections"). Advisory: the Stop hook reports
+# findings and never promotes this rule to a gate (ADR-0021). Selected by a function that returns a field or a mutable
+# reference; the criteria require the collection to be the object's own state.
+id: no-exposed-mutable-collection
+language: Rust
+kind: noul
+subject: node
+state: local
+threshold: 0.5
+axis: file
+severity: warning
+rule:
+  all:
+    - kind: function_item
+    - has:
+        field: return_type
+        regex: "&\\s*mut\\s+(\\[|[A-Za-z_:]*(Vec|Map|Set|Deque|Heap)\\b)"
+ask: >-
+  This function hands the caller the object's own mutable collection, so the caller can change its state without the
+  object noticing.
+criteria:
+  "true": >-
+    The function returns a list, dict, set, map, slice, array or Vec that is the object's own field or an internal
+    buffer, by reference or as the same mutable instance, so the caller can add or remove elements without going
+    through the object's methods.
+  "false": >-
+    The function returns a copy, a read-only or immutable view (tuple, frozenset, shared reference, iterator, readonly
+    type), or a value the function built itself. Returning a collection from a plain data record that has no
+    invariants is not a violation.

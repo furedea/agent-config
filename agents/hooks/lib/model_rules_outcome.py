@@ -55,6 +55,7 @@ class Judgement:
     withheld_files: int = 0
     seconds: float = 0.0
     usd: float = 0.0
+    failed_reviews: int = 0
 
     @property
     def judged(self) -> int:
@@ -75,4 +76,5 @@ class Judgement:
             self.withheld_files + other.withheld_files,
             self.seconds + other.seconds,
             self.usd + other.usd,
+            self.failed_reviews + other.failed_reviews,
         )

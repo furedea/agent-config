@@ -67,7 +67,7 @@ class Review:
 
     root: Path
     base: str | None
-    rules: Path
+    rules: tuple[Path, ...]
     cache: Path
     programs: Programs
     paths: tuple[str, ...] = ()
@@ -140,6 +140,9 @@ class Review:
             return Prevented(f"{REVIEWER} printed a plan that cannot be read")
         return report
 
+    def _rule_arguments(self) -> tuple[str, ...]:
+        return tuple(word for path in self.rules for word in ("-R", str(path)))
+
     def _arguments(self, *extra: str) -> tuple[str, ...]:
         base = ("--base", self.base) if self.base else ()
         return (
@@ -150,8 +153,7 @@ class Review:
             "--fail-on",
             "error",
             *base,
-            "-R",
-            str(self.rules),
+            *self._rule_arguments(),
             "-c",
             str(self.cache),
         )
@@ -161,16 +163,21 @@ def review_all(reviews: tuple[Review, ...], credentials: Credentials, deadline: 
     """Judge each review in turn, sharing one cap of SUBJECT_CAP subjects among them."""
     combined = Judgement(())
     cap = SUBJECT_CAP
-    for review in reviews:
+    for position, review in enumerate(reviews):
         plan = review.plan(deadline, cap)
         if isinstance(plan, Prevented):
-            return plan
-        cap = max(0, cap - plan.cost)
+            return _failed_review(plan, position, combined)
         outcome = review.judge(plan, credentials, deadline) if plan.judged else _unjudged(plan)
         if isinstance(outcome, Prevented):
-            return outcome
+            return _failed_review(outcome, position, combined)
+        cap = max(0, cap - plan.cost)
         combined = combined.combined(outcome)
     return combined
+
+
+def _failed_review(prevented: Prevented, position: int, combined: Judgement) -> Judgement | Prevented:
+    """The first review failing prevents the run; a later one keeps the earlier findings and is retried next Stop."""
+    return prevented if position == 0 else combined.combined(Judgement((), skipped_files=1, failed_reviews=1))
 
 
 def cache_path(state_directory: Path) -> Path:

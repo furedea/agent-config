@@ -76,6 +76,11 @@ def decide(command: str) -> str:
             'gh issue comment 1 -R furedea/r -b "$(cat)"', "does more than print", id="a body typed into cat"
         ),
         pytest.param(
+            "gh issue comment 1 -R furedea/r -F - <<'EOF'<notes.txt\nx\nEOF",
+            "cannot see",
+            id="a file redirect joined to a quoted heredoc",
+        ),
+        pytest.param(
             'gh pr comment 1 -R furedea/r --body-file "$(echo .env)"', "computes", id="a body file path from a command"
         ),
         pytest.param(
@@ -216,3 +221,27 @@ def test_a_quoted_tilde_names_a_directory_called_tilde(
     Path("~/body.md").write_text(f"config = {secret_samples['aws_key']}\n")
     assert decide("gh issue comment 1 -R furedea/r -F '~/body.md'") == "ask"
     assert decide("gh issue comment 1 -R furedea/r -F '~nosuchuser0123/x'") == "allow"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_parameter_a_read_sends_is_scanned_as_expanded(
+    secret_samples: dict[str, str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("SEARCH_TEXT", secret_samples["github_token"])
+    assert decide('gh issue list -R furedea/r --search "$SEARCH_TEXT"') == "ask"
+    monkeypatch.setenv("SEARCH_TEXT", "is:open")
+    assert decide('gh issue list -R furedea/r --search "$SEARCH_TEXT"') == "allow"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_single_quoted_part_of_a_run_time_path_is_not_expanded(
+    secret_samples: dict[str, str], tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    clean = tmp_path / "clean"
+    clean.mkdir()
+    (clean / "body.md").write_text("No secrets.\n")
+    monkeypatch.setenv("BODY_DIR", str(clean))
+    monkeypatch.setenv("NAME", "body.md")
+    Path("$BODY_DIR").mkdir()
+    Path("$BODY_DIR/body.md").write_text(f"config = {secret_samples['aws_key']}\n")
+    assert decide("gh issue comment 1 -R furedea/r -F '$BODY_DIR'/\"$NAME\"") == "ask"

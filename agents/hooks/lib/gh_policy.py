@@ -49,12 +49,16 @@ QUOTED_HEREDOC = re.compile(r"""^<<-?\s*(?:'[^']+'|"[^"]+"|\\\w+)$""")
 INPUT_FILE = re.compile(r"^<\s*((?:~/)?[^\s$`'\"\\*?\[<>&(~][^\s$`'\"\\*?\[<>&(]*)$")
 # A file named by a quoted parameter, which stays one path and is read like a body file named at run time.
 RUN_TIME_FILE = re.compile(r'^<\s*"[^"`]*\$[^"`]*"$')
+QUOTED_TEXT = re.compile(r"'[^']*'|\"(?:[^\"\\]|\\.)*\"")
+INPUT_OPERATOR = re.compile(r"[0-9]*<(?:<<|<-?|>|&)?(?!\()")
 INPUT_REDIRECT = re.compile(r"""(?:^|\s)(0?<(?:<<|<-?|>|&)?\s*(?:'[^']*'|"[^"]*"|\S+))""")
 # A substitution holding only an input redirection, such as `$(< .env)`, reads that file in bash.
 REDIRECT_SUBSTITUTION = re.compile(r"\$\(\s*<|`\s*<")
 # A run-time path the guard would expand differently from the shell: a glob, substitution, tilde,
 # escape, parameter operator or subscript, or a zsh modifier such as `$f:h`.
 UNEXPANDABLE_PATH = re.compile(r"[`*?\[~\\]|\$\(|\$\{[^}]*[^A-Za-z0-9_}]|\$\{?[A-Za-z_][A-Za-z0-9_]*\}?:")
+# A word's single-quoted, double-quoted, and bare parts, in order.
+SHELL_PART = re.compile(r"""'[^']*'|"[^"]*"|[^'"]+""")
 # A plain parameter in a run-time path; one the environment lacks expands to nothing, as in the shell.
 PLAIN_PARAMETER = re.compile(r"\$(?:([A-Za-z_][A-Za-z0-9_]*)|\{([A-Za-z_][A-Za-z0-9_]*)\})")
 # Programs a body substitution may run without changing anything gh reads: the directory, remotes, or files.
@@ -218,9 +222,20 @@ def _expanded_path(source: str) -> str | None:
     """The file a run-time path names after quote removal and plain parameter expansion, when it exists."""
     if UNEXPANDABLE_PATH.search(source):
         return None
-    unquoted = re.sub(r"[\"']", "", source)
-    expanded = PLAIN_PARAMETER.sub(lambda match: _shell_value(match[1] or match[2]), unquoted)
+    expanded = shell_expanded(source)
     return expanded if expanded and Path(expanded).exists() else None
+
+
+def shell_expanded(source: str) -> str:
+    """A word's text as the shell builds it: single-quoted parts kept, plain parameters elsewhere expanded."""
+    return "".join(
+        part[1:-1] if part.startswith("'") else _expand_parameters(part.strip('"'))
+        for part in SHELL_PART.findall(source)
+    )
+
+
+def _expand_parameters(text: str) -> str:
+    return PLAIN_PARAMETER.sub(lambda match: _shell_value(match[1] or match[2]), text)
 
 
 def _shell_value(name: str) -> str:
@@ -296,8 +311,15 @@ def _with_stdin_file(call: GhCall, name: str) -> GhCall | str:
 
 
 def input_redirects(command: shell_syntax.Command) -> list[str]:
-    """Each input redirection in a call's trailer, as written."""
-    return [match[1] for match in INPUT_REDIRECT.finditer(command.trailer.split("\n", 1)[0])]
+    """Each input redirection in a call's trailer, as written.
+
+    Any extra operator counts, even one joined to a quoted heredoc delimiter, so a later redirection
+    cannot hide behind the first.
+    """
+    first_line = command.trailer.split("\n", 1)[0]
+    found = [match[1] for match in INPUT_REDIRECT.finditer(first_line)]
+    operators = INPUT_OPERATOR.findall(QUOTED_TEXT.sub("Q", first_line))
+    return found if len(operators) == len(found) else [*found, *operators[len(found) :]]
 
 
 def _target(call: GhCall, line: CommandLine, trusted: trusted_owners.TrustedOwners) -> TargetClass:
@@ -367,7 +389,8 @@ def _resolved_defaults() -> list[str]:
 
 def _sent_text(call: GhCall, line: CommandLine) -> str:
     """The command text, inline bodies and heredocs included, and the start of each literal file the call sends."""
-    return "\n".join([line.source, *(_file_head(Path(name)) for name in call.files)])
+    expanded = [_expand_parameters(line.source)] if line.single_call else []
+    return "\n".join([line.source, *expanded, *(_file_head(Path(name)) for name in call.files)])
 
 
 def _is_irregular(path: Path) -> bool:

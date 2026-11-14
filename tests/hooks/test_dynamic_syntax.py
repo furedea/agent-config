@@ -168,3 +168,46 @@ def test_a_function_reading_an_absolute_script_is_judged_by_its_text(isolated_pr
     script = isolated_project / "script.sh"
     script.write_text("git commit --no-verify -m x\n")
     assert decide("forbidden", f"f(){{ sh < {script}; }}; cd /; f").decision == "deny"
+
+
+@pytest.mark.parametrize(
+    "template",
+    [
+        "trap 'sh < script.sh' EXIT; cd nested",
+        "for d in a b; do sh < script.sh; cd nested; done",
+        "while true; do sh < script.sh; cd nested; done",
+        "for ((i = 0; i < 2; i++)); do sh < script.sh; cd nested; done",
+    ],
+)
+@pytest.mark.parametrize("kind", ["allowed", "forbidden"])
+def test_a_relative_script_read_by_a_trap_or_a_repeated_loop_body_asks(
+    kind: str, template: str, isolated_project: Path
+) -> None:
+    (isolated_project / "script.sh").write_text("echo safe\n")
+    (isolated_project / "nested").mkdir()
+    (isolated_project / "nested/script.sh").write_text("git commit --no-verify -m x\n")
+    assert decide(kind, template).decision == "ask"
+
+
+@pytest.mark.parametrize("kind", ["allowed", "forbidden"])
+@pytest.mark.parametrize(
+    "command",
+    [
+        "alias -- -g=gh",
+        "aliases[g]=gh\ng pr merge 1",
+        "typeset aliases[g]=gh",
+        "galiases[G]='| sh'",
+        "functions[f]='gh pr merge 1'\nf",
+        "dis_functions[f]=x",
+    ],
+)
+def test_defining_an_alias_or_function_through_any_spelling_asks(kind: str, command: str) -> None:
+    assert decide(kind, command).decision == "ask"
+
+
+@pytest.mark.parametrize("kind", ["allowed", "forbidden"])
+def test_a_relative_script_read_once_outside_any_body_is_still_judged_by_its_text(
+    kind: str, isolated_project: Path
+) -> None:
+    (isolated_project / "script.sh").write_text("echo safe\n")
+    assert decide(kind, "sh < script.sh; for d in a b; do echo $d; done").decision == "allow"

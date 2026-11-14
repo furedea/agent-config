@@ -4,6 +4,11 @@ from collections.abc import Callable
 
 from shell_words import UnsupportedSyntaxError
 
+# zsh parameters whose elements define aliases or functions when assigned.
+CODE_PARAMETERS = frozenset(
+    "aliases galiases saliases dis_aliases dis_galiases dis_saliases functions dis_functions".split()
+)
+
 
 def scripts(arguments: tuple[str, ...], dynamic: tuple[bool, ...]) -> list[str] | None:
     """Each literal script eval or trap runs, none for an alias lookup; None for any other program.
@@ -13,6 +18,12 @@ def scripts(arguments: tuple[str, ...], dynamic: tuple[bool, ...]) -> list[str] 
     """
     reader = READERS.get(arguments[0])
     return None if reader is None else reader(arguments, dynamic)
+
+
+def defines_code(record: dict) -> bool:
+    """Whether a parser record names a zsh parameter that defines an alias or a function, as an assignment does."""
+    name = record.get("Name")
+    return isinstance(name, dict) and name.get("Value") in CODE_PARAMETERS
 
 
 def _eval_scripts(arguments: tuple[str, ...], dynamic: tuple[bool, ...]) -> list[str]:
@@ -37,7 +48,7 @@ def _trap_scripts(arguments: tuple[str, ...], dynamic: tuple[bool, ...]) -> list
 
 def _alias_scripts(arguments: tuple[str, ...], dynamic: tuple[bool, ...]) -> list[str]:
     """None for a lookup; a definition asks, since its value joins whatever words later follow its name."""
-    if any(dynamic[1:]) or any("=" in argument and not argument.startswith("-") for argument in arguments[1:]):
+    if any(dynamic[1:]) or any("=" in argument for argument in arguments[1:]):
         raise UnsupportedSyntaxError("an alias defined in the command requires explicit review", "wrapper")
     return []
 

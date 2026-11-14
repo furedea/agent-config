@@ -32,6 +32,7 @@ ALLOWED_NODES = frozenset(
         ).split(),
     }
 )
+DEFERRING_NODES = frozenset({"FuncDecl", "ForClause", "WhileClause"})
 DIRECTORY_CHANGES = frozenset({"cd", "pushd", "popd"})
 SHELLS = frozenset("ash bash dash hush ksh mksh oksh pdksh posh rbash sh yash zsh".split())
 # Shells whose syntax is not bash's. However one is invoked, the call asks: the inspection cannot tell
@@ -189,9 +190,9 @@ def parse(source: str, depth: int = 0, directories: tuple[Path | None, ...] = ()
         raise UnsupportedSyntaxError("shell wrapper nesting exceeds the inspection limit", "wrapper")
     records = tuple(nodes(syntax_tree(source)))
     owners = {id(node["Cmd"]): node for node in records if isinstance(node.get("Cmd"), dict)}
-    if any(node.get("Type") not in ALLOWED_NODES for node in records):
+    if any(node.get("Type") not in ALLOWED_NODES or code_text.defines_code(node) for node in records):
         raise UnsupportedSyntaxError("dynamic or unsupported shell syntax requires explicit review", "expansion")
-    hidden_calls, in_functions = hidden_from_provider(records), function_calls(records)
+    hidden_calls, later_calls = hidden_from_provider(records), deferred_calls(records)
     data = source.encode()
     sources = shell_input.InputSources.of(records, data)
     commands: list[Command] = []
@@ -203,7 +204,8 @@ def parse(source: str, depth: int = 0, directories: tuple[Path | None, ...] = ()
         layers = [command, *unwrapped(command)]
         for layer in layers:
             directories = reached_directories(directories, layer)
-        reachable = (*directories, None) if id(node) in in_functions else directories
+        deferred = id(node) in later_calls or any(Path(layer.arguments[0]).name == "trap" for layer in layers)
+        reachable = (*directories, None) if deferred else directories
         innermost = layers[-1]
         name = shell_name(Path(innermost.arguments[0]).name)
         scripts = [(script, layer.wrapper_depth + 1) for layer in layers for script in shell_scripts(layer)]
@@ -243,12 +245,13 @@ def input_scripts(read: Callable[[], list[str]], tolerant: bool) -> list[str]:
 def hidden_from_provider(records: tuple[dict, ...]) -> set[int]:
     """The calls under a time keyword or a negation, or in a function body, which the provider's rules skip."""
     covered = [node["Stmt"] for node in records if node.get("Type") == "TimeClause" and node.get("Stmt")]
-    return _calls_under(covered + [node for node in records if node.get("Negated")]) | function_calls(records)
+    functions = [node["Body"] for node in records if node.get("Type") == "FuncDecl"]
+    return _calls_under(covered + functions + [node for node in records if node.get("Negated")])
 
 
-def function_calls(records: tuple[dict, ...]) -> set[int]:
-    """The calls in function bodies, which run wherever the function is called, after any later cd."""
-    return _calls_under([node["Body"] for node in records if node.get("Type") == "FuncDecl"])
+def deferred_calls(records: tuple[dict, ...]) -> set[int]:
+    """The calls in function and loop bodies, which may run again after a cd that follows them."""
+    return _calls_under([node for node in records if node.get("Type") in DEFERRING_NODES])
 
 
 def _calls_under(roots: list[dict]) -> set[int]:

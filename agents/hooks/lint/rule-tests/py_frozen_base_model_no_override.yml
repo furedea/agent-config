@@ -12,7 +12,16 @@ valid:
   - |
     class Money(Other):
         model_config = ConfigDict(frozen=False)
+  - |
+    class Money(FrozenBaseModel):
+        amount: int
+
+        def helper(self) -> None:
+            model_config = ConfigDict(frozen=False)
 invalid:
+  - |
+    class Money(FrozenBaseModel):
+        model_config = {"frozen": False}
   - |
     class Money(FrozenBaseModel):
         model_config = pydantic.ConfigDict(frozen=False)

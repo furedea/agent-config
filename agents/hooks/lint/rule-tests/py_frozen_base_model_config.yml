@@ -16,6 +16,12 @@ valid:
 invalid:
   - |
     class FrozenBaseModel(pydantic.BaseModel):
+        def helper(self) -> None:
+            model_config = pydantic.ConfigDict(
+                frozen=True, extra="forbid", strict=True, validate_default=True, revalidate_instances="always"
+            )
+  - |
+    class FrozenBaseModel(pydantic.BaseModel):
         model_config = pydantic.ConfigDict(frozen=True, extra="forbid", strict=True, validate_default=True)
   - |
     class FrozenBaseModel(pydantic.BaseModel):

@@ -6,7 +6,23 @@ valid:
     order = Order.model_validate(data)
   - |
     order = Order.model_validate(yaml.safe_load(text))
+  - |
+    order = Order.model_validate(tomllib.loads(text))
+  - |
+    from tomllib import loads
+
+    order = Order.model_validate(loads(text))
 invalid:
+  - |
+    import json as jsonlib
+
+    order = Order.model_validate(jsonlib.loads(payload))
+  - |
+    from json import loads
+
+    order = Order.model_validate(loads(payload))
+  - |
+    order = Order.model_validate(orjson.loads(payload))
   - |
     order = Order.model_validate(json.loads(payload))
   - |

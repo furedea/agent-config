@@ -39,7 +39,9 @@ rule:
         regex: ^FrozenBaseModel$
     - not:
         has:
-          stopBy: end
-          kind: expression_statement
+          field: body
+          kind: block
           has:
-            matches: complete_model_config
+            kind: expression_statement
+            has:
+              matches: complete_model_config

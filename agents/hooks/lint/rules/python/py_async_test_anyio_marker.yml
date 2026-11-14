@@ -15,11 +15,11 @@ utils:
           field: right
           any:
             - kind: attribute
-              regex: ^(pytest\.)?mark\.anyio$
+              regex: ^(\w+\.)?mark\.anyio$
             - has:
                 stopBy: end
                 kind: attribute
-                regex: ^(pytest\.)?mark\.anyio$
+                regex: ^(\w+\.)?mark\.anyio$
 rule:
   kind: function_definition
   regex: ^async\s+def\s+test_
@@ -40,7 +40,7 @@ rule:
           stopBy: end
           has:
             kind: decorator
-            regex: ^@(pytest\.)?mark\.anyio$
+            regex: ^@(\w+\.)?mark\.anyio$
       - inside:
           any:
             - kind: module

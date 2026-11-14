@@ -32,6 +32,34 @@ valid:
         pass
 invalid:
   - |
+    from pydantic import BaseModel, Field
+
+
+    class Money(BaseModel):
+        amount: int = Field(0)
+  - |
+    from pydantic import (
+        ConfigDict,
+        BaseModel,
+    )
+
+
+    class Money(BaseModel):
+        amount: int
+  - |
+    from pydantic import Field, BaseModel as PydanticModel
+
+
+    class Money(PydanticModel):
+        amount: int
+  - |
+    import pydantic
+
+
+    @final
+    class Money(pydantic.BaseModel):
+        amount: int
+  - |
     import pydantic
 
 

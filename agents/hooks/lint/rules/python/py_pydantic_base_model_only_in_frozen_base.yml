@@ -20,6 +20,7 @@ rule:
         - all:
             - inside:
                 kind: module
+                stopBy: end
                 has:
                   pattern: import pydantic as $ALIAS
             - has:
@@ -30,8 +31,10 @@ rule:
         - all:
             - inside:
                 kind: module
+                stopBy: end
                 has:
-                  pattern: from pydantic import BaseModel
+                  kind: import_from_statement
+                  regex: '(?s)^from\s+pydantic\s+import\b.*\bBaseModel\s*(,|\)|$)'
             - has:
                 field: superclasses
                 kind: argument_list
@@ -41,8 +44,42 @@ rule:
         - all:
             - inside:
                 kind: module
+                stopBy: end
                 has:
                   pattern: from pydantic import BaseModel as $RENAMED
+            - has:
+                field: superclasses
+                kind: argument_list
+                has:
+                  pattern: $RENAMED
+        - all:
+            - inside:
+                kind: module
+                stopBy: end
+                has:
+                  pattern: from pydantic import $$$BEFORE, BaseModel as $RENAMED
+            - has:
+                field: superclasses
+                kind: argument_list
+                has:
+                  pattern: $RENAMED
+        - all:
+            - inside:
+                kind: module
+                stopBy: end
+                has:
+                  pattern: from pydantic import BaseModel as $RENAMED, $$$AFTER
+            - has:
+                field: superclasses
+                kind: argument_list
+                has:
+                  pattern: $RENAMED
+        - all:
+            - inside:
+                kind: module
+                stopBy: end
+                has:
+                  pattern: from pydantic import $$$BEFORE, BaseModel as $RENAMED, $$$AFTER
             - has:
                 field: superclasses
                 kind: argument_list

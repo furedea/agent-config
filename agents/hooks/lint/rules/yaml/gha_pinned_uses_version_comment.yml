@@ -12,7 +12,7 @@ rule:
   all:
     - has:
         field: key
-        regex: ^uses$
+        regex: ^["']?uses["']?$
     - has:
         field: value
         regex: "@[0-9a-f]{40}[\"']?$"

@@ -40,7 +40,9 @@ rule:
             field: value
             has:
               stopBy: end
-              kind: block_mapping_pair
+              any:
+                - kind: block_mapping_pair
+                - kind: flow_pair
               has:
                 field: key
                 regex: ^cancel-in-progress$

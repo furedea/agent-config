@@ -42,6 +42,15 @@ valid:
         runs-on: ubuntu-latest
         steps:
           - run: echo hi
+  - |
+    on:
+      pull_request:
+    concurrency: {group: "ci-${{ github.ref }}", cancel-in-progress: true}
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        steps:
+          - run: echo hi
 invalid:
   - |
     'on': push

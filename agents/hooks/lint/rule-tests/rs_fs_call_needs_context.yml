@@ -64,3 +64,8 @@ invalid:
     fn f(p: &Path) -> Result<u64> {
         Ok(p.symlink_metadata()?.len())
     }
+  - |
+    fn f(p: &Path) -> Result<String> {
+        let s = read_to_string(p)?;
+        Ok(s)
+    }

@@ -20,3 +20,8 @@ invalid:
   - |
     #[cfg_attr(test, automock)]
     trait Clock { fn now(&self) -> u64; }
+  - |
+    mockall::mock! { Clock {} }
+  - |
+    #[faux::create]
+    struct Clock;

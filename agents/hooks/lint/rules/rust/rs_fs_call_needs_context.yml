@@ -18,6 +18,11 @@ rule:
           field: function
           kind: scoped_identifier
           regex: ^((std::)?fs::[a-z_]+|((std::)?fs::)?File::(open|create))$
+      # An imported function: `use std::fs::read_to_string; read_to_string(p)?`.
+      - has:
+          field: function
+          kind: identifier
+          regex: ^(read_to_string|read_dir|create_dir|create_dir_all|remove_file|remove_dir|remove_dir_all|read_link|hard_link|set_permissions|symlink_metadata)$
       # `path.canonicalize()?`, `path.symlink_metadata()?`: a `Path` method that does I/O.
       - has:
           field: function

@@ -13,6 +13,15 @@ rule:
         regex: ^get_.
         not:
           regex: ^get_(mut|unchecked|unchecked_mut)$
+    # An FFI declaration or export is named by its C symbol.
+    - not:
+        inside:
+          kind: foreign_mod_item
+          stopBy: end
+    - not:
+        has:
+          kind: function_modifiers
+          regex: extern
     # A trait implementation cannot rename the method the trait fixes.
     - not:
         inside:

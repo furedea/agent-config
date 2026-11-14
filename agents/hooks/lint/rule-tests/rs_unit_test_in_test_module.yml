@@ -33,3 +33,9 @@ invalid:
         #[test]
         fn works() {}
     }
+  - |
+    #[tokio::test]
+    async fn works() {}
+  - |
+    #[rstest]
+    fn works() {}

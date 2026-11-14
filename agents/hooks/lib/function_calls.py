@@ -35,7 +35,7 @@ def respelled_calls(records: tuple[dict, ...], data: bytes) -> list[str]:
     bodies: dict[str, list[dict]] = {}
     for node in (node for node in records if node.get("Type") == "FuncDecl"):
         bodies.setdefault(node["Name"]["Value"], []).append(_followed(node["Body"], data))
-    if any(_names_ifs(node) for node in records) and bodies:
+    if bodies and b"IFS" in data:
         raise UnsupportedSyntaxError("calling a function after changing IFS requires explicit review", "expansion")
     respelled = []
     for call in (node for node in records if node.get("Type") == "CallExpr" and node.get("Args")):
@@ -51,11 +51,6 @@ def respelled_calls(records: tuple[dict, ...], data: bytes) -> list[str]:
                 for shift in shifts
             ]
     return respelled
-
-
-def _names_ifs(record: dict) -> bool:
-    name = record.get("Name") or record.get("Param")
-    return isinstance(name, dict) and name.get("Value") == "IFS"
 
 
 def _followed(body: dict, data: bytes) -> dict:

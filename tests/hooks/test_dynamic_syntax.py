@@ -392,3 +392,16 @@ def test_an_unquoted_argument_whose_globbing_or_splitting_the_respelling_cannot_
     kind: str, command: str
 ) -> None:
     assert decide(kind, command).decision == "ask"
+
+
+@pytest.mark.parametrize("kind", ["allowed", "forbidden"])
+@pytest.mark.parametrize(
+    "command",
+    [
+        "printf -v IFS x; f(){ find . $1; }; f 'ax-delete'",
+        "read -r IFS <<< x; f(){ find . $1; }; f 'ax-delete'",
+        "declare -n r=IFS; r=x; f(){ find . $1; }; f 'ax-delete'",
+    ],
+)
+def test_any_spelling_that_names_ifs_beside_a_function_asks(kind: str, command: str) -> None:
+    assert decide(kind, command).decision == "ask"

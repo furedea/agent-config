@@ -1,6 +1,6 @@
 id: go_iota_enum_typed
 language: go
-severity: warning
+severity: error
 message: "Declare the `iota` constant with its own type, e.g. `StatePending State = iota`."
 note: "A conversion such as `State(iota)` counts as typed. Whether the type has a `String()` method is not judged. A shift such as `1 << iota` and a blank `_ = iota` that is followed by a typed constant are skipped; the specs that inherit an untyped `iota` are reported through it."
 rule:

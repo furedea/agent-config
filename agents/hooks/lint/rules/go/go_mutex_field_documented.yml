@@ -1,6 +1,6 @@
 id: go_mutex_field_documented
 language: go
-severity: warning
+severity: error
 message: "Document the fields the mutex guards in a comment above it."
 note: "Only a file that imports the standard `sync` package without an alias is judged. Only the presence of a preceding comment is judged: its content, a trailing comment on the previous field (which counts as a comment), and whether the mutex sits directly above the fields it guards are not."
 rule:

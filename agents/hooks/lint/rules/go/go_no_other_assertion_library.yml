@@ -1,6 +1,6 @@
 id: go_no_other_assertion_library
 language: go
-severity: warning
+severity: error
 message: "Assert with testify (`assert` / `require`); do not add another assertion library."
 rule:
   kind: import_spec

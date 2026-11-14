@@ -96,7 +96,7 @@ def reason(command: str) -> str:
             id="logged spaced resolution beside an unresolution",
         ),
         pytest.param("gh api repos/furedea/agent-config/issues/2/sub_issues -F sub_issue_id=9", id="a sub-issue link"),
-        pytest.param('gh pr create --head topic --body-file "$D/pr.md"', id="a quoted run-time body file"),
+        pytest.param('gh pr create --head topic -t x --body-file "$D/pr.md"', id="a quoted run-time body file"),
         pytest.param(
             "gh pr create --head topic --title 'fix: x' "
             "--body \"$(cat <<'EOF'\nUse `git add -A` never.\n$HOME stays.\nEOF\n)\"",
@@ -289,6 +289,9 @@ def test_reads_and_local_changes_are_allowed_in_any_form(command: str) -> None:
         pytest.param("gh pr review 42 --approve", "class D", id="an approval"),
         pytest.param("gh pr review 42 -ca", "class D", id="an approval in a short bundle"),
         pytest.param("gh pr review 42", "needs one of", id="a review without an action, which would prompt"),
+        pytest.param("gh issue create -R furedea/r -b safe", "needs one of", id="an issue without a title"),
+        pytest.param("gh pr create -R furedea/r -H topic -b safe", "needs one of", id="a PR without a title"),
+        pytest.param("gh stack submit", "needs one of", id="an interactive stack submit"),
         pytest.param("gh pr review 42 -b 'Looks good'", "needs one of", id="a review body without an action"),
         pytest.param("gh pr close 42 -d", "class D", id="a close that deletes the branch"),
         pytest.param("gh pr comment 42 --delete-last --yes", "needs one of", id="a comment deletion"),

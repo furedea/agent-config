@@ -370,12 +370,10 @@ def _may_name_url(word: Word) -> bool:
 def sent_path(path: str) -> str:
     """`-` for a path that is standard input; refuse any other device, process, or non-regular file.
 
-    The path is resolved the way the shell's open would, through `~`, `..`, and symlinks.
+    The path is the argument gh receives, a tilde the shell expanded included; it is resolved the way
+    gh's open would, through `..` and symlinks.
     """
-    try:
-        resolved = Path(os.path.realpath(Path(path).expanduser()))
-    except RuntimeError as error:
-        raise UnclassifiableError("a sent file names a home directory that does not exist") from error
+    resolved = Path(os.path.realpath(path))
     if path == "-" or STDIN_PATHS.fullmatch(path) or STDIN_PATHS.fullmatch(str(resolved)):
         return "-"
     if str(resolved).startswith(("/dev/", "/proc/")) or (resolved.exists() and not resolved.is_file()):

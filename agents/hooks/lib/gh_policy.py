@@ -243,12 +243,10 @@ def _file_problem(call: GhCall, line: CommandLine) -> str:
     """Why the files a call sends cannot be scanned as they will be sent, or an empty string."""
     if (call.files or call.unscanned_files) and not line.single_call:
         return "sends a file another command on the line may write after the guard reads it"
-    paths = [_local_path(name) for name in call.files]
-    if None in paths:
-        return "sends a file in a home directory that does not exist"
-    if any(path and _is_irregular(path) for path in paths):
+    paths = [Path(name) for name in call.files]
+    if any(_is_irregular(path) for path in paths):
         return "sends a FIFO, device, or other file that is not a regular file"
-    if any(path and _exceeds_scan(path) for path in paths):
+    if any(_exceeds_scan(path) for path in paths):
         return "sends a file larger than the secret scan reads"
     return ""
 
@@ -277,12 +275,17 @@ def _with_stdin(call: GhCall, candidate: shell_syntax.Command) -> GhCall | str:
 
 
 def _with_stdin_file(call: GhCall, name: str) -> GhCall | str:
-    """The call with a literal file its standard input reads, judged like any sent file path."""
+    """The call with a literal file its standard input reads, judged like any sent file path.
+
+    The redirect's text is the shell's own, so a leading `~/` is the home directory, as the shell expands it.
+    """
     try:
-        path = gh_invocation.sent_path(name)
-    except gh_options.UnclassifiableError as error:
+        path = gh_invocation.sent_path(str(Path(name).expanduser()))
+    except (gh_options.UnclassifiableError, RuntimeError) as error:
         return f"cannot send its standard input: {error}"
-    return replace(call, files=(*call.files, path)) if path != "-" else call
+    if path == "-":
+        return "reads its body from the shell's own standard input"
+    return replace(call, files=(*call.files, path))
 
 
 def input_redirects(command: shell_syntax.Command) -> list[str]:
@@ -356,16 +359,7 @@ def _resolved_defaults() -> list[str]:
 
 def _sent_text(call: GhCall, line: CommandLine) -> str:
     """The command text, inline bodies and heredocs included, and the start of each literal file the call sends."""
-    paths = filter(None, (_local_path(name) for name in call.files))
-    return "\n".join([line.source, *(_file_head(path) for path in paths)])
-
-
-def _local_path(name: str) -> Path | None:
-    """The file a sent path names, or None for a ~user path whose user does not exist."""
-    try:
-        return Path(name).expanduser()
-    except RuntimeError:
-        return None
+    return "\n".join([line.source, *(_file_head(Path(name)) for name in call.files)])
 
 
 def _is_irregular(path: Path) -> bool:

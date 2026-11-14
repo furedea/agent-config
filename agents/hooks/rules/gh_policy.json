@@ -81,6 +81,10 @@
           "--body",
           "-F",
           "--body-file"
+        ],
+        [
+          "-t",
+          "--title"
         ]
       ]
     },
@@ -303,6 +307,10 @@
           "--body",
           "-F",
           "--body-file"
+        ],
+        [
+          "-t",
+          "--title"
         ]
       ]
     },
@@ -529,6 +537,11 @@
       "flags": [
         "--auto",
         "--open"
+      ],
+      "required": [
+        [
+          "--auto"
+        ]
       ]
     },
     "stack push": {

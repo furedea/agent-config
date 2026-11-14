@@ -45,12 +45,7 @@ def decide(command: str) -> str:
         ),
         pytest.param("gh issue comment 1 -R furedea/r -F - < /dev/zero", "device", id="a device on stdin"),
         pytest.param(
-            "gh issue comment 1 -R furedea/r -F '~nosuchuser0123/x'", "home directory", id="an unknown home directory"
-        ),
-        pytest.param(
-            "gh api repos/furedea/r/issues/1/comments -F body=@'~nosuchuser0123/x'",
-            "home directory",
-            id="an unknown home directory in a typed field",
+            "gh issue comment 1 -R furedea/r -F - < /dev/stdin", "own standard input", id="stdin redirected from stdin"
         ),
         pytest.param(
             "gh api repos/furedea/agent-config/issues/1/comments -f body=@$GH_TOKEN",
@@ -193,3 +188,17 @@ def test_a_run_time_path_the_shell_may_expand_differently_stays_unscanned(
     (tmp_path / "body.md").write_text(f"config = {secret_samples['aws_key']}\n")
     # Scanning the file the guard would wrongly expand to would ask; left unscanned, a trusted write passes.
     assert decide(f"gh pr comment 1 -R furedea/r --body-file {path}") == "allow"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_quoted_tilde_names_a_directory_called_tilde(
+    secret_samples: dict[str, str], tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    home = tmp_path / "home"
+    home.mkdir()
+    monkeypatch.setenv("HOME", str(home))
+    (home / "body.md").write_text("No secrets.\n")
+    Path("~").mkdir()
+    Path("~/body.md").write_text(f"config = {secret_samples['aws_key']}\n")
+    assert decide("gh issue comment 1 -R furedea/r -F '~/body.md'") == "ask"
+    assert decide("gh issue comment 1 -R furedea/r -F '~nosuchuser0123/x'") == "allow"

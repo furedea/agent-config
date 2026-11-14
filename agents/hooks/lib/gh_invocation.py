@@ -43,6 +43,8 @@ REPOSITORY_SPEC = re.compile(
     r"(?:(?P<host>[A-Za-z0-9.-]+\.[A-Za-z]+)/)?(?P<owner>[A-Za-z0-9-]+)/(?P<name>[A-Za-z0-9_.-]+)"
 )
 DOT_SEGMENT = re.compile(r"(?:^|/)(?:\.|%2e){1,2}(?:/|$)", re.IGNORECASE)
+# A HOST/OWNER/REPO argument, as gh repo view takes one: a dotted host name, then owner and name.
+HOST_REPOSITORY = re.compile(r"[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]+/[^/]+/[^/]+")
 ISSUE_NUMBER = re.compile(r"#?[0-9]+")
 STDIN_PATHS = re.compile(r"/dev/stdin|/dev/fd/0|/proc/self/fd/0")
 # A run-time endpoint that starts with a literal path segment and slash, which no expansion can turn into a URL.
@@ -174,7 +176,7 @@ def _check_read_repositories(words: tuple[Word, ...]) -> None:
 
 
 def _repository_words(words: tuple[Word, ...]) -> list[Word]:
-    """The values given to -R or --repo in any spelling pflag reads, a short bundle included, and each URL."""
+    """The repository words of a call: -R and --repo values in any spelling, URLs, and HOST/OWNER/REPO arguments."""
     found: list[Word] = []
     for index, word in enumerate(words):
         if word.dynamic:
@@ -187,7 +189,7 @@ def _repository_words(words: tuple[Word, ...]) -> list[Word]:
         elif value.startswith("-") and not value.startswith("--") and "R" in value:
             rest = value[value.index("R") + 1 :].removeprefix("=")
             found.append(Word(rest, rest))
-        elif _is_url(value):
+        elif _is_url(value) or HOST_REPOSITORY.match(value):
             found.append(word)
     return found
 

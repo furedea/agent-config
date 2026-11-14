@@ -166,6 +166,8 @@ def test_reversible_writes_to_a_trusted_owner_are_allowed(command: str) -> None:
         pytest.param("gh stack init", id="an interactive stack init"),
         pytest.param("gh stack add my_feature/part", id="a stack branch with a slash"),
         pytest.param("gh pr checkout user/feat/x", id="a checkout of a branch with slashes"),
+        pytest.param("gh repo view furedea/agent-config", id="a repository view by owner and name"),
+        pytest.param("gh pr view release/v1.2/x", id="a PR view of a branch with dots and slashes"),
         *(
             pytest.param(command, id=f"a header read {name}")
             for name, command in (
@@ -376,6 +378,7 @@ def test_reads_and_local_changes_are_allowed_in_any_form(command: str) -> None:
         pytest.param("gh pr view 1 --repo=https://evil.example/o/r", "another host", id="a read of another URL"),
         pytest.param('gh pr list -R "$R"', "run time", id="a read whose repository is only a parameter"),
         pytest.param("gh pr view 1 -cR evil.example/o/r", "another host", id="a read host in a short bundle"),
+        pytest.param("gh repo view evil.example/o/r", "another host", id="a repository view on another host"),
         pytest.param("gh pr view https://evil.example/o/r/pull/1", "another host", id="a read of a foreign URL"),
         pytest.param('gh pr list --repo="$R"', "known only at run time", id="a read repository attached at run time"),
         pytest.param("gh pr view 1 -R$X", "known only at run time", id="a read repository in a short bundle"),

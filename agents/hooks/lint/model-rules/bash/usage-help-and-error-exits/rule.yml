@@ -8,14 +8,24 @@ state: located
 threshold: 0.5
 axis: file
 severity: warning
-# The script's own argument handling: a `case` or `if` that mentions the help flags or calls `usage`.
+# The script's own argument handling: a `case` branch or an `if` that tests a help flag or calls `usage`. A branch that
+# handles help without calling `usage` is a subject too, since that is the clearest way to break the rule.
 rule:
-  all:
-    - any:
-        - kind: case_statement
+  any:
+    - all:
+        - kind: case_item
+        - regex: "(--help|(^|[\\s|(])-h([\\s|)]|$))"
+    - all:
+        - kind: case_item
+        - has: { kind: command, regex: "^usage\\b", stopBy: end }
+    - all:
         - kind: if_statement
-    - regex: "usage|--help|-h\\b"
-    - has: { kind: command, regex: "^usage\\b", stopBy: end }
+        - has: { field: condition, regex: "(--help|(^|[\\s\"])-h([\\s\"\\]]|$))", stopBy: end }
+        - not: { inside: { kind: if_statement, stopBy: end } }
+    - all:
+        - kind: if_statement
+        - has: { kind: command, regex: "^usage\\b", stopBy: end }
+        - not: { has: { kind: if_statement, stopBy: end } }
 ask: >-
   This argument handling prints usage for a requested help with a non-zero exit, or for a missing or invalid argument
   with exit status 0 or on standard output.

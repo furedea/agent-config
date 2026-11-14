@@ -14,6 +14,17 @@ rule:
     - kind: block_mapping_pair
     - has: { field: key, regex: "^permissions$" }
     - has: { field: value, kind: block_node }
+    # Only in a workflow: the document has a top-level `jobs` mapping.
+    - inside:
+        stopBy: end
+        kind: document
+        has:
+          kind: block_node
+          has:
+            kind: block_mapping
+            has:
+              kind: block_mapping_pair
+              has: { field: key, regex: "^jobs$" }
 ask: >-
   This `permissions` block grants a scope or an access level that the steps of the job (or of every job, at the workflow
   level) do not use.

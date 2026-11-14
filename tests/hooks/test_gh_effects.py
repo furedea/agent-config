@@ -288,6 +288,8 @@ def test_reads_and_local_changes_are_allowed_in_any_form(command: str) -> None:
         pytest.param("timeout 9 gh issue comment 1 -b x", "environment", id="a wrapper hiding the environment"),
         pytest.param("gh pr review 42 --approve", "class D", id="an approval"),
         pytest.param("gh pr review 42 -ca", "class D", id="an approval in a short bundle"),
+        pytest.param("gh pr review 42", "needs one of", id="a review without an action, which would prompt"),
+        pytest.param("gh pr review 42 -b 'Looks good'", "needs one of", id="a review body without an action"),
         pytest.param("gh pr close 42 -d", "class D", id="a close that deletes the branch"),
         pytest.param("gh pr comment 42 --delete-last --yes", "needs one of", id="a comment deletion"),
         pytest.param("gh pr comment 42 -b x --delete-last --yes", "class D", id="a comment deletion with a body"),
@@ -355,6 +357,11 @@ def test_reads_and_local_changes_are_allowed_in_any_form(command: str) -> None:
         ),
         pytest.param("gh pr create -R furedea/r -t x -b y", "needs one of", id="a PR without --head, which may push"),
         pytest.param('gh pr create -R furedea/r -H "$H" -t x -b y', "parameter", id="a PR head known at run time"),
+        pytest.param(
+            "gh pr create -R furedea/r -H \"$(printf '')\" -t x -b y",
+            "needs one of",
+            id="a PR head computed at run time",
+        ),
         pytest.param(
             'gh pr view "${X/x/https\\:\\/\\/evil.example\\/o\\/r\\/pull\\/1}"',
             "computed word",

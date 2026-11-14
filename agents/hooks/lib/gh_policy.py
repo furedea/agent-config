@@ -13,6 +13,7 @@ from pathlib import Path
 
 import gh_catalog
 import gh_invocation
+import gh_options
 import hook_decision
 import secret_content
 import shell_inspection
@@ -231,14 +232,24 @@ def _ungranted(call: GhCall, line: CommandLine, rules: GhRules) -> str:
     target = _target(call, line, rules.trusted)
     if not all(rules.catalog.grant(target, operation, call.effect) for operation in call.operations):
         return IRREVERSIBLE_REASON if call.effect is Effect.IRREVERSIBLE else TARGET_REASONS[target]
-    if (call.files or call.unscanned_files) and not line.single_call:
-        return "sends a file another command on the line may write after the guard reads it"
-    if any(_is_irregular(Path(name).expanduser()) for name in call.files):
-        return "sends a FIFO, device, or other file that is not a regular file"
-    if any(_exceeds_scan(Path(name).expanduser()) for name in call.files):
-        return "sends a file larger than the secret scan reads"
+    if problem := _file_problem(call, line):
+        return problem
     if call.unscanned_files and (call.effect is Effect.READ or target is not TargetClass.TRUSTED):
         return "sends input the guard cannot read to a target outside the trusted owners"
+    return ""
+
+
+def _file_problem(call: GhCall, line: CommandLine) -> str:
+    """Why the files a call sends cannot be scanned as they will be sent, or an empty string."""
+    if (call.files or call.unscanned_files) and not line.single_call:
+        return "sends a file another command on the line may write after the guard reads it"
+    paths = [_local_path(name) for name in call.files]
+    if None in paths:
+        return "sends a file in a home directory that does not exist"
+    if any(path and _is_irregular(path) for path in paths):
+        return "sends a FIFO, device, or other file that is not a regular file"
+    if any(path and _exceeds_scan(path) for path in paths):
+        return "sends a file larger than the secret scan reads"
     return ""
 
 
@@ -259,10 +270,19 @@ def _with_stdin(call: GhCall, candidate: shell_syntax.Command) -> GhCall | str:
         expands = not QUOTED_HEREDOC.match(redirect) and re.search(r"[$`]", candidate.trailer)
         return "sends input that expands at run time" if expands else call
     if match := INPUT_FILE.match(redirect):
-        return replace(call, files=(*call.files, match[1]))
+        return _with_stdin_file(call, match[1])
     if RUN_TIME_FILE.match(redirect):
         return replace(call, unscanned_files=(*call.unscanned_files, redirect.removeprefix("<").strip()))
     return "reads its body from input the guard cannot see"
+
+
+def _with_stdin_file(call: GhCall, name: str) -> GhCall | str:
+    """The call with a literal file its standard input reads, judged like any sent file path."""
+    try:
+        path = gh_invocation.sent_path(name)
+    except gh_options.UnclassifiableError as error:
+        return f"cannot send its standard input: {error}"
+    return replace(call, files=(*call.files, path)) if path != "-" else call
 
 
 def input_redirects(command: shell_syntax.Command) -> list[str]:
@@ -336,7 +356,16 @@ def _resolved_defaults() -> list[str]:
 
 def _sent_text(call: GhCall, line: CommandLine) -> str:
     """The command text, inline bodies and heredocs included, and the start of each literal file the call sends."""
-    return "\n".join([line.source, *(_file_head(Path(name).expanduser()) for name in call.files)])
+    paths = filter(None, (_local_path(name) for name in call.files))
+    return "\n".join([line.source, *(_file_head(path) for path in paths)])
+
+
+def _local_path(name: str) -> Path | None:
+    """The file a sent path names, or None for a ~user path whose user does not exist."""
+    try:
+        return Path(name).expanduser()
+    except RuntimeError:
+        return None
 
 
 def _is_irregular(path: Path) -> bool:

@@ -207,14 +207,20 @@ def _classify_write(words: tuple[Word, ...], spec: CommandSpec, single_call: boo
     targets = scan.values_of(REPOSITORY_OPTIONS | spec.repositories)
     targets += tuple(word for word in scan.positionals if _is_url(word.value))
     repositories = tuple(None if word.dynamic else repository(word.value) for word in targets)
+    data_options = spec.texts | spec.files
     for group in spec.required:
-        if not any(word.value.strip("\"'") for word in scan.values_of(group)):
+        # A body may be computed text or a run-time file the scan judges; any other required value must be literal.
+        given = [(option, word) for option, word in scan.options if option in group]
+        literal = any(
+            word.value.strip("\"'") and (option in data_options or not word.dynamic) for option, word in given
+        )
+        if not literal and not scan.flags & group & (spec.flags | spec.irreversible_flags):
             raise UnclassifiableError(f"'{spec.operation}' needs one of {', '.join(sorted(group))}")
     if scan.flags & spec.read_flags:
         return GhCall((spec.operation,), Effect.READ)
     effect = Effect.IRREVERSIBLE if scan.flags & spec.irreversible_flags else spec.effect
     files = scan.values_of(spec.files)
-    paths = [_stdin_path(word.value) for word in files if not word.dynamic]
+    paths = [sent_path(word.value) for word in files if not word.dynamic]
     return GhCall(
         (spec.operation,),
         effect,
@@ -361,12 +367,15 @@ def _may_name_url(word: Word) -> bool:
     return ":" in word.source or (bool(lead) and any(scheme.startswith(lead) for scheme in ("https://", "http://")))
 
 
-def _stdin_path(path: str) -> str:
+def sent_path(path: str) -> str:
     """`-` for a path that is standard input; refuse any other device, process, or non-regular file.
 
     The path is resolved the way the shell's open would, through `~`, `..`, and symlinks.
     """
-    resolved = Path(os.path.realpath(Path(path).expanduser()))
+    try:
+        resolved = Path(os.path.realpath(Path(path).expanduser()))
+    except RuntimeError as error:
+        raise UnclassifiableError("a sent file names a home directory that does not exist") from error
     if path == "-" or STDIN_PATHS.fullmatch(path) or STDIN_PATHS.fullmatch(str(resolved)):
         return "-"
     if str(resolved).startswith(("/dev/", "/proc/")) or (resolved.exists() and not resolved.is_file()):
@@ -381,7 +390,7 @@ def _file_source(word: Word) -> str:
 
 def _file_path(word: Word) -> str:
     """The path a file word names: an --input value as is, a key=@path field after its @."""
-    return _stdin_path(word.value.partition("=")[2][1:] if _names_file(word) else word.value)
+    return sent_path(word.value.partition("=")[2][1:] if _names_file(word) else word.value)
 
 
 def _classify_graphql(request: ApiRequest, catalog: Catalog) -> GhCall:

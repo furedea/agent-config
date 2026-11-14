@@ -416,6 +416,16 @@
       "irreversible_flags": [
         "-a",
         "--approve"
+      ],
+      "required": [
+        [
+          "-c",
+          "--comment",
+          "-r",
+          "--request-changes",
+          "-a",
+          "--approve"
+        ]
       ]
     },
     "pr merge": {

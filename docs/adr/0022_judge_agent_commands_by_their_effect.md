@@ -13,8 +13,10 @@ to a Capability / Effect Gateway with grants, we decided for judging each comman
 and asking only when the effect widens the agent's authority or cannot be undone, and against
 widening the allowlist form by form (ADR-0009 already rejected this) and against asking whenever
 the text is not fully parsed, to make a prompt mean "this changes what the agent may do or cannot
-be taken back", accepting that the guard is a review layer, not a boundary, and that the
-classification of external programs must stay precise.
+be taken back", accepting that the guard is a review layer, not a boundary, that the
+classification of external programs must stay precise, and that a class B dependency add
+only defers the code: the added package runs later under a class A command (`cargo test`,
+`pytest`, `go test`) inside the sandbox, where the sandbox, not the prompt, is the protection.
 
 ## Protection order
 
@@ -29,12 +31,12 @@ earlier one by prompting more:
 
 ## Classes
 
-| Class | Effect                                 | Examples                                                                                                                                                                                                                                                                                                                                | Decision |
-| ----- | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| A     | Stays inside the environment           | edit, build, test, `rm` inside writable roots, shell functions, loops                                                                                                                                                                                                                                                                   | allow    |
-| B     | External, inside the grant, reversible | PR / issue create, edit, comment, review reply, `resolveReviewThread` on a trusted owner's repository; read-only `gh`; Herdr panes the agent created; dependency adds that run no package code (`cargo add`, `go get`, `uv add --no-build`)                                                                                             | allow    |
-| C     | Widens authority                       | writes to repositories of owners not in `trusted_owners.json`; non-allowlisted hosts; secrets; sandbox escape; fetched-package execution (`npx`, `uvx`, `bunx`, `pnpm dlx`, `nix run`, `nix shell`, `uv run --with`, `npm install`, and any `uv add` without `--no-build`, because resolving or syncing can run an sdist build backend) | ask      |
-| D     | Promotes or cannot be undone           | `gh pr merge`, `gh release create` / `edit` / `upload` / `delete`, `gh repo delete` / `edit`, `gh api -X DELETE`, `git push --force` without lease, `git stash drop` / `clear`, `git remote add` / `set-url`, `kill`, `pkill`, `herdr server`                                                                                           | ask      |
+| Class | Effect                                 | Examples                                                                                                                                                                                                                                                                                                                                                                                                | Decision |
+| ----- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| A     | Stays inside the environment           | edit, build, test, `rm` inside writable roots, shell functions, loops                                                                                                                                                                                                                                                                                                                                   | allow    |
+| B     | External, inside the grant, reversible | PR / issue create, edit, comment, review reply, `resolveReviewThread` on a trusted owner's repository; read-only `gh`; Herdr panes the agent created; dependency adds that run no package code at add time (`cargo add`, `GOTOOLCHAIN=local go get`, `uv add --no-build`, `npm install --ignore-scripts`)                                                                                               | allow    |
+| C     | Widens authority                       | writes to repositories of owners not in `trusted_owners.json`; non-allowlisted hosts; secrets; sandbox escape; fetched-package execution (`npx`, `uvx`, `bunx`, `pnpm dlx`, `nix run`, `nix shell`, `uv run --with`, `npm install` without `--ignore-scripts`, `go get` that may switch toolchains, and any `uv add` without `--no-build`, because resolving or syncing can run an sdist build backend) | ask      |
+| D     | Promotes or cannot be undone           | `gh pr merge`, `gh release create` / `edit` / `upload` / `delete`, `gh repo delete` / `edit`, `gh api -X DELETE`, `git push --force` without lease, `git stash drop` / `clear`, `git remote add` / `set-url`, `kill`, `pkill`, `herdr server`                                                                                                                                                           | ask      |
 
 The deny list is unchanged. Function and loop bodies are judged by the commands inside them, so a
 class D operation hidden in `f() { gh pr merge 1; }; f` still asks. A construct the guard cannot

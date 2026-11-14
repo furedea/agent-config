@@ -1,0 +1,26 @@
+id: ts_no_vague_name
+language: typescript
+severity: warning
+message: "Name by the domain or action, not `manager`, `helper`, `util`, or `common`."
+note: "Class, interface and type names ending in the vague word, and declared names equal to it; functions that merely end in it (`findCommon`) and local variables are not checked; a name the project already established stays in the prose exception."
+rule:
+  any:
+    - all:
+        - any:
+            - kind: class_declaration
+            - kind: abstract_class_declaration
+            - kind: interface_declaration
+            - kind: type_alias_declaration
+        - has:
+            field: name
+            regex: (Manager|Helper|Util|Utils|Common)$
+    - all:
+        - any:
+            - kind: class_declaration
+            - kind: abstract_class_declaration
+            - kind: function_declaration
+            - kind: interface_declaration
+            - kind: type_alias_declaration
+        - has:
+            field: name
+            regex: ^(manager|helper|util|utils|common)$

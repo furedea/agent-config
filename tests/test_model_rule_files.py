@@ -64,6 +64,53 @@ function pure(a: number, b: number): number {
 
 // Removed when the parser handles empty input (#123).
 test.fails("known defect", () => {});
+
+type Request = { readonly url: string; readonly retries?: number };
+
+const parsed = JSON.parse("{}") as Request;
+const levels = ["low", "high"] as const;
+const typed = <Request>JSON.parse("{}");
+
+function stamp(): number {
+  // The clock is read here on purpose.
+  return Date.now();
+}
+
+describe("stamp", () => {
+  it("returns a number", () => {});
+});
+
+describe.concurrent("stamp again", () => {
+  it("returns a number", () => {});
+});
+
+vi.mock("./sibling");
+vi.doMock("./other");
+
+it.concurrent("first case", () => {});
+it.concurrent("second case", () => {});
+
+const expiresAt = () => Date.now() + 1000;
+
+class Loader {
+  load = (path: string): string => {
+    if (!path) {
+      throw new Error("missing");
+    }
+    return path;
+  };
+}
+
+register("/item", () => {
+  throw new Error("missing");
+});
+
+const loadLater = function (path: string): string {
+  if (!path) {
+    throw new Error("missing");
+  }
+  return path;
+};
 """
 
 
@@ -337,10 +384,24 @@ def test_typescript_rules_select_the_functions_they_ask_about(repository: Path) 
 
     counts = subjects_by_rule(plan(repository))
 
+    # `stamp` is a fourth function and the only one that holds a comment, and the comment above `test.fails` stands
+    # outside any function; `stamp` and the arrow function `expiresAt` read the clock; `as const` is not an
+    # assertion to judge, and the angle-bracket form `<Request>` has its own rule; `load`, the field arrow
+    # function `Loader.load`, the callback passed to `register` and the function expression `loadLater` throw; the
+    # `describe` and `describe.concurrent` blocks and the top level of the file, which holds two `it.concurrent`
+    # calls, are the groups of tests; `vi.mock` and `vi.doMock` are both mocks.
     assert counts == {
-        "command-query-naming": 3,
+        "angle-bracket-assertion-follows-validation": 1,
+        "command-query-naming": 4,
+        "comment-explains-why": 2,
         "error-message-names-operation": 1,
+        "expected-failure-returned-as-value": 4,
+        "inject-time-and-randomness": 2,
         "known-defect-marker-names-removal": 1,
+        "mock-only-external-boundaries": 2,
+        "repeated-cases-use-it-each": 3,
+        "states-modeled-as-discriminated-union": 1,
+        "type-assertion-follows-validation": 1,
     }
 
 

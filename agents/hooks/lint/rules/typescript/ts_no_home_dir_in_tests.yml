@@ -1,0 +1,17 @@
+id: ts_no_home_dir_in_tests
+language: typescript
+severity: warning
+message: "Use a temporary directory instead of the real home directory."
+note: "Scanned only in `*.test.ts` and files under `tests/`; `ast-grep test` ignores the file filter."
+files:
+  - "**/*.test.ts"
+  - "**/tests/**/*.ts"
+rule:
+  any:
+    - pattern: homedir()
+    - pattern: os.homedir()
+    - pattern: process.env.HOME
+    - pattern: process.env.USERPROFILE
+    - all:
+        - kind: subscript_expression
+        - regex: ^process\.env\[["'](HOME|USERPROFILE)["']\]$

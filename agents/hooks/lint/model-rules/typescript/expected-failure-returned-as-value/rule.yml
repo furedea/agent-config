@@ -1,0 +1,40 @@
+# Expected failures are returned as values; throw is for programmer errors and unrecoverable states
+# (agents/skills/typescript-style/references/errors.md). Advisory and unfitted.
+id: expected-failure-returned-as-value
+languages: [ TypeScript, Tsx ]
+kind: noul
+subject: node
+state: local
+threshold: 0.5
+axis: file
+severity: warning
+rule:
+  any:
+    - all:
+        - kind: function_declaration
+        - has: { kind: throw_statement, stopBy: end }
+    - all:
+        - kind: method_definition
+        - has: { kind: throw_statement, stopBy: end }
+    - all:
+        - any:
+            - kind: arrow_function
+            - kind: function_expression
+        - inside:
+            any:
+              - kind: variable_declarator
+              - kind: public_field_definition
+              - kind: arguments
+        - has: { kind: throw_statement, stopBy: end }
+ask: >-
+  This function throws for a failure that its caller can legitimately expect, such as invalid input, a missing item, or a
+  failed lookup, instead of returning the failure as a value.
+criteria:
+  "true": >-
+    A throw reports a condition that depends on the data or environment and that a caller would reasonably handle, such as
+    a validation failure, a record that may not exist, or a file that may be unreadable, and the function returns no
+    `Result`-like value for it.
+  "false": >-
+    Every throw reports a programmer error or an unrecoverable state, such as a violated precondition, an impossible
+    branch, or an invariant that the program's own code must keep. Rethrowing or wrapping a caught error with a cause, and
+    a function that already returns its expected failures as values, are not violations.

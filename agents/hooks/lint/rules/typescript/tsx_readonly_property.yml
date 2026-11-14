@@ -1,0 +1,23 @@
+id: tsx_readonly_property
+language: tsx
+severity: warning
+message: "Declare the property `readonly`."
+note: "The `.tsx` counterpart of ts_readonly_property; ast-grep parses `.tsx` files as the separate `tsx` language. Declarations of `type` and `interface` only; the property types of parameters and function types are left alone."
+rule:
+  all:
+    - kind: property_signature
+    - not:
+        regex: ^readonly\s
+    - inside:
+        any:
+          - kind: interface_body
+          - all:
+              - kind: object_type
+              - inside:
+                  kind: type_alias_declaration
+                  stopBy:
+                    not:
+                      any:
+                        - kind: union_type
+                        - kind: intersection_type
+                        - kind: parenthesized_type

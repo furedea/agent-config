@@ -1,0 +1,31 @@
+id: tsx_no_vague_name
+valid:
+  - |
+    class UserStore {}
+  - |
+    function findCommon(left: string[], right: string[]): string[] {
+      return left.filter((item) => right.includes(item));
+    }
+  - |
+    function formatDate(date: Date): string {
+      return date.toISOString();
+    }
+  - |
+    const common = gitCommonDir(cwd);
+invalid:
+  - |
+    class SessionManager {}
+  - |
+    class URLHelper {}
+  - |
+    abstract class BaseManager {}
+  - |
+    type XMLUtils = { parse(text: string): unknown };
+  - |
+    function helper(date: Date): string {
+      return date.toISOString();
+    }
+  - |
+    interface StringUtils {
+      trim(value: string): string;
+    }

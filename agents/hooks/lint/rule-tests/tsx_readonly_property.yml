@@ -1,0 +1,31 @@
+id: tsx_readonly_property
+valid:
+  - |
+    type Payment = { readonly kind: "card"; readonly last4: string };
+  - |
+    interface User {
+      readonly id: string;
+      readonly name: string;
+    }
+  - |
+    function open(options: { path: string }): void {}
+  - |
+    type Handler = (event: { name: string }) => void;
+  - |
+    function open(options: { path: string } | null): void {}
+  - |
+    function Button(props: { label: string } & Base): void {}
+  - |
+    const state = useState<{ count: number } | null>(null);
+invalid:
+  - |
+    type Payment = { kind: "card"; readonly last4: string };
+  - |
+    interface User {
+      readonly id: string;
+      name: string;
+    }
+  - |
+    type Shape = { readonly kind: "a" } | { kind: "b" };
+  - |
+    type Props = Base & { label: string };

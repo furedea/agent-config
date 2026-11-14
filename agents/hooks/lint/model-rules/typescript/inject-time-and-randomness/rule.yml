@@ -1,0 +1,40 @@
+# Time and randomness are arguments, not read inside logic (agents/skills/typescript-style/references/testing.md).
+# Advisory and unfitted.
+id: inject-time-and-randomness
+languages: [ TypeScript, Tsx ]
+kind: noul
+subject: node
+state: local
+threshold: 0.5
+axis: file
+severity: warning
+rule:
+  all:
+    - any:
+        - kind: function_declaration
+        - kind: method_definition
+        - all:
+            - any:
+                - kind: arrow_function
+                - kind: function_expression
+            - inside:
+                any:
+                  - kind: variable_declarator
+                  - kind: public_field_definition
+                  - kind: arguments
+    - has:
+        stopBy: end
+        any:
+          - pattern: Date.now()
+          - pattern: new Date()
+          - pattern: Math.random()
+          - pattern: crypto.randomUUID()
+ask: >-
+  This function reads the current time or a random value itself, so its result cannot be fixed in a test.
+criteria:
+  "true": >-
+    Logic that computes a result calls `Date.now()`, `new Date()`, `Math.random()` or `crypto.randomUUID()` directly instead
+    of receiving the time or a random function (for example an `Rng`) as an argument or a dependency.
+  "false": >-
+    The function is a thin entry point or composition root that supplies the clock or random source to the logic, or it only
+    measures elapsed time for logging, or it already receives them as arguments.

@@ -1,0 +1,75 @@
+id: ts_no_unvalidated_json_cast
+valid:
+  - |
+    const raw: unknown = JSON.parse(text);
+  - |
+    const raw = JSON.parse(text) as unknown;
+  - |
+    const config = parseConfig(JSON.parse(text));
+  - |
+    const body: unknown = await response.json();
+  - |
+    const body: Promise<unknown> = response.json();
+  - |
+    function load(text: string): unknown {
+      return JSON.parse(text);
+    }
+  - |
+    function load(text: string) {
+      return JSON.parse(text);
+    }
+  - |
+    class Cache {
+      config: unknown = JSON.parse(text);
+    }
+  - |
+    const load = (text: string): unknown => JSON.parse(text);
+invalid:
+  - |
+    const config = JSON.parse(text) as Config;
+  - |
+    const config: Config = JSON.parse(text);
+  - |
+    let config: Config = JSON.parse(text);
+  - |
+    const body: Promise<Body> = response.json();
+  - |
+    const body = await response.json() as Body;
+  - |
+    const config = JSON.parse(text) satisfies Config;
+  - |
+    const body = (await response.json()) satisfies Body;
+  - |
+    const load = (text: string): Config => JSON.parse(text);
+  - |
+    const fetchBody = async (): Promise<Body> => response.json();
+  - |
+    class Cache {
+      config: Config = JSON.parse(text);
+    }
+  - |
+    class Client {
+      body: Promise<Body> = response.json();
+    }
+  - |
+    const body = await response.json() as unknown as Body;
+  - |
+    function load(text: string): Config {
+      return JSON.parse(text);
+    }
+  - |
+    async function load(): Promise<Body> {
+      return response.json();
+    }
+  - |
+    const config = JSON.parse(text) as unknown as Config;
+  - |
+    const body = (await response.json()) as unknown as Body;
+  - |
+    const config = <Config>JSON.parse(text);
+  - |
+    const body = <Body>(await response.json());
+  - |
+    let body: Body = await response.json();
+  - |
+    const body = (await response.json()) as Body;

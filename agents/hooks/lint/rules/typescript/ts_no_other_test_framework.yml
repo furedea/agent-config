@@ -1,0 +1,14 @@
+id: ts_no_other_test_framework
+language: typescript
+severity: warning
+message: "Use vitest as the only test framework."
+note: "Imports of jest, mocha and `node:test`, and `jest.*` calls; a Jest dependency in `package.json` is not seen."
+rule:
+  any:
+    - all:
+        - kind: import_statement
+        - has:
+            field: source
+            kind: string
+            regex: ^["'](jest|@jest/globals|mocha|node:test)["']$
+    - pattern: jest.$METHOD($$$ARGS)

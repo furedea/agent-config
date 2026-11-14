@@ -1,0 +1,51 @@
+id: ts_catch_rethrow_requires_cause
+valid:
+  - |
+    try {
+      run();
+    } catch (error) {
+      throw new Error("read config", { cause: error });
+    }
+  - |
+    try {
+      run();
+    } catch (error) {
+      throw error;
+    }
+  - |
+    function validate(value: string): void {
+      throw new Error("value is empty");
+    }
+  - |
+    try {
+      run();
+    } catch (error) {
+      throw new Error("read config", options);
+    }
+invalid:
+  - |
+    try {
+      run();
+    } catch (error) {
+      throw new Error("read config");
+    }
+  - |
+    try {
+      run();
+    } catch (error) {
+      throw new Error("read config", {});
+    }
+  - |
+    try {
+      run();
+    } catch (error) {
+      throw new Error("read config", { retries: 1 });
+    }
+  - |
+    try {
+      run();
+    } catch (error) {
+      if (retried) {
+        throw new TypeError(`read ${path}`);
+      }
+    }

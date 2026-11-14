@@ -1,0 +1,30 @@
+# Repeated cases of one behaviour use it.each (agents/skills/typescript-style/references/testing.md). Advisory and unfitted.
+id: repeated-cases-use-it-each
+languages: [ TypeScript, Tsx ]
+kind: noul
+subject: node
+state: local
+threshold: 0.5
+axis: file
+severity: warning
+rule:
+  any:
+    - all:
+        - kind: call_expression
+        - has: { field: function, regex: '^describe(\.|$)' }
+    - all:
+        - kind: program
+        - has:
+            kind: expression_statement
+            has:
+              kind: call_expression
+              has: { field: function, regex: '^(it|test)(\.|$)' }
+ask: >-
+  This test group (a `describe` block, or the top level of a test file) repeats the same test body for different inputs as separate tests instead of one `it.each` table.
+criteria:
+  "true": >-
+    Two or more tests differ only in their input and expected value, with the same arrange and assert steps, so they could
+    be rows of one `it.each` table.
+  "false": >-
+    Each test checks a different behaviour, or has different setup or assertions, or the repeated cases already use
+    `it.each` or `test.each`.

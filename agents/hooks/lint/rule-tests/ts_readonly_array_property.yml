@@ -1,0 +1,33 @@
+id: ts_readonly_array_property
+valid:
+  - |
+    type Order = { readonly lines: readonly string[] };
+  - |
+    interface Order {
+      readonly lines: ReadonlyArray<string>;
+    }
+  - |
+    function join(parts: string[]): string[] {
+      return parts;
+    }
+  - |
+    function open(options: { paths: string[] } | null): void {}
+  - |
+    type Load = { readonly result: Promise<string[]> };
+  - |
+    function open(options: { paths: string[] }): void {}
+  - |
+    type Handler = (event: { names: string[] }) => void;
+invalid:
+  - |
+    type Order = { readonly lines: string[] };
+  - |
+    interface Order {
+      readonly lines: Array<string>;
+    }
+  - |
+    type Order = { readonly lines: string[] | null };
+  - |
+    type Order = { readonly lines: string[] | null | undefined };
+  - |
+    type Order = { readonly lines: null | string[] | undefined };

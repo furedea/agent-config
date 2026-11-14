@@ -69,12 +69,19 @@
       "files": [
         "-F",
         "--body-file",
-        "--attach",
-        "--recover"
+        "--attach"
       ],
       "flags": [
         "-w",
         "--web"
+      ],
+      "required": [
+        [
+          "-b",
+          "--body",
+          "-F",
+          "--body-file"
+        ]
       ]
     },
     "issue edit": {
@@ -136,6 +143,14 @@
       "irreversible_flags": [
         "--delete-last",
         "--yes"
+      ],
+      "required": [
+        [
+          "-b",
+          "--body",
+          "-F",
+          "--body-file"
+        ]
       ]
     },
     "issue close": {
@@ -268,8 +283,7 @@
         "--body-file",
         "--attach",
         "-T",
-        "--template",
-        "--recover"
+        "--template"
       ],
       "flags": [
         "-d",
@@ -280,8 +294,16 @@
         "--web"
       ],
       "required": [
-        "-H",
-        "--head"
+        [
+          "-H",
+          "--head"
+        ],
+        [
+          "-b",
+          "--body",
+          "-F",
+          "--body-file"
+        ]
       ]
     },
     "pr edit": {
@@ -337,6 +359,14 @@
       "irreversible_flags": [
         "--delete-last",
         "--yes"
+      ],
+      "required": [
+        [
+          "-b",
+          "--body",
+          "-F",
+          "--body-file"
+        ]
       ]
     },
     "pr ready": {

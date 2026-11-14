@@ -160,6 +160,19 @@ def test_a_run_time_path_expanding_to_a_device_asks(monkeypatch: pytest.MonkeyPa
 
 
 @pytest.mark.usefixtures("furedea_checkout")
+def test_an_unset_parameter_expands_to_nothing_before_the_scan(secret_samples: dict[str, str]) -> None:
+    Path(".env.md").write_text(f"config = {secret_samples['aws_key']}\n")
+    assert decide('gh issue comment 1 -R furedea/r -F "${UNSET_PREFIX}.env.md"') == "ask"
+    assert decide('gh issue comment 1 -R furedea/r -F "$UNSET_PREFIX$PWD/.env.md"') == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_file_larger_than_the_scan_reads_asks() -> None:
+    Path("big.md").write_text("x" * 100001)
+    assert decide("gh issue comment 1 -R furedea/r -F big.md") == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
 @pytest.mark.parametrize("path", ['"$BODY_DIR:h/body.md"', '"$BODY_DIR"/../body.md\\x', '~"$BODY_DIR"/body.md'])
 def test_a_run_time_path_the_shell_may_expand_differently_stays_unscanned(
     secret_samples: dict[str, str], tmp_path: Path, monkeypatch: pytest.MonkeyPatch, path: str

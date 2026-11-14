@@ -54,7 +54,7 @@ class CommandSpec:
 
     `texts` carry prose sent to GitHub, `files` name local files whose content is sent, `repositories`
     name further target repositories, `irreversible_flags` turn the operation irreversible, and
-    `read_flags` turn it into a read, and one of `required` must be given.
+    `read_flags` turn it into a read, and each group in `required` needs one of its options given.
     """
 
     operation: str
@@ -66,15 +66,18 @@ class CommandSpec:
     flags: frozenset[str] = frozenset()
     irreversible_flags: frozenset[str] = frozenset()
     read_flags: frozenset[str] = frozenset()
-    required: frozenset[str] = frozenset()
+    required: tuple[frozenset[str], ...] = ()
 
     @classmethod
     def from_json(cls, data: dict) -> Self:
         """Validate one command entry of the table."""
-        lists = ("values", "texts", "files", "repositories", "flags", "irreversible_flags", "read_flags", "required")
-        if not set(data) <= {"operation", "effect", *lists} or not _is_name(data.get("operation")):
+        lists = ("values", "texts", "files", "repositories", "flags", "irreversible_flags", "read_flags")
+        if not set(data) <= {"operation", "effect", "required", *lists} or not _is_name(data.get("operation")):
             raise ValueError("invalid command entry")
-        return cls(data["operation"], Effect(data["effect"]), *(_options(data.get(key, [])) for key in lists))
+        required = tuple(_options(group) for group in data.get("required", []))
+        return cls(
+            data["operation"], Effect(data["effect"]), *(_options(data.get(key, [])) for key in lists), required
+        )
 
     @property
     def value_options(self) -> frozenset[str]:

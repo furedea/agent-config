@@ -54,6 +54,8 @@ REDIRECT_SUBSTITUTION = re.compile(r"\$\(\s*<|`\s*<")
 # A run-time path the guard would expand differently from the shell: a glob, substitution, tilde,
 # escape, parameter operator or subscript, or a zsh modifier such as `$f:h`.
 UNEXPANDABLE_PATH = re.compile(r"[`*?\[~\\]|\$\(|\$\{[^}]*[^A-Za-z0-9_}]|\$\{?[A-Za-z_][A-Za-z0-9_]*\}?:")
+# A plain parameter in a run-time path; one the environment lacks expands to nothing, as in the shell.
+PLAIN_PARAMETER = re.compile(r"\$(?:([A-Za-z_][A-Za-z0-9_]*)|\{([A-Za-z_][A-Za-z0-9_]*)\})")
 # Programs a body substitution may run without changing anything gh reads: the directory, remotes, or files.
 PRINTING_PROGRAMS = frozenset({"cat", "echo", "printf"})
 IRREVERSIBLE_REASON = "cannot be taken back or promotes work (class D)"
@@ -210,8 +212,14 @@ def _expanded_path(source: str) -> str | None:
     """The file a run-time path names after quote removal and plain parameter expansion, when it exists."""
     if UNEXPANDABLE_PATH.search(source):
         return None
-    path = Path(os.path.expandvars(re.sub(r"[\"']", "", source))).expanduser()
-    return str(path) if "$" not in str(path) and path.exists() else None
+    unquoted = re.sub(r"[\"']", "", source)
+    expanded = PLAIN_PARAMETER.sub(lambda match: _shell_value(match[1] or match[2]), unquoted)
+    return expanded if expanded and Path(expanded).exists() else None
+
+
+def _shell_value(name: str) -> str:
+    """What a plain parameter holds in a shell started in the hook's directory with the hook's environment."""
+    return str(Path.cwd()) if name == "PWD" else os.environ.get(name, "")
 
 
 def _ask(reason: str, preview: str, operation: str = "") -> Verdict:
@@ -227,6 +235,8 @@ def _ungranted(call: GhCall, line: CommandLine, rules: GhRules) -> str:
         return "sends a file another command on the line may write after the guard reads it"
     if any(_is_irregular(Path(name).expanduser()) for name in call.files):
         return "sends a FIFO, device, or other file that is not a regular file"
+    if any(_exceeds_scan(Path(name).expanduser()) for name in call.files):
+        return "sends a file larger than the secret scan reads"
     if call.unscanned_files and (call.effect is Effect.READ or target is not TargetClass.TRUSTED):
         return "sends input the guard cannot read to a target outside the trusted owners"
     return ""
@@ -332,6 +342,11 @@ def _sent_text(call: GhCall, line: CommandLine) -> str:
 def _is_irregular(path: Path) -> bool:
     """Whether a path exists but is not a regular file; opening a FIFO would block the hook and drain gh's input."""
     return path.exists() and not path.is_file()
+
+
+def _exceeds_scan(path: Path) -> bool:
+    """Whether a regular file is longer than the part the secret scan reads."""
+    return path.is_file() and path.stat().st_size > SENT_FILE_LIMIT_BYTES
 
 
 def _file_head(path: Path) -> str:

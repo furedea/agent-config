@@ -207,8 +207,9 @@ def _classify_write(words: tuple[Word, ...], spec: CommandSpec, single_call: boo
     targets = scan.values_of(REPOSITORY_OPTIONS | spec.repositories)
     targets += tuple(word for word in scan.positionals if _is_url(word.value))
     repositories = tuple(None if word.dynamic else repository(word.value) for word in targets)
-    if spec.required and not any(word.value and not word.dynamic for word in scan.values_of(spec.required)):
-        raise UnclassifiableError(f"'{spec.operation}' needs one of {', '.join(sorted(spec.required))}")
+    for group in spec.required:
+        if not any(word.value.strip("\"'") for word in scan.values_of(group)):
+            raise UnclassifiableError(f"'{spec.operation}' needs one of {', '.join(sorted(group))}")
     if scan.flags & spec.read_flags:
         return GhCall((spec.operation,), Effect.READ)
     effect = Effect.IRREVERSIBLE if scan.flags & spec.irreversible_flags else spec.effect

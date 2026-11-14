@@ -12,5 +12,7 @@ rule:
           kind: identifier
           regex: ^str$
       - has:
-          kind: identifier
-          regex: ^Enum$
+          any:
+            - kind: identifier
+            - kind: attribute
+          regex: ^(enum\.)?Enum$

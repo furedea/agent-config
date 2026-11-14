@@ -2,7 +2,7 @@ id: py_definition_order
 language: python
 severity: warning
 message: "Define Enums before the classes and functions of the module; move this definition after the Enum it precedes."
-note: "Only the Enum-first half of `Enum -> class -> function` is judged. A class before a function is common (decorators, helpers a class body calls) and is left to review."
+note: "An Enum that also inherits another user-defined class (a mixin) is skipped, because that class must come first. Only the Enum-first half of `Enum -> class -> function` is judged. A class before a function is common (decorators, helpers a class body calls) and is left to review."
 rule:
   all:
     - any:
@@ -25,8 +25,14 @@ rule:
         has:
           field: superclasses
           kind: argument_list
-          has:
-            any:
-              - kind: identifier
-              - kind: attribute
-            regex: ^(enum\.)?(Enum|IntEnum|StrEnum|Flag|IntFlag)$
+          all:
+            - has:
+                any:
+                  - kind: identifier
+                  - kind: attribute
+                regex: ^(enum\.)?(Enum|IntEnum|StrEnum|Flag|IntFlag)$
+            - not:
+                has:
+                  kind: identifier
+                  not:
+                    regex: ^(str|int|Enum|IntEnum|StrEnum|Flag|IntFlag)$

@@ -22,6 +22,13 @@ valid:
 
 
     def paint() -> None: ...
+  - |
+    class ColorMixin:
+        def describe(self) -> str: ...
+
+
+    class Color(ColorMixin, Enum):
+        RED = "red"
 invalid:
   - |
     def paint() -> None: ...

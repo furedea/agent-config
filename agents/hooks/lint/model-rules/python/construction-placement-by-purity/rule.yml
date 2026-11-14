@@ -13,7 +13,7 @@ rule:
     - kind: function_definition
     - has:
         field: name
-        regex: ^(from|parse|create|make)_[a-z0-9_]+$
+        regex: ^((from|parse|create|make)_|[a-z0-9_]+_(from|parse)_)[a-z0-9_]+$
 ask: >-
   This constructor-named function sits in the wrong place for what it does: pure construction belongs in a classmethod
   of the value, and construction that does I/O belongs in a module-level function.

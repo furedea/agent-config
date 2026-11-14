@@ -20,4 +20,4 @@ rule:
           has:
             stopBy: end
             kind: assignment
-            regex: ^pytestmark\s*=.*anyio
+            regex: (?s)^pytestmark\s*=.*anyio

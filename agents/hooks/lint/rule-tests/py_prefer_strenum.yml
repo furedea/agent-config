@@ -16,3 +16,6 @@ invalid:
   - |
     class Color(Enum, str):
         RED = "red"
+  - |
+    class Color(str, enum.Enum):
+        RED = "red"

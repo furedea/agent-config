@@ -16,6 +16,15 @@ valid:
     async def test_something() -> None:
         assert await work() == 1
   - |
+    pytestmark = [
+        pytest.mark.slow,
+        pytest.mark.anyio,
+    ]
+
+
+    async def test_something() -> None:
+        assert await work() == 1
+  - |
     async def helper() -> int:
         return 1
   - |

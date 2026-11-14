@@ -16,7 +16,7 @@ rule:
     all:
       - has:
           field: key
-          regex: ^"?on"?$
+          regex: ^["']?on["']?$
       - has:
           field: value
           any:

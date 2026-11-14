@@ -64,3 +64,7 @@ Use `cancel-in-progress: false` for deploy workflows that must run in order; can
   cache broad paths that may contain credentials. When using an external shared
   backend, do not let untrusted workflows write caches that privileged
   workflows later execute.
+
+## 6. Workflow File Names
+
+Name workflow files in kebab-case with the `.yml` extension (e.g. `release-please.yml`). This is the GitHub Actions convention and an exception to the general underscore rule for file names.

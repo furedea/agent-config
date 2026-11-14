@@ -23,9 +23,13 @@ rule:
             - regex: ^["']?(push|pull_request)["']?$
             - regex: ^\[[^\]]*\b(push|pull_request)\b
             - has:
-                kind: block_mapping
+                any:
+                  - kind: block_mapping
+                  - kind: flow_mapping
                 has:
-                  kind: block_mapping_pair
+                  any:
+                    - kind: block_mapping_pair
+                    - kind: flow_pair
                   has:
                     field: key
                     regex: ^["']?(push|pull_request)["']?$

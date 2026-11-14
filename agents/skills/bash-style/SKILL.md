@@ -8,6 +8,8 @@ description: >
 
 ## Working Directory and Tracing
 
+- Start every executable script with `#!/usr/bin/env bash` and `set -euCo pipefail`; the static rules check only
+  files that already have a `sh` or `bash` shebang, so a missing shebang is not reported.
 - Choose the working directory by responsibility. Hooks that operate on a project must use the
   target project's working directory. Resolve bundled resources relative to the script's location.
   Use `cd "$(dirname "$0")"` only when all relative operations should use that location.

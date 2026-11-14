@@ -211,3 +211,80 @@ def test_a_relative_script_read_once_outside_any_body_is_still_judged_by_its_tex
 ) -> None:
     (isolated_project / "script.sh").write_text("echo safe\n")
     assert decide(kind, "sh < script.sh; for d in a b; do echo $d; done").decision == "allow"
+
+
+@pytest.mark.parametrize("kind", ["allowed", "forbidden"])
+@pytest.mark.parametrize(
+    "command",
+    [
+        "f(){ sh; }; f <<'EOF'\ngit commit --no-verify -m x\nEOF",
+        "f(){ bash; }; echo 'gh pr merge 1' | f",
+        "f(){ sh; }; f < script.sh",
+        "f(){ bash -s x; }; f",
+    ],
+)
+def test_a_shell_in_a_function_body_reading_the_callers_input_asks(
+    kind: str, command: str, isolated_project: Path
+) -> None:
+    (isolated_project / "script.sh").write_text("git commit --no-verify -m x\n")
+    assert decide(kind, command).decision == "ask"
+
+
+@pytest.mark.parametrize("kind", ["allowed", "forbidden"])
+@pytest.mark.parametrize(
+    "command",
+    [
+        "f(){ echo 'echo hi' | sh; }; f",
+        "f(){ sh <<'EOF'\necho hi\nEOF\n}; f",
+    ],
+)
+def test_a_shell_in_a_function_body_with_its_own_literal_input_is_judged_by_it(kind: str, command: str) -> None:
+    assert decide(kind, command).decision == "allow"
+
+
+@pytest.mark.parametrize("kind", ["allowed", "forbidden"])
+@pytest.mark.parametrize(
+    "command",
+    [
+        ": ${aliases[g]::=gh}",
+        ": ${BASH_ALIASES[g]:=gh}",
+        "BASH_ALIASES[g]=gh",
+        "BASH_CMDS[gh]=./evil",
+        "commands[gh]=./evil",
+        "set -A aliases g gh",
+        "printf -v 'BASH_ALIASES[g]' gh",
+        "read -A functions",
+        "hash -p ./evil gh",
+        "hash gh=./evil",
+    ],
+)
+def test_replacing_what_a_command_name_runs_asks(kind: str, command: str) -> None:
+    assert decide(kind, command).decision == "ask"
+
+
+@pytest.mark.parametrize("kind", ["allowed", "forbidden"])
+@pytest.mark.parametrize(
+    "command", ["hash", "hash -r", "hash gh", "mkdir functions", "git commit -q -m 'add functions'"]
+)
+def test_hash_lookups_and_the_words_alone_run_unprompted(kind: str, command: str) -> None:
+    assert decide(kind, command).decision == "allow"
+
+
+@pytest.mark.parametrize("kind", ["allowed", "forbidden"])
+@pytest.mark.parametrize(
+    "template",
+    [
+        "for d in a b; do cd nested; done; sh < script.sh",
+        "f(){ cd nested; }; f; f; sh < script.sh",
+        "trap 'cd nested' DEBUG; sh < script.sh",
+        "eval 'cd nested'; sh < script.sh",
+    ],
+)
+def test_a_relative_script_read_after_a_repeated_or_hidden_cd_asks(
+    kind: str, template: str, isolated_project: Path
+) -> None:
+    (isolated_project / "script.sh").write_text("echo safe\n")
+    (isolated_project / "nested/nested").mkdir(parents=True)
+    (isolated_project / "nested/script.sh").write_text("echo safe\n")
+    (isolated_project / "nested/nested/script.sh").write_text("git commit --no-verify -m x\n")
+    assert decide(kind, template).decision == "ask"

@@ -219,7 +219,9 @@ def parse(source: str, depth: int = 0, directories: tuple[Path | None, ...] = ()
         if unreviewed:
             layers[-1] = replace(innermost, unreviewed=True)
         commands += layers
-        commands += [nested for script, nested_depth in scripts for nested in parse(script, nested_depth, reachable)]
+        nested = [item for script, nested_depth in scripts for item in parse(script, nested_depth, reachable)]
+        directories = unsettled(directories, nested + (layers if deferred else []))
+        commands += nested
     return tuple(commands)
 
 
@@ -258,10 +260,14 @@ def _calls_under(roots: list[dict]) -> set[int]:
     return {id(call) for root in roots for call in nodes(root) if call.get("Type") == "CallExpr"}
 
 
-def reached_directories(directories: tuple[Path | None, ...], command: Command) -> tuple[Path | None, ...]:
-    """Add where a cd, pushd, popd, or env -C may lead to the directories reachable so far.
+def unsettled(directories: tuple[Path | None, ...], commands: list[Command]) -> tuple[Path | None, ...]:
+    """Add an unknown directory once a cd may repeat, as in a loop or function, or hides in an eval or trap script."""
+    changes = any(Path(item.arguments[0]).name in DIRECTORY_CHANGES for item in commands)
+    return (*directories, None) if changes else directories
 
-    None is a directory known only at run time.
+
+def reached_directories(directories: tuple[Path | None, ...], command: Command) -> tuple[Path | None, ...]:
+    """Add where a cd, pushd, popd, or env -C may lead to the directories reachable so far; None is unknown.
 
     Earlier directories stay reachable, since a cd inside a subshell or before || may not take effect.
     """
@@ -478,10 +484,7 @@ def shell_name(executable: str) -> str:
 
 
 def wrapper_scripts(command: Command, name: str) -> list[str]:
-    """The scripts a wrapper such as script -c, flock -c, or watch hands to a shell.
-
-    Every one counts, as the program picks.
-    """
+    """The scripts a wrapper such as script -c, flock -c, or watch hands to a shell, each counting as it may run."""
     arguments = command.arguments
     scan = OptionScan(name, arguments).run()
     if not scan.runs_script:

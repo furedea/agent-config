@@ -20,12 +20,14 @@ class InputSources:
     `feeds` maps a statement on the reading side of a pipe to the statement writing into it, and
     `enclosing` maps a statement inside a compound command, such as `( ... )` or `{ ...; }`, to the
     compound statement whose input redirection it inherits. Records list an outer node before the
-    nodes inside it, so the nearest source wins.
+    nodes inside it, so the nearest source wins. `in_functions` holds the statements of function
+    bodies, which inherit whatever input each call of the function is given.
     """
 
     data: bytes
     feeds: dict[int, dict]
     enclosing: dict[int, dict]
+    in_functions: frozenset[int] = frozenset()
 
     @classmethod
     def of(cls, records: tuple[dict, ...], data: bytes) -> Self:
@@ -43,13 +45,16 @@ class InputSources:
             for statement in nodes(compound["Cmd"])
             if "Cmd" in statement
         }
-        return cls(data, feeds, enclosing)
+        bodies = (node["Body"] for node in records if node.get("Type") == "FuncDecl")
+        in_functions = frozenset(id(statement) for body in bodies for statement in nodes(body) if "Cmd" in statement)
+        return cls(data, feeds, enclosing, in_functions)
 
     def scripts(self, owner: dict, directories: tuple[Path | None, ...]) -> list[str]:
         """Return each script a shell statement may read from its standard input, to be judged one by one.
 
-        A `<(...)` argument, or both a pipe and an inherited redirection whose order the hook does
-        not track, leave the script to run time, so they are refused rather than guessed.
+        A `<(...)` argument, both a pipe and an inherited redirection whose order the hook does not
+        track, or no source of its own inside a function body, leave the script to run time, so they
+        are refused rather than guessed.
         """
         if _reads_process_substitution(owner.get("Cmd", owner), self.data):
             raise _computed_input()
@@ -60,6 +65,8 @@ class InputSources:
             raise _computed_input()
         if outer is not None:
             return redirected_scripts(outer, self.data, directories)
+        if feed is None and id(owner) in self.in_functions:
+            raise _computed_input()
         return [piped_script(feed, self.data)] if feed is not None else []
 
 

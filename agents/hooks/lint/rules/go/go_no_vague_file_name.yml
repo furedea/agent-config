@@ -5,7 +5,6 @@ message: "Name the file by its domain or action, not a vague word like utils, he
 rule:
   kind: source_file
 files:
-  - "**/{pkg,util,common}/**/*.go"
   - "**/{utils,util,helpers,helper,manager,common,formatter}.go"
   - "**/*[._-]{utils,util,helpers,helper,manager,common,formatter}.go"
   - "**/{utils,util,helpers,helper,manager,common,formatter}[._-]*.go"

@@ -72,20 +72,16 @@ FLAGGED_PATHS = {
     "tsx_no_vague_file_name": ["utils.tsx", "button.helpers.tsx"],
     "py_no_vague_file_name": ["utils.py", "pkg/string_utils.py", "user_manager.py"],
     "rs_no_vague_file_name": ["utils.rs", "src/string_helpers.rs", "tests/common_setup.rs"],
-    "go_no_vague_file_name": [
-        "utils.go",
-        "string_utils.go",
-        "pkg/store/user.go",
-        "internal/util/user.go",
-        "common/user.go",
-    ],
+    "go_no_vague_file_name": ["utils.go", "string_utils.go", "user.helpers.go"],
+    "go_no_vague_directory_name": ["pkg/store/user.go", "internal/util/user.go", "common/user.go"],
 }
 CLEAN_PATHS = {
     "ts_no_vague_file_name": ["utility.ts", "futile.ts", "user_store.ts", "utils.py"],
     "tsx_no_vague_file_name": ["button.tsx", "utility.tsx"],
     "py_no_vague_file_name": ["__init__.py", "user_store.py", "futile.py", "__common__.py"],
     "rs_no_vague_file_name": ["user_store.rs", "tests/common/mod.rs", "tests/common/setup.rs"],
-    "go_no_vague_file_name": ["user_store.go", "futile.go", "internal/store/user.go", "internal/package/user.go"],
+    "go_no_vague_file_name": ["user_store.go", "futile.go", "internal/store/user.go"],
+    "go_no_vague_directory_name": ["user_store.go", "futile.go", "internal/store/user.go", "internal/package/user.go"],
 }
 SOURCE_TEXT = {
     ".ts": "export const a = 1\n",

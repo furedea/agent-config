@@ -1,0 +1,8 @@
+id: go_no_vague_directory_name
+language: go
+severity: warning
+message: "Name the package directory by its domain, not pkg, util, or common, unless the name is already established locally."
+rule:
+  kind: source_file
+files:
+  - "**/{pkg,util,common}/**/*.go"

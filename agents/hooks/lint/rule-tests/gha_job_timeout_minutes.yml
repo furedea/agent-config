@@ -23,6 +23,9 @@ valid:
 invalid:
   - |
     jobs:
+      build: {runs-on: ubuntu-latest, steps: []}
+  - |
+    jobs:
       build:
         "runs-on": ubuntu-latest
         steps:

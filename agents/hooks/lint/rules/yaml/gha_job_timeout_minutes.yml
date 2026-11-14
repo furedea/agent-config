@@ -2,32 +2,45 @@ id: gha_job_timeout_minutes
 language: yaml
 severity: warning
 message: "Set `timeout-minutes` on the job; the default is 6 hours."
-note: "A job that calls a reusable workflow (`uses:`) has no `runs-on` and cannot set it, so it is not checked."
+note: "A job that calls a reusable workflow (`uses:`) has no `runs-on` and cannot set it, so it is not checked. A job written as a flow mapping is found by its `runs-on` key alone."
 files:
   - "**/.github/workflows/**"
 rule:
-  kind: block_mapping
-  inside:
-    kind: block_node
-    inside:
-      kind: block_mapping_pair
+  any:
+    - kind: block_mapping
       inside:
-        kind: block_mapping
+        kind: block_node
         inside:
-          kind: block_node
+          kind: block_mapping_pair
           inside:
-            kind: block_mapping_pair
-            has:
-              field: key
-              regex: ^jobs$
-  has:
-    kind: block_mapping_pair
-    has:
-      field: key
-      regex: ^["']?runs-on["']?$
-  not:
-    has:
-      kind: block_mapping_pair
+            kind: block_mapping
+            inside:
+              kind: block_node
+              inside:
+                kind: block_mapping_pair
+                has:
+                  field: key
+                  regex: ^jobs$
       has:
-        field: key
-        regex: ^["']?timeout-minutes["']?$
+        kind: block_mapping_pair
+        has:
+          field: key
+          regex: ^["']?runs-on["']?$
+      not:
+        has:
+          kind: block_mapping_pair
+          has:
+            field: key
+            regex: ^["']?timeout-minutes["']?$
+    - kind: flow_mapping
+      has:
+        kind: flow_pair
+        has:
+          field: key
+          regex: ^["']?runs-on["']?$
+      not:
+        has:
+          kind: flow_pair
+          has:
+            field: key
+            regex: ^["']?timeout-minutes["']?$

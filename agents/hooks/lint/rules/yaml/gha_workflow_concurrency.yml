@@ -39,7 +39,7 @@ rule:
       all:
         - has:
             field: key
-            regex: ^concurrency$
+            regex: ^["']?concurrency["']?$
         - has:
             field: value
             has:

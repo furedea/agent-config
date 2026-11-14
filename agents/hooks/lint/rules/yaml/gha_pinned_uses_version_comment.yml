@@ -8,16 +8,33 @@ files:
   - "**/action.yml"
   - "**/action.yaml"
 rule:
-  kind: block_mapping_pair
-  all:
-    - has:
-        field: key
-        regex: ^["']?uses["']?$
-    - has:
-        field: value
-        regex: "@[0-9a-f]{40}[\"']?$"
-  not:
-    precedes:
-      stopBy: neighbor
-      kind: comment
-      regex: ^#\s*v?\d
+  any:
+    - kind: block_mapping_pair
+      all:
+        - has:
+            field: key
+            regex: ^["']?uses["']?$
+        - has:
+            field: value
+            regex: "@[0-9a-f]{40}[\"']?$"
+      not:
+        precedes:
+          stopBy: neighbor
+          kind: comment
+          regex: ^#\s*v?\d
+    # A flow mapping's comment follows the closing brace, so it is the mapping that is checked.
+    - kind: flow_pair
+      all:
+        - has:
+            field: key
+            regex: ^["']?uses["']?$
+        - has:
+            field: value
+            regex: "@[0-9a-f]{40}[\"']?$"
+      not:
+        inside:
+          stopBy: end
+          precedes:
+            stopBy: neighbor
+            kind: comment
+            regex: ^#\s*v?\d

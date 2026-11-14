@@ -7,4 +7,4 @@ rule:
     - kind: use_declaration
       regex: ^use (mockall|mockall_double|unimock|faux)\b
     - kind: attribute_item
-      regex: ^#\[(mockall::)?automock\b
+      regex: ^#\[(cfg_attr\([^\]]*?,\s*)?(mockall::)?automock\b

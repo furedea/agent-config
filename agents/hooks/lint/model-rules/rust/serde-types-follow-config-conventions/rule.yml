@@ -14,7 +14,7 @@ rule:
     - kind: struct_item
     - follows:
         kind: attribute_item
-        regex: derive\(.*\b(Deserialize|Serialize)\b
+        regex: (?s)derive\(.*\b(Deserialize|Serialize)\b
         stopBy:
           not:
             any:

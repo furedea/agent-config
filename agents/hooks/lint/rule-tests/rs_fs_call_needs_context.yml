@@ -24,6 +24,11 @@ valid:
         let c = p.canonicalize().with_context(|| format!("resolve {}", p.display()))?;
         Ok(c)
     }
+  - |
+    fn f(client: &Client) -> Result<Meta> {
+        let m = client.metadata()?;
+        Ok(m)
+    }
 invalid:
   - |
     fn f(p: &Path) -> Result<String> {
@@ -57,5 +62,5 @@ invalid:
     }
   - |
     fn f(p: &Path) -> Result<u64> {
-        Ok(p.metadata()?.len())
+        Ok(p.symlink_metadata()?.len())
     }

@@ -18,13 +18,13 @@ rule:
           field: function
           kind: scoped_identifier
           regex: ^((std::)?fs::[a-z_]+|((std::)?fs::)?File::(open|create))$
-      # `path.canonicalize()?`, `path.metadata()?`: a `Path` method that does I/O.
+      # `path.canonicalize()?`, `path.symlink_metadata()?`: a `Path` method that does I/O.
       - has:
           field: function
           kind: field_expression
           has:
             field: field
-            regex: ^(canonicalize|metadata|symlink_metadata|read_dir|read_link)$
+            regex: ^(canonicalize|symlink_metadata|read_dir|read_link)$
       # `OpenOptions::new().read(true).open(path)?`: the fallible call is the `.open` method.
       - all:
           - has:

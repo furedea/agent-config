@@ -22,7 +22,8 @@ rule:
               regex: ^_$
           - precedes:
               kind: const_spec
-              stopBy: end
+              stopBy:
+                kind: const_spec
               has:
                 field: type
                 regex: .+

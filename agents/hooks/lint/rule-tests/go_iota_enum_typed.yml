@@ -26,6 +26,13 @@ invalid:
         _ = iota
         StateReady
         StateDone
+        Other OtherType = 10
+    )
+  - |
+    const (
+        _ = iota
+        StateReady
+        StateDone
     )
   - |
     const (

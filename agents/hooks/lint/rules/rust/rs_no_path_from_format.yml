@@ -6,4 +6,4 @@ rule:
   any:
     - pattern: PathBuf::from(format!($$$ARGS))
     - pattern: Path::new(&format!($$$ARGS))
-    - pattern: Path::new(&$A + $B)
+    - pattern: Path::new(&($A + $B))

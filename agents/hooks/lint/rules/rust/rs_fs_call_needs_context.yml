@@ -13,7 +13,20 @@ rule:
   kind: try_expression
   has:
     kind: call_expression
-    has:
-      field: function
-      kind: scoped_identifier
-      regex: ^((std::)?fs::[a-z_]+|(std::fs::)?File::(open|create)|(std::fs::)?OpenOptions::new)$
+    any:
+      - has:
+          field: function
+          kind: scoped_identifier
+          regex: ^((std::)?fs::[a-z_]+|((std::)?fs::)?File::(open|create))$
+      # `OpenOptions::new().read(true).open(path)?`: the fallible call is the `.open` method.
+      - all:
+          - has:
+              field: function
+              kind: field_expression
+              has:
+                field: field
+                regex: ^open$
+          - has:
+              kind: scoped_identifier
+              regex: OpenOptions::new$
+              stopBy: end

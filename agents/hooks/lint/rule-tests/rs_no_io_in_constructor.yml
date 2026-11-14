@@ -12,6 +12,10 @@ valid:
     impl Name {
         pub fn new(value: String) -> Self { Self(value) }
     }
+  - |
+    impl Endpoint {
+        pub fn new(ip: Ipv4Addr, port: u16) -> Self { Self(std::net::SocketAddr::new(ip.into(), port)) }
+    }
 invalid:
   - |
     impl Config {
@@ -30,4 +34,8 @@ invalid:
   - |
     impl Probe {
         fn try_new() -> Self { Command::new("git"); Self }
+    }
+  - |
+    impl Client {
+        pub fn new(addr: &str) -> Self { Self(TcpStream::connect(addr)) }
     }

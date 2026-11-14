@@ -14,6 +14,11 @@ valid:
         let s = fs::read_to_string(p).with_context(|| "read")?;
         Ok(s)
     }
+  - |
+    fn f(p: &Path) -> Result<File> {
+        let f = OpenOptions::new().read(true).open(p).with_context(|| "open")?;
+        Ok(f)
+    }
 invalid:
   - |
     fn f(p: &Path) -> Result<String> {
@@ -28,5 +33,15 @@ invalid:
   - |
     fn f(p: &Path) -> Result<()> {
         let _f = File::open(p)?;
+        Ok(())
+    }
+  - |
+    fn f(p: &Path) -> Result<()> {
+        let _f = fs::File::open(p)?;
+        Ok(())
+    }
+  - |
+    fn f(p: &Path) -> Result<()> {
+        let _f = OpenOptions::new().read(true).open(p)?;
         Ok(())
     }

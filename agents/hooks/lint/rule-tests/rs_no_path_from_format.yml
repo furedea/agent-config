@@ -11,3 +11,5 @@ invalid:
     fn f(dir: &str) -> PathBuf { PathBuf::from(format!("{dir}/a")) }
   - |
     fn f(dir: &str) { let p = Path::new(&format!("{}/a", dir)); }
+  - |
+    fn f(dir: String) { let p = Path::new(&(dir + "/a")); }

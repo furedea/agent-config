@@ -8,6 +8,13 @@ valid:
     }
   - |
     fn helper() {}
+  - |
+    #[cfg(test)]
+    #[allow(clippy::unwrap_used)]
+    mod tests {
+        #[test]
+        fn works() {}
+    }
 invalid:
   - |
     #[test]
@@ -17,3 +24,8 @@ invalid:
     #[test]
     #[should_panic]
     fn panics() {}
+  - |
+    mod internal {
+        #[test]
+        fn works() {}
+    }

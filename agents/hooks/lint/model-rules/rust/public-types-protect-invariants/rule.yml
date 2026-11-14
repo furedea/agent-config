@@ -16,15 +16,11 @@ rule:
         kind: field_declaration_list
         has:
           kind: field_declaration
-          all:
-            - has:
-                kind: visibility_modifier
-            - has:
-                field: type
-                regex: ^(Vec|HashMap|HashSet|BTreeMap|BTreeSet|VecDeque)<
+          has:
+            kind: visibility_modifier
 ask: >-
   This type has a public field that holds a mutable collection, or a public field whose value must satisfy an
-  invariant that the type's own constructor checks.
+  invariant that the type's own constructor or `parse` function checks.
 criteria:
   "true": >-
     A caller can break a rule the type depends on by writing the public field directly: an invariant checked in a

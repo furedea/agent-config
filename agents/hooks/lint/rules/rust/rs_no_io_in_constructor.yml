@@ -24,4 +24,4 @@ rule:
           has:
             field: function
             kind: scoped_identifier
-            regex: ^((std::)?fs::|(std::fs::)?File::(open|create)|(std::process::)?Command::new|(std::)?net::)
+            regex: ^((std::)?fs::|((std::)?fs::)?File::(open|create)|(std::process::)?Command::new|((std::)?net::)?(TcpStream|TcpListener|UdpSocket)::)

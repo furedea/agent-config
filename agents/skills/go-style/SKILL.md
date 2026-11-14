@@ -18,14 +18,14 @@ the existing environment workflow.
 
 ## Task-Specific References
 
-| Task                                                       | Read                                         |
-| ---------------------------------------------------------- | -------------------------------------------- |
-| Dependencies, package layout, tool commands, or lint gates | [Project tooling](references/tooling.md)     |
-| Types, constructors, enums, or interfaces                  | [Types](references/types.md)                 |
-| Fallible operations, wrapping, sentinel errors, or panics  | [Error handling](references/errors.md)       |
-| Writing, running, or reviewing tests                       | [Testing](references/testing.md)             |
-| Contexts, goroutines, channels, or locks                   | [Concurrency](references/concurrency.md)     |
-| Naming, formatting, doc comments, or logging               | [Code conventions](references/code_style.md) |
+| Task                                                          | Read                                         |
+| ------------------------------------------------------------- | -------------------------------------------- |
+| Dependencies, package layout, tool commands, or lint gates    | [Project tooling](references/tooling.md)     |
+| Types, constructors, enums, sum types, or interfaces          | [Types](references/types.md)                 |
+| Fallible operations, wrapping, sentinel errors, or panics     | [Error handling](references/errors.md)       |
+| Writing, running, or reviewing tests                          | [Testing](references/testing.md)             |
+| Contexts, goroutines, channels, or locks                      | [Concurrency](references/concurrency.md)     |
+| Naming, formatting, doc comments, or logging                  | [Code conventions](references/code_style.md) |
 
 Read only the references relevant to the current task. For a focused review, use the references
 for the affected concepts.

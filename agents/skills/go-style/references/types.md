@@ -41,6 +41,22 @@ func (s State) String() string {
 }
 ```
 
+## Sum Types
+
+- Model data-carrying variants as an interface with an unexported marker method, annotated
+  `//sumtype:decl`; `gochecksumtype` checks type switches for exhaustiveness.
+
+```go
+//sumtype:decl
+type Payment interface{ isPayment() }
+
+type Card struct{ Last4 string }
+type Cash struct{}
+
+func (Card) isPayment() {}
+func (Cash) isPayment() {}
+```
+
 ## Interfaces
 
 - Keep interfaces small and define them in the consuming package, not next to the implementation.

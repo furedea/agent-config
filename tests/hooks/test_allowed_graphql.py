@@ -1,4 +1,4 @@
-"""GraphQL commands that read GitHub may carry a jq filter, and nothing else after the query."""
+"""A GraphQL document that only queries reads GitHub with any variables or filter; a mutation is judged by name."""
 
 import pytest
 from tests.runtime import load_script_module
@@ -33,6 +33,27 @@ def decide(command: str) -> str:
             "gh api graphql -f query='query { a } # x' -F ok=true",
             id="a -F boolean variable",
         ),
+        pytest.param("gh api graphql -f query='query { x }' -f note=mutation", id="the keyword in a variable"),
+        pytest.param("gh api graphql -f query='query { x }' --jq '.mutation'", id="the keyword in a filter"),
+        pytest.param("gh api graphql -f query='query { x }' -F n=@notes.txt", id="a -F variable that reads a file"),
+        pytest.param("gh api graphql -f query='query { x }' -F n=abc", id="a -F variable that is not a literal"),
+        pytest.param("gh api graphql -f query='query { x }' -f n=@notes.txt", id="a -f value with @"),
+        pytest.param("gh api graphql -f query='query { x }' -f n='a b'", id="a quoted variable value"),
+        pytest.param("gh api graphql -f query='query Q { x }' -f operationName=Q", id="an operation name"),
+        pytest.param("gh api graphql -f query='query { x }' -X POST", id="an explicit POST"),
+        pytest.param(
+            'gh api graphql -f query=\'query($o:String!){repository(owner:$o,name:"r"){id}}\' -f o="$OWNER"',
+            id="a variable value known at run time",
+        ),
+        pytest.param(
+            'gh api graphql -f query=\'{ a: repository(owner:"h0x91b",name:"dev-3.0"){pullRequest(number:272)'
+            "{title}} }' --jq '.data[].pullRequest.title'",
+            id="a logged aliased query of another owner",
+        ),
+        pytest.param(
+            "gh api graphql -f query='query { a(s: \"mutation { y }\") }'", id="a mutation keyword inside a string"
+        ),
+        pytest.param("gh api graphql -f query='# mutation { y }\nquery { x }'", id="a mutation keyword in a comment"),
     ],
 )
 def test_read_only_queries_with_a_jq_filter_are_allowed(command: str) -> None:
@@ -62,22 +83,19 @@ def test_other_graphql_forms_still_ask(command: str) -> None:
     "command",
     [
         pytest.param("gh api graphql -f query='query { x } mutation { y }'", id="a mutation after a query"),
-        pytest.param("gh api graphql -f query='query { x }' -f note=mutation", id="the keyword in a variable"),
         pytest.param("gh api graphql -f query='query { x } MUTATION { y }'", id="an upper-case keyword"),
         pytest.param("gh api graphql -f query='query { x } Mutation { y }'", id="a capitalized keyword"),
-        pytest.param("gh api graphql -f query='query { x }' --jq '.mutation'", id="the keyword in a filter"),
-        pytest.param("gh api graphql -f query='query { x }' -F n=@secret.txt", id="a -F variable that reads a file"),
-        pytest.param("gh api graphql -f query='query { x }' -F n=abc", id="a -F variable that is not a literal"),
-        pytest.param("gh api graphql -f query='query { x }' -f n=@secret.txt", id="a -f value with @"),
-        pytest.param("gh api graphql -f query='query { x }' -f n='a b'", id="a quoted variable value"),
-        pytest.param("gh api graphql -f query='query { x }' -f operationName=y", id="an operation name"),
         pytest.param("gh api graphql -f query='query { x }' -F query=@q.graphql", id="a query from a file"),
         pytest.param("gh api graphql -F query=@q.graphql", id="only a query file"),
         pytest.param("gh api graphql -f query='query { x }' --input body.json", id="a request body from a file"),
-        pytest.param("gh api graphql -f query='query { x }' -X POST", id="an explicit method"),
         pytest.param("gh api graphql -f query='fragment F on User { id }'", id="a document not starting as a query"),
         pytest.param("gh api graphql -f query=query", id="an unquoted query"),
         pytest.param('gh api graphql -f query="query { $x }"', id="an expansion in a double-quoted query"),
+        pytest.param("gh api graphql -f query='query { x }' -X GET", id="a GET method"),
+        pytest.param("gh api graphql -f query='query { x }' -f \"$Q\"", id="a field whose name is known at run time"),
+        pytest.param("gh api graphql -f query='query { x } subscription { y }'", id="a subscription"),
+        pytest.param("gh api graphql -f query='mutation { ...F } fragment F on Mutation { x }'", id="a root fragment"),
+        pytest.param("gh api graphql -f query='query { x'", id="an unclosed document"),
     ],
 )
 def test_graphql_forms_that_could_write_or_read_files_ask(command: str) -> None:

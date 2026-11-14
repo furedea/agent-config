@@ -444,5 +444,47 @@
   ],
   "agents/hooks/guard_suppression.py": [
     "tests/codex/test_hook_adapter_cli.py"
+  ],
+  "agents/hooks/rules/gh_policy.json": [
+    "tests/hooks/test_gh_effects.py",
+    "tests/hooks/test_allowed_gh_api.py",
+    "tests/hooks/test_allowed_graphql.py",
+    "tests/hooks/test_allowed_review_replies.py",
+    "tests/hooks/test_quote_normalization.py",
+    "tests/hooks/test_zsh_expansion_flags.py"
+  ],
+  "agents/hooks/lib/gh_catalog.py": [
+    "tests/hooks/test_gh_effects.py",
+    "tests/hooks/test_allowed_gh_api.py",
+    "tests/hooks/test_allowed_graphql.py",
+    "tests/hooks/test_allowed_review_replies.py",
+    "tests/hooks/test_quote_normalization.py",
+    "tests/hooks/test_zsh_expansion_flags.py"
+  ],
+  "agents/hooks/lib/gh_invocation.py": [
+    "tests/hooks/test_gh_effects.py",
+    "tests/hooks/test_allowed_gh_api.py",
+    "tests/hooks/test_allowed_graphql.py",
+    "tests/hooks/test_allowed_review_replies.py",
+    "tests/hooks/test_quote_normalization.py",
+    "tests/hooks/test_zsh_expansion_flags.py"
+  ],
+  "agents/hooks/lib/gh_policy.py": [
+    "tests/hooks/test_gh_effects.py",
+    "tests/hooks/test_allowed_gh_api.py",
+    "tests/hooks/test_allowed_graphql.py",
+    "tests/hooks/test_allowed_review_replies.py",
+    "tests/hooks/test_quote_normalization.py",
+    "tests/hooks/test_zsh_expansion_flags.py",
+    "tests/hooks/test_guard_bypasses.py"
+  ],
+  "agents/hooks/lib/graphql_document.py": [
+    "tests/hooks/test_graphql_document.py",
+    "tests/hooks/test_allowed_graphql.py",
+    "tests/hooks/test_gh_effects.py"
+  ],
+  "agents/hooks/lib/secret_content.py": [
+    "tests/hooks/test_secret_content.py",
+    "tests/hooks/test_gh_effects.py"
   ]
 }

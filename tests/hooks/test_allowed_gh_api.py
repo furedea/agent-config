@@ -31,6 +31,11 @@ LOGS = '"repos/o/r/actions/jobs/$J/logs"'
         pytest.param(
             "gh api repos/o/r/actions/runs/123/attempts/2/jobs -q '.jobs[0].id'", id="a job id read with a jq filter"
         ),
+        pytest.param(
+            f'gh api repos/o/r/contents/$f {RAW} > "$S/ref/x"',
+            id="an unquoted variable in a raw file read that is the whole line",
+        ),
+        pytest.param("gh api repos/furedea/template-$r/contents --jq '.[].name'", id="a logged template listing"),
     ],
 )
 def test_read_only_gh_api_forms_pass(command: str) -> None:
@@ -48,7 +53,9 @@ def test_read_only_gh_api_forms_pass(command: str) -> None:
             "J='1 -X DELETE'; gh api --allow-escape-sequences repos/o/r/actions/jobs/$J/logs",
             id="an unquoted variable holding a method option in a log read",
         ),
-        pytest.param(f'gh api repos/o/r/contents/$f {RAW} > "$S/ref/x"', id="an unquoted variable in a raw file read"),
+        pytest.param(f"f=x; gh api repos/o/r/contents/$f {RAW}", id="an unquoted variable assigned on the line"),
+        pytest.param(f"gh api repos/o/r/contents/$f {RAW} | head", id="an unquoted variable in a pipeline"),
+        pytest.param("gh api repos/o/r/git/trees/HEAD?recursive=1", id="an unquoted glob in the endpoint"),
         pytest.param(f"gh api --allow-escape-sequences {LOGS} -X DELETE", id="a method option after a log read"),
         pytest.param(f"gh api --allow-escape-sequences {LOGS} --method POST", id="a long method option after a read"),
         pytest.param(f"gh api --allow-escape-sequences {LOGS} -f body=x", id="a field after a log read"),

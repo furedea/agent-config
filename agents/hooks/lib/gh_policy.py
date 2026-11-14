@@ -11,6 +11,7 @@ import subprocess
 from dataclasses import dataclass, replace
 from pathlib import Path
 
+import command_policy
 import gh_catalog
 import gh_invocation
 import gh_options
@@ -32,7 +33,10 @@ ARITHMETIC_ASSIGNMENT = re.compile(r"[A-Za-z_][A-Za-z0-9_]*=\S*\[[^\]]*\$\(")
 SENT_FILE_LIMIT_BYTES = 100000
 REMOTE_LOOKUP_TIMEOUT_SECONDS = 5
 GITHUB_HOST = "github.com"
-DIRECTORY_CHANGES = frozenset({"cd", "pushd", "popd"})
+# Programs that only print or filter output; beside them nothing on the line can change the directory or remotes.
+OUTPUT_FILTERS = frozenset(
+    {"cat", "column", "cut", "echo", "grep", "head", "jq", "printf", "sort", "tail", "tr", "true", "uniq", "wc"}
+)
 # Programs that set shell variables, or run code that may: on a line holding one, a variable gh reads,
 # such as GH_REPO, GH_HOST, GH_TOKEN, HTTPS_PROXY, SSL_CERT_FILE, or HOME, may differ from the
 # harness environment the guard judged. The hook's own environment is the harness's.
@@ -93,6 +97,8 @@ class CommandLine:
     program through env with a changed environment, or runs any command behind a wrapper or inside a
     script another program reads, whose assignments the line's own syntax does not show; gh may then
     not see the harness environment.
+    `changes_directory` says another command on the line is not an output filter, so the directory or
+    its remotes may differ from what the hook reads.
     """
 
     source: str
@@ -111,7 +117,8 @@ def command_line(source: str, commands: tuple[shell_syntax.Command, ...]) -> Com
         or any(_changes_environment(item) for item in commands)
         or any(item.wrapper_depth for item in commands)
     )
-    moves = any(Path(item.arguments[0]).name in DIRECTORY_CHANGES for item in commands)
+    others = [item for item in commands if not is_gh(command_policy.canonical(item))]
+    moves = not all(Path(item.arguments[0]).name in OUTPUT_FILTERS for item in others)
     return CommandLine(source, _is_single_call(source, commands), hides_code, changes, moves)
 
 

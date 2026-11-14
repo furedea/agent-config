@@ -108,3 +108,17 @@ def test_a_read_of_the_working_repository_follows_its_remote_host(origin: str, e
     add_remote("origin", origin)
     assert decide("gh pr list") == expected
     assert decide("gh pr list -R furedea/agent-config") == "allow"
+    assert decide("gh pr list | head -3") == expected
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "git remote set-url origin https://evil.example/o/r && gh pr list",
+        "chdir ../other && gh pr list",
+        "../other; gh pr list",
+    ],
+)
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_read_of_the_working_repository_beside_other_commands_asks(command: str) -> None:
+    assert decide(command) == "ask"

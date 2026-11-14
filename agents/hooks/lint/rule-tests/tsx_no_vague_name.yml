@@ -18,6 +18,8 @@ invalid:
   - |
     class URLHelper {}
   - |
+    abstract class BaseManager {}
+  - |
     type XMLUtils = { parse(text: string): unknown };
   - |
     function helper(date: Date): string {

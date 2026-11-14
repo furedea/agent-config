@@ -8,6 +8,8 @@ valid:
     const config = parseConfig(JSON.parse(text));
   - |
     const body: unknown = await response.json();
+  - |
+    const body: Promise<unknown> = response.json();
 invalid:
   - |
     const config = JSON.parse(text) as Config;
@@ -15,6 +17,8 @@ invalid:
     const config: Config = JSON.parse(text);
   - |
     let config: Config = JSON.parse(text);
+  - |
+    const body: Promise<Body> = response.json();
   - |
     const config = JSON.parse(text) as unknown as Config;
   - |

@@ -8,6 +8,7 @@ rule:
     - all:
         - any:
             - kind: class_declaration
+            - kind: abstract_class_declaration
             - kind: interface_declaration
             - kind: type_alias_declaration
         - has:
@@ -16,6 +17,7 @@ rule:
     - all:
         - any:
             - kind: class_declaration
+            - kind: abstract_class_declaration
             - kind: function_declaration
             - kind: interface_declaration
             - kind: type_alias_declaration

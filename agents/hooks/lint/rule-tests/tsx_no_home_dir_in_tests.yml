@@ -4,6 +4,8 @@ valid:
     const dir = await mkdtemp(join(tmpdir(), "case-"));
   - |
     const name = basename(directory);
+  - |
+    const value = process.env["TMPDIR"];
 invalid:
   - |
     const dir = join(homedir(), ".config");
@@ -11,3 +13,7 @@ invalid:
     const dir = join(os.homedir(), ".config");
   - |
     const home = process.env.HOME;
+  - |
+    const home = process.env["HOME"];
+  - |
+    const profile = process.env['USERPROFILE'];

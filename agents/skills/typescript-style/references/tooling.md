@@ -16,6 +16,7 @@
 - Keep the strict `tsconfig.json` options (`strict`, `noUncheckedIndexedAccess`,
   `exactOptionalPropertyTypes`, `verbatimModuleSyntax`) and never loosen them to make code compile;
   fix the code instead.
+- Detect unused files, exports, and dependencies with knip.
 
 ## Directory Structure
 

@@ -15,12 +15,13 @@ rule:
         - has:
             field: type
             kind: type_annotation
-            not: { regex: ':\s*unknown$' }
+            not: { regex: ':\s*(Promise<unknown>|unknown)$' }
         - has:
             field: value
             any:
               - pattern: JSON.parse($$$ARGS)
               - pattern: await $RESPONSE.json()
+              - pattern: $RESPONSE.json()
 constraints:
   TYPE:
     not:

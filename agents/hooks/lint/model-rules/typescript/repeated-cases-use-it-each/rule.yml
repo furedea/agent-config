@@ -18,7 +18,7 @@ rule:
             kind: expression_statement
             has:
               kind: call_expression
-              has: { field: function, kind: identifier, regex: '^(it|test)$' }
+              has: { field: function, regex: '^(it|test)(\.|$)' }
 ask: >-
   This test group (a `describe` block, or the top level of a test file) repeats the same test body for different inputs as separate tests instead of one `it.each` table.
 criteria:

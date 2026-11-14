@@ -14,7 +14,9 @@ rule:
         - kind: function_declaration
         - kind: method_definition
         - all:
-            - kind: arrow_function
+            - any:
+                - kind: arrow_function
+                - kind: function_expression
             - inside: { kind: variable_declarator }
     - has:
         stopBy: end

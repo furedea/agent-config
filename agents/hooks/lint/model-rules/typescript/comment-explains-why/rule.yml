@@ -16,7 +16,9 @@ rule:
         - kind: method_definition
         - has: { kind: comment, stopBy: end }
     - all:
-        - kind: arrow_function
+        - any:
+            - kind: arrow_function
+            - kind: function_expression
         - inside: { kind: variable_declarator }
         - has: { kind: comment, stopBy: end }
 ask: >-

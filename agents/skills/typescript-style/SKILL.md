@@ -24,7 +24,7 @@ GitHub settings; preserve the existing environment workflow.
 | Unions, Value Objects, immutability, or input parsing             | [Types](references/types.md)                 |
 | Fallible operations, error values, throwing, or promises          | [Error handling](references/errors.md)       |
 | Writing, running, or reviewing tests                              | [Testing](references/testing.md)             |
-| File naming, comments, or user-facing wording                     | [Code conventions](references/code_style.md) |
+| File naming, imports, formatting, comments, or user-facing wording | [Code conventions](references/code_style.md) |
 
 Read only the references relevant to the current task. For a focused review, use the references
 for the affected concepts.

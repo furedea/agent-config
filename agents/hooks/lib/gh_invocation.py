@@ -41,6 +41,7 @@ REPOSITORY_SPEC = re.compile(
     r"(?:(?P<host>[A-Za-z0-9.-]+\.[A-Za-z]+)/)?(?P<owner>[A-Za-z0-9-]+)/(?P<name>[A-Za-z0-9_.-]+)"
 )
 DOT_SEGMENT = re.compile(r"(?:^|/)(?:\.|%2e){1,2}(?:/|$)", re.IGNORECASE)
+STDIN_PATHS = re.compile(r"/dev/stdin|/dev/fd/0|/proc/self/fd/0")
 OWNER_PREFIX = re.compile(r"[\"']?[A-Za-z0-9-]+/")
 REPOSITORY_PATH = re.compile(r"repos/(?P<owner>[^/]+)/(?P<name>[^/]+)")
 
@@ -155,6 +156,9 @@ def _check_read_repositories(words: tuple[Word, ...]) -> None:
     A run-time repository passes when a literal owner and slash start it: gh could read only that
     owner, a name without a dot, as a host.
     """
+    for word in words:
+        if word.dynamic and (word.source.startswith("-") or _may_name_url(word)):
+            raise UnclassifiableError("a read takes an option value or URL known only at run time")
     for word in _repository_words(words):
         if word.dynamic and not OWNER_PREFIX.match(word.source):
             raise UnclassifiableError("a read names its repository only at run time")
@@ -203,14 +207,15 @@ def _classify_write(words: tuple[Word, ...], spec: CommandSpec, single_call: boo
         return GhCall((spec.operation,), Effect.READ)
     effect = Effect.IRREVERSIBLE if scan.flags & spec.irreversible_flags else spec.effect
     files = scan.values_of(spec.files)
+    paths = [_stdin_path(word.value) for word in files if not word.dynamic]
     return GhCall(
         (spec.operation,),
         effect,
         tuple(repository for repository in repositories if repository),
         None in repositories,
-        files=tuple(word.value for word in files if not word.dynamic and word.value != "-"),
+        files=tuple(path for path in paths if path != "-"),
         unscanned_files=any(word.dynamic for word in files),
-        reads_stdin=any(word.value == "-" for word in files),
+        reads_stdin="-" in paths,
     )
 
 
@@ -218,6 +223,8 @@ def _check_write_words(scan: OptionScan) -> None:
     """Refuse a write whose words could carry an option the guard does not see."""
     if any(word.may_be_option for word in scan.positionals):
         raise UnclassifiableError("an argument may become an option at run time")
+    if any(_may_name_url(word) for word in scan.positionals):
+        raise UnclassifiableError("an argument may become a URL at run time")
     if any(word.spreading for _, word in scan.options):
         raise UnclassifiableError("an option value may split into several words at run time")
 
@@ -277,6 +284,8 @@ def _api_request(words: tuple[Word, ...]) -> ApiRequest:
     scan = gh_options.scan(words, OptionTable(API_VALUES, API_FLAGS))
     if len(scan.positionals) != 1 or scan.positionals[0].may_be_option:
         raise UnclassifiableError("gh api needs exactly one endpoint that cannot become an option")
+    if _may_name_url(scan.positionals[0]):
+        raise UnclassifiableError("a gh api endpoint may become a URL at run time")
     if any(word.dynamic for word in scan.values_of(METHOD_OPTIONS | HEADER_OPTIONS | {"--hostname"})):
         raise UnclassifiableError("a gh api method, header, or host is known only at run time")
     if any(METHOD_OVERRIDE.match(word.value) for word in scan.values_of(HEADER_OPTIONS)):
@@ -301,7 +310,10 @@ def _names_foreign_host(scan: OptionScan) -> bool:
     if any(word.value.lower() != GITHUB_HOST for word in scan.values_of(frozenset({"--hostname"}))):
         return True
     endpoint = scan.positionals[0]
-    return "://" in endpoint.value and (endpoint.dynamic or urlsplit(endpoint.value).hostname != "api." + GITHUB_HOST)
+    if "://" not in endpoint.value:
+        return False
+    parts = urlsplit(endpoint.value)
+    return endpoint.dynamic or parts.scheme != "https" or parts.hostname != "api." + GITHUB_HOST
 
 
 def _file_words(scan: OptionScan) -> tuple[Word, ...]:
@@ -321,9 +333,23 @@ def _names_file(word: Word) -> bool:
     return word.value.partition("=")[2].startswith("@")
 
 
+def _may_name_url(word: Word) -> bool:
+    """Whether a run-time word could become a URL: a colon in its source can join a scheme to a host."""
+    return word.dynamic and ":" in word.source
+
+
+def _stdin_path(path: str) -> str:
+    """`-` for a path that is standard input; refuse any other device or process file, which no scan can read."""
+    if path == "-" or STDIN_PATHS.fullmatch(path):
+        return "-"
+    if path.startswith(("/dev/", "/proc/")):
+        raise UnclassifiableError("a sent file is a device or process file")
+    return path
+
+
 def _file_path(word: Word) -> str:
     """The path a file word names: an --input value as is, a key=@path field after its @."""
-    return word.value.partition("=")[2][1:] if _names_file(word) else word.value
+    return _stdin_path(word.value.partition("=")[2][1:] if _names_file(word) else word.value)
 
 
 def _classify_graphql(request: ApiRequest, catalog: Catalog) -> GhCall:

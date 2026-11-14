@@ -60,6 +60,7 @@ cargo clippy --all-targets -- -D warnings
 cargo test
 ```
 
+- Forbid `unsafe` by default.
 - Enable `clippy::pedantic` as `warn`, with `priority = -1` so that per-lint entries in the same table override the group. Under the `-D warnings` gate above, a pedantic warning fails the build; fix it or allow that lint with a reason.
 - Allow an individual lint only with a reason: `#[expect(..., reason = "...")]` at the site, or a `Cargo.toml` allow with a comment. A crate-wide `Cargo.toml` allow needs the user's approval, the same as a per-site suppression.
 

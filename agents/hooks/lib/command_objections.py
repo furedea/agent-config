@@ -182,12 +182,15 @@ def gh_objection(command: str, commands: tuple[shell_syntax.Command, ...], polic
     """
     if policy.gh is None:
         return hook_decision.ALLOW
-    line = gh_policy.CommandLine(command, commands)
-    for candidate in (command_policy.canonical(item) for item in commands):
-        if not gh_policy.is_gh(candidate) or not command_policy.prefix_rule(
-            candidate.arguments, policy.prefixes, "allow"
-        ):
-            continue
+    candidates = [
+        candidate
+        for candidate in (command_policy.canonical(item) for item in commands)
+        if gh_policy.is_gh(candidate) and command_policy.prefix_rule(candidate.arguments, policy.prefixes, "allow")
+    ]
+    if not candidates:
+        return hook_decision.ALLOW
+    line = gh_policy.command_line(command, commands)
+    for candidate in candidates:
         verdict = gh_policy.verdict(candidate, line, policy.gh)
         if verdict.decision != "allow" and not is_listed(candidate, policy.listing_rules):
             return verdict

@@ -7,7 +7,6 @@ option's value or as data; anywhere it could become an option, the call is uncla
 
 import re
 from dataclasses import dataclass
-from pathlib import Path
 from urllib.parse import urlsplit
 
 import graphql_document
@@ -58,7 +57,8 @@ class GhCall:
     `repositories` are the repositories it names; with none and no other mark, the call acts on the
     repository gh picks from the working directory. `unknown_target` marks a repository or host
     known only at run time or outside github.com, and `node` a target named by GraphQL node ID.
-    `files` are local files, named by literal paths, whose content the call sends.
+    `files` are local files, named by literal paths, whose content the call sends, and
+    `unscanned_files` marks a sent file whose path is known only at run time.
     """
 
     operations: tuple[str, ...]
@@ -67,6 +67,7 @@ class GhCall:
     unknown_target: bool = False
     node: bool = False
     files: tuple[str, ...] = ()
+    unscanned_files: bool = False
 
     @property
     def label(self) -> str:
@@ -136,7 +137,7 @@ class ApiRequest:
     endpoint: Word
     fields: tuple[tuple[str, Word], ...]
     files: tuple[str, ...]
-    foreign_host: bool
+    unscanned_files: bool
     sends_input: bool
 
     @property
@@ -144,8 +145,7 @@ class ApiRequest:
         """The endpoint path without a leading slash, the API host, or a query string."""
         endpoint = self.endpoint.value
         if "://" in endpoint:
-            parts = urlsplit(endpoint)
-            endpoint = parts.path if parts.hostname == "api." + GITHUB_HOST else "//unknown-host"
+            endpoint = urlsplit(endpoint).path
         return endpoint.split("?", 1)[0].lstrip("/")
 
 
@@ -177,24 +177,41 @@ def _classify_words(words: tuple[Word, ...], catalog: Catalog) -> GhCall:
     spec = catalog.commands.get(f"{words[0].value} {words[1].value}")
     if spec is None:
         raise _UnclassifiableError(f"'gh {words[0].value} {words[1].value}' is not in the gh operation table")
-    if spec.effect in {Effect.READ, Effect.LOCAL}:
+    if spec.effect is Effect.READ:
         return GhCall((spec.operation,), spec.effect)
+    if spec.effect is Effect.LOCAL:
+        return _classify_local(words[2:], spec)
     return _classify_write(words[2:], spec)
 
 
+def _classify_local(words: tuple[Word, ...], spec: CommandSpec) -> GhCall:
+    """A change to the local checkout, whose every option must be listed; `--` would pass options to git."""
+    if any(word.value == "--" for word in words):
+        raise _UnclassifiableError("arguments after -- reach another program")
+    scan = _scan(words, OptionTable(spec.value_options, spec.flags))
+    if any(word.may_be_option for word in scan.positionals):
+        raise _UnclassifiableError("an argument may become an option at run time")
+    return GhCall((spec.operation,), spec.effect)
+
+
 def _classify_write(words: tuple[Word, ...], spec: CommandSpec) -> GhCall:
-    scan = _scan(words, OptionTable(spec.value_options | REPOSITORY_OPTIONS, spec.flags | spec.irreversible_flags))
+    flags = spec.flags | spec.irreversible_flags | spec.read_flags
+    scan = _scan(words, OptionTable(spec.value_options | REPOSITORY_OPTIONS, flags))
     _check_write_words(scan, spec)
     targets = scan.values_of(REPOSITORY_OPTIONS | spec.repositories)
     targets += tuple(word for word in scan.positionals if _is_url(word.value))
     repositories = tuple(None if word.dynamic else repository(word.value) for word in targets)
+    if scan.flags & spec.read_flags:
+        return GhCall((spec.operation,), Effect.READ)
     effect = Effect.IRREVERSIBLE if scan.flags & spec.irreversible_flags else spec.effect
+    files = scan.values_of(spec.files)
     return GhCall(
         (spec.operation,),
         effect,
         tuple(repository for repository in repositories if repository),
         None in repositories,
-        files=tuple(word.value for word in scan.values_of(spec.files) if not word.dynamic),
+        files=tuple(word.value for word in files if not word.dynamic),
+        unscanned_files=any(word.dynamic for word in files),
     )
 
 
@@ -268,6 +285,7 @@ def _classify_api(words: tuple[Word, ...], catalog: Catalog) -> GhCall:
     if not request.endpoint.dynamic and request.path in GRAPHQL_PATHS:
         return _classify_graphql(request, catalog)
     if request.method in READ_METHODS:
+        _check_read_files(request)
         return GhCall(("api.read",), Effect.READ, files=request.files)
     if request.endpoint.dynamic:
         raise _UnclassifiableError("a gh api write names its endpoint only at run time")
@@ -280,8 +298,21 @@ def _classify_api(words: tuple[Word, ...], catalog: Catalog) -> GhCall:
     match = REPOSITORY_PATH.match(request.path)
     placeholder = match is not None and "{" in match["owner"] + match["name"]
     repositories = (Repository(match["owner"], match["name"]),) if match and not placeholder else ()
-    unknown = request.foreign_host or not (repositories or placeholder)
-    return GhCall((route.operation,), route.effect, repositories, unknown, files=request.files)
+    unknown = not (repositories or placeholder)
+    return GhCall(
+        (route.operation,),
+        route.effect,
+        repositories,
+        unknown,
+        files=request.files,
+        unscanned_files=request.unscanned_files,
+    )
+
+
+def _check_read_files(request: ApiRequest) -> None:
+    """Refuse a read that sends a file named only at run time, which no scan can see before it leaves."""
+    if request.unscanned_files:
+        raise _UnclassifiableError("a GitHub read sends a file named only at run time")
 
 
 def _check_field_texts(request: ApiRequest) -> None:
@@ -301,6 +332,8 @@ def _api_request(words: tuple[Word, ...]) -> ApiRequest:
         raise _UnclassifiableError("a gh api method, header, or host is known only at run time")
     if any(METHOD_OVERRIDE.match(word.value) for word in scan.values_of(HEADER_OPTIONS)):
         raise _UnclassifiableError("a gh api header overrides the method")
+    if _names_foreign_host(scan):
+        raise _UnclassifiableError("a gh api request goes to another host than api.github.com")
     fields = tuple((option, word) for option, word in scan.options if option in FIELD_OPTIONS)
     sends_body = bool(fields or scan.values_of(frozenset({"--input"})))
     methods = scan.values_of(METHOD_OPTIONS)
@@ -309,18 +342,31 @@ def _api_request(words: tuple[Word, ...]) -> ApiRequest:
         scan.positionals[0],
         fields,
         _sent_files(scan),
-        any(word.value.lower() != GITHUB_HOST for word in scan.values_of(frozenset({"--hostname"}))),
+        any(word.dynamic for word in _file_words(scan)),
         bool(scan.values_of(frozenset({"--input"}))),
     )
 
 
+def _names_foreign_host(scan: OptionScan) -> bool:
+    if any(word.value.lower() != GITHUB_HOST for word in scan.values_of(frozenset({"--hostname"}))):
+        return True
+    endpoint = scan.positionals[0]
+    return "://" in endpoint.value and (endpoint.dynamic or urlsplit(endpoint.value).hostname != "api." + GITHUB_HOST)
+
+
+def _file_words(scan: OptionScan) -> tuple[Word, ...]:
+    """The words naming a file a gh api call sends: --input values and -F values read with @."""
+    typed = tuple(word for word in scan.values_of(TYPED_FIELD_OPTIONS) if word.value.partition("=")[2].startswith("@"))
+    return scan.values_of(frozenset({"--input"})) + typed
+
+
 def _sent_files(scan: OptionScan) -> tuple[str, ...]:
-    """Literal local files a gh api call sends: the --input file and -F values read with @."""
-    paths = [word.value for word in scan.values_of(frozenset({"--input"})) if not word.dynamic]
-    for word in scan.values_of(TYPED_FIELD_OPTIONS):
-        _, _, value = word.value.partition("=")
-        if value.startswith("@") and not word.dynamic:
-            paths.append(value[1:])
+    """Literal local files a gh api call sends; standard input is not a file."""
+    paths = (
+        word.value.partition("=")[2][1:] if "=" in word.value else word.value
+        for word in _file_words(scan)
+        if not word.dynamic
+    )
     return tuple(path for path in paths if path != "-")
 
 
@@ -335,6 +381,7 @@ def _classify_graphql(request: ApiRequest, catalog: Catalog) -> GhCall:
         field for item in found if item.type == graphql_document.OperationType.MUTATION for field in item.root_fields
     ]
     if not mutated:
+        _check_read_files(request)
         return GhCall(("graphql.query",), Effect.READ, files=request.files)
     _check_field_texts(request)
     unknown = [field for field in mutated if field not in catalog.mutations]
@@ -346,11 +393,11 @@ def _classify_graphql(request: ApiRequest, catalog: Catalog) -> GhCall:
     reversible = all(item.effect is Effect.REVERSIBLE for item in operations)
     names = tuple(sorted({item.name for item in operations}))
     effect = Effect.REVERSIBLE if reversible else Effect.IRREVERSIBLE
-    return GhCall(names, effect, unknown_target=request.foreign_host, node=True, files=request.files)
+    return GhCall(names, effect, node=True, files=request.files, unscanned_files=request.unscanned_files)
 
 
 def _document(request: ApiRequest) -> str:
-    """The text of the one literal query field; one read from a literal file is read here."""
+    """The text of the one literal query field given inline."""
     if request.sends_input or any(word.dynamic and not FIELD_KEY.match(word.source) for _, word in request.fields):
         raise _UnclassifiableError("a GraphQL request body or field name is known only at run time")
     queries = [(option, word) for option, word in request.fields if word.value.partition("=")[0] == "query"]
@@ -358,12 +405,9 @@ def _document(request: ApiRequest) -> str:
         raise _UnclassifiableError("a GraphQL request needs exactly one literal query field")
     ((option, word),) = queries
     text = word.value.partition("=")[2]
-    if option not in TYPED_FIELD_OPTIONS or not text.startswith("@"):
-        return text
-    try:
-        return Path(text[1:]).read_text()
-    except (OSError, UnicodeDecodeError) as error:
-        raise _UnclassifiableError("the GraphQL document file cannot be read") from error
+    if option in TYPED_FIELD_OPTIONS and text.startswith("@"):
+        raise _UnclassifiableError("a GraphQL document read from a file may change before gh reads it")
+    return text
 
 
 def has_parameter(source: str) -> bool:

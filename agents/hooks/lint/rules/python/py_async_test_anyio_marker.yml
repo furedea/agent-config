@@ -31,4 +31,4 @@ rule:
             kind: expression_statement
             has:
               kind: assignment
-              regex: (?s)^pytestmark\s*=.*anyio
+              regex: (?s)^pytestmark\s*=[^"']*pytest\.mark\.anyio\b

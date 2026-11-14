@@ -35,6 +35,12 @@ valid:
         assert work() == 1
 invalid:
   - |
+    pytestmark = pytest.mark.filterwarnings("ignore:anyio")
+
+
+    async def test_something() -> None:
+        assert await work() == 1
+  - |
     async def test_something(not_anyio_backend: str) -> None:
         assert await work() == 1
   - |

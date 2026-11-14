@@ -59,10 +59,11 @@ Settings changes are the owner's decision, so this ADR only recommends them:
 - Scope the GitHub App permissions to what class B needs, with no `Administration` or `Contents`
     write beyond it. GitHub has no separate merge permission: the merge endpoint needs the same
     `Pull requests: write` as class B, so the permission cannot stop a merge.
-- Add a main-branch ruleset that requires the owner's approval. This, or the future Gateway, is the
-    enforcement point that stops `gh pr merge` without the owner even if a prompt is bypassed.
+- Add a ruleset that requires the owner's approval on every branch a PR may merge into (`main`
+    and any `develop` or `release/*` branch), not on `main` alone. This, or the future Gateway, is
+    the enforcement point that stops `gh pr merge` without the owner even if a prompt is bypassed.
 
-Once the ruleset exists, the class D prompt for merging becomes a convenience, not the guard.
+Merges into a branch the ruleset does not cover stay guarded only by the class D prompt.
 
 ## Measurement target
 

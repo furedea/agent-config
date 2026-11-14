@@ -16,6 +16,12 @@ valid:
     func run(log Logger) {
         log.Printf("start %d", 80)
     }
+  - |
+    import stdlog "log"
+
+    func run(log Logger) {
+        log.Printf("start")
+    }
 invalid:
   - |
     import "log"

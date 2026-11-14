@@ -11,6 +11,10 @@ valid:
 invalid:
   - |
     func load() error {
+        return errors.New("A name is required")
+    }
+  - |
+    func load() error {
         return errors.New("Config missing")
     }
   - |

@@ -13,6 +13,10 @@ rule:
         kind: source_file
         has:
           kind: import_spec
+          not:
+            has:
+              field: name
+              regex: .+
           has:
             field: path
             regex: ^"(log|log/slog)"$

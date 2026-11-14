@@ -2,7 +2,7 @@ id: go_error_no_capitalized_message
 language: go
 severity: warning
 message: "Start the error message with a lowercase letter."
-note: "A message that starts with an initialism (`HTTP 500`) is skipped: only a capital followed by a lowercase letter matches."
+note: "A message that starts with an initialism (`HTTP 500`) is skipped: only a capital followed by a lowercase letter or a space matches."
 rule:
   any:
     - pattern: fmt.Errorf($MSG, $$$ARGS)
@@ -14,4 +14,4 @@ rule:
         selector: call_expression
 constraints:
   MSG:
-    regex: ^["`][A-Z][a-z]
+    regex: ^["`][A-Z]([a-z]|\s)

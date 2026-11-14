@@ -20,6 +20,14 @@ valid:
     func New(log Logger) {
         log.SetOutput(os.Stderr)
     }
+  - |
+    package store
+
+    import stdlog "log"
+
+    func New(log Logger) {
+        log.SetOutput(os.Stderr)
+    }
 invalid:
   - |
     package store

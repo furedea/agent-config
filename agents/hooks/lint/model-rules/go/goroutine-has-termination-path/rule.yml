@@ -13,12 +13,13 @@ severity: warning
 rule:
   kind: go_statement
 ask: >-
-  This goroutine is started with nobody waiting for its end and no way to make it stop.
+  This goroutine is started with nobody waiting for its end, or with no way to make it stop.
 criteria:
   "true": >-
-    Nothing owns the goroutine: no WaitGroup, errgroup or done channel lets the caller wait for it, and the goroutine
-    has no exit path tied to context cancellation or a closed channel, so it can outlive its caller or leak.
+    The goroutine lacks an owner or lacks a termination path: no WaitGroup, errgroup or received result or done channel
+    lets the caller wait for it, or it can run forever because it neither does finite work nor stops on context
+    cancellation or a closed channel. Either gap can let it outlive its caller or leak.
   "false": >-
-    The goroutine has an owner that waits for it (errgroup, WaitGroup, a result or done channel that is received) or an
-    exit path that its caller can trigger (context cancellation, a closed channel), or it is bounded by the program's
-    lifetime on purpose and says so.
+    The goroutine has both an owner that waits for it (errgroup, WaitGroup, a result or done channel that is received)
+    and a termination path (finite work, or an exit that context cancellation or a closed channel triggers), or it is
+    bound to the program's lifetime on purpose and says so.

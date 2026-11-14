@@ -2,7 +2,7 @@ id: go_use_slog
 language: go
 severity: warning
 message: "Log with `log/slog` instead of the standard `log` package."
-note: "Test files are skipped. A `*log.Logger` held in a variable or built by `log.New` is not followed; an aliased import is not either. Only a file that imports the standard `log` package is judged."
+note: "Test files are skipped. A `*log.Logger` held in a variable or built by `log.New` is not followed; a file that imports `log` under another name is skipped. Only a file that imports the standard `log` package is judged."
 ignores:
   - "**/*_test.go"
 rule:
@@ -12,6 +12,10 @@ rule:
     kind: source_file
     has:
       kind: import_spec
+      not:
+        has:
+          field: name
+          regex: .+
       has:
         field: path
         regex: ^"log"$

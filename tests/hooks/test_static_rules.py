@@ -123,7 +123,7 @@ def test_findings_are_returned_as_context_with_rule_file_line_and_message(
         "--config",
         str(lint_directory / "sgconfig.yml"),
         "--json=stream",
-        str(source),
+        "src/source.py",
     ]
 
 

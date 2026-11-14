@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.runtime import REPO_ROOT
+from tests.runtime import REPO_ROOT, load_script_module
 
 LINT_ROOT = REPO_ROOT / "agents/hooks/lint"
 SG_CONFIG = LINT_ROOT / "sgconfig.yml"
@@ -130,3 +130,33 @@ def test_file_scoped_rules_flag_exactly_the_vaguely_named_files(tmp_path: Path) 
         if hit["ruleId"] in flagged:
             flagged[hit["ruleId"]].add(Path(hit["file"]).as_posix().removeprefix("./"))
     assert flagged == expected, result.stderr
+
+
+ANCESTOR_SEGMENTS = ("common", "pkg", "util", "tests")
+
+
+def test_directories_above_the_repository_do_not_change_what_the_hook_flags(tmp_path: Path) -> None:
+    executable = shutil.which("ast-grep")
+    if executable is None:
+        reason = "ast-grep is provided by the flake dev shell"
+        if os.environ.get("REQUIRE_AST_GREP") == "1":
+            pytest.fail(reason)
+        pytest.skip(reason)
+    static_rule_scan = load_script_module("agents/hooks/lint_format.py", "lint_format_for_ancestors").static_rule_scan
+    repository = tmp_path.joinpath(*ANCESTOR_SEGMENTS, "common", "repo")
+    for relative, text in {
+        "src/user.go": "package a\n",
+        "src/user.rs": "fn a() {}\n",
+        "src/utils.rs": "fn a() {}\n",
+    }.items():
+        (repository / relative).parent.mkdir(parents=True, exist_ok=True)
+        (repository / relative).write_text(text)
+    (repository / ".git").mkdir()
+
+    messages = static_rule_scan.diagnostics(
+        [repository / "src/user.go", repository / "src/user.rs", repository / "src/utils.rs"]
+    )
+
+    assert [(m.split(" · ")[0], m.split(" · ")[1].split(":")[0]) for m in messages] == [
+        ("Static rule rs_no_vague_file_name", str(repository / "src/utils.rs"))
+    ]

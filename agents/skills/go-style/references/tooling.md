@@ -14,7 +14,6 @@
 - Start with `main.go` at the module root.
 - Move to `cmd/<name>/main.go` when the module has several commands.
 - Put non-public packages under `internal/`.
-- Do not create `pkg/`, `util/`, or `common/`; name packages by domain.
 - Keep `main` thin: parse flags, wire dependencies, and call library code.
 
 ## Quality Gates

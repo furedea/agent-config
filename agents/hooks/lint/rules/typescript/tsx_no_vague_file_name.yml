@@ -1,0 +1,11 @@
+id: tsx_no_vague_file_name
+language: tsx
+severity: warning
+message: "Name the file by its domain or action, not a vague word like utils, helpers, manager, common, or formatter, unless the name is already established locally."
+rule:
+  kind: program
+files:
+  - "**/{utils,util,helpers,helper,manager,common,formatter}.tsx"
+  - "**/*[._-]{utils,util,helpers,helper,manager,common,formatter}.tsx"
+  - "**/{utils,util,helpers,helper,manager,common,formatter}[._-]*.tsx"
+  - "**/*[._-]{utils,util,helpers,helper,manager,common,formatter}[._-]*.tsx"

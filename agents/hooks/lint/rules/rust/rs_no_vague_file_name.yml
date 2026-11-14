@@ -1,0 +1,13 @@
+id: rs_no_vague_file_name
+language: rust
+severity: warning
+message: "Name the file by its domain or action, not a vague word like utils, helpers, manager, common, or formatter, unless the name is already established locally."
+rule:
+  kind: source_file
+files:
+  - "**/{utils,util,helpers,helper,manager,common,formatter}.rs"
+  - "**/*[._-]{utils,util,helpers,helper,manager,common,formatter}.rs"
+  - "**/{utils,util,helpers,helper,manager,common,formatter}[._-]*.rs"
+  - "**/*[._-]{utils,util,helpers,helper,manager,common,formatter}[._-]*.rs"
+ignores:
+  - "**/tests/common/**"

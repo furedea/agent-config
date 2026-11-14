@@ -23,7 +23,6 @@
 - Store integration tests in `tests/`.
 - Keep unit tests near the module when they need private access.
 - Use `examples/` only for runnable examples that should compile.
-- Avoid `utils.rs` and `helpers.rs`; name modules by domain or action.
 
 Typical binary crate shape:
 

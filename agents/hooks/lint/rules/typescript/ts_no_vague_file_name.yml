@@ -1,0 +1,11 @@
+id: ts_no_vague_file_name
+language: typescript
+severity: warning
+message: "Name the file by its domain or action, not a vague word like utils, helpers, manager, common, or formatter, unless the name is already established locally."
+rule:
+  kind: program
+files:
+  - "**/{utils,util,helpers,helper,manager,common,formatter}.ts"
+  - "**/*[._-]{utils,util,helpers,helper,manager,common,formatter}.ts"
+  - "**/{utils,util,helpers,helper,manager,common,formatter}[._-]*.ts"
+  - "**/*[._-]{utils,util,helpers,helper,manager,common,formatter}[._-]*.ts"

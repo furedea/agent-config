@@ -83,6 +83,10 @@ function build_output() {
 }
 ```
 
+## Formatting
+
+Indent with **2 spaces** (Google Shell Style Guide convention). Configure via `.editorconfig` at the project root; `shfmt` reads it automatically. Run `shfmt -d <file>` to check.
+
 ## Task-Specific References
 
 - When creating a new script and a complete skeleton is useful, read

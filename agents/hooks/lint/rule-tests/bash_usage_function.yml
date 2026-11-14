@@ -11,6 +11,9 @@ valid:
     #!/usr/bin/env bash
     usage() { echo "Usage: $0"; }
   - |
+    #!/usr/bin/env bats
+    @test "x" { true; }
+  - |
     # sourced library without a shebang
     helper() { :; }
 invalid:

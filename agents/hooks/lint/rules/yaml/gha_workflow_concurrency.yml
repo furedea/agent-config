@@ -20,7 +20,7 @@ rule:
       - has:
           field: value
           any:
-            - regex: ^(push|pull_request)$
+            - regex: ^["']?(push|pull_request)["']?$
             - regex: ^\[[^\]]*\b(push|pull_request)\b
             - has:
                 kind: block_mapping
@@ -28,7 +28,7 @@ rule:
                   kind: block_mapping_pair
                   has:
                     field: key
-                    regex: ^(push|pull_request)$
+                    regex: ^["']?(push|pull_request)["']?$
   not:
     has:
       kind: block_mapping_pair

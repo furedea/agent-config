@@ -114,6 +114,7 @@
         "^herdr status( |$)",
         "^herdr --help( |$)",
         "^herdr --version( |$)",
+        "^herdr [a-z][a-z-]*( [a-z][a-z-]*)? --help$",
         "^herdr pane list( |$)",
         "^herdr pane read( |$)",
         "^herdr pane current( |$)",
@@ -131,9 +132,13 @@
         "^herdr workspace close [^ -][^ ]*$",
         "^herdr worktree remove --workspace [^ -][^ ]*$",
         "^herdr workspace list( |$)",
-        "^herdr workspace get( |$)"
+        "^herdr workspace get( |$)",
+        "^herdr pane send-text [^ -][^ ]* .+$",
+        "^herdr pane send-keys [^ -][^ ]* .+$",
+        "^herdr pane run [^ -][^ ]* .+$",
+        "^herdr agent send-keys [^ -][^ ]* .+$"
       ],
-      "justification": "Allow Herdr reads and handing work to a new Claude or Codex session; repository trust, pane environments, other agent kinds, and driving existing panes run outside the sandbox and ask."
+      "justification": "Allow Herdr reads, handing work to a new Claude or Codex session, and driving the panes of agents this session started; repository trust, pane environments, other agent kinds, and driving any other pane run outside the sandbox and ask."
     },
     {
       "programs": [
@@ -161,10 +166,12 @@
         "^go list( |$)",
         "^go version( |$)",
         "^go mod download( |$)",
+        "^go mod tidy( |$)",
+        "^go get( |$)",
         "^go env( -json| -changed| [A-Z][A-Za-z0-9_]*)*$",
         "^go run( [^@ ]+)*$"
       ],
-      "justification": "Allow local Go builds, verification, and inspection; go env -w and -u change user-level Go configuration, and go run pkg@version fetches and executes a remote module the project's go.mod does not pin, so those forms ask."
+      "justification": "Allow local Go builds, verification, inspection, and dependency changes in go.mod; go env -w and -u change user-level Go configuration, and go run pkg@version fetches and executes a remote module the project's go.mod does not pin, so those forms ask."
     },
     {
       "programs": [

@@ -144,17 +144,74 @@ def test_docker_catch_all_is_a_hook_rule_because_a_prefix_ask_would_override_the
     assert asking == {"docker", "docker-compose"}
 
 
-@pytest.mark.parametrize(
-    "prefix",
-    [
-        ("herdr", "pane", "run"),
-        ("herdr", "pane", "send-text"),
-        ("herdr", "pane", "send-keys"),
-        ("herdr", "agent", "send-keys"),
-    ],
-)
-def test_driving_other_terminal_panes_requires_approval(prefix: tuple[str, ...]) -> None:
-    assert prefix in ASK
+# Class C widens authority (fetched code, sandbox escape, other people's resources); class D promotes
+# work or cannot be undone. Every other external effect stays inside the session's grant and runs.
+WIDENING_AUTHORITY = {
+    ("uv", "run", "--with"),
+    ("uvx",),
+    ("npm", "install"),
+    ("nix", "run"),
+    ("nix", "shell"),
+    ("npx",),
+    ("pnpm", "dlx"),
+    ("bunx",),
+    ("herdr", "workspace", "focus"),
+    ("herdr", "workspace", "rename"),
+    ("herdr", "workspace", "report-metadata"),
+    ("herdr", "tab"),
+    ("herdr", "plugin", "action"),
+    ("esa", "post", "create"),
+    ("esa", "post", "update"),
+    ("docker", "build"),
+    ("docker", "run"),
+    ("docker", "exec"),
+    ("docker", "compose", "up"),
+    ("terraform", "init"),
+}
+PROMOTING_OR_IRREVERSIBLE = {
+    ("kill",),
+    ("pkill",),
+    ("git", "remote", "add"),
+    ("git", "remote", "set-url"),
+    ("git", "stash", "drop"),
+    ("git", "stash", "clear"),
+    ("gh", "pr", "merge"),
+    ("gh", "stack", "merge"),
+    ("gh", "stack", "unstack"),
+    ("gh", "workflow", "run"),
+    ("gh", "release"),
+    ("herdr", "server"),
+    ("docker", "compose", "down"),
+}
+WITHIN_THE_GRANT = [
+    ("uv", "add"),
+    ("uv", "lock", "--upgrade-package"),
+    ("uv", "lock", "--upgrade"),
+    ("cargo", "add"),
+    ("cargo", "update"),
+    ("go", "get"),
+    ("go", "mod", "tidy"),
+    ("pnpm", "add"),
+    ("nix", "flake", "update"),
+    ("rm",),
+    ("herdr", "pane", "run"),
+    ("herdr", "pane", "send-text"),
+    ("herdr", "pane", "send-keys"),
+    ("herdr", "agent", "send-keys"),
+]
+
+
+def test_only_commands_that_widen_authority_or_promote_work_ask() -> None:
+    assert WIDENING_AUTHORITY.isdisjoint(PROMOTING_OR_IRREVERSIBLE)
+    assert ASK == WIDENING_AUTHORITY | PROMOTING_OR_IRREVERSIBLE
+
+
+@pytest.mark.parametrize("prefix", WITHIN_THE_GRANT)
+def test_effects_inside_the_grant_render_only_as_allow(generated_permissions: dict, prefix: tuple[str, ...]) -> None:
+    assert prefix in ALLOW
+    assert prefix not in ASK
+    assert " ".join(prefix) in bash_prefixes(generated_permissions, "allow")
+    assert " ".join(prefix) not in bash_prefixes(generated_permissions, "ask")
 
 
 def test_justifications_are_provider_neutral() -> None:
@@ -214,8 +271,8 @@ def test_the_1password_cli_is_denied_for_every_subcommand(
     assert 'pattern = ["op"],\n    decision = "forbidden"' in rules.read_text()
 
 
-def test_rm_asks_and_recursive_rm_is_denied_by_the_shared_prefixes() -> None:
-    assert ("rm",) in ASK
+def test_rm_is_left_to_the_path_aware_guard_and_recursive_rm_is_denied_by_the_shared_prefixes() -> None:
+    assert ("rm",) in ALLOW
     deny = {tuple(rule["prefix"]) for rule in POLICY["rules"] if rule["decision"] == "deny"}
     recursive = {("rm", flag) for flag in ("-r", "-rf", "-fr", "-R", "-Rf", "--recursive")}
     assert recursive <= deny
@@ -234,22 +291,18 @@ GO_ALLOW = [
     "golangci-lint run",
     "golangci-lint fmt",
     "govulncheck",
+    "go mod tidy",
+    "go get",
 ]
-GO_ASK = ["go mod tidy", "go get"]
 
 
 @pytest.mark.parametrize("prefix", GO_ALLOW)
-def test_go_builds_verification_and_inspection_are_allowed(generated_permissions: dict, prefix: str) -> None:
+def test_go_builds_verification_inspection_and_dependency_changes_are_allowed(
+    generated_permissions: dict, prefix: str
+) -> None:
     assert tuple(prefix.split()) in ALLOW
     assert prefix in bash_prefixes(generated_permissions, "allow")
     assert prefix not in bash_prefixes(generated_permissions, "ask")
-
-
-@pytest.mark.parametrize("prefix", GO_ASK)
-def test_go_dependency_changes_require_approval(generated_permissions: dict, prefix: str) -> None:
-    assert tuple(prefix.split()) in ASK
-    assert tuple(prefix.split()) not in ALLOW
-    assert prefix in bash_prefixes(generated_permissions, "ask")
 
 
 def test_go_install_stays_denied() -> None:

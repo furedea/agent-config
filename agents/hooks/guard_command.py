@@ -26,6 +26,7 @@ import foreign_shell_policy
 import hook_decision
 import hook_input
 import literal_words
+import removal_paths
 import shell_syntax
 import trusted_owners
 from hook_decision import Verdict
@@ -150,12 +151,19 @@ def command_verdict(kind: str, payload: dict, policy: Policy) -> Verdict:
     if verdict.decision == "allow":
         verdict = foreign_shell_policy.objection(commands)
     if kind == "allowed" and verdict.decision == "allow":
-        verdict = automation_options.objection(commands)
-    if kind == "allowed" and verdict.decision == "allow":
-        verdict = automation_paths.objection(payload, commands)
-    if kind == "allowed" and verdict.decision == "allow":
-        return command_objections.settings_objection(command, commands)
+        return whole_command_objection(command, payload, commands)
     return verdict
+
+
+def whole_command_objection(command: str, payload: dict, commands: tuple[shell_syntax.Command, ...]) -> Verdict:
+    """The allowed guard's checks that read past one segment's words: options, file paths, and request settings."""
+    checks = (
+        lambda: automation_options.objection(commands),
+        lambda: automation_paths.objection(payload, commands),
+        lambda: removal_paths.objection(payload, commands),
+        lambda: command_objections.settings_objection(command, commands),
+    )
+    return next((verdict for check in checks if (verdict := check()).decision != "allow"), hook_decision.ALLOW)
 
 
 def _record(verdict: Verdict, kind: str, payload: object) -> None:

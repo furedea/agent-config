@@ -22,6 +22,7 @@ rule:
           kind: module
           stopBy: end
           has:
-            stopBy: end
-            kind: assignment
-            regex: (?s)^pytestmark\s*=.*anyio
+            kind: expression_statement
+            has:
+              kind: assignment
+              regex: (?s)^pytestmark\s*=.*anyio

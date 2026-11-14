@@ -14,15 +14,16 @@ rule:
     - kind: decorated_definition
     - has:
         kind: decorator
-        regex: pytest\.fixture
+        regex: ^@(pytest\.)?fixture\b
 ask: >-
   This fixture is not justified by shared setup, an external resource, or teardown, or its scope is wider than its setup
   cost needs.
 criteria:
   "true": >-
-    Only one test uses the fixture and it has no teardown after `yield` and no external resource; or the setup is
+    The file defines the tests, only one of them uses the fixture, and it has no teardown after `yield` and no external resource; or the setup is
     lightweight, or the tests need to pass arguments to it, so a helper function would do; or its scope is `module` or
     `session` although the setup is cheap.
   "false": >-
-    Two or more tests use the fixture (in this file or through conftest), or it manages an external resource or
+    Two or more tests use the fixture, or the fixture is defined in `conftest.py` (its users are in other files that
+    are not shown), or it manages an external resource or
     teardown, or it needs a wider scope because its setup is expensive.

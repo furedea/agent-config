@@ -35,6 +35,13 @@ valid:
         assert work() == 1
 invalid:
   - |
+    def helper() -> None:
+        pytestmark = pytest.mark.anyio
+
+
+    async def test_something() -> None:
+        assert await work() == 1
+  - |
     async def test_something() -> None:
         assert await work() == 1
   - |

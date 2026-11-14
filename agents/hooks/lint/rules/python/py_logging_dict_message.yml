@@ -13,11 +13,12 @@ rule:
     - has:
         field: arguments
         kind: argument_list
-        has:
-          nthChild: 1
-          any:
-            - kind: string
-            - kind: concatenated_string
-            - all:
-                - kind: keyword_argument
-                - regex: ^msg\s*=\s*[A-Za-z]{0,2}["']
+        any:
+          - has:
+              nthChild: 1
+              any:
+                - kind: string
+                - kind: concatenated_string
+          - has:
+              kind: keyword_argument
+              regex: ^msg\s*=\s*[A-Za-z]{0,2}["']

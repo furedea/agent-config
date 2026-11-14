@@ -1,6 +1,15 @@
 id: py_definition_order
 valid:
   - |
+    @unique
+    class Color(Enum):
+        RED = 1
+
+
+    @dataclass(frozen=True)
+    class Palette:
+        name: str
+  - |
     class Color(StrEnum):
         RED = "red"
 
@@ -30,6 +39,21 @@ valid:
     class Color(ColorMixin, Enum):
         RED = "red"
 invalid:
+  - |
+    @dataclass(frozen=True)
+    class Palette:
+        name: str
+
+
+    class Color(StrEnum):
+        RED = "red"
+  - |
+    def paint() -> None: ...
+
+
+    @unique
+    class Color(Enum):
+        RED = 1
   - |
     def paint() -> None: ...
 

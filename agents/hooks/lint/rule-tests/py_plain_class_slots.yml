@@ -1,6 +1,10 @@
 id: py_plain_class_slots
 valid:
   - |
+    class Registry:
+        def __init__(self, items: list[str]) -> None:
+            validate(items)
+  - |
     class Foo:
         __slots__ = ("name", "age")
 
@@ -25,6 +29,10 @@ valid:
     class Namespace:
         def run(self) -> None: ...
 invalid:
+  - |
+    class Foo:
+        def __init__(self, count: int) -> None:
+            self.count: int = count
   - |
     class Foo:
         def __init__(self, name: str) -> None:

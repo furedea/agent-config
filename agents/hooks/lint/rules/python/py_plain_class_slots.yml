@@ -18,9 +18,18 @@ rule:
         kind: block
         has:
           kind: function_definition
-          has:
-            field: name
-            regex: ^__init__$
+          all:
+            - has:
+                field: name
+                regex: ^__init__$
+            - has:
+                field: body
+                kind: block
+                has:
+                  stopBy: end
+                  any:
+                    - pattern: self.$ATTR = $VALUE
+                    - pattern: "self.$ATTR: $TYPE = $VALUE"
     - not:
         has:
           field: body

@@ -1,0 +1,16 @@
+id: py_no_structlog_loguru
+language: python
+severity: error
+message: "Use the standard `logging` module (with `extra`); do not import structlog or loguru."
+rule:
+  any:
+    - pattern: import structlog
+    - pattern: import structlog as $ALIAS
+    - pattern: import loguru
+    - pattern: import loguru as $ALIAS
+    - pattern: from structlog import $$$NAMES
+    - pattern: from loguru import $$$NAMES
+    - kind: import_from_statement
+      regex: (?s)^from\s+(structlog|loguru)(\.[A-Za-z_.]+)?\s+import\b
+    - kind: import_statement
+      regex: ^import\s+([A-Za-z_.]+\s*,\s*)*(structlog|loguru)\b

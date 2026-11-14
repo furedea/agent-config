@@ -11,7 +11,9 @@ Let `ruff format` decide quotes and operator spacing; do not hand-format against
 
 ## Logging
 
-Add extensive logging at critical system points where failures would be hard to diagnose (CSV file references, before/after raise statements, etc.).
+- Log extensively at points where failures would be hard to diagnose (file references, before and after `raise`)
+- Configure handlers and formatters only at the entry point; library code only calls `logging.getLogger(__name__)`
+- The default formatter does not print `extra` values: configure a formatter at the entry point that includes them (`python-json-logger` for machine-read logs, a key=value formatter for human-read logs)
 
 ## Naming Conventions
 

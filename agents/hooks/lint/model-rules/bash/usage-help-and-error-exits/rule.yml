@@ -18,6 +18,10 @@ rule:
     - all:
         - kind: case_item
         - has: { kind: command, regex: "^usage\\b", stopBy: end }
+    # The catch-all and the empty-argument branches, which handle a missing or invalid argument.
+    - all:
+        - kind: case_item
+        - has: { field: value, regex: "^(\\*|\"\"|'')$" }
     - all:
         - kind: if_statement
         - has: { field: condition, regex: "(--help|(^|[\\s\"])-h([\\s\"\\]]|$))", stopBy: end }

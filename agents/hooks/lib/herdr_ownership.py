@@ -1,8 +1,8 @@
-"""Let a session prompt and type into only the Herdr agents it started.
+"""Let a session prompt only the Herdr agents it started.
 
 Herdr runs outside the sandbox, so text sent to a pane runs there too. An agent this session
-started carries the same sandbox and hooks, so prompting it or typing into its pane is safe; any
-other target may be the user's own shell or session, and driving it needs the user's judgment.
+started carries the same sandbox and hooks, so prompting it is safe; any other target may be the
+user's own shell or session, and prompting it needs the user's judgment.
 """
 
 import json
@@ -17,18 +17,8 @@ from herdr_grammar import has_global_option
 from session_store import ScopeError, SessionRecord, atomic_json, file_lock, read_json
 
 AGENTS_FILE = "herdr_agents.json"
-AGENT_INPUTS = frozenset({("agent", "prompt"), ("agent", "send-keys")})
-PANE_INPUTS = frozenset({("pane", "send-text"), ("pane", "send-keys"), ("pane", "run")})
-# Keys that move within or submit the agent's input; interrupt, end-of-input, and suspend keys could
-# end the agent and leave later input to the shell beneath it, which runs outside the sandbox.
-SAFE_KEYS = frozenset({"enter", "esc", "escape", "tab", "up", "down", "left", "right", "backspace", "space"})
-# Text that ends the agent; Herdr may still list it for a moment, so the next input could reach the shell.
-EXIT_WORDS = frozenset({"/exit", "/quit", "/logout", "exit", "quit", "logout"})
-TERMINAL_INPUTS = PANE_INPUTS | {("agent", "send-keys")}
 OWNERSHIP_ACTIONS = frozenset(
-    {("agent", "start"), ("workspace", "close"), ("worktree", "remove"), ("agent", "rename")}
-    | AGENT_INPUTS
-    | PANE_INPUTS
+    {("agent", "start"), ("agent", "prompt"), ("workspace", "close"), ("worktree", "remove"), ("agent", "rename")}
 )
 LIST_TIMEOUT_SECONDS = 5
 
@@ -53,26 +43,16 @@ def check(record: SessionRecord, command: str) -> None:
         simple = _is_single_call(command, commands)
         if not simple or "--group" in parsed.arguments:
             raise ScopeError("Herdr ownership actions need one simple direct Herdr call")
-        _require_permitted(record, parsed)
-
-
-def _require_permitted(record: SessionRecord, parsed: shell_syntax.Command) -> None:
-    """Refuse one simple ownership action unless it stays with this session's own terminals."""
-    action = parsed.arguments[1:3]
-    if action == ("agent", "start"):
-        _claim(_target(parsed))
-    elif action in AGENT_INPUTS:
-        _require_owned(record, _target(parsed))
-    elif action in PANE_INPUTS:
-        _require_owned_pane(record, _target(parsed))
-    elif action == ("workspace", "close"):
-        _require_closable(record, parsed)
-    elif action == ("worktree", "remove"):
-        _require_removable(record, parsed)
-    else:
-        raise ScopeError("Renaming a Herdr agent could hand one of this session's names to another pane")
-    if action in TERMINAL_INPUTS:
-        _require_inert_input(parsed)
+        if action == ("agent", "start"):
+            _claim(_target(parsed))
+        elif action == ("agent", "prompt"):
+            _require_owned(record, _target(parsed))
+        elif action == ("workspace", "close"):
+            _require_closable(record, parsed)
+        elif action == ("worktree", "remove"):
+            _require_removable(record, parsed)
+        else:
+            raise ScopeError("Renaming a Herdr agent could hand one of this session's names to another pane")
 
 
 def confirm(record: SessionRecord, command: str, response: object) -> None:
@@ -276,40 +256,6 @@ def _require_owned(record: SessionRecord, name: str) -> None:
         return
     shown = name or "chosen at run time"
     raise ScopeError(f"Herdr agent {shown} was not started by this session; its pane may run outside the sandbox")
-
-
-def _require_owned_pane(record: SessionRecord, pane: str) -> None:
-    """A pane is owned while the agent this session started there still runs in it."""
-    owned = [entry for entry in entries(record, "agents").values() if pane and entry["pane_id"] == pane]
-    live = _live_agents() if owned else []
-    if any(agent.get("pane_id") == pane and _matches_agent(agent, entry) for entry in owned for agent in live):
-        return
-    shown = pane or "chosen at run time"
-    raise ScopeError(f"Herdr pane {shown} was not started by this session; it may run outside the sandbox")
-
-
-def _require_inert_input(parsed: shell_syntax.Command) -> None:
-    """Keys must be listed safe ones and text one line without control characters or an exit command, all literal.
-
-    The agent was live when this ran, but terminal input that ends it would reach its shell.
-    """
-    words = list(zip(parsed.arguments[4:], parsed.dynamic[4:], strict=True))
-    keys = parsed.arguments[2] == "send-keys"
-    text = " ".join(word for word, _ in words)
-    if all(not dynamic and (_is_safe_key(word) if keys else _is_plain_text(word)) for word, dynamic in words) and (
-        keys or text.strip().split(" ")[0].casefold() not in EXIT_WORDS
-    ):
-        return
-    kind = "keys" if keys else "text"
-    raise ScopeError(f"Herdr {kind} could end the agent and reach its shell outside the sandbox")
-
-
-def _is_safe_key(word: str) -> bool:
-    return word.casefold() in SAFE_KEYS
-
-
-def _is_plain_text(word: str) -> bool:
-    return not any(ord(character) < 32 or ord(character) == 127 for character in word)
 
 
 def _agent_session(agent: dict) -> str:

@@ -214,13 +214,15 @@ Without the items, the hook reports `Model rules skipped` at every Stop and does
 - The provider's own `ask` prefixes are kept for commands that widen authority (fetched or
     unpinned code, containers, other people's workspaces, outside hosts) or promote work and cannot be
     undone (merge, release, stash drop, remote changes, signals, the Herdr server); an `ask` rule still
-    prompts in Claude Code's auto mode. Dependency changes run unprompted.
-- `rm` runs unprompted for files inside the worktree and the session's temporary directories. The
-    command guard asks for Git metadata, any other path (resolved through links in its parent
-    directories), a path known only at run time, xargs operands, recursive forms the deny prefixes
-    do not list, and rm beside any program other than a listed read-only one (`ls`, `cat`, `echo`,
-    ...), since it may change the working directory or create a link first.
+    prompts in Claude Code's auto mode. Dependency changes run unprompted, except beside an
+    assignment, `env`, `export`, or a sourced file, whose settings could install outside the
+    project; global flags (`pnpm add -g` in any spelling, `uv add --dev`) are denied wherever they sit.
+- `rm` runs unprompted for files inside the worktree and the session's own temporary directories
+    (never a shared `/tmp` or `/var/tmp` itself). The command guard asks for Git metadata, any other
+    path (resolved through links in its parent directories), a path known only at run time, xargs
+    operands, recursive forms the deny prefixes do not list, and rm beside any program other than a
+    listed read-only one (`ls`, `cat`, `echo`, ...), since it may change the working directory or
+    create a link first.
 - Typing into a Herdr pane (`pane send-text`, `pane send-keys`, `pane run`, `agent send-keys`)
-    runs unprompted only while the target is the pane of an agent this session started and that
-    agent still runs there, with navigation keys only (no interrupt, end-of-input, or suspend) and
-    one line of text without control characters; anything else asks.
+    always asks, even for an agent this session started: keys or text can answer that agent's
+    approval prompt or end it and reach the shell beneath it. Hand work over with `agent prompt`.

@@ -2390,31 +2390,31 @@
       "justification": "Ask before publishing or triggering work that is visible to others."
     },
     {
-      "decision": "allow",
+      "decision": "ask",
       "prefix": [
         "herdr",
         "pane",
         "send-text"
       ],
-      "justification": "Allow driving panes of agents this session started; the hooks ask for every other pane, which may run outside the sandbox."
+      "justification": "Ask before typing into a pane; raw terminal input can answer an agent's approval prompt or reach the shell beneath it, outside the sandbox."
     },
     {
-      "decision": "allow",
+      "decision": "ask",
       "prefix": [
         "herdr",
         "pane",
         "send-keys"
       ],
-      "justification": "Allow driving panes of agents this session started; the hooks ask for every other pane, which may run outside the sandbox."
+      "justification": "Ask before typing into a pane; raw terminal input can answer an agent's approval prompt or reach the shell beneath it, outside the sandbox."
     },
     {
-      "decision": "allow",
+      "decision": "ask",
       "prefix": [
         "herdr",
         "pane",
         "run"
       ],
-      "justification": "Allow driving panes of agents this session started; the hooks ask for every other pane, which may run outside the sandbox."
+      "justification": "Ask before typing into a pane; raw terminal input can answer an agent's approval prompt or reach the shell beneath it, outside the sandbox."
     },
     {
       "decision": "allow",
@@ -2444,13 +2444,13 @@
       "justification": "Allow handing work to a new Herdr session; the hooks limit prompts to agents this session started."
     },
     {
-      "decision": "allow",
+      "decision": "ask",
       "prefix": [
         "herdr",
         "agent",
         "send-keys"
       ],
-      "justification": "Allow driving panes of agents this session started; the hooks ask for every other pane, which may run outside the sandbox."
+      "justification": "Ask before typing into a pane; raw terminal input can answer an agent's approval prompt or reach the shell beneath it, outside the sandbox."
     },
     {
       "decision": "allow",

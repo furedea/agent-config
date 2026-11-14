@@ -155,6 +155,10 @@ WIDENING_AUTHORITY = {
     ("npx",),
     ("pnpm", "dlx"),
     ("bunx",),
+    ("herdr", "pane", "run"),
+    ("herdr", "pane", "send-text"),
+    ("herdr", "pane", "send-keys"),
+    ("herdr", "agent", "send-keys"),
     ("herdr", "workspace", "focus"),
     ("herdr", "workspace", "rename"),
     ("herdr", "workspace", "report-metadata"),
@@ -194,10 +198,6 @@ WITHIN_THE_GRANT = [
     ("pnpm", "add"),
     ("nix", "flake", "update"),
     ("rm",),
-    ("herdr", "pane", "run"),
-    ("herdr", "pane", "send-text"),
-    ("herdr", "pane", "send-keys"),
-    ("herdr", "agent", "send-keys"),
 ]
 
 

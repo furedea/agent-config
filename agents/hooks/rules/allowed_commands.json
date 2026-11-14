@@ -132,13 +132,9 @@
         "^herdr workspace close [^ -][^ ]*$",
         "^herdr worktree remove --workspace [^ -][^ ]*$",
         "^herdr workspace list( |$)",
-        "^herdr workspace get( |$)",
-        "^herdr pane send-text [^ -][^ ]* .+$",
-        "^herdr pane send-keys [^ -][^ ]* .+$",
-        "^herdr pane run [^ -][^ ]* .+$",
-        "^herdr agent send-keys [^ -][^ ]* .+$"
+        "^herdr workspace get( |$)"
       ],
-      "justification": "Allow Herdr reads, handing work to a new Claude or Codex session, and driving the panes of agents this session started; repository trust, pane environments, other agent kinds, and driving any other pane run outside the sandbox and ask."
+      "justification": "Allow Herdr reads and handing work to a new Claude or Codex session; repository trust, pane environments, other agent kinds, and driving existing panes run outside the sandbox and ask."
     },
     {
       "programs": [

@@ -11,6 +11,8 @@ from pathlib import Path
 import automation_paths
 import command_policy
 import hook_decision
+import hook_input
+import session_snapshot
 import shell_syntax
 from hook_decision import Verdict
 
@@ -24,6 +26,10 @@ GIT_DIRECTORY = ".git"
 # assignment before it, so neither a path nor PATH can swap in another program.
 COMPANIONS = frozenset({"echo", "printf", "true", "false", "test", "[", "ls", "cat", "pwd", "stat"})
 WRAPPERS = frozenset({"command", "nohup", "nice", "time", "timeout", "stdbuf"})
+# System temporary roots other programs and users share; only a session's own directory below one counts.
+SHARED_TEMPORARY_ROOTS = frozenset(
+    Path(path).resolve() for path in ("/tmp", "/private/tmp", "/var/tmp", "/private/var/tmp", "/dev/shm")
+)
 
 
 def objection(payload: dict, commands: tuple[shell_syntax.Command, ...]) -> Verdict:
@@ -39,11 +45,20 @@ def objection(payload: dict, commands: tuple[shell_syntax.Command, ...]) -> Verd
             PROGRAM,
         )
     directory = automation_paths.working_directory(payload)
-    roots = automation_paths.writable_roots(directory) if directory is not None else ()
+    roots = _writable_roots(directory) if directory is not None else ()
     reason = next((reason for call in calls if (reason := _call_reason(call, directory, roots))), "")
     if not reason:
         return hook_decision.ALLOW
     return hook_decision.ask(f"Needs review: rm {reason}.\n\nCommand: {preview}", PROGRAM)
+
+
+def _writable_roots(directory: Path) -> tuple[Path, ...]:
+    """The worktree holding the directory, if any, and the session's own temporary directories."""
+    try:
+        worktree: tuple[Path, ...] = (session_snapshot.repository_root(directory),)
+    except session_snapshot.SnapshotError:
+        worktree = ()
+    return worktree + tuple(root for root in hook_input.temporary_roots() if root not in SHARED_TEMPORARY_ROOTS)
 
 
 def _is_safe_companion(item: shell_syntax.Command) -> bool:

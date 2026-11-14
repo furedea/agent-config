@@ -1,6 +1,7 @@
 """rm runs unprompted inside the worktree and the session's temporary directories; elsewhere it asks."""
 
 import os
+import tempfile
 from pathlib import Path
 
 import pytest
@@ -170,3 +171,23 @@ def test_a_quoted_tilde_operand_does_not_stop_the_check(git_project: Path, comma
 
 def test_a_quoted_tilde_names_a_file_in_the_working_directory(git_project: Path) -> None:
     assert judged(git_project, "rm '~/notes'") == "allow"
+
+
+@pytest.mark.parametrize("shared", ["/tmp", "/var/tmp"])
+def test_a_shared_system_temporary_directory_is_not_a_session_root(
+    git_project: Path, monkeypatch: pytest.MonkeyPatch, shared: str
+) -> None:
+    for name in ("TMPDIR", "CLAUDE_TMPDIR", "CLAUDE_CODE_TMPDIR"):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setattr(tempfile, "tempdir", shared)
+    assert judged(git_project, f"rm {shared}/other-app.sock") == "ask"
+
+
+def test_a_session_temporary_directory_below_a_shared_root_stays_writable(
+    git_project: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    session = Path("/tmp/claude-test-session").resolve()
+    monkeypatch.setenv("TMPDIR", str(session))
+    monkeypatch.setattr(tempfile, "tempdir", str(session))
+    assert judged(git_project, f"rm {session}/scratch.txt") == "allow"
+    assert judged(git_project, "rm /tmp/other-app.sock") == "ask"

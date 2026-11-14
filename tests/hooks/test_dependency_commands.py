@@ -42,6 +42,11 @@ def test_dependency_changes_inside_the_project_run(git_project: Path, command: s
         "pnpm add -Dg cowsay",
         "pnpm add cowsay --global-dir /tmp/g",
         "pnpm add cowsay --global-dir=/tmp/g",
+        "pnpm add cowsay --glob",
+        "pnpm add cowsay --global=true",
+        "pnpm add cowsay --config.global=true",
+        "pnpm add cowsay --config.global-dir=/tmp/g",
+        "pnpm --global add cowsay",
         "uv add --dev pytest",
         "uv add pytest --dev",
     ],
@@ -50,3 +55,25 @@ def test_global_installs_and_the_legacy_dev_group_are_denied_wherever_the_flag_s
     git_project: Path, command: str
 ) -> None:
     assert judged(git_project, command, "forbidden") == "deny"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "npm_config_global=true pnpm add cowsay",
+        "env npm_config_global=true pnpm add cowsay",
+        "PNPM_HOME=/tmp/g pnpm add cowsay",
+        "export npm_config_global=true && pnpm add cowsay",
+        "declare -x npm_config_global=true; pnpm add cowsay",
+        "source settings.sh && pnpm add cowsay",
+        "npm_config_dev=true uv add pytest",
+        "UV_PROJECT_ENVIRONMENT=/tmp/env uv add httpx",
+    ],
+)
+def test_a_dependency_change_beside_settings_the_guard_cannot_read_asks(git_project: Path, command: str) -> None:
+    assert judged(git_project, command, "allowed") == "ask"
+
+
+@pytest.mark.parametrize("command", ["pnpm add zod && pnpm test", "uv add httpx && uv run --frozen pytest"])
+def test_a_dependency_change_beside_other_commands_runs(git_project: Path, command: str) -> None:
+    assert judged(git_project, command, "allowed") == "allow"

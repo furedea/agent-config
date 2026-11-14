@@ -14,4 +14,8 @@ invalid:
   - |
     const config: Config = JSON.parse(text);
   - |
+    let config: Config = JSON.parse(text);
+  - |
+    let body: Body = await response.json();
+  - |
     const body = (await response.json()) as Body;

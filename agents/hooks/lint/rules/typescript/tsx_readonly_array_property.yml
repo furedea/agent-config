@@ -13,8 +13,30 @@ rule:
     - inside:
         any:
           - kind: type_annotation
-            inside: { kind: property_signature }
+            inside:
+              kind: property_signature
+              inside:
+                any:
+                  - kind: interface_body
+                  - all:
+                      - kind: object_type
+                      - inside:
+                          any:
+                            - kind: type_alias_declaration
+                            - kind: union_type
+                            - kind: intersection_type
           - kind: union_type
             inside:
               kind: type_annotation
-              inside: { kind: property_signature }
+              inside:
+                kind: property_signature
+                inside:
+                  any:
+                    - kind: interface_body
+                    - all:
+                        - kind: object_type
+                        - inside:
+                            any:
+                              - kind: type_alias_declaration
+                              - kind: union_type
+                              - kind: intersection_type

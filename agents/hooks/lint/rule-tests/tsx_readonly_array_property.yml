@@ -12,6 +12,10 @@ valid:
     }
   - |
     type Load = { readonly result: Promise<string[]> };
+  - |
+    function open(options: { paths: string[] }): void {}
+  - |
+    type Handler = (event: { names: string[] }) => void;
 invalid:
   - |
     type Order = { readonly lines: string[] };

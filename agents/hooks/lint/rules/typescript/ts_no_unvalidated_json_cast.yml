@@ -8,8 +8,17 @@ rule:
     - pattern: JSON.parse($$$ARGS) as $TYPE
     - pattern: (await $RESPONSE.json()) as $TYPE
     - pattern: $RESPONSE.json() as $TYPE
-    - pattern: 'const $NAME: $TYPE = JSON.parse($$$ARGS)'
-    - pattern: 'const $NAME: $TYPE = await $RESPONSE.json()'
+    - all:
+        - kind: variable_declarator
+        - has:
+            field: type
+            kind: type_annotation
+            not: { regex: ':\s*unknown$' }
+        - has:
+            field: value
+            any:
+              - pattern: JSON.parse($$$ARGS)
+              - pattern: await $RESPONSE.json()
 constraints:
   TYPE:
     not:

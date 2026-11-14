@@ -29,16 +29,18 @@ earlier one by prompting more:
 
 ## Classes
 
-| Class | Effect                                 | Examples                                                                                                                                                                                                                            | Decision |
-| ----- | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| A     | Stays inside the environment           | edit, build, test, `rm` inside writable roots, shell functions, loops                                                                                                                                                               | allow    |
-| B     | External, inside the grant, reversible | PR / issue create, edit, comment, review reply, `resolveReviewThread` on a trusted owner's repository; read-only `gh`; Herdr panes the agent created; dependency adds (`uv add`, `cargo add`, `go get`)                             | allow    |
-| C     | Widens authority                       | writes to repositories of owners not in `trusted_owners.json`; non-allowlisted hosts; secrets; sandbox escape; fetched-package execution (`npx`, `uvx`, `bunx`, `pnpm dlx`, `nix run`, `nix shell`, `uv run --with`, `npm install`) | ask      |
-| D     | Promotes or cannot be undone           | `gh pr merge`, `gh release`, `gh repo delete` / `edit`, `gh api -X DELETE`, `git push --force` without lease, `git stash drop` / `clear`, `git remote add` / `set-url`, `kill`, `pkill`, `herdr server`                             | ask      |
+| Class | Effect                                 | Examples                                                                                                                                                                                                                                                                                             | Decision |
+| ----- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| A     | Stays inside the environment           | edit, build, test, `rm` inside writable roots, shell functions, loops                                                                                                                                                                                                                                | allow    |
+| B     | External, inside the grant, reversible | PR / issue create, edit, comment, review reply, `resolveReviewThread` on a trusted owner's repository; read-only `gh`; Herdr panes the agent created; dependency adds that run no package code (`cargo add`, `go get`, `uv add --no-sync`)                                                           | allow    |
+| C     | Widens authority                       | writes to repositories of owners not in `trusted_owners.json`; non-allowlisted hosts; secrets; sandbox escape; fetched-package execution (`npx`, `uvx`, `bunx`, `pnpm dlx`, `nix run`, `nix shell`, `uv run --with`, `npm install`, and a plain `uv add`, whose sync can run an sdist build backend) | ask      |
+| D     | Promotes or cannot be undone           | `gh pr merge`, `gh release create` / `edit` / `upload` / `delete`, `gh repo delete` / `edit`, `gh api -X DELETE`, `git push --force` without lease, `git stash drop` / `clear`, `git remote add` / `set-url`, `kill`, `pkill`, `herdr server`                                                        | ask      |
 
-The deny list is unchanged. An unparsed or run-time construct asks only when an external-effect
-program is involved; for class A programs it is allowed, which replaces the uniform ask of
-ADR-0015 rule 2 (rule 1 stands).
+The deny list is unchanged. Function and loop bodies are judged by the commands inside them, so a
+class D operation hidden in `f() { gh pr merge 1; }; f` still asks. A construct the guard cannot
+read, or a program it cannot determine (`eval`, `$cmd ...`, a shell fed unreadable input), asks
+unless every program it could involve is known to be class A. Only a known class A program with
+a run-time argument is allowed, which narrows the uniform ask of ADR-0015 rule 2 (rule 1 stands).
 
 ## Mapping to #181
 
@@ -52,12 +54,13 @@ agent-independent path in #181 and stay a human decision here.
 
 Settings changes are the owner's decision, so this ADR only recommends them:
 
-- Scope the GitHub App permissions to what class B needs, with no merge, release, or
-    administration rights.
-- Add a main-branch ruleset that requires the owner's approval, so `gh pr merge` cannot promote
-    without the owner even if a prompt is bypassed.
+- Scope the GitHub App permissions to what class B needs, with no `Administration` or `Contents`
+    write beyond it. GitHub has no separate merge permission: the merge endpoint needs the same
+    `Pull requests: write` as class B, so the permission cannot stop a merge.
+- Add a main-branch ruleset that requires the owner's approval. This, or the future Gateway, is the
+    enforcement point that stops `gh pr merge` without the owner even if a prompt is bypassed.
 
-Once these exist, the class D prompts for those operations become a convenience, not the guard.
+Once the ruleset exists, the class D prompt for merging becomes a convenience, not the guard.
 
 ## Measurement target
 

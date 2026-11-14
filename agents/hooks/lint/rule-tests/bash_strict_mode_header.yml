@@ -5,6 +5,12 @@ valid:
     set -euCo pipefail
     echo hi
   - |
+    #!/usr/bin/env bash
+    # comments and function definitions may come before it
+    usage() { :; }
+    set -euCo pipefail
+    echo hi
+  - |
     # sourced library without a shebang
     helper() { :; }
 invalid:
@@ -20,3 +26,11 @@ invalid:
     main() {
       set -euCo pipefail
     }
+  - |
+    #!/usr/bin/env bash
+    echo hi
+    set -euCo pipefail
+  - |
+    #!/usr/bin/env bash
+    cd /tmp
+    set -euCo pipefail

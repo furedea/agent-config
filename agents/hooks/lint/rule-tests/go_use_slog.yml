@@ -21,6 +21,12 @@ invalid:
     import "log"
 
     func run() {
+        log.Output(1, "start")
+    }
+  - |
+    import "log"
+
+    func run() {
         log.Printf("start %d", 80)
     }
   - |

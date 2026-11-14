@@ -1,8 +1,8 @@
 id: go_mutex_field_documented
 language: go
 severity: warning
-message: "Document the fields the mutex guards in a comment directly above it."
-note: "Whether the mutex sits directly above the fields it guards is not judged."
+message: "Document the fields the mutex guards in a comment above it."
+note: "Only the presence of a preceding comment is judged: its content, a trailing comment on the previous field (which counts as a comment), and whether the mutex sits directly above the fields it guards are not."
 rule:
   kind: field_declaration
   has:

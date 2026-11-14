@@ -5,7 +5,7 @@ message: "A library package must not configure the global logger; accept a `*slo
 note: "`package main` is skipped, because the program owns the global logger. Only a file that imports `log` or `log/slog` is judged."
 rule:
   kind: call_expression
-  regex: ^(slog\.SetDefault|log\.(SetOutput|SetFlags|SetPrefix))\(
+  regex: ^(slog\.(SetDefault|SetLogLoggerLevel)|log\.(Default\(\)\.)?(SetOutput|SetFlags|SetPrefix))\(
   all:
     - inside:
         kind: source_file

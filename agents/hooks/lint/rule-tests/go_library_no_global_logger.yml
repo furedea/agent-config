@@ -24,6 +24,22 @@ invalid:
   - |
     package store
 
+    import "log"
+
+    func New(w io.Writer) {
+        log.Default().SetOutput(w)
+    }
+  - |
+    package store
+
+    import "log/slog"
+
+    func New() {
+        slog.SetLogLoggerLevel(slog.LevelDebug)
+    }
+  - |
+    package store
+
     import "log/slog"
 
     func init() {

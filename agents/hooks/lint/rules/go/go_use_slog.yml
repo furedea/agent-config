@@ -7,7 +7,7 @@ ignores:
   - "**/*_test.go"
 rule:
   kind: call_expression
-  regex: ^log\.(Print|Printf|Println|Fatal|Fatalf|Fatalln|Panic|Panicf|Panicln)\(
+  regex: ^log\.(Print|Printf|Println|Fatal|Fatalf|Fatalln|Panic|Panicf|Panicln|Output)\(
   inside:
     kind: source_file
     has:

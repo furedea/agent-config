@@ -5,6 +5,7 @@
 - Put module-level constants before types when they configure the following code.
 - Prefer `type` aliases and enums before structs that use them.
 - Put public structs, enums, and traits before their implementations.
+- Put public functions before private helper functions.
 - Keep related types and their `impl` blocks close together.
 
 ## Structs
@@ -66,6 +67,7 @@ pub enum Provider {
 - Prefer borrowing in parameters: `&str`, `&Path`, `&[T]`.
 - Return owned values when the function creates or transforms ownership.
 - Use associated functions for pure construction.
+- Keep I/O in module-level functions or dedicated service structs, not inside Value Object constructors.
 - Prefer `Result<T, E>` for expected failures.
 - Prefer early returns for guard clauses.
 - Avoid `async` unless the project has real concurrency or nonblocking I/O requirements.

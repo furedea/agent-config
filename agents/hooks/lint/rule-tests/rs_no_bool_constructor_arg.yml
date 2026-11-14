@@ -12,6 +12,10 @@ valid:
     impl Cli {
         pub fn new(name: String) -> Self { Self { name } }
     }
+  - |
+    impl Builder {
+        pub fn with_color(mut self, color: bool) -> Self { self.color = color; self }
+    }
 invalid:
   - |
     impl Cli {

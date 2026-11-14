@@ -8,6 +8,14 @@ valid:
     fn budget() -> u32 { 1 }
   - |
     fn target_name() -> &'static str { "x" }
+  - |
+    impl Registry {
+        pub fn get_mut(&mut self, key: &str) -> Option<&mut Item> { self.map.get_mut(key) }
+    }
+  - |
+    impl Index for Registry {
+        fn get_item(&self) -> u8 { 0 }
+    }
 invalid:
   - |
     impl Config {

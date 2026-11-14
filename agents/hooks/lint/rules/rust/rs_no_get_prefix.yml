@@ -3,8 +3,19 @@ language: rust
 severity: warning
 message: "Avoid a Java-style `get_` prefix; name the accessor after the value (`len`, `status`) or use `as_*` / `into_*`."
 rule:
-  kind: function_item
-  has:
-    field: name
-    kind: identifier
-    regex: ^get_.
+  all:
+    - kind: function_item
+    - has:
+        field: name
+        kind: identifier
+        regex: ^get_.
+        not:
+          regex: ^get_(mut|unchecked|unchecked_mut)$
+    # A trait implementation cannot rename the method the trait fixes.
+    - not:
+        inside:
+          kind: impl_item
+          stopBy: end
+          has:
+            field: trait
+            regex: .

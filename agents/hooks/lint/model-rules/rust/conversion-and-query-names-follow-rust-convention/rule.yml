@@ -20,7 +20,7 @@ rule:
         - has:
             field: name
             kind: identifier
-            regex: ^(as|into|to|try|from|parse)_
+            regex: ^(parse|(as|into|to|try|from|parse)_.*)$
 ask: >-
   The name of this conversion or boolean query does not follow Rust's naming convention for what the function does.
 criteria:

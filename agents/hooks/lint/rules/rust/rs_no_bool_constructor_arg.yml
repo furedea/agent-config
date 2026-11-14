@@ -12,6 +12,9 @@ rule:
     - has:
         field: parameters
         kind: parameters
+        not:
+          has:
+            kind: self_parameter
         has:
           kind: parameter
           has:

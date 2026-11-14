@@ -1,6 +1,9 @@
 id: py_frozen_config_complete
 valid:
   - |
+    class Money(FrozenBase[int]):
+        model_config = ConfigDict(frozen=True, strict=True)
+  - |
     class Money(FrozenModel):
         model_config = ConfigDict(frozen=True, strict=True)
   - |

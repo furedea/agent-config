@@ -25,6 +25,7 @@ rule:
               any:
                 - kind: identifier
                 - kind: attribute
+                - kind: subscript
               not:
                 regex: ^(pydantic\.)?BaseModel$
     - any:

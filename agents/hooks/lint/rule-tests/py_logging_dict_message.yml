@@ -1,6 +1,8 @@
 id: py_logging_dict_message
 valid:
   - |
+    logger.log(logging.INFO, {"action": "save"})
+  - |
     logger.info(payload)
   - |
     logger.info(msg={"action": "save"})
@@ -13,6 +15,8 @@ valid:
   - |
     print("saving")
 invalid:
+  - |
+    logger.log(logging.INFO, "saving")
   - |
     request.logger.info("saving")
   - |

@@ -10,6 +10,10 @@ valid:
     result = asyncio.run(main())
 invalid:
   - |
+    @mark.asyncio
+    async def test_something() -> None:
+        assert await work() == 1
+  - |
     @pytest.mark.asyncio
     async def test_something() -> None:
         assert await work() == 1

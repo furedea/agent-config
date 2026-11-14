@@ -209,6 +209,13 @@ def _classify_write(words: tuple[Word, ...], spec: CommandSpec, single_call: boo
     _check_sent_values(scan.values_of(spec.values | spec.texts) + scan.positionals, single_call)
     targets = scan.values_of(REPOSITORY_OPTIONS | spec.repositories)
     targets += tuple(word for word in scan.positionals if _is_url(word.value))
+    # A related issue, such as a parent or blocker, named by URL is another repository the write changes.
+    targets += tuple(
+        Word(part, part, word.dynamic)
+        for word in scan.values_of(spec.values)
+        for part in (item.strip() for item in word.value.split(","))
+        if _is_url(part) or (word.dynamic and _may_name_url(word))
+    )
     repositories = tuple(None if word.dynamic else repository(word.value) for word in targets)
     data_options = spec.texts | spec.files
     for group in spec.required:

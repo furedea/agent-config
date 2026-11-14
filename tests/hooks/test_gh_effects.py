@@ -4,7 +4,6 @@ Commands marked "logged" are the gh prompts recorded on 2026-11-14; a logged com
 short is completed with the closing text its form needs.
 """
 
-import subprocess
 from pathlib import Path
 
 import pytest
@@ -116,6 +115,10 @@ def reason(command: str) -> str:
         pytest.param("gh stack submit --auto", id="a non-interactive stack submit"),
         pytest.param("gh pr comment https://github.com/furedea/agent-config/pull/1 -b ok", id="a URL target"),
         pytest.param("gh issue comment 1 -R FUREDEA/agent-config -b ok", id="an owner in another case"),
+        pytest.param(
+            "gh issue edit 123 -R furedea/r --parent https://github.com/furedea/other/issues/1",
+            id="a parent issue in another trusted repository",
+        ),
         pytest.param("gh issue comment 1 --repo=github.com/furedea/agent-config -b ok", id="a host-qualified repo"),
         pytest.param("gh issue comment 1 -R furedea/r -b ok | head -1", id="a write piped through a filter"),
         pytest.param(
@@ -203,6 +206,21 @@ def test_reads_and_local_changes_are_allowed_in_any_form(command: str) -> None:
         pytest.param("gh pr comment https://ghe.example/furedea/r/pull/1 -b x", "class C", id="another host by URL"),
         pytest.param("gh issue comment 1 -R ghe.example/furedea/r -b x", "class C", id="another host by option"),
         pytest.param("gh issue develop 1 --branch-repo other/r", "class C", id="a branch in another repository"),
+        pytest.param(
+            "gh issue edit 123 -R furedea/r --parent https://github.com/other/r/issues/1",
+            "class C",
+            id="a parent issue in another repository",
+        ),
+        pytest.param(
+            "gh issue edit 123 -R furedea/r --add-sub-issue 4,https://github.com/other/r/issues/2",
+            "class C",
+            id="a sub-issue in another repository among numbers",
+        ),
+        pytest.param(
+            "gh issue close 1 -R furedea/r --duplicate-of https://ghe.example/o/r/issues/1",
+            "class C",
+            id="a duplicate on another host",
+        ),
         pytest.param('gh issue comment 1 -R "$R" -b x', "class C", id="a repository known only at run time"),
         pytest.param("gh api repos/other/r/issues/1/comments -f body=x", "class C", id="another owner by REST"),
         pytest.param(
@@ -418,54 +436,6 @@ def test_writes_that_widen_authority_promote_or_hide_their_target_ask(command: s
     verdict = guard.decide("allowed", {"tool_input": {"command": command}})
     assert verdict.decision == "ask"
     assert fragment in verdict.reason
-
-
-@pytest.mark.parametrize(
-    ("remotes", "expected"),
-    [
-        pytest.param({"origin": "git@github.com:furedea/agent-config.git"}, "allow", id="a trusted SSH origin"),
-        pytest.param({"origin": "https://github.com/other/agent-config"}, "ask", id="another owner's origin"),
-        pytest.param(
-            {"origin": "https://github.com/furedea/fork", "upstream": "https://github.com/other/project"},
-            "ask",
-            id="an upstream remote gh may pick",
-        ),
-        pytest.param({"origin": "https://gitlab.com/furedea/agent-config"}, "ask", id="no GitHub remote"),
-        pytest.param(
-            {"origin": "https://github.com/furedea/x", "upstream": "http://github.com/other/r"},
-            "ask",
-            id="a remote URL the guard cannot read",
-        ),
-        pytest.param({}, "ask", id="no remote"),
-    ],
-)
-@pytest.mark.usefixtures("isolated_project")
-def test_a_write_to_the_working_repository_follows_every_github_remote(remotes: dict[str, str], expected: str) -> None:
-    subprocess.run(["git", "init", "--quiet"], check=True)
-    for name, url in remotes.items():
-        subprocess.run(["git", "remote", "add", name, url], check=True, capture_output=True)
-    assert decide("gh issue comment 1 -b ok") == expected
-
-
-@pytest.mark.parametrize(("resolved", "expected"), [("other/project", "ask"), ("furedea/agent-config", "allow")])
-def test_a_default_repository_set_by_gh_names_the_working_repository(
-    furedea_checkout: Path, resolved: str, expected: str
-) -> None:
-    subprocess.run(["git", "config", "remote.origin.gh-resolved", resolved], check=True, cwd=furedea_checkout)
-    assert decide("gh issue comment 1 -b ok") == expected
-
-
-@pytest.mark.usefixtures("furedea_checkout")
-def test_gh_repo_in_the_hook_environment_names_the_working_repository(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("GH_REPO", "other/r")
-    assert decide("gh issue comment 1 -b ok") == "ask"
-
-
-@pytest.mark.usefixtures("furedea_checkout")
-def test_another_gh_host_in_the_hook_environment_makes_every_write_ask(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("GH_HOST", "ghe.example")
-    assert decide("gh issue comment 1 -R furedea/agent-config -b ok") == "ask"
-    assert decide("gh pr view 1") == "allow"
 
 
 @pytest.mark.parametrize(

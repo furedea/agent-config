@@ -2,13 +2,15 @@ id: go_iota_enum_typed
 language: go
 severity: warning
 message: "Declare the `iota` constant with its own type, e.g. `StatePending State = iota`."
-note: "Whether the type has a `String()` method is not judged. Expressions such as `1 << iota` and the blank `_ = iota` are skipped."
+note: "Whether the type has a `String()` method is not judged. A shift such as `1 << iota` and the blank `_ = iota` are skipped."
 rule:
   kind: const_spec
   has:
     field: value
     kind: expression_list
-    regex: ^iota$
+    regex: \biota\b
+    not:
+      regex: <<
   not:
     any:
       - has:

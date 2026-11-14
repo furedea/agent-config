@@ -2,6 +2,7 @@
 
 - Return `error` as the last result.
 - Wrap with the operation and subject: `fmt.Errorf("read config %s: %w", path, err)`.
+- Compare with `errors.Is` and `errors.As`, never `==`; `errorlint` enforces this.
 - Define a sentinel error (`ErrNotFound`) or a custom error type only when callers branch on it.
 - Do not log and return the same error; handle it at one level, usually the outermost.
 - Do not ignore errors with `_`; handle them or explain why they are safe to drop.

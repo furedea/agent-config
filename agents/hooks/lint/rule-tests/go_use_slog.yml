@@ -22,6 +22,14 @@ valid:
     func run(log Logger) {
         log.Printf("start")
     }
+  - |
+    import "log"
+
+    func init() { log.SetFlags(0) }
+
+    func write(log Logger) {
+        log.Printf("start")
+    }
 invalid:
   - |
     import "log"

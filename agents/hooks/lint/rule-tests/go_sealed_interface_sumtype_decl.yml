@@ -11,6 +11,9 @@ valid:
     type Policy interface{ isAllowed(u User) bool }
 invalid:
   - |
+    // sumtype:decl
+    type Payment interface{ isPayment() }
+  - |
     type Payment interface{ isPayment() }
   - |
     // Payment is a sum type.

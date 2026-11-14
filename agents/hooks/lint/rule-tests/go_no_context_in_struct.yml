@@ -5,13 +5,25 @@ valid:
         addr string
     }
   - |
+    import "context"
+
     func run(ctx context.Context) {}
+  - |
+    import context "example.com/webctx"
+
+    type Server struct {
+        ctx context.Context
+    }
 invalid:
   - |
+    import "context"
+
     type Server struct {
         ctx context.Context
     }
   - |
+    import "context"
+
     type Server struct {
         addr string
         context.Context

@@ -16,4 +16,4 @@ rule:
   not:
     follows:
       kind: comment
-      regex: ^//\s*sumtype:decl\b
+      regex: ^//sumtype:decl\b

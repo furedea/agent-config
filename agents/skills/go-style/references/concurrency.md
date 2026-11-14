@@ -2,7 +2,7 @@
 
 - Pass `context.Context` as the first parameter.
 - Give every goroutine a defined owner and a termination path (context cancellation, closed
-    channel, or `WaitGroup`). Do not start a goroutine whose end nobody waits for.
+  channel, or `WaitGroup`). Do not start a goroutine whose end nobody waits for.
 - Use `errgroup` for parallel work that returns errors; it propagates the first error and cancels the context.
 - The sender closes a channel, never the receiver; do not close a channel from several senders.
 - Place a `sync.Mutex` directly above the fields it guards and document the guarded set.

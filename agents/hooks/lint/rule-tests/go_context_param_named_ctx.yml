@@ -1,15 +1,36 @@
 id: go_context_param_named_ctx
 valid:
   - |
+    import "context"
+
     func fetch(ctx context.Context, url string) error { return nil }
   - |
+    import "context"
+
     func fetch(_ context.Context) error { return nil }
   - |
+    import "github.com/labstack/echo/v4"
+
     func fetch(c echo.Context) error { return nil }
+  - |
+    import context "example.com/webctx"
+
+    func fetch(c context.Context) error { return nil }
+  - |
+    func fetch(c context.Context) error { return nil }
 invalid:
   - |
+    import "context"
+
     func fetch(c context.Context, url string) error { return nil }
   - |
+    import "context"
+
     func fetch(context context.Context) error { return nil }
   - |
+    import (
+        "context"
+        "fmt"
+    )
+
     func (s *Server) fetch(parent context.Context) error { return nil }

@@ -2,22 +2,38 @@ id: go_use_slog
 language: go
 severity: warning
 message: "Log with `log/slog` instead of the standard `log` package."
-note: "Test files are skipped. A `*log.Logger` held in a variable or built by `log.New` is not followed; a file that imports `log` under another name is skipped. Only a file that imports the standard `log` package is judged."
+note: "A function whose parameter is named `log` is skipped. Test files are skipped. A `*log.Logger` held in a variable or built by `log.New` is not followed; a file that imports `log` under another name is skipped. Only a file that imports the standard `log` package is judged."
 ignores:
   - "**/*_test.go"
 rule:
   kind: call_expression
   regex: ^log\.(Default\(\)\.)?(Print|Printf|Println|Fatal|Fatalf|Fatalln|Panic|Panicf|Panicln|Output)\(
-  inside:
-    kind: source_file
-    has:
-      kind: import_spec
-      not:
+  all:
+    - inside:
+        kind: source_file
         has:
-          field: name
-          regex: .+
-      has:
-        field: path
-        regex: ^"log"$
-      stopBy: end
-    stopBy: end
+          kind: import_spec
+          not:
+            has:
+              field: name
+              regex: .+
+          has:
+            field: path
+            regex: ^"log"$
+          stopBy: end
+        stopBy: end
+    - not:
+        inside:
+          any:
+            - kind: function_declaration
+            - kind: method_declaration
+            - kind: func_literal
+          has:
+            field: parameters
+            has:
+              kind: parameter_declaration
+              has:
+                field: name
+                regex: ^log$
+              stopBy: end
+          stopBy: end

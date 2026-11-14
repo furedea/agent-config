@@ -176,7 +176,7 @@ def _static_script(word: dict, data: bytes) -> str:
 
 def _computed_input() -> UnsupportedSyntaxError:
     return UnsupportedSyntaxError(
-        "a shell reading a computed script from its input requires explicit review", "wrapper"
+        "running a shell on a script read from computed or inherited input requires explicit review", "wrapper"
     )
 
 

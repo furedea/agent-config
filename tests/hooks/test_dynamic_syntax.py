@@ -349,6 +349,8 @@ def test_a_shell_in_a_function_body_trusts_no_input_from_outside_the_body(kind: 
         'f(){ find . "$@"; }; f -delete; f(){ :; }',
         "f(){ find . \"$@\"; }; 'f' -delete",
         "f(){ id=$1; find . $id; }; f -delete",
+        "f(){ find . $1; }; f 'x -delete'",
+        'f(){ id=$1; find . $id; }; f "x -delete"',
         'f(){ local id="$1"; find . "$id"; }; f -delete',
     ],
 )

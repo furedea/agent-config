@@ -1,6 +1,7 @@
 """Respell function body calls with the words of each call, so a caller cannot hand a body a denied option."""
 
 import re
+import shlex
 from dataclasses import dataclass
 
 from shell_words import PARAMETER_MODIFIERS, UnsupportedSyntaxError, literal_word, nodes, source_text
@@ -35,7 +36,7 @@ def respelled_calls(records: tuple[dict, ...], data: bytes) -> list[str]:
     respelled = []
     for call in (node for node in records if node.get("Type") == "CallExpr" and node.get("Args")):
         name, dynamic = literal_word(call["Args"][0], data)
-        words = [source_text(word, data) for word in call["Args"][1:]]
+        words = call["Args"][1:]
         for body in [] if dynamic else bodies.get(name, []):
             copies = _copies(body)
             shifts = range(len(words) + 1) if _calls(body, data, "shift") else range(1)
@@ -105,7 +106,7 @@ class _Respelling:
     Inside quotes, the quotes close around the words.
     """
 
-    words: list[str]
+    words: list[dict]
     data: bytes
     copies: dict[str, str]
 
@@ -119,11 +120,17 @@ class _Respelling:
 
     def _part(self, part: dict, *, quoted: bool) -> str:
         if self.reads(part, self.copies):
-            name, words = self.copies.get(part["Param"]["Value"], part["Param"]["Value"]), self.words
-            value = (
-                " ".join(words) if name in {"@", "*"} else (words[int(name) - 1] if int(name) <= len(words) else "''")
-            )
+            name = self.copies.get(part["Param"]["Value"], part["Param"]["Value"])
+            words = self.words if name in {"@", "*"} else self.words[int(name) - 1 : int(name)]
+            value = " ".join(self._spelled(word, quoted=quoted) for word in words) or "''"
             return f'"{value}"' if quoted else value
         if part.get("Type") == "DblQuoted" and not part.get("Dollar"):
             return '"' + "".join(self._part(item, quoted=True) for item in part.get("Parts", [])) + '"'
         return source_text(part, self.data)
+
+    def _spelled(self, word: dict, *, quoted: bool) -> str:
+        """The caller's word as written, or, where the expansion is unquoted, each field it splits into, requoted."""
+        value, dynamic = literal_word(word, self.data)
+        if quoted or dynamic:
+            return source_text(word, self.data)
+        return " ".join(map(shlex.quote, value.split())) or "''"

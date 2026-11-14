@@ -29,7 +29,9 @@ def scripts(arguments: tuple[str, ...], dynamic: tuple[bool, ...]) -> list[str] 
         UnsupportedSyntaxError: The text is computed at run time, so no rule can judge it.
     """
     if names_code_parameter(arguments, dynamic):
-        raise UnsupportedSyntaxError("a call that may define an alias, a function, or a command path needs review")
+        raise UnsupportedSyntaxError(
+            "defining an alias, a function, or a command path in the command requires explicit review", "wrapper"
+        )
     reader = READERS.get(arguments[0])
     return None if reader is None else reader(arguments, dynamic)
 

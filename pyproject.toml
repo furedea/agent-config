@@ -36,6 +36,7 @@ known_first_party = [
   "gh_invocation",
   "gh_options",
   "gh_policy",
+  "gh_repository",
   "graphql_document",
   "powershell_options",
   "primary_workspaces",

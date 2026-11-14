@@ -23,9 +23,16 @@ from gh_options import (
     has_parameter,
     stays_one_word,
 )
+from gh_repository import (
+    GITHUB_HOST,
+    REPOSITORY_OPTIONS,
+    Repository,
+    is_url,
+    names_repository_option,
+    repository,
+    repository_words,
+)
 
-GITHUB_HOST = "github.com"
-REPOSITORY_OPTIONS = frozenset({"-R", "--repo"})
 METHOD_OPTIONS = frozenset({"-X", "--method"})
 HEADER_OPTIONS = frozenset({"-H", "--header"})
 TYPED_FIELD_OPTIONS = frozenset({"-F", "--field"})
@@ -39,26 +46,13 @@ READ_METHODS = frozenset({"GET", "HEAD"})
 GRAPHQL_PATHS = frozenset({"graphql", "api/graphql"})
 METHOD_OVERRIDE = re.compile(r"\s*x-(?:http-)?method(?:-override)?\s*:", re.IGNORECASE)
 FIELD_KEY = re.compile(r"[A-Za-z_][A-Za-z0-9_]*=")
-REPOSITORY_SPEC = re.compile(
-    r"(?:(?P<host>[A-Za-z0-9.-]+\.[A-Za-z]+)/)?(?P<owner>[A-Za-z0-9-]+)/(?P<name>[A-Za-z0-9_.-]+)"
-)
 DOT_SEGMENT = re.compile(r"(?:^|/)(?:\.|%2e){1,2}(?:/|$)", re.IGNORECASE)
-# A HOST/OWNER/REPO argument, as gh repo view takes one: a dotted host name, then owner and name.
-HOST_REPOSITORY = re.compile(r"[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]+/[^/]+/[^/]+")
 ISSUE_NUMBER = re.compile(r"#?[0-9]+")
 STDIN_PATHS = re.compile(r"/dev/stdin|/dev/fd/0|/proc/self/fd/0")
 # A run-time endpoint that starts with a literal path segment and slash, which no expansion can turn into a URL.
 LITERAL_PATH_START = re.compile(r"[\"']?/?[A-Za-z0-9_.-]+/")
 OWNER_PREFIX = re.compile(r"[\"']?[A-Za-z0-9-]+/")
 REPOSITORY_PATH = re.compile(r"repos/(?P<owner>[^/]+)/(?P<name>[^/]+)")
-
-
-@dataclass(frozen=True, slots=True)
-class Repository:
-    """A github.com repository a call names, by owner and name."""
-
-    owner: str
-    name: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -158,7 +152,7 @@ def _classify_words(words: tuple[Word, ...], catalog: Catalog, single_call: bool
         _check_read_repositories(words[2:])
         if spec.operation == "repo.view":
             _check_repository_arguments(words[2:])
-        return GhCall((spec.operation,), spec.effect, reads_working_repository=not _repository_words(words[2:]))
+        return GhCall((spec.operation,), spec.effect, reads_working_repository=not names_repository_option(words[2:]))
     if spec.effect is Effect.LOCAL:
         return _classify_local(words[2:], spec)
     return _classify_write(words[2:], spec, single_call)
@@ -175,7 +169,7 @@ def _check_read_repositories(words: tuple[Word, ...]) -> None:
             raise UnclassifiableError("a read takes an option value, URL, or computed word known only at run time")
         if word.dynamic and "/" in word.source and not OWNER_PREFIX.match(word.source):
             raise UnclassifiableError("a read takes a path whose host part is known only at run time")
-    for word in _repository_words(words):
+    for word in repository_words(words):
         if word.dynamic and not OWNER_PREFIX.match(word.source):
             raise UnclassifiableError("a read names its repository only at run time")
         if not word.dynamic and repository(word.value) is None:
@@ -193,25 +187,6 @@ def _check_repository_arguments(words: tuple[Word, ...]) -> None:
             raise UnclassifiableError("a repository argument names another host than github.com")
 
 
-def _repository_words(words: tuple[Word, ...]) -> list[Word]:
-    """The repository words of a call: -R and --repo values in any spelling, URLs, and HOST/OWNER/REPO arguments."""
-    found: list[Word] = []
-    for index, word in enumerate(words):
-        if word.dynamic:
-            continue
-        value = word.value
-        if value == "--repo" or (value.startswith("-") and not value.startswith("--") and value.endswith("R")):
-            found += words[index + 1 : index + 2]
-        elif value.startswith("--repo="):
-            found.append(Word(value.removeprefix("--repo="), value.removeprefix("--repo=")))
-        elif value.startswith("-") and not value.startswith("--") and "R" in value:
-            rest = value[value.index("R") + 1 :].removeprefix("=")
-            found.append(Word(rest, rest))
-        elif _is_url(value) or HOST_REPOSITORY.match(value):
-            found.append(word)
-    return found
-
-
 def _classify_local(words: tuple[Word, ...], spec: CommandSpec) -> GhCall:
     """A change to the local checkout, whose every option must be listed; `--` would pass options to git."""
     if any(word.value == "--" for word in words):
@@ -222,7 +197,7 @@ def _classify_local(words: tuple[Word, ...], spec: CommandSpec) -> GhCall:
     scan = gh_options.scan(words, OptionTable(spec.value_options, spec.flags))
     if spec.operation == "repo.clone":
         _check_repository_arguments(scan.positionals[:1])
-    return GhCall((spec.operation,), spec.effect, reads_working_repository=not _repository_words(words))
+    return GhCall((spec.operation,), spec.effect, reads_working_repository=not names_repository_option(words))
 
 
 def _classify_write(words: tuple[Word, ...], spec: CommandSpec, single_call: bool) -> GhCall:
@@ -231,7 +206,7 @@ def _classify_write(words: tuple[Word, ...], spec: CommandSpec, single_call: boo
     _check_write_words(scan)
     _check_sent_values(scan.values_of(spec.values | spec.texts) + scan.positionals, single_call)
     targets = scan.values_of(REPOSITORY_OPTIONS)
-    targets += tuple(word for word in scan.positionals if _is_url(word.value))
+    targets += tuple(word for word in scan.positionals if is_url(word.value))
     repositories = tuple(None if word.dynamic else repository(word.value) for word in targets)
     # Linked issues and --branch-repo name further repositories the write changes, never its own target.
     linked = scan.values_of(spec.repositories) + _reference_targets(scan.values_of(spec.references))
@@ -270,7 +245,7 @@ def _reference_targets(words: tuple[Word, ...]) -> tuple[Word, ...]:
     """
     dynamic = tuple(word for word in words if word.dynamic)
     parts = (part.strip() for word in words if not word.dynamic for part in word.value.split(","))
-    names = (part if _is_url(part) else part.partition("#")[0] for part in parts if not ISSUE_NUMBER.fullmatch(part))
+    names = (part if is_url(part) else part.partition("#")[0] for part in parts if not ISSUE_NUMBER.fullmatch(part))
     return dynamic + tuple(Word(name, name) for name in names)
 
 
@@ -478,21 +453,3 @@ def _document(request: ApiRequest) -> str:
     if option in TYPED_FIELD_OPTIONS and text.startswith("@"):
         raise UnclassifiableError("a GraphQL document read from a file may change before gh reads it")
     return text
-
-
-def repository(spec: str) -> Repository | None:
-    """The github.com repository an OWNER/REPO, HOST/OWNER/REPO, or URL names; None for any other host."""
-    if _is_url(spec):
-        parts = urlsplit(spec if "://" in spec else "https://" + spec)
-        if parts.hostname != GITHUB_HOST:
-            return None
-        spec = "/".join(parts.path.strip("/").split("/")[:2])
-    match = REPOSITORY_SPEC.fullmatch(spec)
-    if match is None or (match["host"] or GITHUB_HOST).lower() != GITHUB_HOST:
-        return None
-    return Repository(match["owner"], match["name"].removesuffix(".git"))
-
-
-def _is_url(value: str) -> bool:
-    lowered = value.lower()
-    return "://" in value or lowered.startswith((GITHUB_HOST + "/", "git@", "ssh:"))

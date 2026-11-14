@@ -76,6 +76,19 @@ def decide(command: str) -> str:
             'gh issue comment 1 -R furedea/r -b "$(cat)"', "does more than print", id="a body typed into cat"
         ),
         pytest.param(
+            "gh issue comment 1 -R furedea/r -b \"$(printf '\\147\\150\\160\\137x')\"",
+            "does more than print",
+            id="a body decoded by printf escapes",
+        ),
+        pytest.param(
+            'gh issue comment 1 -R furedea/r -b "$(echo -e x)"', "does more than print", id="a body from echo -e"
+        ),
+        pytest.param(
+            "gh issue comment 1 -R furedea/r -F - <<EOF\nghp_AAA\\\nBBB\nEOF",
+            "expands",
+            id="an unquoted heredoc joining lines with a backslash",
+        ),
+        pytest.param(
             "gh issue comment 1 -R furedea/r -F - <<'EOF'<notes.txt\nx\nEOF",
             "cannot see",
             id="a file redirect joined to a quoted heredoc",

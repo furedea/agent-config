@@ -15,13 +15,15 @@ import command_policy
 import gh_catalog
 import gh_invocation
 import gh_options
+import gh_repository
 import hook_decision
 import secret_content
 import shell_inspection
 import shell_syntax
 import trusted_owners
 from gh_catalog import Catalog, Effect, TargetClass
-from gh_invocation import GhCall, Repository, Unclassified
+from gh_invocation import GhCall, Unclassified
+from gh_repository import Repository
 from hook_decision import Verdict
 
 PROGRAM = "gh"
@@ -171,7 +173,8 @@ def _only_prints(command: shell_syntax.Command) -> bool:
     if any(not QUOTED_HEREDOC.match(redirect) for redirect in input_redirects(command)):
         return False
     if name != "cat":
-        return True
+        # printf and echo -e turn escapes such as \147 into text the scan of the source never sees.
+        return not any("\\" in argument or "%b" in argument or argument == "-e" for argument in command.arguments)
     redirects = input_redirects(command)
     return len(command.arguments) == 1 and len(redirects) == 1 and bool(QUOTED_HEREDOC.match(redirects[0]))
 
@@ -204,7 +207,7 @@ def verdict(candidate: shell_syntax.Command, line: CommandLine, rules: GhRules) 
 def _judged_call(candidate: shell_syntax.Command, line: CommandLine, rules: GhRules) -> GhCall | str:
     """The classified call with its standard input resolved, or why the guard cannot judge it."""
     configured_repository = os.environ.get("GH_REPO")
-    foreign_repository = configured_repository and gh_invocation.repository(configured_repository) is None
+    foreign_repository = configured_repository and gh_repository.repository(configured_repository) is None
     if os.environ.get("GH_HOST", GITHUB_HOST).lower() != GITHUB_HOST or foreign_repository:
         return "the environment sends gh to another host than github.com"
     if line.hides_code:
@@ -304,7 +307,7 @@ def _with_stdin(call: GhCall, candidate: shell_syntax.Command) -> GhCall | str:
         return "reads its body from input the guard cannot see" if redirects else ""
     redirect = redirects[0].removeprefix("0")
     if redirect.startswith("<<"):
-        expands = not QUOTED_HEREDOC.match(redirect) and re.search(r"[$`]", candidate.trailer)
+        expands = not QUOTED_HEREDOC.match(redirect) and re.search(r"[$`\\]", candidate.trailer)
         return "sends input that expands at run time" if expands else call
     if match := INPUT_FILE.match(redirect):
         return _with_stdin_file(call, match[1])
@@ -368,13 +371,13 @@ def _working_repositories() -> tuple[Repository, ...]:
     may still map it to one through an ssh alias or a URL rewrite the guard does not follow.
     """
     if configured := os.environ.get("GH_REPO"):
-        repository = gh_invocation.repository(configured)
+        repository = gh_repository.repository(configured)
         return (repository,) if repository else ()
     urls = _remote_urls()
     if urls is None:
         return ()
     origins = [trusted_owners.parse_origin(url) for url in urls]
-    resolved = [gh_invocation.repository(value) for value in _resolved_defaults()]
+    resolved = [gh_repository.repository(value) for value in _resolved_defaults()]
     if None in origins or None in resolved:
         return ()
     return (*(Repository(owner, name) for owner, name in filter(None, origins)), *filter(None, resolved))
@@ -386,7 +389,7 @@ def _remotes_on_github() -> bool:
     if urls is None:
         return False
     origins_known = all(trusted_owners.parse_origin(url) for url in urls)
-    return origins_known and all(gh_invocation.repository(value) for value in _resolved_defaults())
+    return origins_known and all(gh_repository.repository(value) for value in _resolved_defaults())
 
 
 def _remote_urls() -> set[str] | None:

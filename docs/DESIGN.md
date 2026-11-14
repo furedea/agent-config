@@ -217,8 +217,9 @@ Without the items, the hook reports `Model rules skipped` at every Stop and does
     prompts in Claude Code's auto mode. Dependency changes run unprompted.
 - `rm` runs unprompted for files inside the worktree and the session's temporary directories. The
     command guard asks for Git metadata, any other path (resolved through links in its parent
-    directories), a path known only at run time, xargs operands, recursive forms the deny prefixes do not list, and rm beside a command
-    that can change the working directory or create links (`cd`, `ln`, `mkdir`, `env -C`, ...).
+    directories), a path known only at run time, xargs operands, recursive forms the deny prefixes
+    do not list, and rm beside any program other than a listed read-only one (`ls`, `cat`, `echo`,
+    ...), since it may change the working directory or create a link first.
 - Typing into a Herdr pane (`pane send-text`, `pane send-keys`, `pane run`, `agent send-keys`)
     runs unprompted only while the target is the pane of an agent this session started and that
     agent still runs there; any other pane asks.

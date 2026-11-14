@@ -25,7 +25,9 @@ def judged(project: Path | None, command: str, kind: str = "allowed") -> str:
         "rm -- -odd-name",
         "rm ./build/out.o",
         "rm -d empty-directory",
-        "git status && rm scratch.txt",
+        "ls -la && rm scratch.txt",
+        "rm scratch.txt; echo done",
+        "nohup rm scratch.txt",
         "/bin/rm scratch.txt",
         "command rm scratch.txt",
     ],
@@ -104,6 +106,8 @@ def test_removing_a_path_known_only_at_run_time_asks(git_project: Path, command:
     "command",
     [
         "cd / && rm etc/hosts",
+        "cd .git && rm -f index",
+        "cd .. && rm sibling.txt",
         "(cd ~; rm .zshrc)",
         "pushd ~ && rm .zshrc",
         "popd && rm scratch.txt",
@@ -124,9 +128,14 @@ def test_removal_after_a_directory_change_the_guard_cannot_follow_asks(git_proje
         "mv a b && rm b",
         "cp -R ~/.ssh keys; rm keys/config",
         "install -d out && rm out/x",
+        "git status && rm scratch.txt",
+        "builtin cd / && rm etc/hosts",
+        "gcp -R ~/.ssh keys && rm keys/config",
+        "python3 make_link.py && rm home/.zshrc",
+        "$TOOL && rm scratch.txt",
     ],
 )
-def test_removal_beside_a_command_that_can_create_links_or_directories_asks(git_project: Path, command: str) -> None:
+def test_removal_beside_a_program_not_listed_as_read_only_asks(git_project: Path, command: str) -> None:
     assert judged(git_project, command) == "ask"
 
 

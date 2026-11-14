@@ -19,6 +19,11 @@ from session_store import ScopeError, SessionRecord, atomic_json, file_lock, rea
 AGENTS_FILE = "herdr_agents.json"
 AGENT_INPUTS = frozenset({("agent", "prompt"), ("agent", "send-keys")})
 PANE_INPUTS = frozenset({("pane", "send-text"), ("pane", "send-keys"), ("pane", "run")})
+OWNERSHIP_ACTIONS = frozenset(
+    {("agent", "start"), ("workspace", "close"), ("worktree", "remove"), ("agent", "rename")}
+    | AGENT_INPUTS
+    | PANE_INPUTS
+)
 LIST_TIMEOUT_SECONDS = 5
 
 
@@ -35,15 +40,7 @@ def check(record: SessionRecord, command: str) -> None:
             or Path(parsed.arguments[0]).name != "herdr"
             or (
                 not has_global_option(parsed.arguments)
-                and action
-                not in {
-                    ("agent", "start"),
-                    ("workspace", "close"),
-                    ("worktree", "remove"),
-                    ("agent", "rename"),
-                    *AGENT_INPUTS,
-                    *PANE_INPUTS,
-                }
+                and (action not in OWNERSHIP_ACTIONS or parsed.arguments[3:] == ("--help",))
             )
         ):
             continue

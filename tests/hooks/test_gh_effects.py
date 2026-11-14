@@ -170,7 +170,6 @@ def test_reversible_writes_to_a_trusted_owner_are_allowed(command: str) -> None:
                 ("in the background", "gh api -H 'Accept: x' repos/o/r &"),
                 ("in a subshell", "( gh api -H 'Accept: x' repos/o/r )"),
                 ("through env", "env gh api -H 'Accept: x' repos/o/r"),
-                ("through sh -c", "sh -c 'gh api -H \"Accept: x\" repos/o/r'"),
                 ("through timeout", "timeout 5 gh api -H 'Accept: x' repos/o/r"),
                 ("with a redirect to a file", "gh api -H 'Accept: x' repos/o/r > out.txt"),
             )

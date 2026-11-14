@@ -8,6 +8,8 @@ from shell_words import PARAMETER_MODIFIERS, UnsupportedSyntaxError, literal_wor
 
 # $1, ${12}, $@, and $*, which take the words a function is called with.
 POSITIONAL = re.compile(r"[1-9][0-9]*|[@*]")
+LITERALS = frozenset({"Lit", "SglQuoted"})
+EXPANSIONS = frozenset({"ParamExp", "CmdSubst", "ProcSubst", "ArithmExp"})
 # A caller's word that an unquoted expansion splits and globs no differently from its plain text.
 PLAIN_FIELDS = re.compile(r"[A-Za-z0-9_./:=@%+,\s-]*")
 
@@ -35,7 +37,7 @@ def respelled_calls(records: tuple[dict, ...], data: bytes) -> list[str]:
     bodies: dict[str, list[dict]] = {}
     for node in (node for node in records if node.get("Type") == "FuncDecl"):
         bodies.setdefault(node["Name"]["Value"], []).append(_followed(node["Body"], data))
-    if bodies and b"IFS" in data:
+    if bodies and _may_change_ifs(records):
         raise UnsupportedSyntaxError("calling a function after changing IFS requires explicit review", "expansion")
     respelled = []
     for call in (node for node in records if node.get("Type") == "CallExpr" and node.get("Args")):
@@ -51,6 +53,34 @@ def respelled_calls(records: tuple[dict, ...], data: bytes) -> list[str]:
                 for shift in shifts
             ]
     return respelled
+
+
+def _may_change_ifs(records: tuple[dict, ...]) -> bool:
+    """Whether a name or word is IFS however quoted, or a declaration's name or nameref is known only at run time."""
+    names = (record.get("Name") or record.get("Param") for record in records)
+    if any(isinstance(name, dict) and name.get("Value") == "IFS" for name in names):
+        return True
+    words = (record for record in records if "Type" not in record and isinstance(record.get("Parts"), list))
+    if any("IFS" in _literal(word) for word in words):
+        return True
+    return any(_computed_declaration(record) for record in records if record.get("Type") == "DeclClause")
+
+
+def _computed_declaration(declaration: dict) -> bool:
+    """Whether a declaration names its variable at run time, or makes a nameref from any expansion."""
+    arguments = declaration.get("Args", [])
+    nameref = any(
+        argument.get("Naked")
+        and "n" in _literal(argument.get("Value"))
+        and _literal(argument.get("Value")).startswith("-")
+        for argument in arguments
+    )
+    expanding = [argument for argument in arguments if any(part.get("Type") in EXPANSIONS for part in nodes(argument))]
+    return any(argument.get("Naked") for argument in expanding) or (nameref and bool(expanding))
+
+
+def _literal(word: dict | None) -> str:
+    return "".join(part.get("Value", "") for part in nodes(word) if part.get("Type") in LITERALS)
 
 
 def _followed(body: dict, data: bytes) -> dict:

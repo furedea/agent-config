@@ -43,7 +43,6 @@ REPOSITORY_SPEC = re.compile(
     r"(?:(?P<host>[A-Za-z0-9.-]+\.[A-Za-z]+)/)?(?P<owner>[A-Za-z0-9-]+)/(?P<name>[A-Za-z0-9_.-]+)"
 )
 DOT_SEGMENT = re.compile(r"(?:^|/)(?:\.|%2e){1,2}(?:/|$)", re.IGNORECASE)
-SUBSTITUTION = re.compile(r"\$\(|`")
 STDIN_PATHS = re.compile(r"/dev/stdin|/dev/fd/0|/proc/self/fd/0")
 # A run-time endpoint that starts with a literal path segment and slash, which no expansion can turn into a URL.
 LITERAL_PATH_START = re.compile(r"[\"']?/?[A-Za-z0-9_.-]+/")
@@ -162,8 +161,8 @@ def _check_read_repositories(words: tuple[Word, ...]) -> None:
     owner, a name without a dot, as a host.
     """
     for word in words:
-        if word.dynamic and (word.source.startswith("-") or _may_name_url(word) or SUBSTITUTION.search(word.source)):
-            raise UnclassifiableError("a read takes an option value, URL, or command output known only at run time")
+        if word.dynamic and (word.source.startswith("-") or _may_name_url(word) or not _plain_parameters(word)):
+            raise UnclassifiableError("a read takes an option value, URL, or computed word known only at run time")
     for word in _repository_words(words):
         if word.dynamic and not OWNER_PREFIX.match(word.source):
             raise UnclassifiableError("a read names its repository only at run time")
@@ -208,7 +207,7 @@ def _classify_write(words: tuple[Word, ...], spec: CommandSpec, single_call: boo
     targets = scan.values_of(REPOSITORY_OPTIONS | spec.repositories)
     targets += tuple(word for word in scan.positionals if _is_url(word.value))
     repositories = tuple(None if word.dynamic else repository(word.value) for word in targets)
-    if spec.required and not scan.values_of(spec.required):
+    if spec.required and not any(word.value and not word.dynamic for word in scan.values_of(spec.required)):
         raise UnclassifiableError(f"'{spec.operation}' needs one of {', '.join(sorted(spec.required))}")
     if scan.flags & spec.read_flags:
         return GhCall((spec.operation,), Effect.READ)
@@ -342,6 +341,11 @@ def _sent_files(scan: OptionScan) -> tuple[str, ...]:
 def _names_file(word: Word) -> bool:
     """Whether a -F field value reads a file, as key=@path."""
     return word.value.partition("=")[2].startswith("@")
+
+
+def _plain_parameters(word: Word) -> bool:
+    """Whether a run-time word expands only plain named parameters, with no substitution or parameter operator."""
+    return bool(gh_options.PLAIN_PARAMETER_WORD.fullmatch(word.source))
 
 
 def _may_name_url(word: Word) -> bool:

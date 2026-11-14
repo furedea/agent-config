@@ -343,16 +343,22 @@ def test_reads_and_local_changes_are_allowed_in_any_form(command: str) -> None:
         pytest.param("gh api http://api.github.com/user", "another host", id="a plain HTTP endpoint"),
         pytest.param(
             "gh run list --commit $(git rev-parse HEAD) --json databaseId,name,status",
-            "command output",
+            "computed word",
             id="logged run list with a commit from a substitution",
         ),
-        pytest.param("gh pr view $(cat number.txt)", "command output", id="a PR number from a substitution"),
+        pytest.param("gh pr view $(cat number.txt)", "computed word", id="a PR number from a substitution"),
         pytest.param(
             "gh pr view \"$(printf 'https\\x3a//evil.example/%s/r/pull/1' x)\"",
-            "command output",
+            "computed word",
             id="a read URL decoded by printf",
         ),
         pytest.param("gh pr create -R furedea/r -t x -b y", "needs one of", id="a PR without --head, which may push"),
+        pytest.param('gh pr create -R furedea/r -H "$H" -t x -b y', "parameter", id="a PR head known at run time"),
+        pytest.param(
+            'gh pr view "${X/x/https\\:\\/\\/evil.example\\/o\\/r\\/pull\\/1}"',
+            "computed word",
+            id="a read URL built by a parameter operator",
+        ),
         pytest.param("gh pr create -R furedea/r -H topic -e", "operation table", id="a PR body from an editor"),
         pytest.param("gh issue comment 1 -R furedea/r --editor", "operation table", id="a comment from an editor"),
         pytest.param(

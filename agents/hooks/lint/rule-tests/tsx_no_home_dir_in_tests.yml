@@ -5,6 +5,12 @@ valid:
   - |
     const name = basename(directory);
   - |
+    process.env.HOME = await mkdtemp(join(tmpdir(), "case-"));
+  - |
+    delete process.env.HOME;
+  - |
+    process.env["HOME"] = temporary;
+  - |
     const value = process.env["TMPDIR"];
 invalid:
   - |
@@ -13,6 +19,10 @@ invalid:
     const dir = join(os.homedir(), ".config");
   - |
     const home = process.env.HOME;
+  - |
+    const original = process.env.HOME;
+    process.env.HOME = temporary;
+    process.env.HOME = original;
   - |
     const home = process.env["HOME"];
   - |

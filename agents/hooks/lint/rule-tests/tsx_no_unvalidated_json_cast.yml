@@ -38,6 +38,8 @@ invalid:
   - |
     const config = JSON.parse(text) satisfies Config;
   - |
+    const config = JSON.parse(text)! as Config;
+  - |
     const body = (await response.json()) satisfies Body;
   - |
     const load = (text: string): Config => JSON.parse(text);

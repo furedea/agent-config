@@ -13,6 +13,12 @@ valid:
       throw error;
     }
   - |
+    try {
+      run();
+    } catch {
+      throw new Error("read config");
+    }
+  - |
     function validate(value: string): void {
       throw new Error("value is empty");
     }

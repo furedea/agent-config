@@ -12,6 +12,7 @@ rule:
         kind: throw_statement
         inside:
           kind: catch_clause
+          has: { field: parameter, regex: '.' }
           stopBy:
             any:
               - kind: function_declaration

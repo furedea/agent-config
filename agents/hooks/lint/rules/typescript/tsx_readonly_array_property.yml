@@ -14,7 +14,10 @@ rule:
         kind: type_annotation
         stopBy:
           not:
-            kind: union_type
+            any:
+              - kind: union_type
+              - kind: intersection_type
+              - kind: parenthesized_type
         inside:
           kind: property_signature
           inside:

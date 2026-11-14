@@ -8,6 +8,8 @@ rule:
     - pattern: JSON.parse($$$ARGS) as $TYPE
     - pattern: (await $RESPONSE.json()) as $TYPE
     - pattern: JSON.parse($$$ARGS) as unknown as $TYPE
+    - pattern: JSON.parse($$$ARGS)! as $TYPE
+    - pattern: (await $RESPONSE.json())! as $TYPE
     - pattern: JSON.parse($$$ARGS) satisfies $TYPE
     - pattern: (await $RESPONSE.json()) satisfies $TYPE
     - pattern: await $RESPONSE.json() satisfies $TYPE

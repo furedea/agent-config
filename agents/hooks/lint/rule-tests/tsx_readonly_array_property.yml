@@ -30,4 +30,6 @@ invalid:
   - |
     type Order = { readonly lines: string[] | null | undefined };
   - |
+    type Order = { readonly lines: string[] & Tagged };
+  - |
     type Order = { readonly lines: null | string[] | undefined };

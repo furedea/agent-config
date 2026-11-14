@@ -95,3 +95,17 @@ def test_herdr_help_runs_unprompted(command: str) -> None:
 @pytest.mark.parametrize("command", ["herdr worktree create --help --path /tmp/x", "herdr --session x pane --help"])
 def test_herdr_help_with_other_words_is_judged_by_its_own_form(command: str) -> None:
     assert guard.decide("allowed", {"tool_input": {"command": command}}).decision == "ask"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "herdr pane send-text --help",
+        "herdr pane send-keys --help",
+        "herdr pane run --help",
+        "herdr agent send-keys --help",
+    ],
+)
+@pytest.mark.usefixtures("herdr")
+def test_help_for_pane_input_is_not_an_ownership_action(repository: Path, command: str) -> None:
+    assert decision(run(repository, command)) == "allow"

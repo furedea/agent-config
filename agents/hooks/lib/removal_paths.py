@@ -2,8 +2,8 @@
 
 Provider prefix rules see words, not paths, so this guard resolves each operand instead. Git cannot
 restore what rm deletes, so Git metadata, paths outside those roots, operands known only at run
-time, and recursive removal ask, and so does rm beside a command that can move the working
-directory or create a link before rm runs.
+time, and recursive removal ask, and so does rm beside any program that is not a listed
+read-only one, since it may move the working directory or create a link before rm runs.
 """
 
 from pathlib import Path
@@ -18,8 +18,11 @@ PROGRAM = "rm"
 RECURSIVE_SHORT = frozenset("rR")
 RECURSIVE_LONG = "--recursive"
 GIT_DIRECTORY = ".git"
-# Programs that can move the working directory or make a path name another file before rm runs.
-PATH_CHANGERS = frozenset({"cd", "pushd", "popd", "ln", "mv", "cp", "mkdir", "install", "tar", "unzip"})
+# Programs that may share a command with rm: they neither move the working directory nor create
+# files, so rm's operands still name what they named when the guard resolved them. A wrapper here
+# runs its rm, which the guard judges as its own call.
+COMPANIONS = frozenset({"echo", "printf", "true", "false", "test", "[", "ls", "cat", "pwd", "stat"})
+WRAPPERS = frozenset({"command", "nohup", "nice", "time", "timeout", "stdbuf", "env"})
 CHDIR_OPTIONS = ("--chdir", "-C")
 
 
@@ -29,10 +32,10 @@ def objection(payload: dict, commands: tuple[shell_syntax.Command, ...]) -> Verd
     if not calls:
         return hook_decision.ALLOW
     preview = shell_syntax.command_preview(calls[0].raw)
-    if changer := next((name for item in commands if (name := _path_changer(item))), ""):
+    if other := next((name for item in commands if (name := _unsafe_companion(item))), ""):
         return hook_decision.ask(
-            f"Needs review: rm shares the command with '{changer}', which can change the file a path names, "
-            f"so its operands cannot be resolved beforehand.\n\nCommand: {preview}",
+            f"Needs review: rm shares the command with '{other}', which may change the working directory or the "
+            f"file a path names, so its operands cannot be resolved beforehand.\n\nCommand: {preview}",
             PROGRAM,
         )
     directory = automation_paths.working_directory(payload)
@@ -43,14 +46,16 @@ def objection(payload: dict, commands: tuple[shell_syntax.Command, ...]) -> Verd
     return hook_decision.ask(f"Needs review: rm {reason}.\n\nCommand: {preview}", PROGRAM)
 
 
-def _path_changer(item: shell_syntax.Command) -> str:
-    """The program, if any, that can change the working directory or create links before a later rm runs."""
+def _unsafe_companion(item: shell_syntax.Command) -> str:
+    """The segment's program unless it is rm, a listed read-only program, or a wrapper that keeps the directory."""
+    if item.program_is_dynamic:
+        return item.arguments[0]
     name = command_policy.canonical(item).arguments[0]
-    if name in PATH_CHANGERS:
-        return name
-    if name == "env" and any(_is_chdir_option(word) for word in item.arguments[1:]):
-        return "env --chdir"
-    return ""
+    if name in {PROGRAM, *COMPANIONS}:
+        return ""
+    if name in WRAPPERS and not any(_is_chdir_option(word) for word in item.arguments[1:]):
+        return ""
+    return name
 
 
 def _is_chdir_option(word: str) -> bool:

@@ -5,7 +5,7 @@ verification level. The conventions below govern Python test tooling and structu
 
 - Use `pytest` as test framework
 - Run tests using `uv run --frozen pytest`
-- Use `anyio` for async tests
+- Use `anyio` for async tests, do not use `asyncio`
 - Use `pytest-mock` for mocking (`mocker` fixture)
 - `pytest`, `anyio`, and `pytest-mock` belong in the template's test dependency group
 - Record a reproduced defect with `@pytest.mark.xfail(strict=True, reason="...")` and a comment

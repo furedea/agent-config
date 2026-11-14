@@ -27,9 +27,16 @@ rule:
                 kind: block
                 has:
                   stopBy: end
-                  any:
-                    - pattern: self.$ATTR = $VALUE
-                    - pattern: "self.$ATTR: $TYPE = $VALUE"
+                  kind: assignment
+                  has:
+                    field: left
+                    any:
+                      - kind: attribute
+                        regex: ^self\.
+                      - has:
+                          stopBy: end
+                          kind: attribute
+                          regex: ^self\.
     - not:
         has:
           field: body

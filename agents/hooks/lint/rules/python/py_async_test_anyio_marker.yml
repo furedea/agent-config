@@ -11,7 +11,13 @@ rule:
       - has:
           field: parameters
           kind: parameters
-          regex: anyio_backend
+          has:
+            any:
+              - kind: identifier
+              - kind: typed_parameter
+              - kind: default_parameter
+              - kind: typed_default_parameter
+            regex: ^anyio_backend(\s*[:=]|$)
       - inside:
           kind: decorated_definition
           stopBy: end

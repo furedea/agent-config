@@ -30,6 +30,10 @@ valid:
         def run(self) -> None: ...
 invalid:
   - |
+    class Pair:
+        def __init__(self, pair: tuple[int, int]) -> None:
+            self.left, self.right = pair
+  - |
     class Foo:
         def __init__(self, count: int) -> None:
             self.count: int = count

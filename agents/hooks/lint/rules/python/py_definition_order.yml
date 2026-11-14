@@ -17,9 +17,13 @@ utils:
             regex: ^(enum\.)?(Enum|IntEnum|StrEnum|Flag|IntFlag)$
         - not:
             has:
-              kind: identifier
+              any:
+                - kind: identifier
+                - kind: attribute
+                - kind: subscript
+                - kind: call
               not:
-                regex: ^(str|int|Enum|IntEnum|StrEnum|Flag|IntFlag)$
+                regex: ^((enum\.)?(Enum|IntEnum|StrEnum|Flag|IntFlag)|str|int)$
 rule:
   all:
     - any:

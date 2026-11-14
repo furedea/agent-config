@@ -4,6 +4,8 @@
 
 - Keep functions focused and small
 - Use Pythonic syntax (comprehensions, `with` statements, etc.)
+- Don't use `global` (not explicit enough); `nonlocal` is judged by `py_no_nonlocal`
+- Use built-in generics (e.g., `tuple`, `list`, `dict`) instead of `typing.Tuple`, `typing.List`, `typing.Dict`
 
 ## Formatting
 
@@ -20,7 +22,9 @@ logger.info({"action": "save", "csv_file": self.csv_file, "status": "run"})
 ## Naming Conventions
 
 - Constants: `SCREAMING_SNAKE_CASE` — define semantically meaningful string literals as module-level constants (two blank lines after imports) rather than embedding them inline
-- Getters: name of the output variable
+- Variables / functions / files: `snake_case`
+    - Getters: name of the output variable
+- Classes: `UpperCamelCase`
 - Iterator arguments:
     - Loop body ≤ 2 lines: single character (`x`, `i`)
     - Loop body ≥ 3 lines: descriptive name
@@ -38,13 +42,18 @@ logger.info({"action": "save", "csv_file": self.csv_file, "status": "run"})
 
 - Import statements
 - Global variable definitions
+- Object (class/function) definitions
 
 ### One blank line between
 
 - Function/method docstring sections: summary `"""`, detail, `Args`, `Returns/Yields`, `Raises`
+- Import groups (standard / third-party / local / personal)
+- Instance methods
 
 ### Imports
 
+- Order import groups as: standard library → third-party → local
+- Use exactly one blank line between these groups
 - Avoid `from ... import ...` unless the imported name is self-explanatory (e.g., `Enum`, `Path`), or the module path is so long that `module.name` at call sites becomes unwieldy (e.g., `from swebench.inference.make_datasets.utils import extract_diff`)
 - Avoid `as` aliases unless required for clarity
 
@@ -72,6 +81,7 @@ sections = [problem_statement, *_file_sections(files), "Please output a unified 
 ## Comments & Docstrings
 
 - Write comments on their own line above the relevant code
+- Always add docstrings to public APIs
 - Comment non-obvious choices (algorithm params, fallback behavior, encoding handling)
 
 ```python

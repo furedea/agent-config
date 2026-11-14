@@ -18,9 +18,7 @@ rule:
         not:
           inside:
             kind: expression_statement
-            parent:
-              kind: block
-              nthChild: 1
+            nthChild: 1
 ask: >-
   This function embeds a string literal that carries meaning of its own instead of naming it as a module-level constant.
 criteria:

@@ -38,6 +38,13 @@ valid:
 
     class Color(ColorMixin, Enum):
         RED = "red"
+  - |
+    class ColorMixin(Generic[T]):
+        pass
+
+
+    class Color(ColorMixin[T], Enum):
+        RED = 1
 invalid:
   - |
     @dataclass(frozen=True)

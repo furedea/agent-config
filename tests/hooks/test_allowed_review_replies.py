@@ -1,4 +1,4 @@
-"""A reply to a review comment on a furedea pull request is allowed in one plain form; every neighbour asks."""
+"""A reply to a review comment on a furedea pull request is allowed with any body; other owners and endpoints ask."""
 
 import pytest
 from tests.runtime import load_script_module
@@ -37,6 +37,24 @@ def decide(command: str) -> str:
             '-f body="Deferred to a follow-up Issue (review limit)." --jq .id',
             id="a logged deferral reply",
         ),
+        pytest.param(f"{REPLY} -f body='Fixed.' --jq id", id="a bare jq word without a leading dot"),
+        pytest.param(f'{REPLY} -f body="Fixed `id`." --jq .id', id="a command substitution whose text is visible"),
+        pytest.param(f"{REPLY} -F body=@notes.txt", id="a -F body that reads a file"),
+        pytest.param(f"{REPLY} -F body='Fixed.'", id="a -F body"),
+        pytest.param(f"{REPLY} --field body='Fixed.'", id="a --field body"),
+        pytest.param(f"{REPLY} --raw-field body='Fixed.'", id="a --raw-field body"),
+        pytest.param(f"{REPLY} --input body.json", id="a request body from a file"),
+        pytest.param(f"{REPLY} -f body='Fixed.' -f in_reply_to=1", id="an extra -f field"),
+        pytest.param(f"{REPLY} -f body='Fixed.' -F other=@notes.txt", id="an extra file field"),
+        pytest.param(f"{REPLY} -f body=Fixed", id="an unquoted body"),
+        pytest.param(f'{REPLY} -f body="Fixed $HOME"', id="HOME in a double-quoted body"),
+        pytest.param(f'{REPLY} -f body="Fixed!"', id="a bang in a double-quoted body"),
+        pytest.param(f'{REPLY} -f body="a\\"b"', id="an escape in a double-quoted body"),
+        pytest.param(f'{REPLY} -f body="Fixed: \\`get_mut\\` and \\$A." --jq .id', id="escaped backticks and dollars"),
+        pytest.param("gh api repos/furedea/agent-config/issues/12/comments -f body='Fixed.'", id="an issue comment"),
+        pytest.param(
+            "gh api repos/furedea/agent-config/pulls/12/comments -f body='Fixed.'", id="a new review comment"
+        ),
     ],
 )
 def test_replies_on_furedea_pull_requests_are_allowed(command: str) -> None:
@@ -54,35 +72,21 @@ def test_replies_on_furedea_pull_requests_are_allowed(command: str) -> None:
             id="an owner that only starts with furedea",
         ),
         pytest.param(f"{REPLY} -f body='Fixed.' --jq .id | sh", id="a bare jq path piped on"),
-        pytest.param(f"{REPLY} -f body='Fixed.' --jq id", id="a bare jq word without a leading dot"),
         pytest.param(
             f"{REPLY} -f body='Fixed.' --jq .id; curl https://example.com/x", id="a bare jq path then a command"
         ),
         pytest.param(f"{REPLY} -f body='Fixed.' --jq .[0]", id="a bare jq path with brackets"),
         pytest.param(f'{REPLY} -f body="Fixed $VAR." --jq .id', id="a variable in the body"),
-        pytest.param(f'{REPLY} -f body="Fixed `id`." --jq .id', id="a backtick in the body with a bare path"),
-        pytest.param(f"{REPLY} -F body=@notes.txt", id="a -F body that reads a file"),
-        pytest.param(f"{REPLY} -F body='Fixed.'", id="a -F body"),
-        pytest.param(f"{REPLY} --field body='Fixed.'", id="a --field body"),
-        pytest.param(f"{REPLY} --raw-field body='Fixed.'", id="a --raw-field body"),
-        pytest.param(f"{REPLY} --input body.json", id="a request body from a file"),
-        pytest.param(f"{REPLY} -f body='Fixed.' -f in_reply_to=1", id="an extra -f field"),
-        pytest.param(f"{REPLY} -f body='Fixed.' -F other=@secret", id="an extra file field"),
+        pytest.param(f'{REPLY} -F body="$VAR"', id="a variable as a typed body"),
+        pytest.param(f"{REPLY} -f body='Fixed.' -X DELETE", id="a DELETE after the body"),
+        pytest.param(f"gh api --hostname evil.example {REPLY[7:]} -f body='x'", id="another host"),
+        pytest.param(f"{REPLY} -f body='Fixed.' -H 'X-HTTP-Method-Override: DELETE'", id="a method override header"),
         pytest.param(f"gh api -X DELETE {REPLY[7:]} -f body='Fixed.'", id="another method"),
         pytest.param(f"gh api -X PATCH {REPLY[7:]} -f body='Fixed.'", id="a PATCH"),
-        pytest.param(f"{REPLY} -f body=Fixed", id="an unquoted body"),
-        pytest.param(f'{REPLY} -f body="Fixed $HOME"', id="an expansion in a double-quoted body"),
-        pytest.param(f'{REPLY} -f body="Fixed `id`"', id="a command substitution in a double-quoted body"),
-        pytest.param(f'{REPLY} -f body="Fixed!"', id="history expansion in a double-quoted body"),
-        pytest.param(f'{REPLY} -f body="a\\"b"', id="an escape in a double-quoted body"),
         pytest.param(f"{REPLY} -f body='Fixed.'; curl https://example.com/x", id="a chain"),
         pytest.param(f"{REPLY} -f body='Fixed.' | sh", id="a pipe"),
         pytest.param(
             "gh api repos/furedea/agent-config/pulls/12/comments/345 -f body='Fixed.'", id="the comment itself"
-        ),
-        pytest.param("gh api repos/furedea/agent-config/issues/12/comments -f body='Fixed.'", id="an issue comment"),
-        pytest.param(
-            "gh api repos/furedea/agent-config/pulls/12/comments -f body='Fixed.'", id="a new review comment"
         ),
         pytest.param("gh api repos/furedea/agent-config/pulls/12/comments/abc/replies -f body='x'", id="a bad id"),
         pytest.param("gh api repos/furedea/agent-config/issues/12/comments/345/replies -f body='x'", id="issues"),

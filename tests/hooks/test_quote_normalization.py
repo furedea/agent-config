@@ -23,6 +23,15 @@ pytestmark = pytest.mark.usefixtures("isolated_project")
             id="double-quoted reply bodies holding an apostrophe",
         ),
         pytest.param('gh run list --commit "$sha"', id="quoted run-time commits"),
+        pytest.param(
+            'gh api repos/furedea/r/pulls/1/comments/2/replies -f body="Fixed \\`x\\`."',
+            id="double-quoted escaped backticks",
+        ),
+        pytest.param(
+            'gh api repos/furedea/r/pulls/1/comments/2/replies -f body="Fixed \\$x."',
+            id="double-quoted escaped dollars",
+        ),
+        pytest.param('gh api repos/furedea/r/pulls/1/comments/2/replies -f body="a\\"b"', id="double-quoted escapes"),
     ],
 )
 def test_static_words_match_precise_rules_by_value_not_quoting(command: str) -> None:
@@ -32,19 +41,12 @@ def test_static_words_match_precise_rules_by_value_not_quoting(command: str) -> 
 @pytest.mark.parametrize(
     "command",
     [
-        pytest.param("gh run list --commit $sha", id="unquoted run-time commits"),
-        pytest.param("sha=0123456789abcdef0123456789abcdef01234567; gh run list --commit $sha", id="assigned commits"),
-        pytest.param("gh run list --commit $(git rev-parse HEAD)", id="commits from command substitution"),
-        pytest.param(
-            'gh api repos/furedea/r/pulls/1/comments/2/replies -f body="Fixed `x`."', id="double-quoted backticks"
-        ),
         pytest.param(
             'gh api repos/furedea/r/pulls/1/comments/2/replies -f body="Fixed $x."', id="double-quoted expansions"
         ),
         pytest.param(
-            'gh api repos/furedea/r/pulls/1/comments/2/replies -f body="Fixed!"', id="double-quoted history expansion"
+            "x='1 -R other/r'; gh pr comment 1 --repo furedea/r --body-file $x", id="an assigned value that splits"
         ),
-        pytest.param('gh api repos/furedea/r/pulls/1/comments/2/replies -f body="a\\"b"', id="double-quoted escapes"),
     ],
 )
 def test_words_that_expand_or_vary_at_run_time_still_ask(command: str) -> None:

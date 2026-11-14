@@ -100,7 +100,7 @@ def test_escalation_previews_are_bounded(run_cli: CliRunner) -> None:
     assert result.returncode == 0
     assert result.stderr == ""
     reason = json.loads(result.stdout)["hookSpecificOutput"]["permissionDecisionReason"]
-    assert "command not in allowlist" in reason
+    assert "cannot be taken back" in reason
     assert "omitted" in reason.lower()
     assert len(reason) < 500
 

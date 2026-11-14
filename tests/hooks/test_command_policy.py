@@ -39,14 +39,14 @@ def test_loading_still_rejects_an_invalid_pattern_among_valid_ones(tmp_path: Pat
 def test_unmatched_commands_are_judged_with_one_grep(mocker: MockerFixture) -> None:
     rules = policy.load_rules(ALLOWED_RULES)
     spy = mocker.spy(subprocess, "run")
-    assert policy.regex_reason("gh pr review 42 --approve", rules) == ""
+    assert policy.regex_reason("docker run alpine", rules) == ""
     assert grep_calls(spy) == 1
 
 
 def test_matched_commands_spawn_at_most_one_grep_per_rule(mocker: MockerFixture) -> None:
     rules = policy.load_rules(ALLOWED_RULES)
     spy = mocker.spy(subprocess, "run")
-    assert policy.regex_reason("gh pr list", rules)
+    assert policy.regex_reason("docker ps", rules)
     assert grep_calls(spy) <= 1 + len(rules)
 
 
@@ -75,7 +75,6 @@ def test_only_programs_that_reach_past_the_sandbox_are_governed() -> None:
     assert policy.governed_programs(rules) == {
         "agent-browser",
         "agent-desktop",
-        "gh",
         "curl",
         "wget",
         "herdr",

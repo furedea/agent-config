@@ -23,6 +23,7 @@ import automation_paths
 import command_objections
 import command_policy
 import foreign_shell_policy
+import gh_policy
 import hook_decision
 import hook_input
 import literal_words
@@ -43,6 +44,7 @@ class Policy:
     rules: list[dict]
     literal_words: bool = True
     ignored: trusted_owners.Ignored | None = None
+    gh: gh_policy.GhRules | None = None
 
     @property
     def listing_rules(self) -> list[dict]:
@@ -71,25 +73,40 @@ def policies(kind: str, directory: Path) -> Policy:
         rule["patterns"] = patterns + [
             "^" + re.escape(str(Path.home())) + pattern[2:] for pattern in patterns if pattern.startswith("^~/")
         ]
+    gh = gh_rules(directory) if kind == "allowed" else None
     root = command_policy.project_root()
     if root is None or (project := command_policy.project_file(root, name)) is None:
-        return Policy(prefixes, rules)
+        return Policy(prefixes, rules, gh=gh)
     try:
         project_rules = command_policy.load_rules(project)
     except ValueError as error:
         raise ValueError(f"invalid project {kind} command rules: {project}") from error
     if kind == "allowed" and (ignored := ignored_project_rules(root, directory)):
-        return Policy(prefixes, rules, ignored=ignored)
-    taken = command_policy.governed_programs(rules) & set(command_policy.pinned_programs(project_rules))
+        return Policy(prefixes, rules, ignored=ignored, gh=gh)
+    governed = command_policy.governed_programs(rules) | {gh_policy.PROGRAM}
+    taken = governed & set(command_policy.pinned_programs(project_rules))
     if taken:
         raise ValueError(f"project rule pins a program the global rules govern: {', '.join(sorted(taken))}: {project}")
-    return Policy(prefixes, rules + project_rules)
+    return Policy(prefixes, rules + project_rules, gh=gh)
+
+
+def gh_rules(directory: Path) -> gh_policy.GhRules:
+    """The gh policy table, trusted owners, and secret patterns the gh judgement reads."""
+    return gh_policy.load(
+        Path(os.environ.get("AGENT_GH_POLICY", str(directory / "rules/gh_policy.json"))),
+        trusted_owners_path(directory),
+        Path(os.environ.get("AGENT_SECRET_CONTENT_PATTERNS", str(directory / "rules/secret_content_patterns.json"))),
+    )
+
+
+def trusted_owners_path(directory: Path) -> Path:
+    """Where the trusted owner list lives, overridable for tests."""
+    return Path(os.environ.get("AGENT_TRUSTED_OWNERS", str(directory / "rules/trusted_owners.json")))
 
 
 def ignored_project_rules(root: Path, directory: Path) -> trusted_owners.Ignored | None:
     """Project allow rules widen what runs unreviewed, so only a trusted owner's repository may add them."""
-    path = Path(os.environ.get("AGENT_TRUSTED_OWNERS", str(directory / "rules/trusted_owners.json")))
-    return trusted_owners.ignored_rules(root, trusted_owners.load(path))
+    return trusted_owners.ignored_rules(root, trusted_owners.load(trusted_owners_path(directory)))
 
 
 def decide(kind: str, payload: dict, directory: Path = ROOT) -> Verdict:
@@ -150,12 +167,20 @@ def command_verdict(kind: str, payload: dict, policy: Policy) -> Verdict:
     if verdict.decision == "allow":
         verdict = foreign_shell_policy.objection(commands)
     if kind == "allowed" and verdict.decision == "allow":
-        verdict = automation_options.objection(commands)
-    if kind == "allowed" and verdict.decision == "allow":
-        verdict = automation_paths.objection(payload, commands)
-    if kind == "allowed" and verdict.decision == "allow":
-        return command_objections.settings_objection(command, commands)
+        return allowed_line_objection(payload, commands, policy)
     return verdict
+
+
+def allowed_line_objection(payload: dict, commands: tuple[shell_syntax.Command, ...], policy: Policy) -> Verdict:
+    """The objections the allowed kind raises about the whole line once every segment passed on its own."""
+    command = payload.get("tool_input", {}).get("command") or ""
+    checks = (
+        lambda: command_objections.gh_objection(command, commands, policy),
+        lambda: automation_options.objection(commands),
+        lambda: automation_paths.objection(payload, commands),
+        lambda: command_objections.settings_objection(command, commands),
+    )
+    return next((verdict for check in checks if (verdict := check()).decision != "allow"), hook_decision.ALLOW)
 
 
 def _record(verdict: Verdict, kind: str, payload: object) -> None:

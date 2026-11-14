@@ -17,7 +17,7 @@ rule:
         - kind: func_literal
     - has:
         kind: call_expression
-        regex: ^(slog|log)\.|[lL]og(ger)?\.(Debug|Info|Warn|Error)(Context)?\(
+        regex: ^(slog|log)\.|[lL]og(ger)?\.(Debug|Info|Warn|Error|Print|Printf|Println)(Context)?\(
         stopBy: end
 ask: >-
   This function logs an error and also returns that same error, or a wrapped form of it, to its caller.

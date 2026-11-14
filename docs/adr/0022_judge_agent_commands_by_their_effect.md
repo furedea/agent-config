@@ -36,13 +36,20 @@ earlier one by prompting more:
 | A     | Stays inside the environment           | edit, build, test, `rm` inside writable roots, shell functions, loops                                                                                                                                                                                                                                                                                                                                   | allow    |
 | B     | External, inside the grant, reversible | PR / issue create, edit, comment, review reply, `resolveReviewThread` on a trusted owner's repository; read-only `gh`; Herdr panes the agent created; dependency adds that run no package code at add time (`cargo add`, `GOTOOLCHAIN=local go get`, `uv add --no-build`, `npm install --ignore-scripts`)                                                                                               | allow    |
 | C     | Widens authority                       | writes to repositories of owners not in `trusted_owners.json`; non-allowlisted hosts; secrets; sandbox escape; fetched-package execution (`npx`, `uvx`, `bunx`, `pnpm dlx`, `nix run`, `nix shell`, `uv run --with`, `npm install` without `--ignore-scripts`, `go get` that may switch toolchains, and any `uv add` without `--no-build`, because resolving or syncing can run an sdist build backend) | ask      |
-| D     | Promotes or cannot be undone           | `gh pr merge`, `gh release create` / `edit` / `upload` / `delete`, `gh repo delete` / `edit`, `gh api -X DELETE`, `git push --force` without lease, `git stash drop` / `clear`, `git remote add` / `set-url`, `kill`, `pkill`, `herdr server`                                                                                                                                                           | ask      |
+| D     | Promotes or cannot be undone           | `gh pr merge`, `gh release create` / `edit` / `upload` / `delete` / `delete-asset`, `gh repo edit`, `gh api -X DELETE`, `git stash drop` / `clear`, `git remote add` / `set-url`, `kill` / `pkill` that send a signal (not `kill -l` / `-L`), `herdr server`                                                                                                                                            | ask      |
 
-The deny list is unchanged. Function and loop bodies are judged by the commands inside them, so a
+The deny list is unchanged and stays a hard denial, not class D: `gh repo delete`, `git push
+--force` without lease, and static ast-grep rules (user decision, kept in step with the amendment
+of ADR-0021) all block. Class D is the ask tier for operations that are not denied. The classes
+follow one rule: A loses nothing the sandbox does not hold (`rm` in writable roots is
+recoverable from the checkout or by rebuild); D loses state outside the working tree (stashes,
+processes, release assets) or promotes work to a shared target. Function and loop bodies are judged by the commands inside them, so a
 class D operation hidden in `f() { gh pr merge 1; }; f` still asks. A construct the guard cannot
 read, or a program it cannot determine (`eval`, `$cmd ...`, a shell fed unreadable input), asks
-unless every program it could involve is known to be class A. Only a known class A program with
-a run-time argument is allowed, which narrows the uniform ask of ADR-0015 rule 2 (rule 1 stands).
+unless every program it could involve is known to be class A. A run-time argument of a known
+program passes where every possible value keeps the classified target and operation (ADR-0009;
+`gh pr view "$NUMBER" --json state`), which narrows the uniform ask of ADR-0015 rule 2 (rule 1
+stands).
 
 ## Mapping to #181
 

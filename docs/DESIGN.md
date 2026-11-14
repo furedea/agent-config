@@ -222,4 +222,5 @@ Without the items, the hook reports `Model rules skipped` at every Stop and does
     ...), since it may change the working directory or create a link first.
 - Typing into a Herdr pane (`pane send-text`, `pane send-keys`, `pane run`, `agent send-keys`)
     runs unprompted only while the target is the pane of an agent this session started and that
-    agent still runs there; any other pane asks.
+    agent still runs there, with navigation keys only (no interrupt, end-of-input, or suspend) and
+    one line of text without control characters; anything else asks.

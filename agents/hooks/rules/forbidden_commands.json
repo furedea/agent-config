@@ -42,6 +42,17 @@
     },
     {
       "programs": [
+        "pnpm",
+        "uv"
+      ],
+      "patterns": [
+        "^pnpm add( .*)? (-[A-Za-z]*g[A-Za-z]*|--global|--global-dir(=.*)?)( |$)",
+        "^uv add( .*)? --dev( |$)"
+      ],
+      "justification": "Nix owns globally installed tools, and dependencies go into named groups instead of the legacy dev group; the deny prefixes catch these flags only right after the subcommand."
+    },
+    {
+      "programs": [
         "agent-browser"
       ],
       "patterns": [

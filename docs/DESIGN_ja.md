@@ -103,4 +103,4 @@ flowchart LR
 - 補助のガードは，静的に判定できるシェルのテキストだけを判定し，残りは確認を求める．[ADR-0015](adr/0015_judge_only_statically_determinable_shell_text_in_the_guards.md) と [ADR-0016](adr/0016_inspect_shell_syntax_in_the_supplementary_command_guards.md) を参照．
 - provider 自身の `ask` 接頭辞は，権限を広げるコマンド（取得したコードや固定していないコード，コンテナ，他人のワークスペース，外部のホスト）と，作業を反映し取り消せないコマンド（merge，release，stash drop，remote の変更，シグナル，Herdr サーバ）だけに残す．`ask` ルールは Claude Code の auto mode でも確認を出す．依存の変更は確認なしで走る．
 - `rm` は，ワークツリーとセッションの一時ディレクトリの中のファイルなら確認なしで走る．Git のメタデータ，それ以外のパス（親ディレクトリのリンクをたどって解決する），実行時にしか決まらないパス，xargs の引数，拒否の接頭辞にない再帰の形，読み取り専用として列挙したもの（`ls`，`cat`，`echo` など）以外のプログラムと並んだ `rm`（先に作業ディレクトリを変えたりリンクを作ったりしうる）はコマンドガードが確認を求める．
-- Herdr のペインへの入力（`pane send-text`，`pane send-keys`，`pane run`，`agent send-keys`）は，対象がこのセッションが起動したエージェントのペインで，そのエージェントがまだそこで動いているときだけ確認なしで走る．それ以外のペインは確認を求める．
+- Herdr のペインへの入力（`pane send-text`，`pane send-keys`，`pane run`，`agent send-keys`）は，対象がこのセッションが起動したエージェントのペインで，そのエージェントがまだそこで動いていて，キーが移動や確定のキーだけ（割り込み・入力終了・一時停止なし），テキストが制御文字を含まない 1 行のときだけ確認なしで走る．それ以外は確認を求める．

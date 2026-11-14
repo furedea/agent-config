@@ -20,10 +20,10 @@ RECURSIVE_LONG = "--recursive"
 GIT_DIRECTORY = ".git"
 # Programs that may share a command with rm: they neither move the working directory nor create
 # files, so rm's operands still name what they named when the guard resolved them. A wrapper here
-# runs its rm, which the guard judges as its own call.
+# runs its rm, which the guard judges as its own call. Each counts only as a bare name without an
+# assignment before it, so neither a path nor PATH can swap in another program.
 COMPANIONS = frozenset({"echo", "printf", "true", "false", "test", "[", "ls", "cat", "pwd", "stat"})
-WRAPPERS = frozenset({"command", "nohup", "nice", "time", "timeout", "stdbuf", "env"})
-CHDIR_OPTIONS = ("--chdir", "-C")
+WRAPPERS = frozenset({"command", "nohup", "nice", "time", "timeout", "stdbuf"})
 
 
 def objection(payload: dict, commands: tuple[shell_syntax.Command, ...]) -> Verdict:
@@ -32,7 +32,7 @@ def objection(payload: dict, commands: tuple[shell_syntax.Command, ...]) -> Verd
     if not calls:
         return hook_decision.ALLOW
     preview = shell_syntax.command_preview(calls[0].raw)
-    if other := next((name for item in commands if (name := _unsafe_companion(item))), ""):
+    if other := next((item.arguments[0] for item in commands if not _is_safe_companion(item)), ""):
         return hook_decision.ask(
             f"Needs review: rm shares the command with '{other}', which may change the working directory or the "
             f"file a path names, so its operands cannot be resolved beforehand.\n\nCommand: {preview}",
@@ -46,22 +46,13 @@ def objection(payload: dict, commands: tuple[shell_syntax.Command, ...]) -> Verd
     return hook_decision.ask(f"Needs review: rm {reason}.\n\nCommand: {preview}", PROGRAM)
 
 
-def _unsafe_companion(item: shell_syntax.Command) -> str:
-    """The segment's program unless it is rm, a listed read-only program, or a wrapper that keeps the directory."""
-    if item.program_is_dynamic:
-        return item.arguments[0]
+def _is_safe_companion(item: shell_syntax.Command) -> bool:
+    """Whether the segment is rm itself, or a listed read-only program or wrapper named bare with no assignment."""
     name = command_policy.canonical(item).arguments[0]
-    if name in {PROGRAM, *COMPANIONS}:
-        return ""
-    if name in WRAPPERS and not any(_is_chdir_option(word) for word in item.arguments[1:]):
-        return ""
-    return name
-
-
-def _is_chdir_option(word: str) -> bool:
-    if word.startswith("--"):
-        return word.partition("=")[0] == CHDIR_OPTIONS[0]
-    return word.startswith("-") and CHDIR_OPTIONS[1][1] in word[1:]
+    if name == PROGRAM:
+        return True
+    bare = not item.program_is_dynamic and item.arguments[0] == name and item.raw.lstrip().startswith(name)
+    return bare and name in COMPANIONS | WRAPPERS
 
 
 def _call_reason(call: shell_syntax.Command, directory: Path | None, roots: tuple[Path, ...]) -> str:

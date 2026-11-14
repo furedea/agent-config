@@ -133,6 +133,10 @@ def test_removal_after_a_directory_change_the_guard_cannot_follow_asks(git_proje
         "gcp -R ~/.ssh keys && rm keys/config",
         "python3 make_link.py && rm home/.zshrc",
         "$TOOL && rm scratch.txt",
+        "./ls && rm scratch.txt",
+        "PATH=. ls && rm scratch.txt",
+        "env PATH=. ls && rm scratch.txt",
+        "BASH_ENV=x true && rm scratch.txt",
     ],
 )
 def test_removal_beside_a_program_not_listed_as_read_only_asks(git_project: Path, command: str) -> None:

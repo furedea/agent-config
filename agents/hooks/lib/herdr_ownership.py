@@ -19,6 +19,10 @@ from session_store import ScopeError, SessionRecord, atomic_json, file_lock, rea
 AGENTS_FILE = "herdr_agents.json"
 AGENT_INPUTS = frozenset({("agent", "prompt"), ("agent", "send-keys")})
 PANE_INPUTS = frozenset({("pane", "send-text"), ("pane", "send-keys"), ("pane", "run")})
+# Keys that move within or submit the agent's input; interrupt, end-of-input, and suspend keys could
+# end the agent and leave later input to the shell beneath it, which runs outside the sandbox.
+SAFE_KEYS = frozenset({"enter", "esc", "escape", "tab", "up", "down", "left", "right", "backspace", "space"})
+TERMINAL_INPUTS = PANE_INPUTS | {("agent", "send-keys")}
 OWNERSHIP_ACTIONS = frozenset(
     {("agent", "start"), ("workspace", "close"), ("worktree", "remove"), ("agent", "rename")}
     | AGENT_INPUTS
@@ -47,18 +51,26 @@ def check(record: SessionRecord, command: str) -> None:
         simple = _is_single_call(command, commands)
         if not simple or "--group" in parsed.arguments:
             raise ScopeError("Herdr ownership actions need one simple direct Herdr call")
-        if action == ("agent", "start"):
-            _claim(_target(parsed))
-        elif action in AGENT_INPUTS:
-            _require_owned(record, _target(parsed))
-        elif action in PANE_INPUTS:
-            _require_owned_pane(record, _target(parsed))
-        elif action == ("workspace", "close"):
-            _require_closable(record, parsed)
-        elif action == ("worktree", "remove"):
-            _require_removable(record, parsed)
-        else:
-            raise ScopeError("Renaming a Herdr agent could hand one of this session's names to another pane")
+        _require_permitted(record, parsed)
+
+
+def _require_permitted(record: SessionRecord, parsed: shell_syntax.Command) -> None:
+    """Refuse one simple ownership action unless it stays with this session's own terminals."""
+    action = parsed.arguments[1:3]
+    if action == ("agent", "start"):
+        _claim(_target(parsed))
+    elif action in AGENT_INPUTS:
+        _require_owned(record, _target(parsed))
+    elif action in PANE_INPUTS:
+        _require_owned_pane(record, _target(parsed))
+    elif action == ("workspace", "close"):
+        _require_closable(record, parsed)
+    elif action == ("worktree", "remove"):
+        _require_removable(record, parsed)
+    else:
+        raise ScopeError("Renaming a Herdr agent could hand one of this session's names to another pane")
+    if action in TERMINAL_INPUTS:
+        _require_inert_input(parsed)
 
 
 def confirm(record: SessionRecord, command: str, response: object) -> None:
@@ -272,6 +284,27 @@ def _require_owned_pane(record: SessionRecord, pane: str) -> None:
         return
     shown = pane or "chosen at run time"
     raise ScopeError(f"Herdr pane {shown} was not started by this session; it may run outside the sandbox")
+
+
+def _require_inert_input(parsed: shell_syntax.Command) -> None:
+    """Keys must be listed safe ones and text one line without control characters, both literal.
+
+    The agent was live when this ran, but terminal input that ends it would reach its shell.
+    """
+    words = list(zip(parsed.arguments[4:], parsed.dynamic[4:], strict=True))
+    keys = parsed.arguments[2] == "send-keys"
+    if all(not dynamic and (_is_safe_key(word) if keys else _is_plain_text(word)) for word, dynamic in words):
+        return
+    kind = "keys" if keys else "text"
+    raise ScopeError(f"Herdr {kind} could end the agent and reach its shell outside the sandbox")
+
+
+def _is_safe_key(word: str) -> bool:
+    return word.casefold() in SAFE_KEYS
+
+
+def _is_plain_text(word: str) -> bool:
+    return not any(ord(character) < 32 or ord(character) == 127 for character in word)
 
 
 def _agent_session(agent: dict) -> str:

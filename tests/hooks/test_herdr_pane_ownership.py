@@ -109,3 +109,40 @@ def test_herdr_help_with_other_words_is_judged_by_its_own_form(command: str) -> 
 @pytest.mark.usefixtures("herdr")
 def test_help_for_pane_input_is_not_an_ownership_action(repository: Path, command: str) -> None:
     assert decision(run(repository, command)) == "allow"
+
+
+@pytest.mark.parametrize(
+    "command",
+    ["herdr pane send-keys p1 Enter Enter", "herdr pane send-keys p1 esc", "herdr agent send-keys lane-a Up Enter"],
+)
+def test_keys_that_keep_the_agent_running_are_sent_to_an_owned_pane(
+    repository: Path, herdr: Path, command: str
+) -> None:
+    start_agent(repository, herdr, "w1")
+    assert decision(run(repository, command)) == "allow"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "herdr pane send-keys p1 C-c C-c",
+        "herdr pane send-keys p1 Enter C-d",
+        "herdr agent send-keys lane-a ctrl-z",
+        "herdr pane send-keys p1 $KEY",
+        "herdr pane send-text p1 '/exit\nrm -rf ~\n'",
+        "herdr pane send-text p1 'stop\x03'",
+        "herdr pane run p1 '/exit\nrm -rf ~'",
+        "herdr pane send-text p1 $TEXT",
+    ],
+    ids=["interrupt", "end of input", "suspend", "run-time key", "newline", "control", "run newline", "run-time text"],
+)
+def test_input_that_could_end_the_agent_and_reach_its_shell_asks(repository: Path, herdr: Path, command: str) -> None:
+    start_agent(repository, herdr, "w1")
+    output = run(repository, command)
+    assert decision(output) == "ask"
+    assert "outside the sandbox" in output["hookSpecificOutput"]["permissionDecisionReason"]
+
+
+def test_a_multi_line_prompt_still_goes_through_the_agent(repository: Path, herdr: Path) -> None:
+    start_agent(repository, herdr, "w1")
+    assert decision(run(repository, "herdr agent prompt lane-a 'first line\nsecond line'")) == "allow"

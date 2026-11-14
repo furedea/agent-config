@@ -229,6 +229,8 @@ def test_a_parameter_a_read_sends_is_scanned_as_expanded(
 ) -> None:
     monkeypatch.setenv("SEARCH_TEXT", secret_samples["github_token"])
     assert decide('gh issue list -R furedea/r --search "$SEARCH_TEXT"') == "ask"
+    assert decide('cd . && gh issue list -R furedea/r --search "$SEARCH_TEXT"') == "ask"
+    assert decide('gh issue list -R furedea/r --search "$SEARCH_TEXT"; true') == "ask"
     monkeypatch.setenv("SEARCH_TEXT", "is:open")
     assert decide('gh issue list -R furedea/r --search "$SEARCH_TEXT"') == "allow"
 

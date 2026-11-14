@@ -86,3 +86,11 @@ def test_a_branch_repository_does_not_stand_in_for_the_issue_repository(origin: 
     subprocess.run(["git", "init", "--quiet"], check=True)
     add_remote("origin", origin)
     assert decide("gh issue develop 5 --branch-repo furedea/agent-config") == expected
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_gh_repo_on_another_host_in_the_hook_environment_makes_every_call_ask(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("GH_REPO", "evil.example/o/r")
+    assert decide("gh pr list") == "ask"

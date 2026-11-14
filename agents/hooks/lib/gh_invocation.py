@@ -182,9 +182,11 @@ def _check_read_repositories(words: tuple[Word, ...]) -> None:
 def _check_repository_arguments(words: tuple[Word, ...]) -> None:
     """Refuse a repository argument gh would read as HOST/OWNER/REPO, or as a URL, on another host than github.com."""
     for word in words:
-        if word.value.startswith("-"):
+        if word.dynamic and not OWNER_PREFIX.match(word.source):
+            raise UnclassifiableError("a repository argument is known only at run time")
+        if word.dynamic or word.value.startswith("-"):
             continue
-        if (word.value.count("/") >= 2 or _is_url(word.value)) and repository(word.value) is None:
+        if ("/" in word.value or ":" in word.value) and repository(word.value) is None:
             raise UnclassifiableError("a repository argument names another host than github.com")
 
 

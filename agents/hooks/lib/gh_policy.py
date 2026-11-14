@@ -192,7 +192,9 @@ def verdict(candidate: shell_syntax.Command, line: CommandLine, rules: GhRules) 
 
 def _judged_call(candidate: shell_syntax.Command, line: CommandLine, rules: GhRules) -> GhCall | str:
     """The classified call with its standard input resolved, or why the guard cannot judge it."""
-    if os.environ.get("GH_HOST", GITHUB_HOST).lower() != GITHUB_HOST:
+    configured_repository = os.environ.get("GH_REPO")
+    foreign_repository = configured_repository and gh_invocation.repository(configured_repository) is None
+    if os.environ.get("GH_HOST", GITHUB_HOST).lower() != GITHUB_HOST or foreign_repository:
         return "the environment sends gh to another host than github.com"
     if line.hides_code:
         return "zsh may evaluate a subscript or assignment on this line as code the guard cannot see"
@@ -389,8 +391,9 @@ def _resolved_defaults() -> list[str]:
 
 def _sent_text(call: GhCall, line: CommandLine) -> str:
     """The command text, inline bodies and heredocs included, and the start of each literal file the call sends."""
-    expanded = [_expand_parameters(line.source)] if line.single_call else []
-    return "\n".join([line.source, *expanded, *(_file_head(Path(name)) for name in call.files)])
+    # A line reaching here assigns nothing, so each plain parameter holds the harness environment's value.
+    expanded = _expand_parameters(line.source)
+    return "\n".join([line.source, expanded, *(_file_head(Path(name)) for name in call.files)])
 
 
 def _is_irregular(path: Path) -> bool:

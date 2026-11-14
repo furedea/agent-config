@@ -216,9 +216,11 @@ Without the items, the hook reports `Model rules skipped` at every Stop and does
     undone (merge, release, stash drop, remote changes, signals, the Herdr server); an `ask` rule still
     prompts in Claude Code's auto mode. Dependency changes run unprompted, except beside an
     assignment, `env`, `export`, or a sourced file, whose settings could install outside the
-    project; global flags (`pnpm add -g` in any spelling, `uv add --dev`) are denied wherever they sit.
+    project, or with an option naming another project (`--dir`, `--project`, `--manifest-path`, `-C`,
+    `--flake`, ...); global flags (`pnpm add -g` in any spelling, `uv add --dev`) are denied wherever they sit.
 - `rm` runs unprompted for files inside the worktree and the session's own temporary directories
-    (never a shared `/tmp` or `/var/tmp` itself). The command guard asks for Git metadata, any other
+    (named by `TMPDIR` or `CLAUDE_TMPDIR`, never a shared `/tmp`, `/var/tmp`, or macOS's per-user
+    temporary directory). The command guard asks for Git metadata, any other
     path (resolved through links in its parent directories), a path known only at run time, xargs
     operands, recursive forms the deny prefixes do not list, and rm beside any program other than a
     listed read-only one (`ls`, `cat`, `echo`, ...), since it may change the working directory or

@@ -6,6 +6,8 @@ time, and recursive removal ask, and so does rm beside any program that is not a
 read-only one, since it may move the working directory or create a link before rm runs.
 """
 
+import os
+import re
 from pathlib import Path
 
 import automation_paths
@@ -30,6 +32,8 @@ WRAPPERS = frozenset({"command", "nohup", "nice", "time", "timeout", "stdbuf"})
 SHARED_TEMPORARY_ROOTS = frozenset(
     Path(path).resolve() for path in ("/tmp", "/private/tmp", "/var/tmp", "/private/var/tmp", "/dev/shm")
 )
+# macOS's per-user temporary directory, which every program the user runs shares.
+PER_USER_TEMPORARY_ROOT = re.compile(r"/(private/)?var/folders/[^/]+/[^/]+/T")
 
 
 def objection(payload: dict, commands: tuple[shell_syntax.Command, ...]) -> Verdict:
@@ -58,7 +62,18 @@ def _writable_roots(directory: Path) -> tuple[Path, ...]:
         worktree: tuple[Path, ...] = (session_snapshot.repository_root(directory),)
     except session_snapshot.SnapshotError:
         worktree = ()
-    return worktree + tuple(root for root in hook_input.temporary_roots() if root not in SHARED_TEMPORARY_ROOTS)
+    return worktree + _session_temporary_roots()
+
+
+def _session_temporary_roots() -> tuple[Path, ...]:
+    """Temporary directories the environment names for this session; the system default is shared, so never one."""
+    values = (os.environ.get(name) for name in hook_input.TEMPORARY_DIRECTORY_VARIABLES)
+    roots = (Path(value).expanduser().resolve() for value in values if value)
+    return tuple(
+        root
+        for root in roots
+        if root not in SHARED_TEMPORARY_ROOTS and not PER_USER_TEMPORARY_ROOT.fullmatch(root.as_posix())
+    )
 
 
 def _is_safe_companion(item: shell_syntax.Command) -> bool:

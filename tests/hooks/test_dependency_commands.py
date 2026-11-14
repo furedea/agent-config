@@ -77,3 +77,27 @@ def test_a_dependency_change_beside_settings_the_guard_cannot_read_asks(git_proj
 @pytest.mark.parametrize("command", ["pnpm add zod && pnpm test", "uv add httpx && uv run --frozen pytest"])
 def test_a_dependency_change_beside_other_commands_runs(git_project: Path, command: str) -> None:
     assert judged(git_project, command, "allowed") == "allow"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "pnpm add zod --dir /other/repo",
+        "pnpm -C /other/repo add zod",
+        "pnpm add zod --prefix=/other",
+        "uv add httpx --project /other/repo",
+        "uv add httpx --directory=/other/repo",
+        "uv add --script /other/tool.py httpx",
+        "uv lock --upgrade --project /other/repo",
+        "cargo add serde --manifest-path /other/Cargo.toml",
+        "cargo update --manifest-path=/other/Cargo.toml",
+        "go get -C /other/module example.com/x@v1.0.0",
+        "go mod tidy -modfile=/other/go.mod",
+        "nix flake update --flake /other/flake",
+        "nix flake update --flake=/other/flake",
+        "npm_config_global=true; export npm_config_global; pnpm add cowsay",
+        "PNPM_HOME=/tmp/g; pnpm add cowsay",
+    ],
+)
+def test_a_dependency_change_aimed_at_another_place_asks(git_project: Path, command: str) -> None:
+    assert judged(git_project, command, "allowed") == "ask"

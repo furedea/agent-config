@@ -1,6 +1,5 @@
 """rm runs unprompted inside the worktree and the session's temporary directories; elsewhere it asks."""
 
-import os
 import tempfile
 from pathlib import Path
 
@@ -37,9 +36,12 @@ def test_removing_files_inside_the_worktree_runs_unprompted(git_project: Path, c
     assert judged(git_project, command) == "allow"
 
 
-def test_removing_a_file_in_the_session_temporary_directory_runs_unprompted(git_project: Path) -> None:
-    temporary = Path(os.environ.get("TMPDIR", "/tmp")).resolve() / "scratch.txt"
-    assert judged(git_project, f"rm -f {temporary}") == "allow"
+def test_removing_a_file_in_the_session_temporary_directory_runs_unprompted(
+    git_project: Path, tmp_path_factory: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    session = tmp_path_factory.mktemp("session-tmp")
+    monkeypatch.setenv("TMPDIR", str(session))
+    assert judged(git_project, f"rm -f {session.resolve()}/scratch.txt") == "allow"
 
 
 def test_removing_a_symlink_inside_the_worktree_removes_only_the_link(git_project: Path) -> None:
@@ -191,3 +193,14 @@ def test_a_session_temporary_directory_below_a_shared_root_stays_writable(
     monkeypatch.setattr(tempfile, "tempdir", str(session))
     assert judged(git_project, f"rm {session}/scratch.txt") == "allow"
     assert judged(git_project, "rm /tmp/other-app.sock") == "ask"
+
+
+def test_the_per_user_system_temporary_directory_is_not_a_session_root(
+    git_project: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    shared = "/private/var/folders/ab/cd1234/T"
+    for name in ("CLAUDE_TMPDIR", "CLAUDE_CODE_TMPDIR"):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("TMPDIR", shared)
+    monkeypatch.setattr(tempfile, "tempdir", shared)
+    assert judged(git_project, f"rm {shared}/other-app.sock") == "ask"

@@ -23,9 +23,6 @@ from gh_invocation import GhCall, Repository, Unclassified
 from hook_decision import Verdict
 
 PROGRAM = "gh"
-DIRECTORY_CHANGES = frozenset({"cd", "pushd", "popd"})
-# Variables through which gh picks another repository or host than the call shows.
-TARGET_VARIABLES = re.compile(r"\bGH_(?:REPO|HOST|ENTERPRISE_TOKEN)\b")
 # zsh evaluates a subscript, and a value assigned to an integer variable, as arithmetic that may run a
 # command substitution the parse never sees: `$name[...]` outside single quotes, or an assignment whose
 # value, quoted in any way, holds `[...$(`.
@@ -33,6 +30,10 @@ SUBSCRIPT = re.compile(r"\$\{?[A-Za-z_][A-Za-z0-9_]*\}?\[")
 ARITHMETIC_ASSIGNMENT = re.compile(r"[A-Za-z_][A-Za-z0-9_]*=\S*\[[^\]]*\$\(")
 SENT_FILE_LIMIT_BYTES = 100000
 REMOTE_LOOKUP_TIMEOUT_SECONDS = 5
+GITHUB_HOST = "github.com"
+# Programs a body substitution may run without changing anything gh reads: the directory, remotes, or files.
+PRINTING_PROGRAMS = frozenset({"cat", "echo", "printf"})
+IRREVERSIBLE_REASON = "cannot be taken back or promotes work (class D)"
 TARGET_REASONS = {
     TargetClass.UNTRUSTED: "writes to a repository whose owner is not in trusted_owners.json (class C)",
     TargetClass.UNRESOLVED: "writes to a repository the guard cannot determine before the call (class C)",
@@ -52,40 +53,47 @@ class GhRules:
 
 @dataclass(frozen=True, slots=True)
 class CommandLine:
-    """The whole command a gh call runs in, which decides how far its words and directory can be trusted."""
+    """The whole command a gh call runs in, which decides how far its words and directory can be trusted.
+
+    `single_call` says the line is one call with no assignment or wrapper, so every variable comes
+    from the harness environment and nothing changes the directory, remotes, or files before gh runs.
+    `hides_code` says zsh may run a command substitution inside a subscript or arithmetic assignment.
+    """
 
     source: str
-    commands: tuple[shell_syntax.Command, ...]
+    single_call: bool
+    hides_code: bool
 
-    @property
-    def single_call(self) -> bool:
-        """Whether the line is one call with no assignment, so every variable comes from the harness."""
-        if len(self.commands) != 1 or self.commands[0].wrapper_depth:
-            return False
-        statements = shell_syntax.syntax_tree(self.source).get("Stmts", [])
-        if len(statements) != 1:
-            return False
-        statement = statements[0]
-        command = statement.get("Cmd") or {}
-        flags = ("Background", "Coprocess", "Negated", "Disown")
-        return (
-            not any(statement.get(flag) for flag in flags)
-            and command.get("Type") == "CallExpr"
-            and not command.get("Assigns")
-        )
 
-    @property
-    def evaluates_hidden_code(self) -> bool:
-        """Whether zsh may run a command substitution inside a subscript or an arithmetic assignment."""
-        outside = shell_inspection.text_outside_single_quotes(self.source)
-        return bool(SUBSCRIPT.search(outside) or ARITHMETIC_ASSIGNMENT.search(self.source))
+def command_line(source: str, commands: tuple[shell_syntax.Command, ...]) -> CommandLine:
+    """Read the line's shape once; it parses the source again, so build it only for a line holding gh."""
+    outside = shell_inspection.text_outside_single_quotes(source)
+    hides_code = bool(SUBSCRIPT.search(outside) or ARITHMETIC_ASSIGNMENT.search(source))
+    return CommandLine(source, _is_single_call(source, commands), hides_code)
 
-    @property
-    def keeps_directory(self) -> bool:
-        """Whether gh runs unwrapped in the hook's working directory, picking the repository the hook can see."""
-        names = {Path(item.arguments[0]).name for item in self.commands}
-        wrapped = any(item.wrapper_depth for item in self.commands)
-        return not (wrapped or names & DIRECTORY_CHANGES or TARGET_VARIABLES.search(self.source))
+
+def _is_single_call(source: str, commands: tuple[shell_syntax.Command, ...]) -> bool:
+    """One statement holding one call; any other command only prints text into its words."""
+    head, *substituted = commands
+    if head.wrapper_depth or not all(_only_prints(item) for item in substituted):
+        return False
+    statements = shell_syntax.syntax_tree(source).get("Stmts", [])
+    if len(statements) != 1:
+        return False
+    statement = statements[0]
+    command = statement.get("Cmd") or {}
+    flags = ("Background", "Coprocess", "Negated", "Disown")
+    return (
+        not any(statement.get(flag) for flag in flags)
+        and command.get("Type") == "CallExpr"
+        and not command.get("Assigns")
+    )
+
+
+def _only_prints(command: shell_syntax.Command) -> bool:
+    """Whether a command inside a substitution only prints text, such as a body through a quoted heredoc."""
+    name = Path(command.arguments[0]).name
+    return name in PRINTING_PROGRAMS and not (command.wrapper_depth or command.writes or command.program_is_dynamic)
 
 
 def load(path: Path, trusted: Path, secret_patterns: Path) -> GhRules:
@@ -101,49 +109,49 @@ def is_gh(command: shell_syntax.Command) -> bool:
 def verdict(candidate: shell_syntax.Command, line: CommandLine, rules: GhRules) -> Verdict:
     """Allow a gh call a grant covers and that sends no secret; ask for every other one."""
     preview = shell_syntax.command_preview(candidate.raw)
-    if line.evaluates_hidden_code:
-        return hook_decision.ask(
-            f"Needs review: zsh may evaluate a subscript or assignment on this line as code the guard cannot see."
-            f"\n\nCommand: {preview}",
-            PROGRAM,
-        )
+    if line.hides_code:
+        return _ask("zsh may evaluate a subscript or assignment on this line as code the guard cannot see", preview)
     call = gh_invocation.classify(candidate, rules.catalog, single_call=line.single_call)
     if isinstance(call, Unclassified):
-        return hook_decision.ask(
-            f"Needs review: cannot classify this gh call: {call.reason}.\n\nCommand: {preview}", PROGRAM
-        )
-    target = _target(call, line, rules.trusted)
-    if not all(rules.catalog.grant(target, operation, call.effect) for operation in call.operations):
-        reason = (
-            "cannot be taken back or promotes work (class D)"
-            if call.effect is Effect.IRREVERSIBLE
-            else TARGET_REASONS[target]
-        )
-        return hook_decision.ask(f"Needs review: '{call.label}' {reason}.\n\nCommand: {preview}", f"gh {call.label}")
-    if call.effect in {Effect.READ, Effect.LOCAL} and not call.files:
-        return hook_decision.ALLOW
+        return _ask(f"cannot classify this gh call: {call.reason}", preview)
+    if problem := _ungranted(call, line, rules):
+        return _ask(f"'{call.label}' {problem}", preview, call.label)
     match = secret_content.first_match(_sent_text(call, line), rules.secret_patterns)
     if match is None:
         return hook_decision.ALLOW
-    return hook_decision.ask(
-        f"Needs review: {match.message} ({match.name}) in what this gh call sends to GitHub.\n\nCommand: {preview}",
-        f"gh {call.label}",
-    )
+    return _ask(f"{match.message} ({match.name}) in what this gh call sends to GitHub", preview, call.label)
+
+
+def _ask(reason: str, preview: str, operation: str = "") -> Verdict:
+    return hook_decision.ask(f"Needs review: {reason}.\n\nCommand: {preview}", f"gh {operation}".strip())
+
+
+def _ungranted(call: GhCall, line: CommandLine, rules: GhRules) -> str:
+    """Why no grant allows the call where it acts, or an empty string when one does."""
+    target = _target(call, line, rules.trusted)
+    if not all(rules.catalog.grant(target, operation, call.effect) for operation in call.operations):
+        return IRREVERSIBLE_REASON if call.effect is Effect.IRREVERSIBLE else TARGET_REASONS[target]
+    writes = call.effect not in {Effect.READ, Effect.LOCAL}
+    if writes and (call.files or call.unscanned_files) and not line.single_call:
+        return "sends a file another command on the line may write after the guard reads it"
+    return ""
 
 
 def _target(call: GhCall, line: CommandLine, trusted: trusted_owners.TrustedOwners) -> TargetClass:
-    """Where a write acts; a read or local change is judged as acting on a trusted target, which it does not need."""
+    """Where a write acts; a read or local change is judged as acting on a trusted target, which it does not need.
+
+    gh resolves the repository of the working directory at run time, so the guard resolves it only
+    for a call that is the whole line: nothing on it can change the directory, remotes, or GH_REPO.
+    """
     if call.effect in {Effect.READ, Effect.LOCAL}:
         return TargetClass.TRUSTED
-    if call.unknown_target:
+    if call.unknown_target or os.environ.get("GH_HOST", GITHUB_HOST).lower() != GITHUB_HOST:
         return TargetClass.UNRESOLVED
     if call.node:
         return TargetClass.NODE
     repositories = call.repositories
     if call.implicit:
-        if not line.keeps_directory:
-            return TargetClass.UNRESOLVED
-        repositories = _working_repositories()
+        repositories = _working_repositories() if line.single_call else ()
     if not repositories:
         return TargetClass.UNRESOLVED
     owners_trusted = all(repository.owner.lower() in trusted.owners for repository in repositories)

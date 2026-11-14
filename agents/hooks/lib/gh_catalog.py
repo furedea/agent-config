@@ -53,7 +53,8 @@ class CommandSpec:
     """A gh subcommand's operation and, for writes, every option it may take.
 
     `texts` carry prose sent to GitHub, `files` name local files whose content is sent, `repositories`
-    name further target repositories, and `irreversible_flags` turn the operation irreversible.
+    name further target repositories, `irreversible_flags` turn the operation irreversible, and
+    `read_flags` turn it into a read.
     """
 
     operation: str
@@ -64,11 +65,12 @@ class CommandSpec:
     repositories: frozenset[str] = frozenset()
     flags: frozenset[str] = frozenset()
     irreversible_flags: frozenset[str] = frozenset()
+    read_flags: frozenset[str] = frozenset()
 
     @classmethod
     def from_json(cls, data: dict) -> Self:
         """Validate one command entry of the table."""
-        lists = ("values", "texts", "files", "repositories", "flags", "irreversible_flags")
+        lists = ("values", "texts", "files", "repositories", "flags", "irreversible_flags", "read_flags")
         if not set(data) <= {"operation", "effect", *lists} or not _is_name(data.get("operation")):
             raise ValueError("invalid command entry")
         return cls(data["operation"], Effect(data["effect"]), *(_options(data.get(key, [])) for key in lists))

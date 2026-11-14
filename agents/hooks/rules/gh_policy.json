@@ -92,7 +92,8 @@
       "effect": "reversible",
       "values": ["-b", "--base", "-n", "--name", "--worktree"],
       "repositories": ["--branch-repo"],
-      "flags": ["-c", "--checkout", "-l", "--list"]
+      "flags": ["-c", "--checkout"],
+      "read_flags": ["-l", "--list"]
     },
     "label list": { "operation": "label.list", "effect": "read" },
     "label create": {
@@ -107,7 +108,12 @@
     "pr view": { "operation": "pr.view", "effect": "read" },
     "pr diff": { "operation": "pr.diff", "effect": "read" },
     "pr checks": { "operation": "pr.checks", "effect": "read" },
-    "pr checkout": { "operation": "pr.checkout", "effect": "local" },
+    "pr checkout": {
+      "operation": "pr.checkout",
+      "effect": "local",
+      "values": ["-b", "--branch", "--worktree", "-R", "--repo"],
+      "flags": ["--detach", "-f", "--force", "--recurse-submodules"]
+    },
     "pr create": {
       "operation": "pr.create",
       "effect": "reversible",
@@ -191,7 +197,12 @@
     },
     "pr merge": { "operation": "pr.merge", "effect": "irreversible" },
     "repo view": { "operation": "repo.view", "effect": "read" },
-    "repo clone": { "operation": "repo.clone", "effect": "local" },
+    "repo clone": {
+      "operation": "repo.clone",
+      "effect": "local",
+      "values": ["-u", "--upstream-remote-name"],
+      "flags": ["--no-upstream"]
+    },
     "run list": { "operation": "run.list", "effect": "read" },
     "run view": { "operation": "run.view", "effect": "read" },
     "run watch": { "operation": "run.watch", "effect": "read" },
@@ -211,7 +222,7 @@
     "stack view": { "operation": "stack.view", "effect": "read" },
     "stack init": { "operation": "stack.init", "effect": "local" },
     "stack add": { "operation": "stack.add", "effect": "local" },
-    "stack rebase": { "operation": "stack.rebase", "effect": "local" },
+    "stack rebase": { "operation": "stack.rebase", "effect": "local", "flags": ["--continue", "--abort"] },
     "stack submit": { "operation": "stack.submit", "effect": "reversible", "flags": ["--auto", "--open"] },
     "stack push": { "operation": "stack.push", "effect": "reversible" },
     "stack sync": { "operation": "stack.sync", "effect": "reversible" }

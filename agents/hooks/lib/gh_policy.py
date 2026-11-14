@@ -184,7 +184,8 @@ def verdict(candidate: shell_syntax.Command, line: CommandLine, rules: GhRules) 
         return _ask(call, preview)
     if problem := _ungranted(call, line, rules):
         return _ask(f"'{call.label}' {problem}", preview, call.label)
-    match = secret_content.first_match(_sent_text(call, line), rules.secret_patterns)
+    text = "\n".join([_sent_text(call, line), " ".join(candidate.arguments)])
+    match = secret_content.first_match(text, rules.secret_patterns)
     if match is None:
         return hook_decision.ALLOW
     return _ask(f"{match.message} ({match.name}) in what this gh call sends to GitHub", preview, call.label)
@@ -267,6 +268,8 @@ def _file_problem(call: GhCall, line: CommandLine) -> str:
         return "sends a file another command on the line may write after the guard reads it"
     if any(re.search(r"\$\(|`", source) for source in call.unscanned_files):
         return "sends a file whose path a command computes"
+    if any(UNEXPANDABLE_PATH.search(source) for source in call.unscanned_files):
+        return "sends a file whose path the guard cannot expand as the shell does"
     paths = [Path(name) for name in call.files]
     if any(_is_irregular(path) for path in paths):
         return "sends a FIFO, device, or other file that is not a regular file"
@@ -386,7 +389,8 @@ def _resolved_defaults() -> list[str]:
     except OSError, subprocess.SubprocessError:
         return ["unreadable"]
     values = [line.split(" ", 1)[-1].strip() for line in output.splitlines()]
-    return [value for value in values if value != "base"]
+    # `base` makes the fork's parent the default, which no local setting names, so it stays unresolved.
+    return [value if value != "base" else "parent of a fork" for value in values]
 
 
 def _sent_text(call: GhCall, line: CommandLine) -> str:

@@ -200,13 +200,12 @@ def test_a_file_larger_than_the_scan_reads_asks() -> None:
 
 @pytest.mark.usefixtures("furedea_checkout")
 @pytest.mark.parametrize("path", ['"$BODY_DIR:h/body.md"', '"$BODY_DIR"/../body.md\\x', '~"$BODY_DIR"/body.md'])
-def test_a_run_time_path_the_shell_may_expand_differently_stays_unscanned(
+def test_a_run_time_path_the_shell_may_expand_differently_asks(
     secret_samples: dict[str, str], tmp_path: Path, monkeypatch: pytest.MonkeyPatch, path: str
 ) -> None:
     monkeypatch.setenv("BODY_DIR", str(tmp_path))
     (tmp_path / "body.md").write_text(f"config = {secret_samples['aws_key']}\n")
-    # Scanning the file the guard would wrongly expand to would ask; left unscanned, a trusted write passes.
-    assert decide(f"gh pr comment 1 -R furedea/r --body-file {path}") == "allow"
+    assert decide(f"gh pr comment 1 -R furedea/r --body-file {path}") == "ask"
 
 
 @pytest.mark.usefixtures("furedea_checkout")
@@ -247,3 +246,9 @@ def test_a_single_quoted_part_of_a_run_time_path_is_not_expanded(
     Path("$BODY_DIR").mkdir()
     Path("$BODY_DIR/body.md").write_text(f"config = {secret_samples['aws_key']}\n")
     assert decide("gh issue comment 1 -R furedea/r -F '$BODY_DIR'/\"$NAME\"") == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_secret_split_across_quotes_is_scanned_as_the_shell_joins_it(secret_samples: dict[str, str]) -> None:
+    token = secret_samples["github_token"]
+    assert decide(f"gh issue comment 1 -R furedea/r -b '{token[:2]}''{token[2:]}'") == "ask"

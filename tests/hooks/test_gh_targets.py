@@ -45,7 +45,9 @@ def test_a_write_to_the_working_repository_follows_every_github_remote(remotes: 
     assert decide("gh issue comment 1 -b ok") == expected
 
 
-@pytest.mark.parametrize(("resolved", "expected"), [("other/project", "ask"), ("furedea/agent-config", "allow")])
+@pytest.mark.parametrize(
+    ("resolved", "expected"), [("other/project", "ask"), ("furedea/agent-config", "allow"), ("base", "ask")]
+)
 def test_a_default_repository_set_by_gh_names_the_working_repository(
     furedea_checkout: Path, resolved: str, expected: str
 ) -> None:

@@ -11,7 +11,7 @@
 - Cast initialisms consistently: `ID`, `URL`, `HTTP`, not `Id`, `Url`, `Http`.
 - Use short receiver names (one or two letters), the same across a type's methods.
 - Let name length match scope: `i` in a short loop, a descriptive name for a package-level identifier.
-- Avoid `helper`, `util`, and `common` unless the name is already established locally.
+- Avoid `helper`, `util`, and `common` in identifiers unless the name is already established locally. Package directories named `util` or `common` are never acceptable; `go_no_vague_directory_name` reports them.
 
 ## Comments and Documentation
 

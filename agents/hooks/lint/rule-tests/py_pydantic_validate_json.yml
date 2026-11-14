@@ -14,6 +14,8 @@ valid:
     order = Order.model_validate(loads(text))
 invalid:
   - |
+    order = Order.model_validate(json.loads(payload), strict=True)
+  - |
     import json as jsonlib
 
     order = Order.model_validate(jsonlib.loads(payload))

@@ -42,6 +42,16 @@ rule:
           pattern: cached_property
           stopBy: end
     - not:
+        all:
+          - inside:
+              kind: module
+              has:
+                pattern: from functools import cached_property as $CACHED
+          - has:
+              stopBy: end
+              kind: decorator
+              pattern: "@$CACHED"
+    - not:
         has:
           field: body
           kind: block

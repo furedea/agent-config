@@ -1,6 +1,17 @@
 id: py_plain_class_slots
 valid:
   - |
+    from functools import cached_property as cached
+
+
+    class Report:
+        def __init__(self, rows: list[int]) -> None:
+            self.rows = rows
+
+        @cached
+        def total(self) -> int:
+            return sum(self.rows)
+  - |
     class Report:
         def __init__(self, rows: list[int]) -> None:
             self.rows = rows

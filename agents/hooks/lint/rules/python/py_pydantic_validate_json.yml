@@ -6,17 +6,24 @@ note: "Also judges `import json as alias`, `from json import loads`, `orjson.loa
 rule:
   any:
     - pattern: $MODEL.model_validate(json.loads($$$ARGS))
+    - pattern: $MODEL.model_validate(json.loads($$$ARGS), $$$REST)
     - pattern: $MODEL.model_validate(orjson.loads($$$ARGS))
+    - pattern: $MODEL.model_validate(orjson.loads($$$ARGS), $$$REST)
     - pattern: $MODEL.model_validate(ujson.loads($$$ARGS))
+    - pattern: $MODEL.model_validate(ujson.loads($$$ARGS), $$$REST)
     - all:
-        - pattern: $MODEL.model_validate($ALIAS.loads($$$ARGS))
+        - any:
+            - pattern: $MODEL.model_validate($ALIAS.loads($$$ARGS))
+            - pattern: $MODEL.model_validate($ALIAS.loads($$$ARGS), $$$REST)
         - inside:
             kind: module
             stopBy: end
             has:
               pattern: import json as $ALIAS
     - all:
-        - pattern: $MODEL.model_validate(loads($$$ARGS))
+        - any:
+            - pattern: $MODEL.model_validate(loads($$$ARGS))
+            - pattern: $MODEL.model_validate(loads($$$ARGS), $$$REST)
         - inside:
             kind: module
             stopBy: end

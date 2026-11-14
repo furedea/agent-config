@@ -1,6 +1,6 @@
 id: rs_no_path_from_format
 language: rust
-severity: warning
+severity: error
 message: "Build a path with `Path::join` / `PathBuf::push`, not by formatting a string."
 rule:
   any:

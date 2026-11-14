@@ -1,18 +1,13 @@
 id: rs_unit_test_in_test_module
 language: rust
-severity: warning
+severity: error
 message: "Put a unit test in `#[cfg(test)] mod tests`, or move it to `tests/` when it exercises the public API."
 files:
   - "**/src/**/*.rs"
 ignores:
-  - "**/*tests.rs"
-  - "**/*_test.rs"
-  - "**/test.rs"
-  - "**/fixtures.rs"
   - "**/tests/**"
-  - "**/test_support.rs"
-  - "**/build.rs"
-  - "**/fixtures/**"
+  - "**/tests.rs"
+  - "**/*_tests.rs"
 rule:
   all:
     - kind: function_item

@@ -9,8 +9,7 @@ state: local
 threshold: 0.5
 axis: file
 severity: warning
-# Calls that traverse, test a path's kind, or replace file content; a plain read or `fs::write` is left to
-# rs_fs_call_needs_context and is not selected here.
+# Calls that traverse, test a path's kind, or replace file content; a plain read is not selected here.
 rule:
   all:
     - kind: function_item

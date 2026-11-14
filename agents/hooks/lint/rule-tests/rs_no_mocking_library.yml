@@ -25,3 +25,6 @@ invalid:
   - |
     #[faux::create]
     struct Clock;
+  - |
+    #[mockall_double::double]
+    use dependency::Type;

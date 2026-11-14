@@ -5,7 +5,6 @@
 - Put module-level constants before types when they configure the following code.
 - Prefer `type` aliases and enums before structs that use them.
 - Put public structs, enums, and traits before their implementations.
-- Put public functions before private helper functions.
 - Keep related types and their `impl` blocks close together.
 
 ## Structs
@@ -76,6 +75,7 @@ pub enum Provider {
 - Borrowed views use `as_*`: `as_str`, `as_path`, `as_slice`.
 - Consuming conversions use `into_*`: `into_inner`, `into_path_buf`.
 - Cheap copies can use the value name directly: `len`, `status`, `provider`.
+- Avoid Java-style `get_*` unless following an existing local convention.
 - Boolean queries use `is_*`, `has_*`, `can_*`, or `should_*`.
 - Fallible parsing uses `parse`, `try_from`, or `from_str`.
 

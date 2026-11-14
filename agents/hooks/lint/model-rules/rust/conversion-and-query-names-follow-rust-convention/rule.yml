@@ -1,6 +1,6 @@
 # rust-style/references/types.md (Getter and Conversion Naming): as_* borrows, into_* consumes, to_* copies or
 # converts, boolean queries start with is_/has_/can_/should_, fallible parsing is parse/try_from/from_str. The get_
-# prefix is judged by rs_no_get_prefix. Complements command-query-naming (M-05), which asks whether the name's verb
+# prefix stays prose in types.md. Complements command-query-naming (M-05), which asks whether the name's verb
 # agrees with the body's effect. Advisory and not fitted.
 id: conversion-and-query-names-follow-rust-convention
 language: Rust

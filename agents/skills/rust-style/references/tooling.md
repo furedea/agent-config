@@ -43,7 +43,6 @@ tests/
 
 - Let `rustfmt` define formatting. Do not hand-format around rustfmt.
 - Keep files focused and cohesive.
-- Keep public items before private helpers when it improves scanning.
 - Use `mod.rs` only when the existing project already uses that style.
 - Put one top-level concept per file when the concept has real behavior.
 - Keep generated code out of hand-written modules unless the project has a clear generated-code convention.

@@ -42,7 +42,7 @@ VARIABLE_ARGUMENT = re.compile(rf"{GH_VARIABLE}(?:\+?=.*)?", re.DOTALL)
 # and in the line; a file is read at run time; anything else, a herestring, an unquoted heredoc, or a
 # descriptor copy, may carry text the guard cannot read.
 QUOTED_HEREDOC = re.compile(r"""^<<-?\s*(?:'[^']+'|"[^"]+"|\\\w+)$""")
-INPUT_FILE = re.compile(r"^<\s*([^\s$`'\"\\*?\[<>&(]+)$")
+INPUT_FILE = re.compile(r"^<\s*((?:~/)?[^\s$`'\"\\*?\[<>&(~][^\s$`'\"\\*?\[<>&(]*)$")
 # A file named by a quoted parameter, which stays one path and is read like a body file named at run time.
 RUN_TIME_FILE = re.compile(r'^<\s*"[^"`]*\$[^"`]*"$')
 INPUT_REDIRECT = re.compile(r"""(?:^|\s)(0?<(?:<<|<-?|>|&)?\s*(?:'[^']*'|"[^"]*"|\S+))""")

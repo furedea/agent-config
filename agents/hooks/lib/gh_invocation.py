@@ -150,10 +150,10 @@ def _classify_words(words: tuple[Word, ...], catalog: Catalog, single_call: bool
 
 
 def _check_read_repositories(words: tuple[Word, ...]) -> None:
-    """Refuse a read whose --repo names another host than github.com; its options are otherwise free.
+    """Refuse a read whose repository option or URL names another host than github.com.
 
-    A run-time repository passes when a literal owner and slash start it, which leaves no host gh could
-    reach: gh would read the owner as a host name without a dot.
+    A run-time repository passes when a literal owner and slash start it: gh could read only that
+    owner, a name without a dot, as a host.
     """
     for word in _repository_words(words):
         if word.dynamic and not OWNER_PREFIX.match(word.source):
@@ -163,18 +163,21 @@ def _check_read_repositories(words: tuple[Word, ...]) -> None:
 
 
 def _repository_words(words: tuple[Word, ...]) -> list[Word]:
-    """The values given to -R or --repo, in any of the spellings pflag reads."""
+    """The values given to -R or --repo in any spelling pflag reads, a short bundle included, and each URL."""
     found: list[Word] = []
     for index, word in enumerate(words):
         if word.dynamic:
             continue
-        if word.value in REPOSITORY_OPTIONS:
+        value = word.value
+        if value == "--repo" or (value.startswith("-") and not value.startswith("--") and value.endswith("R")):
             found += words[index + 1 : index + 2]
-        elif word.value.startswith("--repo="):
-            found.append(Word(word.value.removeprefix("--repo="), word.value.removeprefix("--repo=")))
-        elif word.value.startswith("-R") and not word.value.startswith("--"):
-            value = word.value[2:].removeprefix("=")
-            found.append(Word(value, value))
+        elif value.startswith("--repo="):
+            found.append(Word(value.removeprefix("--repo="), value.removeprefix("--repo=")))
+        elif value.startswith("-") and not value.startswith("--") and "R" in value:
+            rest = value[value.index("R") + 1 :].removeprefix("=")
+            found.append(Word(rest, rest))
+        elif _is_url(value):
+            found.append(word)
     return found
 
 

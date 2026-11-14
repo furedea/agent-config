@@ -330,6 +330,8 @@ def test_reads_and_local_changes_are_allowed_in_any_form(command: str) -> None:
         ),
         pytest.param("gh pr view 1 --repo=https://evil.example/o/r", "another host", id="a read of another URL"),
         pytest.param('gh pr list -R "$R"', "run time", id="a read whose repository is only a parameter"),
+        pytest.param("gh pr view 1 -cR evil.example/o/r", "another host", id="a read host in a short bundle"),
+        pytest.param("gh pr view https://evil.example/o/r/pull/1", "another host", id="a read of a foreign URL"),
         pytest.param("gh issue comment 1 -R= -b x other/r", "class C", id="an empty repository after an equals sign"),
         pytest.param(
             'gh issue edit 242 --title "fix: follow-ups" --body-file $f >/dev/null',

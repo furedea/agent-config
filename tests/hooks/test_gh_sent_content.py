@@ -37,6 +37,8 @@ def decide(command: str) -> str:
             id="/dev/fd/0 from an expanding heredoc",
         ),
         pytest.param("gh pr comment 12 -R furedea/r -F /dev/fd/3", "device", id="another descriptor file"),
+        pytest.param("gh pr comment 12 -R furedea/r -F /dev/../dev/fd/3", "device", id="a descriptor file through .."),
+        pytest.param("gh pr comment 12 -R furedea/r -F .", "non-regular", id="a directory"),
         pytest.param('gh api -X GET search/issues --raw-field="q=$GH_TOKEN"', "endpoint", id="an attached raw field"),
         pytest.param("cat notes.txt | gh issue comment 1 -R furedea/r -F -", "pipe", id="a body from a pipe"),
         pytest.param(

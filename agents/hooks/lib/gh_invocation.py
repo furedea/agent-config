@@ -5,8 +5,10 @@ options may follow positional arguments. A run-time word is accepted only where 
 option's value or as data; anywhere it could become an option, the call is unclassified and asks.
 """
 
+import os
 import re
 from dataclasses import dataclass
+from pathlib import Path
 from urllib.parse import urlsplit
 
 import gh_options
@@ -42,6 +44,8 @@ REPOSITORY_SPEC = re.compile(
 )
 DOT_SEGMENT = re.compile(r"(?:^|/)(?:\.|%2e){1,2}(?:/|$)", re.IGNORECASE)
 STDIN_PATHS = re.compile(r"/dev/stdin|/dev/fd/0|/proc/self/fd/0")
+# A run-time endpoint that starts with a literal path segment and slash, which no expansion can turn into a URL.
+LITERAL_PATH_START = re.compile(r"[\"']?/?[A-Za-z0-9_.-]+/")
 OWNER_PREFIX = re.compile(r"[\"']?[A-Za-z0-9-]+/")
 REPOSITORY_PATH = re.compile(r"repos/(?P<owner>[^/]+)/(?P<name>[^/]+)")
 
@@ -284,8 +288,9 @@ def _api_request(words: tuple[Word, ...]) -> ApiRequest:
     scan = gh_options.scan(words, OptionTable(API_VALUES, API_FLAGS))
     if len(scan.positionals) != 1 or scan.positionals[0].may_be_option:
         raise UnclassifiableError("gh api needs exactly one endpoint that cannot become an option")
-    if _may_name_url(scan.positionals[0]):
-        raise UnclassifiableError("a gh api endpoint may become a URL at run time")
+    endpoint = scan.positionals[0]
+    if endpoint.dynamic and not LITERAL_PATH_START.match(endpoint.source):
+        raise UnclassifiableError("a gh api endpoint known at run time must start with a literal path segment")
     if any(word.dynamic for word in scan.values_of(METHOD_OPTIONS | HEADER_OPTIONS | {"--hostname"})):
         raise UnclassifiableError("a gh api method, header, or host is known only at run time")
     if any(METHOD_OVERRIDE.match(word.value) for word in scan.values_of(HEADER_OPTIONS)):
@@ -334,16 +339,27 @@ def _names_file(word: Word) -> bool:
 
 
 def _may_name_url(word: Word) -> bool:
-    """Whether a run-time word could become a URL: a colon in its source can join a scheme to a host."""
-    return word.dynamic and ":" in word.source
+    """Whether a run-time word could become a URL: it holds a colon, or its literal start begins a scheme.
+
+    A word that starts with an expansion is judged elsewhere: as an option for a write, and for a read
+    the sandbox's network allowlist and gh's per-host login keep it from reaching another host.
+    """
+    if not word.dynamic:
+        return False
+    lead = re.split(r"[$`]", word.source, maxsplit=1)[0].strip("\"'").lower()
+    return ":" in word.source or (bool(lead) and any(scheme.startswith(lead) for scheme in ("https://", "http://")))
 
 
 def _stdin_path(path: str) -> str:
-    """`-` for a path that is standard input; refuse any other device or process file, which no scan can read."""
-    if path == "-" or STDIN_PATHS.fullmatch(path):
+    """`-` for a path that is standard input; refuse any other device, process, or non-regular file.
+
+    The path is resolved the way the shell's open would, through `~`, `..`, and symlinks.
+    """
+    resolved = Path(os.path.realpath(Path(path).expanduser()))
+    if path == "-" or STDIN_PATHS.fullmatch(path) or STDIN_PATHS.fullmatch(str(resolved)):
         return "-"
-    if path.startswith(("/dev/", "/proc/")):
-        raise UnclassifiableError("a sent file is a device or process file")
+    if str(resolved).startswith(("/dev/", "/proc/")) or (resolved.exists() and not resolved.is_file()):
+        raise UnclassifiableError("a sent file is a device, process, or other non-regular file")
     return path
 
 

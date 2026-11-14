@@ -490,5 +490,14 @@
     "tests/hooks/test_secret_content.py",
     "tests/hooks/test_gh_effects.py",
     "tests/hooks/test_gh_sent_content.py"
+  ],
+  "agents/hooks/lib/gh_options.py": [
+    "tests/hooks/test_gh_effects.py",
+    "tests/hooks/test_allowed_gh_api.py",
+    "tests/hooks/test_allowed_graphql.py",
+    "tests/hooks/test_allowed_review_replies.py",
+    "tests/hooks/test_quote_normalization.py",
+    "tests/hooks/test_zsh_expansion_flags.py",
+    "tests/hooks/test_gh_sent_content.py"
   ]
 }

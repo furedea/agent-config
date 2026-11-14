@@ -42,7 +42,9 @@ VARIABLE_ARGUMENT = re.compile(rf"{GH_VARIABLE}(?:\+?=.*)?", re.DOTALL)
 # and in the line; a file is read at run time; anything else, a herestring, an unquoted heredoc, or a
 # descriptor copy, may carry text the guard cannot read.
 QUOTED_HEREDOC = re.compile(r"""^<<-?\s*(?:'[^']+'|"[^"]+"|\\\w+)$""")
-INPUT_FILE = re.compile(r"^0?<>?\s*([^\s$`'\"\\*?\[~<&(]+)$")
+INPUT_FILE = re.compile(r"^<\s*([^\s$`'\"\\*?\[<>&(]+)$")
+# A file named by a quoted parameter, which stays one path and is read like a body file named at run time.
+RUN_TIME_FILE = re.compile(r'^<\s*"[^"`]*\$[^"`]*"$')
 INPUT_REDIRECT = re.compile(r"""(?:^|\s)(0?<(?:<<|<-?|>|&)?\s*(?:'[^']*'|"[^"]*"|\S+))""")
 # A substitution holding only an input redirection, such as `$(< .env)`, reads that file in bash.
 REDIRECT_SUBSTITUTION = re.compile(r"\$\(\s*<|`\s*<")
@@ -207,15 +209,15 @@ def _with_stdin(call: GhCall, candidate: shell_syntax.Command) -> GhCall | str:
     redirects = input_redirects(candidate)
     if len(redirects) != 1:
         return "reads its body from input the guard cannot see" if redirects else ""
-    redirect = redirects[0]
+    redirect = redirects[0].removeprefix("0")
     if redirect.startswith("<<"):
         expands = not QUOTED_HEREDOC.match(redirect) and re.search(r"[$`]", candidate.trailer)
         return "sends input that expands at run time" if expands else call
     if match := INPUT_FILE.match(redirect):
         return replace(call, files=(*call.files, match[1]))
-    if redirect.startswith(("<&", "0<&")):
-        return "reads its body from a copied descriptor"
-    return replace(call, unscanned_files=True)
+    if RUN_TIME_FILE.match(redirect):
+        return replace(call, unscanned_files=True)
+    return "reads its body from input the guard cannot see"
 
 
 def input_redirects(command: shell_syntax.Command) -> list[str]:

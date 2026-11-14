@@ -111,7 +111,6 @@ def reason(command: str) -> str:
         pytest.param("gh run rerun 123 --failed", id="a run rerun"),
         pytest.param("gh run cancel 123", id="a run cancel"),
         pytest.param("gh label create bug --color FF0000 -d 'Something broke'", id="a label"),
-        pytest.param("gh stack submit --auto", id="a non-interactive stack submit"),
         pytest.param("gh pr comment https://github.com/furedea/agent-config/pull/1 -b ok", id="a URL target"),
         pytest.param("gh issue comment 1 -R FUREDEA/agent-config -b ok", id="an owner in another case"),
         pytest.param(
@@ -321,6 +320,9 @@ def test_reads_and_local_changes_are_allowed_in_any_form(command: str) -> None:
         pytest.param("gh issue create -R furedea/r -b safe", "needs one of", id="an issue without a title"),
         pytest.param("gh pr create -R furedea/r -H topic -b safe", "needs one of", id="a PR without a title"),
         pytest.param("gh stack submit", "needs one of", id="an interactive stack submit"),
+        pytest.param("gh stack submit --auto", "class D", id="a stack submit, which pushes unscanned commits"),
+        pytest.param("gh stack push", "class D", id="a stack push"),
+        pytest.param("cd ../other && gh pr list", "remotes", id="a read after a directory change"),
         pytest.param(
             "gh pr create -R furedea/r -H topic --head '' -t x -b y",
             "needs one of",

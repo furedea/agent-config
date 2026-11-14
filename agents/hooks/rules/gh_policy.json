@@ -539,7 +539,7 @@
     },
     "stack submit": {
       "operation": "stack.submit",
-      "effect": "reversible",
+      "effect": "irreversible",
       "flags": [
         "--auto",
         "--open"
@@ -552,11 +552,11 @@
     },
     "stack push": {
       "operation": "stack.push",
-      "effect": "reversible"
+      "effect": "irreversible"
     },
     "stack sync": {
       "operation": "stack.sync",
-      "effect": "reversible"
+      "effect": "irreversible"
     }
   },
   "rest": [

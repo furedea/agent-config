@@ -96,3 +96,15 @@ def test_a_gh_repo_on_another_host_in_the_hook_environment_makes_every_call_ask(
 ) -> None:
     monkeypatch.setenv("GH_REPO", "evil.example/o/r")
     assert decide("gh pr list") == "ask"
+
+
+@pytest.mark.parametrize(
+    ("origin", "expected"),
+    [("https://evil.example/o/r", "ask"), ("https://github.com/other/r", "allow")],
+)
+@pytest.mark.usefixtures("isolated_project")
+def test_a_read_of_the_working_repository_follows_its_remote_host(origin: str, expected: str) -> None:
+    subprocess.run(["git", "init", "--quiet"], check=True)
+    add_remote("origin", origin)
+    assert decide("gh pr list") == expected
+    assert decide("gh pr list -R furedea/agent-config") == "allow"

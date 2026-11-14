@@ -32,6 +32,7 @@ ARITHMETIC_ASSIGNMENT = re.compile(r"[A-Za-z_][A-Za-z0-9_]*=\S*\[[^\]]*\$\(")
 SENT_FILE_LIMIT_BYTES = 100000
 REMOTE_LOOKUP_TIMEOUT_SECONDS = 5
 GITHUB_HOST = "github.com"
+DIRECTORY_CHANGES = frozenset({"cd", "pushd", "popd"})
 # Programs that set shell variables, or run code that may: on a line holding one, a variable gh reads,
 # such as GH_REPO, GH_HOST, GH_TOKEN, HTTPS_PROXY, SSL_CERT_FILE, or HOME, may differ from the
 # harness environment the guard judged. The hook's own environment is the harness's.
@@ -98,6 +99,7 @@ class CommandLine:
     single_call: bool
     hides_code: bool
     changes_environment: bool
+    changes_directory: bool = False
 
 
 def command_line(source: str, commands: tuple[shell_syntax.Command, ...]) -> CommandLine:
@@ -109,7 +111,8 @@ def command_line(source: str, commands: tuple[shell_syntax.Command, ...]) -> Com
         or any(_changes_environment(item) for item in commands)
         or any(item.wrapper_depth for item in commands)
     )
-    return CommandLine(source, _is_single_call(source, commands), hides_code, changes)
+    moves = any(Path(item.arguments[0]).name in DIRECTORY_CHANGES for item in commands)
+    return CommandLine(source, _is_single_call(source, commands), hides_code, changes, moves)
 
 
 def _assigns_in_syntax(source: str) -> bool:
@@ -252,6 +255,8 @@ def _ask(reason: str, preview: str, operation: str = "") -> Verdict:
 
 def _ungranted(call: GhCall, line: CommandLine, rules: GhRules) -> str:
     """Why no grant allows the call where it acts, or an empty string when one does."""
+    if call.reads_working_repository and (line.changes_directory or not _remotes_on_github()):
+        return "reads a repository whose host the working directory's remotes may not keep on github.com"
     target = _target(call, line, rules.trusted)
     if not all(rules.catalog.grant(target, operation, call.effect) for operation in call.operations):
         return IRREVERSIBLE_REASON if call.effect is Effect.IRREVERSIBLE else TARGET_REASONS[target]
@@ -358,6 +363,27 @@ def _working_repositories() -> tuple[Repository, ...]:
     if configured := os.environ.get("GH_REPO"):
         repository = gh_invocation.repository(configured)
         return (repository,) if repository else ()
+    urls = _remote_urls()
+    if urls is None:
+        return ()
+    origins = [trusted_owners.parse_origin(url) for url in urls]
+    resolved = [gh_invocation.repository(value) for value in _resolved_defaults()]
+    if None in origins or None in resolved:
+        return ()
+    return (*(Repository(owner, name) for owner, name in filter(None, origins)), *filter(None, resolved))
+
+
+def _remotes_on_github() -> bool:
+    """Whether every remote of the working directory, and its gh default, names a github.com repository."""
+    urls = _remote_urls()
+    if urls is None:
+        return False
+    origins_known = all(trusted_owners.parse_origin(url) for url in urls)
+    return origins_known and all(gh_invocation.repository(value) for value in _resolved_defaults())
+
+
+def _remote_urls() -> set[str] | None:
+    """Each remote URL as git resolves it, insteadOf rewrites applied; None when git cannot be asked."""
     try:
         output = subprocess.run(
             ["git", "remote", "-v"],
@@ -367,13 +393,8 @@ def _working_repositories() -> tuple[Repository, ...]:
             check=False,
         ).stdout
     except OSError, subprocess.SubprocessError:
-        return ()
-    urls = {line.split()[1] for line in output.splitlines() if len(line.split()) >= 2}
-    origins = [trusted_owners.parse_origin(url) for url in urls]
-    resolved = [gh_invocation.repository(value) for value in _resolved_defaults()]
-    if None in origins or None in resolved:
-        return ()
-    return (*(Repository(owner, name) for owner, name in filter(None, origins)), *filter(None, resolved))
+        return None
+    return {line.split()[1] for line in output.splitlines() if len(line.split()) >= 2}
 
 
 def _resolved_defaults() -> list[str]:

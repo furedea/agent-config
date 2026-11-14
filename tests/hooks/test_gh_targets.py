@@ -60,10 +60,10 @@ def test_gh_repo_in_the_hook_environment_names_the_working_repository(monkeypatc
 
 
 @pytest.mark.usefixtures("furedea_checkout")
-def test_another_gh_host_in_the_hook_environment_makes_every_write_ask(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_another_gh_host_in_the_hook_environment_makes_every_call_ask(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("GH_HOST", "ghe.example")
     assert decide("gh issue comment 1 -R furedea/agent-config -b ok") == "ask"
-    assert decide("gh pr view 1") == "allow"
+    assert decide("gh pr view 1") == "ask"
 
 
 @pytest.mark.parametrize(

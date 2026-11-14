@@ -156,7 +156,10 @@ def _only_prints(command: shell_syntax.Command) -> bool:
         return False
     if any(not QUOTED_HEREDOC.match(redirect) for redirect in input_redirects(command)):
         return False
-    return name != "cat" or len(command.arguments) == 1
+    if name != "cat":
+        return True
+    redirects = input_redirects(command)
+    return len(command.arguments) == 1 and len(redirects) == 1 and bool(QUOTED_HEREDOC.match(redirects[0]))
 
 
 def load(path: Path, trusted: Path, secret_patterns: Path) -> GhRules:
@@ -185,6 +188,8 @@ def verdict(candidate: shell_syntax.Command, line: CommandLine, rules: GhRules) 
 
 def _judged_call(candidate: shell_syntax.Command, line: CommandLine, rules: GhRules) -> GhCall | str:
     """The classified call with its standard input resolved, or why the guard cannot judge it."""
+    if os.environ.get("GH_HOST", GITHUB_HOST).lower() != GITHUB_HOST:
+        return "the environment sends gh to another host than github.com"
     if line.hides_code:
         return "zsh may evaluate a subscript or assignment on this line as code the guard cannot see"
     if line.changes_environment:
@@ -243,6 +248,8 @@ def _file_problem(call: GhCall, line: CommandLine) -> str:
     """Why the files a call sends cannot be scanned as they will be sent, or an empty string."""
     if (call.files or call.unscanned_files) and not line.single_call:
         return "sends a file another command on the line may write after the guard reads it"
+    if any(re.search(r"\$\(|`", source) for source in call.unscanned_files):
+        return "sends a file whose path a command computes"
     paths = [Path(name) for name in call.files]
     if any(_is_irregular(path) for path in paths):
         return "sends a FIFO, device, or other file that is not a regular file"

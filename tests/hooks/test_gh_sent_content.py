@@ -72,6 +72,15 @@ def decide(command: str) -> str:
             "does more than print",
             id="a body read from a dash-named file",
         ),
+        pytest.param(
+            'gh issue comment 1 -R furedea/r -b "$(cat)"', "does more than print", id="a body typed into cat"
+        ),
+        pytest.param(
+            'gh pr comment 1 -R furedea/r --body-file "$(echo .env)"', "computes", id="a body file path from a command"
+        ),
+        pytest.param(
+            'gh issue comment 1 -R furedea/r -F - < "$(echo .env)"', "computes", id="a stdin path from a command"
+        ),
     ],
 )
 def test_input_the_guard_cannot_read_before_it_leaves_asks(command: str, fragment: str) -> None:

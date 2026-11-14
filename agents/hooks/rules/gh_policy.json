@@ -1,0 +1,306 @@
+{
+  "version": 1,
+  "grants": [
+    {
+      "target": "any",
+      "effects": ["read", "local"],
+      "decision": "allow",
+      "justification": "Reading GitHub and changing only the local checkout stay inside the grant whatever the repository."
+    },
+    {
+      "target": "trusted",
+      "effects": ["reversible"],
+      "decision": "allow",
+      "justification": "A reversible write to a repository whose owner trusted_owners.json lists stays inside the grant (class B)."
+    },
+    {
+      "target": "node",
+      "operations": ["review_thread.resolve", "review_thread.unresolve", "review_thread.reply"],
+      "decision": "allow",
+      "justification": "A review thread named by node ID cannot be traced to its repository before the call; resolving, unresolving, and replying are reversible, and the agent token reaches only the repositories its GitHub App is installed on."
+    }
+  ],
+  "commands": {
+    "issue list": { "operation": "issue.list", "effect": "read" },
+    "issue status": { "operation": "issue.status", "effect": "read" },
+    "issue view": { "operation": "issue.view", "effect": "read" },
+    "issue create": {
+      "operation": "issue.create",
+      "effect": "reversible",
+      "values": [
+        "-a",
+        "--assignee",
+        "--blocked-by",
+        "--blocking",
+        "-l",
+        "--label",
+        "-m",
+        "--milestone",
+        "--parent",
+        "-p",
+        "--project",
+        "-T",
+        "--template",
+        "--type"
+      ],
+      "texts": ["-b", "--body", "-t", "--title"],
+      "files": ["-F", "--body-file", "--attach", "--recover"],
+      "flags": ["-e", "--editor", "-w", "--web"]
+    },
+    "issue edit": {
+      "operation": "issue.edit",
+      "effect": "reversible",
+      "values": [
+        "--add-assignee",
+        "--add-blocked-by",
+        "--add-blocking",
+        "--add-label",
+        "--add-project",
+        "--add-sub-issue",
+        "-m",
+        "--milestone",
+        "--parent",
+        "--remove-assignee",
+        "--remove-blocked-by",
+        "--remove-blocking",
+        "--remove-label",
+        "--remove-project",
+        "--remove-sub-issue",
+        "--type"
+      ],
+      "texts": ["-b", "--body", "-t", "--title"],
+      "files": ["-F", "--body-file", "--attach"],
+      "flags": ["--remove-milestone", "--remove-parent", "--remove-type"]
+    },
+    "issue comment": {
+      "operation": "issue.comment",
+      "effect": "reversible",
+      "texts": ["-b", "--body"],
+      "files": ["-F", "--body-file", "--attach"],
+      "flags": ["--create-if-none", "--edit-last", "-e", "--editor", "-w", "--web"],
+      "irreversible_flags": ["--delete-last", "--yes"]
+    },
+    "issue close": {
+      "operation": "issue.close",
+      "effect": "reversible",
+      "values": ["--duplicate-of", "-r", "--reason"],
+      "texts": ["-c", "--comment"]
+    },
+    "issue reopen": { "operation": "issue.reopen", "effect": "reversible", "texts": ["-c", "--comment"] },
+    "issue develop": {
+      "operation": "issue.develop",
+      "effect": "reversible",
+      "values": ["-b", "--base", "-n", "--name", "--worktree"],
+      "repositories": ["--branch-repo"],
+      "flags": ["-c", "--checkout", "-l", "--list"]
+    },
+    "label list": { "operation": "label.list", "effect": "read" },
+    "label create": {
+      "operation": "label.create",
+      "effect": "reversible",
+      "values": ["-c", "--color"],
+      "texts": ["-d", "--description"],
+      "flags": ["-f", "--force"]
+    },
+    "pr list": { "operation": "pr.list", "effect": "read" },
+    "pr status": { "operation": "pr.status", "effect": "read" },
+    "pr view": { "operation": "pr.view", "effect": "read" },
+    "pr diff": { "operation": "pr.diff", "effect": "read" },
+    "pr checks": { "operation": "pr.checks", "effect": "read" },
+    "pr checkout": { "operation": "pr.checkout", "effect": "local" },
+    "pr create": {
+      "operation": "pr.create",
+      "effect": "reversible",
+      "values": [
+        "-a",
+        "--assignee",
+        "-B",
+        "--base",
+        "-H",
+        "--head",
+        "-l",
+        "--label",
+        "-m",
+        "--milestone",
+        "-p",
+        "--project",
+        "-r",
+        "--reviewer"
+      ],
+      "texts": ["-b", "--body", "-t", "--title"],
+      "files": ["-F", "--body-file", "--attach", "-T", "--template", "--recover"],
+      "flags": [
+        "-d",
+        "--draft",
+        "--dry-run",
+        "-e",
+        "--editor",
+        "-f",
+        "--fill",
+        "--fill-first",
+        "--fill-verbose",
+        "--no-maintainer-edit",
+        "-w",
+        "--web"
+      ]
+    },
+    "pr edit": {
+      "operation": "pr.edit",
+      "effect": "reversible",
+      "values": [
+        "--add-assignee",
+        "--add-label",
+        "--add-project",
+        "--add-reviewer",
+        "-B",
+        "--base",
+        "-m",
+        "--milestone",
+        "--remove-assignee",
+        "--remove-label",
+        "--remove-project",
+        "--remove-reviewer"
+      ],
+      "texts": ["-b", "--body", "-t", "--title"],
+      "files": ["-F", "--body-file", "--attach"],
+      "flags": ["--remove-milestone"]
+    },
+    "pr comment": {
+      "operation": "pr.comment",
+      "effect": "reversible",
+      "texts": ["-b", "--body"],
+      "files": ["-F", "--body-file", "--attach"],
+      "flags": ["--create-if-none", "--edit-last", "-e", "--editor", "-w", "--web"],
+      "irreversible_flags": ["--delete-last", "--yes"]
+    },
+    "pr ready": { "operation": "pr.ready", "effect": "reversible", "flags": ["--undo"] },
+    "pr close": {
+      "operation": "pr.close",
+      "effect": "reversible",
+      "texts": ["-c", "--comment"],
+      "irreversible_flags": ["-d", "--delete-branch"]
+    },
+    "pr reopen": { "operation": "pr.reopen", "effect": "reversible", "texts": ["-c", "--comment"] },
+    "pr review": {
+      "operation": "pr.review",
+      "effect": "reversible",
+      "texts": ["-b", "--body"],
+      "files": ["-F", "--body-file"],
+      "flags": ["-c", "--comment", "-r", "--request-changes"],
+      "irreversible_flags": ["-a", "--approve"]
+    },
+    "pr merge": { "operation": "pr.merge", "effect": "irreversible" },
+    "repo view": { "operation": "repo.view", "effect": "read" },
+    "repo clone": { "operation": "repo.clone", "effect": "local" },
+    "run list": { "operation": "run.list", "effect": "read" },
+    "run view": { "operation": "run.view", "effect": "read" },
+    "run watch": { "operation": "run.watch", "effect": "read" },
+    "run download": { "operation": "run.download", "effect": "read" },
+    "run rerun": {
+      "operation": "run.rerun",
+      "effect": "reversible",
+      "values": ["-j", "--job"],
+      "flags": ["-d", "--debug", "--failed"]
+    },
+    "run cancel": { "operation": "run.cancel", "effect": "reversible", "flags": ["--force"] },
+    "search code": { "operation": "search.code", "effect": "read" },
+    "search commits": { "operation": "search.commits", "effect": "read" },
+    "search issues": { "operation": "search.issues", "effect": "read" },
+    "search prs": { "operation": "search.prs", "effect": "read" },
+    "search repos": { "operation": "search.repos", "effect": "read" },
+    "stack view": { "operation": "stack.view", "effect": "read" },
+    "stack init": { "operation": "stack.init", "effect": "local" },
+    "stack add": { "operation": "stack.add", "effect": "local" },
+    "stack rebase": { "operation": "stack.rebase", "effect": "local" },
+    "stack submit": { "operation": "stack.submit", "effect": "reversible", "flags": ["--auto", "--open"] },
+    "stack push": { "operation": "stack.push", "effect": "reversible" },
+    "stack sync": { "operation": "stack.sync", "effect": "reversible" }
+  },
+  "rest": [
+    { "method": "POST", "path": "repos/{owner}/{repo}/issues", "operation": "issue.create", "effect": "reversible" },
+    {
+      "method": "PATCH",
+      "path": "repos/{owner}/{repo}/issues/{number}",
+      "operation": "issue.edit",
+      "effect": "reversible"
+    },
+    {
+      "method": "POST",
+      "path": "repos/{owner}/{repo}/issues/{number}/comments",
+      "operation": "issue.comment",
+      "effect": "reversible"
+    },
+    {
+      "method": "PATCH",
+      "path": "repos/{owner}/{repo}/issues/comments/{number}",
+      "operation": "issue.comment_edit",
+      "effect": "reversible"
+    },
+    {
+      "method": "POST",
+      "path": "repos/{owner}/{repo}/issues/{number}/labels",
+      "operation": "issue.label",
+      "effect": "reversible"
+    },
+    {
+      "method": "POST",
+      "path": "repos/{owner}/{repo}/issues/{number}/sub_issues",
+      "operation": "issue.sub_issue",
+      "effect": "reversible"
+    },
+    { "method": "POST", "path": "repos/{owner}/{repo}/pulls", "operation": "pr.create", "effect": "reversible" },
+    {
+      "method": "PATCH",
+      "path": "repos/{owner}/{repo}/pulls/{number}",
+      "operation": "pr.edit",
+      "effect": "reversible"
+    },
+    {
+      "method": "POST",
+      "path": "repos/{owner}/{repo}/pulls/{number}/comments",
+      "operation": "pr.review_comment",
+      "effect": "reversible"
+    },
+    {
+      "method": "POST",
+      "path": "repos/{owner}/{repo}/pulls/{number}/comments/{number}/replies",
+      "operation": "review_thread.reply",
+      "effect": "reversible"
+    },
+    {
+      "method": "PATCH",
+      "path": "repos/{owner}/{repo}/pulls/comments/{number}",
+      "operation": "pr.review_comment_edit",
+      "effect": "reversible"
+    },
+    {
+      "method": "POST",
+      "path": "repos/{owner}/{repo}/pulls/{number}/requested_reviewers",
+      "operation": "pr.request_review",
+      "effect": "reversible"
+    },
+    {
+      "method": "POST",
+      "path": "repos/{owner}/{repo}/actions/runs/{number}/rerun",
+      "operation": "run.rerun",
+      "effect": "reversible"
+    },
+    {
+      "method": "POST",
+      "path": "repos/{owner}/{repo}/actions/runs/{number}/rerun-failed-jobs",
+      "operation": "run.rerun",
+      "effect": "reversible"
+    },
+    {
+      "method": "POST",
+      "path": "repos/{owner}/{repo}/actions/runs/{number}/cancel",
+      "operation": "run.cancel",
+      "effect": "reversible"
+    }
+  ],
+  "graphql_mutations": {
+    "resolveReviewThread": { "operation": "review_thread.resolve", "effect": "reversible" },
+    "unresolveReviewThread": { "operation": "review_thread.unresolve", "effect": "reversible" },
+    "addPullRequestReviewThreadReply": { "operation": "review_thread.reply", "effect": "reversible" }
+  }
+}

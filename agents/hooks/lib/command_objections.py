@@ -7,6 +7,7 @@ from typing import Protocol
 
 import automation_paths
 import command_policy
+import gh_policy
 import herdr_grammar
 import hook_decision
 import literal_words
@@ -42,6 +43,11 @@ class Policy(Protocol):
     @property
     def listing_rules(self) -> list[dict]:
         """Rules that list the exact forms a governed or pinned program may run unprompted."""
+        ...
+
+    @property
+    def gh(self) -> gh_policy.GhRules | None:
+        """The gh policy table and what it reads, loaded for the allowed kind only."""
         ...
 
 
@@ -166,6 +172,26 @@ def governed_objection(candidate: shell_syntax.Command, policy: Policy, preview:
         f"Needs review: command not in allowlist. '{prefix}' is approved, but not in this form.\n\nCommand: {preview}",
         prefix,
     )
+
+
+def gh_objection(command: str, commands: tuple[shell_syntax.Command, ...], policy: Policy) -> Verdict:
+    """The first gh call the gh policy table does not allow, unless a trusted project's rule lists that form.
+
+    Only a call an allow prefix approves is judged: the provider asks or denies for every other one
+    itself, and a provider whose hooks cannot ask would turn the hook's prompt into a denial.
+    """
+    if policy.gh is None:
+        return hook_decision.ALLOW
+    line = gh_policy.CommandLine(command, commands)
+    for candidate in (command_policy.canonical(item) for item in commands):
+        if not gh_policy.is_gh(candidate) or not command_policy.prefix_rule(
+            candidate.arguments, policy.prefixes, "allow"
+        ):
+            continue
+        verdict = gh_policy.verdict(candidate, line, policy.gh)
+        if verdict.decision != "allow" and not is_listed(candidate, policy.listing_rules):
+            return verdict
+    return hook_decision.ALLOW
 
 
 def settings_objection(command: str, commands: tuple[shell_syntax.Command, ...]) -> Verdict:

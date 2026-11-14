@@ -200,6 +200,12 @@ Without the items, the hook reports `Model rules skipped` at every Stop and does
 - Docker runs outside the sandbox, so only its read-only inspection forms run without a prompt and
     every other form asks; see
     [ADR-0017](adr/0017_ask_for_every_docker_form_the_allowlist_does_not_list.md).
+- A `gh` call an allow prefix approves is judged by its effect, not its spelling: the guard turns
+    it into the repository, operation, and effect it has, and looks that up in the target x
+    operation grants of `agents/hooks/rules/gh_policy.json`. Reads and local checkouts run on any
+    repository, reversible writes run on repositories whose owner `trusted_owners.json` lists,
+    allowlisted review-thread mutations run by node ID, and every other write, every call the guard
+    cannot classify, and every body that matches `secret_content_patterns.json` asks.
 - `agent-browser` and `agent-desktop` run outside the sandbox, and their listed forms run without
     a prompt. `file:` and `chrome:` URLs, and terminals, System Settings, and credential apps, are
     denied, and forms that reach logged-in sessions or unnamed targets ask; see

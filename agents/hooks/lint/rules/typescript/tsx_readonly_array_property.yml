@@ -1,0 +1,20 @@
+id: tsx_readonly_array_property
+language: tsx
+severity: warning
+message: "Declare the array property as `readonly T[]`."
+note: "The `.tsx` counterpart of ts_readonly_array_property; ast-grep parses `.tsx` files as the separate `tsx` language. Only an array that is the whole type of a property in a `type` or `interface` is reported; arrays in parameters and returns are left alone."
+rule:
+  all:
+    - any:
+        - kind: array_type
+        - all:
+            - kind: generic_type
+            - has: { field: name, regex: ^Array$ }
+    - inside:
+        any:
+          - kind: type_annotation
+            inside: { kind: property_signature }
+          - kind: union_type
+            inside:
+              kind: type_annotation
+              inside: { kind: property_signature }

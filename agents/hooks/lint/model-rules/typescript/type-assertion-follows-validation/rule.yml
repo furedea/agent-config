@@ -1,0 +1,24 @@
+# `as` is used only immediately after validation (agents/skills/typescript-style/references/types.md).
+# `as const` is not an assertion about a type that could be wrong. Advisory and unfitted.
+id: type-assertion-follows-validation
+languages: [ TypeScript, Tsx ]
+kind: noul
+subject: node
+state: local
+threshold: 0.5
+axis: file
+severity: warning
+rule:
+  all:
+    - kind: as_expression
+    - not: { regex: '\bas\s+const$' }
+ask: >-
+  This `as` type assertion is not placed immediately after a check that makes it true.
+criteria:
+  "true": >-
+    The asserted value was not validated by code just above it (a type guard, a parse function, a schema check, or an
+    exhaustive test), so the assertion only silences the compiler, as in a cast of a parsed JSON value, an `any`, or an
+    argument whose shape was never tested.
+  "false": >-
+    The assertion directly follows the check that justifies it, as the final step of a validating parse function that
+    creates a branded type, or it is `as unknown` or a widening that cannot be wrong.

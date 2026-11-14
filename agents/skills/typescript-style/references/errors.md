@@ -8,8 +8,6 @@
 - Add context when rethrowing or converting: `new Error(message, { cause })`. The message names the
   operation and subject.
 - Do not swallow errors with an empty `catch`; handle, convert, or rethrow.
-- Await or explicitly handle every promise. The lint rules `no-floating-promises`,
-  `no-misused-promises`, and `await-thenable` catch violations; do not disable them.
 
 ```ts
 type Result<T, E> = { readonly ok: true; readonly value: T } | { readonly ok: false; readonly error: E };

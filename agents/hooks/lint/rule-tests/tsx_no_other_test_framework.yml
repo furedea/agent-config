@@ -1,0 +1,15 @@
+id: tsx_no_other_test_framework
+valid:
+  - |
+    import { expect, it } from "vitest";
+  - |
+    import { readFile } from "node:fs/promises";
+  - |
+    vi.fn();
+invalid:
+  - |
+    import { describe, it } from "node:test";
+  - |
+    import { jest } from "@jest/globals";
+  - |
+    const spy = jest.fn();

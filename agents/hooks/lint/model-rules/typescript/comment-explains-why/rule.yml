@@ -1,0 +1,28 @@
+# A comment explains why, not what (agents/skills/typescript-style/references/code_style.md). Advisory and unfitted.
+id: comment-explains-why
+languages: [ TypeScript, Tsx ]
+kind: noul
+subject: node
+state: local
+threshold: 0.5
+axis: file
+severity: warning
+rule:
+  any:
+    - all:
+        - kind: function_declaration
+        - has: { kind: comment, stopBy: end }
+    - all:
+        - kind: method_definition
+        - has: { kind: comment, stopBy: end }
+ask: >-
+  A comment in this function restates what the next lines do, where a clearer name, type or function boundary would say it
+  without the comment.
+criteria:
+  "true": >-
+    A comment only narrates the statement beside it (for example "loop over the items" or "increment the counter"), or
+    explains a confusing step that a better name or a small extracted function would make clear.
+  "false": >-
+    Every comment gives a reason the code cannot show: a constraint, a workaround for a named defect or tool behaviour, the
+    intent behind a non-obvious choice, or a pointer to an issue or decision. A TODO or a documentation comment on a public
+    API is not a violation.

@@ -1,0 +1,14 @@
+id: tsx_no_home_dir_in_tests
+language: tsx
+severity: warning
+message: "Use a temporary directory instead of the real home directory."
+note: "The `.tsx` counterpart of ts_no_home_dir_in_tests; ast-grep parses `.tsx` files as the separate `tsx` language. Scanned only in `*.test.tsx` and files under `tests/`; `ast-grep test` ignores the file filter."
+files:
+  - "**/*.test.tsx"
+  - "**/tests/**/*.tsx"
+rule:
+  any:
+    - pattern: homedir()
+    - pattern: os.homedir()
+    - pattern: process.env.HOME
+    - pattern: process.env.USERPROFILE

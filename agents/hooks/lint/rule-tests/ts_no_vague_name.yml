@@ -1,0 +1,21 @@
+id: ts_no_vague_name
+valid:
+  - |
+    class UserStore {}
+  - |
+    function formatDate(date: Date): string {
+      return date.toISOString();
+    }
+  - |
+    const common = gitCommonDir(cwd);
+invalid:
+  - |
+    class SessionManager {}
+  - |
+    function dateHelper(date: Date): string {
+      return date.toISOString();
+    }
+  - |
+    interface StringUtils {
+      trim(value: string): string;
+    }

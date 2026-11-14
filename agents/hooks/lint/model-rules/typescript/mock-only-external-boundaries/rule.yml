@@ -1,0 +1,27 @@
+# Fakes over mocks; vi.mock only for external dependencies at module boundaries
+# (agents/skills/typescript-style/references/testing.md). Advisory and unfitted.
+id: mock-only-external-boundaries
+languages: [ TypeScript, Tsx ]
+kind: noul
+subject: node
+state: local
+threshold: 0.5
+axis: file
+severity: warning
+rule:
+  all:
+    - kind: call_expression
+    - has:
+        field: function
+        kind: member_expression
+        regex: '^vi\.(mock|spyOn)$'
+ask: >-
+  This test mocks or spies on code that the project owns, or on something that is not a dependency at a module boundary,
+  where a simple fake implementation passed in would do.
+criteria:
+  "true": >-
+    The mocked module or spied method belongs to the project itself (a sibling module or an internal collaborator), or the
+    test replaces behaviour it could inject as a fake object.
+  "false": >-
+    The mock replaces an external dependency at its module boundary, such as a network client, the file system, a clock, or
+    a third-party package, and no fake can be injected there.

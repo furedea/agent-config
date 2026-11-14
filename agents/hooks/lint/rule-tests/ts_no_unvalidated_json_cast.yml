@@ -1,0 +1,17 @@
+id: ts_no_unvalidated_json_cast
+valid:
+  - |
+    const raw: unknown = JSON.parse(text);
+  - |
+    const raw = JSON.parse(text) as unknown;
+  - |
+    const config = parseConfig(JSON.parse(text));
+  - |
+    const body: unknown = await response.json();
+invalid:
+  - |
+    const config = JSON.parse(text) as Config;
+  - |
+    const config: Config = JSON.parse(text);
+  - |
+    const body = (await response.json()) as Body;

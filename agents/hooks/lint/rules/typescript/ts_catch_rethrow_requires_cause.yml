@@ -1,0 +1,20 @@
+id: ts_catch_rethrow_requires_cause
+language: typescript
+severity: warning
+message: "Pass the caught error as `cause`: `new Error(message, { cause })`."
+note: "Only a one-argument `new XError(message)` thrown inside a `catch` is reported; a function declared inside the `catch` is a new scope."
+rule:
+  all:
+    - pattern: new $ERROR($MESSAGE)
+    - inside:
+        kind: throw_statement
+        inside:
+          kind: catch_clause
+          stopBy:
+            any:
+              - kind: function_declaration
+              - kind: function_expression
+              - kind: arrow_function
+              - kind: method_definition
+constraints:
+  ERROR: { regex: Error$ }

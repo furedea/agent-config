@@ -64,6 +64,22 @@ function pure(a: number, b: number): number {
 
 // Removed when the parser handles empty input (#123).
 test.fails("known defect", () => {});
+
+type Request = { readonly url: string; readonly retries?: number };
+
+const parsed = JSON.parse("{}") as Request;
+const levels = ["low", "high"] as const;
+
+function stamp(): number {
+  // The clock is read here on purpose.
+  return Date.now();
+}
+
+describe("stamp", () => {
+  it("returns a number", () => {});
+});
+
+vi.mock("./sibling");
 """
 
 
@@ -337,10 +353,19 @@ def test_typescript_rules_select_the_functions_they_ask_about(repository: Path) 
 
     counts = subjects_by_rule(plan(repository))
 
+    # `stamp` is a fourth function and the only one that holds a comment and reads the clock; `as const` is not an
+    # assertion to judge; `load` is the only function that throws.
     assert counts == {
-        "command-query-naming": 3,
+        "command-query-naming": 4,
+        "comment-explains-why": 1,
         "error-message-names-operation": 1,
+        "expected-failure-returned-as-value": 1,
+        "inject-time-and-randomness": 1,
         "known-defect-marker-names-removal": 1,
+        "mock-only-external-boundaries": 1,
+        "repeated-cases-use-it-each": 1,
+        "states-modeled-as-discriminated-union": 1,
+        "type-assertion-follows-validation": 1,
     }
 
 

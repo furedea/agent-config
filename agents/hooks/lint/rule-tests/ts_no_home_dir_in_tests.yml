@@ -1,0 +1,13 @@
+id: ts_no_home_dir_in_tests
+valid:
+  - |
+    const dir = await mkdtemp(join(tmpdir(), "case-"));
+  - |
+    const name = basename(directory);
+invalid:
+  - |
+    const dir = join(homedir(), ".config");
+  - |
+    const dir = join(os.homedir(), ".config");
+  - |
+    const home = process.env.HOME;

@@ -1,0 +1,16 @@
+id: ts_no_unvalidated_json_cast
+language: typescript
+severity: warning
+message: "Parse external input as `unknown` and validate it instead of asserting its type."
+note: "`JSON.parse` and `Response.json()` return `any`; asserting or annotating the result skips the validation the boundary needs."
+rule:
+  any:
+    - pattern: JSON.parse($$$ARGS) as $TYPE
+    - pattern: (await $RESPONSE.json()) as $TYPE
+    - pattern: $RESPONSE.json() as $TYPE
+    - pattern: 'const $NAME: $TYPE = JSON.parse($$$ARGS)'
+    - pattern: 'const $NAME: $TYPE = await $RESPONSE.json()'
+constraints:
+  TYPE:
+    not:
+      regex: ^unknown$

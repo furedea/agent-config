@@ -1,0 +1,23 @@
+# Go concurrency (agents/skills/go-style/references/concurrency.md: "The sender closes a channel, never the receiver;
+# do not close a channel from several senders"). Advisory (ADR-0021). The cutoff is the 0.5 starting value, not fitted.
+id: channel-closed-by-sender
+language: Go
+kind: noul
+subject: node
+# The file is sent whole: the other senders of the channel are usually in other functions.
+state: located
+threshold: 0.5
+axis: file
+severity: warning
+rule:
+  kind: call_expression
+  regex: ^close\(
+ask: >-
+  This `close` is called by a receiver of the channel, or the same channel can be closed by more than one sender.
+criteria:
+  "true": >-
+    The code that closes the channel only receives from it, or the channel is a receive-only parameter's source, or
+    several goroutines or code paths can each close it, so a second close or a send on a closed channel can panic.
+  "false": >-
+    A single sender, or the one code path that coordinates all senders, closes the channel after its sends are done,
+    or closing is the signal of a done channel that is never sent on.

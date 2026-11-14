@@ -1,0 +1,15 @@
+id: go_package_name_lowercase
+valid:
+  - |
+    package config
+  - |
+    package config_test
+  - |
+    package http2
+invalid:
+  - |
+    package user_store
+  - |
+    package userStore
+  - |
+    package Config

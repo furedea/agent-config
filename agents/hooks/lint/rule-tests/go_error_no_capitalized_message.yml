@@ -1,0 +1,53 @@
+id: go_error_no_capitalized_message
+valid:
+  - |
+    import "fmt"
+
+    func load(path string) error {
+        return fmt.Errorf("read config %s: %w", path, err)
+    }
+  - |
+    import "errors"
+
+    func load() error {
+        return errors.New("HTTP 500 from upstream")
+    }
+  - |
+    func load(fmt Formatter) error {
+        return fmt.Errorf("Invalid input")
+    }
+  - |
+    func load() error {
+        return fmt.Errorf("Invalid input")
+    }
+  - |
+    import fmt "example.com/myfmt"
+
+    func load() error {
+        return fmt.Errorf("Invalid input")
+    }
+invalid:
+  - |
+    import "errors"
+
+    func load() error {
+        return errors.New("Config missing")
+    }
+  - |
+    import "fmt"
+
+    func load() error {
+        return fmt.Errorf("Invalid port")
+    }
+  - |
+    import "fmt"
+
+    func load(path string) error {
+        return fmt.Errorf("Read config %s: %w", path, err)
+    }
+  - |
+    import "errors"
+
+    func load() error {
+        return errors.New("A name is required")
+    }

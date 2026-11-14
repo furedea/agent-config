@@ -1,0 +1,16 @@
+id: go_no_vague_name
+language: go
+severity: warning
+message: "Name the package or type for its domain responsibility, not `manager`, `helper`, `util`, or `common`."
+note: "The prose keeps the exception for a name already established in the project."
+rule:
+  any:
+    - kind: package_identifier
+      inside:
+        kind: package_clause
+      regex: ^(util|utils|common|helper|helpers|manager)$
+    - kind: type_identifier
+      inside:
+        kind: type_spec
+        field: name
+      regex: (Manager|Helper|Helpers|Util|Utils|Common)$

@@ -1,0 +1,19 @@
+id: go_no_vague_name
+valid:
+  - |
+    package session
+    type Store struct{}
+  - |
+    package config
+    type Loader struct{}
+  - |
+    package commonmark
+invalid:
+  - |
+    package util
+  - |
+    package common
+  - |
+    type SessionManager struct{}
+  - |
+    type ParseHelper interface{}

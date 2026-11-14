@@ -1,0 +1,36 @@
+id: go_mutex_field_documented
+valid:
+  - |
+    import sync "example.com/project/sync"
+
+    type Cache struct {
+        mu sync.Mutex
+    }
+  - |
+    import "sync"
+
+    type Cache struct {
+        // mu guards items.
+        mu    sync.Mutex
+        items map[string]int
+    }
+  - |
+    type Cache struct {
+        items map[string]int
+    }
+invalid:
+  - |
+    import "sync"
+
+    type Cache struct {
+        mu    sync.Mutex
+        items map[string]int
+    }
+  - |
+    import "sync"
+
+    type Cache struct {
+        name string
+        mu   sync.RWMutex
+        items map[string]int
+    }

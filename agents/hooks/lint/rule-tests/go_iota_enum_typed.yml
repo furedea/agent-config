@@ -1,0 +1,38 @@
+id: go_iota_enum_typed
+valid:
+  - |
+    const (
+        StatePending State = iota
+        StateDone
+    )
+  - |
+    const (
+        Read Perm = 1 << iota
+        Write
+    )
+  - |
+    const (
+        _  = iota
+        KB ByteSize = 1 << (10 * iota)
+    )
+invalid:
+  - |
+    const (
+        _ = iota
+        StateReady
+        StateDone
+    )
+  - |
+    const (
+        StateReady = iota + 1
+        StateDone
+    )
+  - |
+    const (
+        StatePending = iota
+        StateDone
+    )
+  - |
+    const (
+        Zero = iota
+    )

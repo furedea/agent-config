@@ -1,0 +1,66 @@
+id: go_use_slog
+valid:
+  - |
+    import "log/slog"
+
+    func run() {
+        slog.Info("start", "port", 80)
+    }
+  - |
+    import "log"
+
+    func run() {
+        log.SetFlags(0)
+    }
+  - |
+    func run(log Logger) {
+        log.Printf("start %d", 80)
+    }
+  - |
+    import stdlog "log"
+
+    func run(log Logger) {
+        log.Printf("start")
+    }
+  - |
+    import "log"
+
+    func init() { log.SetFlags(0) }
+
+    func write(log Logger) {
+        log.Printf("start")
+    }
+invalid:
+  - |
+    import "log"
+
+    func run() {
+        log.Default().Println("start")
+    }
+  - |
+    import "log"
+
+    func run() {
+        log.Output(1, "start")
+    }
+  - |
+    import "log"
+
+    func run() {
+        log.Printf("start %d", 80)
+    }
+  - |
+    import "log"
+
+    func run() {
+        log.Fatal(err)
+    }
+  - |
+    import (
+        "fmt"
+        "log"
+    )
+
+    func run() {
+        log.Println("start")
+    }

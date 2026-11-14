@@ -1,0 +1,22 @@
+id: go_sealed_interface_sumtype_decl
+valid:
+  - |
+    //sumtype:decl
+    type Payment interface{ isPayment() }
+  - |
+    type Reader interface{ Read() error }
+  - |
+    type Validator interface{ isValid() bool }
+  - |
+    type Policy interface{ isAllowed(u User) bool }
+invalid:
+  - |
+    // sumtype:decl
+    type Payment interface{ isPayment() }
+  - |
+    type Payment interface{ isPayment() }
+  - |
+    // Payment is a sum type.
+    type Payment interface {
+        isPayment()
+    }

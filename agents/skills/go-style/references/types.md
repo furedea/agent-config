@@ -20,7 +20,7 @@ func NewPort(value int) (Port, error) {
 
 ## Enums
 
-- Declare enums as a typed constant block with `iota` and a `String()` method.
+- Declare enums as a constant block with `iota` and give the type a `String()` method.
 - Handle them with a `switch`; the `exhaustive` linter reports missing cases.
 
 ```go

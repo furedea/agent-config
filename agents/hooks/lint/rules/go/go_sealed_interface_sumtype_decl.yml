@@ -1,0 +1,19 @@
+id: go_sealed_interface_sumtype_decl
+language: go
+severity: warning
+message: "Annotate the sealed interface with `//sumtype:decl` so `gochecksumtype` checks its type switches."
+note: "A sealed interface is detected by an unexported marker method named `isX` with no parameters and no result."
+rule:
+  kind: type_declaration
+  has:
+    kind: type_spec
+    has:
+      field: type
+      kind: interface_type
+      has:
+        kind: method_elem
+        regex: ^is[A-Z]\w*\(\s*\)$
+  not:
+    follows:
+      kind: comment
+      regex: ^//sumtype:decl\b

@@ -14,7 +14,7 @@
 - Start with `main.go` at the module root.
 - Move to `cmd/<name>/main.go` when the module has several commands.
 - Put non-public packages under `internal/`.
-- Do not use `pkg/`; put importable packages at the module root and private ones under `internal/`, following the official Go module layout guide.
+- `pkg/` is allowed when it helps, for example in a polyglot monorepo; the official Go documentation does not forbid it.
 - Keep `main` thin: parse flags, wire dependencies, and call library code.
 
 ## Quality Gates

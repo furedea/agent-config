@@ -62,10 +62,16 @@ def test_ast_grep_accepts_every_valid_case_and_reports_every_invalid_case() -> N
 
 # Snippet tests carry no path, so a rule scoped by `files:` is exercised by scanning named files.
 FLAGGED_PATHS = {
-    "go_no_vague_directory_name": ["pkg/store/user.go", "internal/util/user.go", "common/user.go"],
+    "go_no_vague_directory_name": ["util/user.go", "internal/util/user.go", "common/user.go"],
 }
 CLEAN_PATHS = {
-    "go_no_vague_directory_name": ["user_store.go", "util.go", "internal/store/user.go", "internal/package/user.go"],
+    "go_no_vague_directory_name": [
+        "user_store.go",
+        "util.go",
+        "pkg/store/user.go",
+        "internal/store/user.go",
+        "internal/package/user.go",
+    ],
 }
 
 
@@ -110,7 +116,7 @@ def test_directories_above_the_repository_do_not_change_what_the_hook_flags(tmp_
     require_ast_grep()
     static_rule_scan = load_script_module("agents/hooks/lint_format.py", "lint_format_for_ancestors").static_rule_scan
     repository = tmp_path.joinpath("common", "pkg", "util", "tests", "repo")
-    clean, flagged = repository / "src/user.go", repository / "pkg/user.go"
+    clean, flagged = repository / "src/user.go", repository / "util/user.go"
     for path in (clean, flagged):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text("package a\n")

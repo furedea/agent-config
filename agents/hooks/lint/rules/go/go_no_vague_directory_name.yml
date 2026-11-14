@@ -1,8 +1,8 @@
 id: go_no_vague_directory_name
 language: go
 severity: error
-message: "Do not put packages under pkg, util, or common. Put importable packages at the module root and private ones under internal/, and name each package directory by its domain."
+message: "Do not put packages under util or common. Name each package directory by its domain."
 rule:
   kind: source_file
 files:
-  - "**/{pkg,util,common}/**/*.go"
+  - "**/{util,common}/**/*.go"

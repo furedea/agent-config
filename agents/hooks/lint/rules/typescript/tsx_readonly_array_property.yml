@@ -11,38 +11,22 @@ rule:
             - kind: generic_type
             - has: { field: name, regex: ^Array$ }
     - inside:
-        any:
-          - kind: type_annotation
-            inside:
-              kind: property_signature
-              inside:
-                any:
-                  - kind: interface_body
-                  - all:
-                      - kind: object_type
-                      - inside:
-                          kind: type_alias_declaration
-                          stopBy:
-                            not:
-                              any:
-                                - kind: union_type
-                                - kind: intersection_type
-                                - kind: parenthesized_type
-          - kind: union_type
-            inside:
-              kind: type_annotation
-              inside:
-                kind: property_signature
-                inside:
-                  any:
-                    - kind: interface_body
-                    - all:
-                        - kind: object_type
-                        - inside:
-                            kind: type_alias_declaration
-                            stopBy:
-                              not:
-                                any:
-                                  - kind: union_type
-                                  - kind: intersection_type
-                                  - kind: parenthesized_type
+        kind: type_annotation
+        stopBy:
+          not:
+            kind: union_type
+        inside:
+          kind: property_signature
+          inside:
+            any:
+              - kind: interface_body
+              - all:
+                  - kind: object_type
+                  - inside:
+                      kind: type_alias_declaration
+                      stopBy:
+                        not:
+                          any:
+                            - kind: union_type
+                            - kind: intersection_type
+                            - kind: parenthesized_type

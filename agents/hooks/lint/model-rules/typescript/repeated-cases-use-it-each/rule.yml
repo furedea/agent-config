@@ -8,11 +8,19 @@ threshold: 0.5
 axis: file
 severity: warning
 rule:
-  all:
-    - kind: call_expression
-    - has: { field: function, kind: identifier, regex: '^describe$' }
+  any:
+    - all:
+        - kind: call_expression
+        - has: { field: function, kind: identifier, regex: '^describe$' }
+    - all:
+        - kind: program
+        - has:
+            kind: expression_statement
+            has:
+              kind: call_expression
+              has: { field: function, kind: identifier, regex: '^(it|test)$' }
 ask: >-
-  This test group repeats the same test body for different inputs as separate tests instead of one `it.each` table.
+  This test group (a `describe` block, or the top level of a test file) repeats the same test body for different inputs as separate tests instead of one `it.each` table.
 criteria:
   "true": >-
     Two or more tests differ only in their input and expected value, with the same arrange and assert steps, so they could

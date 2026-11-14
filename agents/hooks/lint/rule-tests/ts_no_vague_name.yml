@@ -3,6 +3,10 @@ valid:
   - |
     class UserStore {}
   - |
+    function findCommon(left: string[], right: string[]): string[] {
+      return left.filter((item) => right.includes(item));
+    }
+  - |
     function formatDate(date: Date): string {
       return date.toISOString();
     }
@@ -12,7 +16,11 @@ invalid:
   - |
     class SessionManager {}
   - |
-    function dateHelper(date: Date): string {
+    class URLHelper {}
+  - |
+    type XMLUtils = { parse(text: string): unknown };
+  - |
+    function helper(date: Date): string {
       return date.toISOString();
     }
   - |

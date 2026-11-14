@@ -27,3 +27,7 @@ invalid:
     }
   - |
     type Order = { readonly lines: string[] | null };
+  - |
+    type Order = { readonly lines: string[] | null | undefined };
+  - |
+    type Order = { readonly lines: null | string[] | undefined };

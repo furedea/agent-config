@@ -16,6 +16,10 @@ invalid:
   - |
     let config: Config = JSON.parse(text);
   - |
+    const config = JSON.parse(text) as unknown as Config;
+  - |
+    const body = (await response.json()) as unknown as Body;
+  - |
     let body: Body = await response.json();
   - |
     const body = (await response.json()) as Body;

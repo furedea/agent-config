@@ -80,6 +80,11 @@ describe("stamp", () => {
 });
 
 vi.mock("./sibling");
+
+it("first case", () => {});
+it("second case", () => {});
+
+const expiresAt = () => Date.now() + 1000;
 """
 
 
@@ -353,17 +358,18 @@ def test_typescript_rules_select_the_functions_they_ask_about(repository: Path) 
 
     counts = subjects_by_rule(plan(repository))
 
-    # `stamp` is a fourth function and the only one that holds a comment and reads the clock; `as const` is not an
-    # assertion to judge; `load` is the only function that throws.
+    # `stamp` is a fourth function and the only one that holds a comment; `stamp` and the arrow function `expiresAt`
+    # read the clock; `as const` is not an assertion to judge; `load` is the only function that throws; the
+    # `describe` block and the top level of the file, which holds two bare `it` calls, are the groups of tests.
     assert counts == {
         "command-query-naming": 4,
         "comment-explains-why": 1,
         "error-message-names-operation": 1,
         "expected-failure-returned-as-value": 1,
-        "inject-time-and-randomness": 1,
+        "inject-time-and-randomness": 2,
         "known-defect-marker-names-removal": 1,
         "mock-only-external-boundaries": 1,
-        "repeated-cases-use-it-each": 1,
+        "repeated-cases-use-it-each": 2,
         "states-modeled-as-discriminated-union": 1,
         "type-assertion-follows-validation": 1,
     }

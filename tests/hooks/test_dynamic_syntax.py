@@ -1,5 +1,7 @@
 """Shell functions, loops, and substitutions run unprompted unless a program with external effect hides in them."""
 
+from pathlib import Path
+
 import pytest
 from hook_decision import Verdict
 from tests.runtime import load_script_module
@@ -81,7 +83,6 @@ def test_a_program_known_only_at_run_time_asks(command: str) -> None:
         'set -- "gh pr merge 1"; builtin eval "$1"',
         'trap "$X" EXIT',
         'f() { trap "$1" EXIT; }; f "gh pr merge 1"',
-        'alias x="$X"',
         'f() { alias x="$1"; }; f "gh pr merge 1"',
     ],
 )
@@ -93,18 +94,18 @@ def test_text_that_the_shell_runs_as_code_asks_when_computed(kind: str, command:
 
 @pytest.mark.parametrize(
     "command",
-    ["trap 'gh pr merge 1' EXIT", "alias m='gh pr merge 1'", "builtin eval 'gh pr merge 1'"],
+    ["trap 'gh pr merge 1' EXIT", "builtin eval 'gh pr merge 1'"],
 )
-def test_a_literal_trap_alias_or_eval_script_is_judged_as_a_script(command: str) -> None:
+def test_a_literal_trap_or_eval_script_is_judged_as_a_script(command: str) -> None:
     assert decide("allowed", command).decision == "ask"
 
 
 @pytest.mark.parametrize("kind", ["allowed", "forbidden"])
 @pytest.mark.parametrize(
     "command",
-    ["trap 'echo \"$tmp\" >&2' EXIT", "trap - EXIT", "trap -p", "trap INT", "alias ll='ls -l'", "alias", "alias ll"],
+    ["trap 'echo \"$tmp\" >&2' EXIT", "trap - EXIT", "trap -p", "trap INT", "alias", "alias ll"],
 )
-def test_traps_and_aliases_of_sandbox_local_commands_run_unprompted(kind: str, command: str) -> None:
+def test_traps_of_sandbox_local_commands_and_alias_lookups_run_unprompted(kind: str, command: str) -> None:
     assert decide(kind, command).decision == "allow"
 
 
@@ -128,9 +129,42 @@ def test_eval_of_a_computed_script_still_asks(kind: str) -> None:
         "$X; git commit --no-verify -m x",
         'f() { "$@"; }; git commit --no-verify -m x',
         "trap 'git commit --no-verify -m x' EXIT",
-        "alias c='git commit --no-verify -m x'",
         "builtin eval 'git commit --no-verify -m x'",
     ],
 )
-def test_denials_see_every_command_in_a_function_body_trap_alias_or_beside_a_computed_call(command: str) -> None:
+def test_denials_see_every_command_in_a_function_body_or_trap_or_beside_a_computed_call(command: str) -> None:
     assert decide("forbidden", command).decision == "deny"
+
+
+@pytest.mark.parametrize("kind", ["allowed", "forbidden"])
+@pytest.mark.parametrize(
+    "command",
+    [
+        "alias g=gh\ng pr merge 1",
+        "alias c='git commit'\nc --no-verify -m x",
+        "alias ll='ls -l'",
+        'alias x="$X"',
+        "alias -g G='| sh'",
+    ],
+)
+def test_an_alias_definition_asks_because_its_value_joins_whatever_follows_its_name(kind: str, command: str) -> None:
+    verdict = decide(kind, command)
+    assert verdict.decision == "ask"
+    assert "review" in verdict.reason
+
+
+@pytest.mark.parametrize("kind", ["allowed", "forbidden"])
+def test_a_function_reading_a_relative_script_asks_since_it_may_run_after_a_cd(
+    kind: str, isolated_project: Path
+) -> None:
+    (isolated_project / "script.sh").write_text("echo safe\n")
+    (isolated_project / "nested").mkdir()
+    (isolated_project / "nested/script.sh").write_text("git commit --no-verify -m x\n")
+    verdict = decide(kind, "f(){ sh < script.sh; }; cd nested; f")
+    assert verdict.decision == "ask"
+
+
+def test_a_function_reading_an_absolute_script_is_judged_by_its_text(isolated_project: Path) -> None:
+    script = isolated_project / "script.sh"
+    script.write_text("git commit --no-verify -m x\n")
+    assert decide("forbidden", f"f(){{ sh < {script}; }}; cd /; f").decision == "deny"

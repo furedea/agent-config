@@ -6,7 +6,7 @@ from shell_words import UnsupportedSyntaxError
 
 
 def scripts(arguments: tuple[str, ...], dynamic: tuple[bool, ...]) -> list[str] | None:
-    """Each literal script eval, trap, or alias runs; None for any other program.
+    """Each literal script eval or trap runs, none for an alias lookup; None for any other program.
 
     Raises:
         UnsupportedSyntaxError: The text is computed at run time, so no rule can judge it.
@@ -36,15 +36,10 @@ def _trap_scripts(arguments: tuple[str, ...], dynamic: tuple[bool, ...]) -> list
 
 
 def _alias_scripts(arguments: tuple[str, ...], dynamic: tuple[bool, ...]) -> list[str]:
-    """The value of each definition; a lookup without `=` has an empty value."""
-    found = []
-    for argument, computed in zip(arguments[1:], dynamic[1:], strict=True):
-        if computed:
-            raise UnsupportedSyntaxError("an alias computed at run time requires explicit review", "wrapper")
-        name, _, value = argument.partition("=")
-        if not name.startswith("-"):
-            found.append(value)
-    return found
+    """None for a lookup; a definition asks, since its value joins whatever words later follow its name."""
+    if any(dynamic[1:]) or any("=" in argument and not argument.startswith("-") for argument in arguments[1:]):
+        raise UnsupportedSyntaxError("an alias defined in the command requires explicit review", "wrapper")
+    return []
 
 
 READERS: dict[str, Callable[[tuple[str, ...], tuple[bool, ...]], list[str]]] = {

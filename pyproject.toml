@@ -25,6 +25,7 @@ known_first_party = [
   "check_execution",
   "check_selection",
   "cleanup_worktrees",
+  "code_text",
   "command_objections",
   "command_policy",
   "comment_nodes",

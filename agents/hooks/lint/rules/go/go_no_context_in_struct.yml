@@ -2,6 +2,7 @@ id: go_no_context_in_struct
 language: go
 severity: warning
 message: "Do not store a `context.Context` in a struct; pass it as the first parameter."
+note: "An aliased import of `context` is not followed."
 rule:
   kind: field_declaration
   has:

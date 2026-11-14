@@ -10,6 +10,11 @@ valid:
         Read Perm = 1 << iota
         Write
     )
+  - |
+    const (
+        _  = iota
+        KB ByteSize = 1 << (10 * iota)
+    )
 invalid:
   - |
     const (

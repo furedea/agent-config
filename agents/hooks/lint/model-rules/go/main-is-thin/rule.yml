@@ -14,6 +14,13 @@ rule:
     - has:
         field: name
         regex: ^main$
+    # Only the entry point: `func main` in any other package is an ordinary function.
+    - inside:
+        kind: source_file
+        has:
+          kind: package_clause
+          regex: ^package main$
+        stopBy: end
 ask: >-
   This `main` function holds program logic beyond parsing flags, wiring dependencies and calling library code.
 criteria:

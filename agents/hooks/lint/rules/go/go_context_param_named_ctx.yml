@@ -2,7 +2,7 @@ id: go_context_param_named_ctx
 language: go
 severity: warning
 message: "Name a `context.Context` parameter `ctx`."
-note: "The position of the parameter is judged by revive `context-as-argument`."
+note: "An aliased import of `context` is not followed. The position of the parameter is judged by revive `context-as-argument`."
 rule:
   kind: identifier
   not:

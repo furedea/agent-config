@@ -2,7 +2,9 @@ id: go_library_no_global_logger
 language: go
 severity: warning
 message: "A library package must not configure the global logger; accept a `*slog.Logger` instead."
-note: "`package main` is skipped, because the program owns the global logger. Only a file that imports `log` or `log/slog` is judged."
+note: "Test files are skipped, because a test may redirect the global logger. `package main` is skipped, because the program owns the global logger. Only a file that imports `log` or `log/slog` is judged."
+ignores:
+  - "**/*_test.go"
 rule:
   kind: call_expression
   regex: ^(slog\.(SetDefault|SetLogLoggerLevel)|log\.(Default\(\)\.)?(SetOutput|SetFlags|SetPrefix))\(

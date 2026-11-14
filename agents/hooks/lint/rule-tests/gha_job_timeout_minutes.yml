@@ -11,6 +11,15 @@ valid:
     jobs:
       call:
         uses: owner/repo/.github/workflows/lint.yml@main
+  - |
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        steps:
+          - uses: owner/action@main
+            with:
+              runs-on: ubuntu-latest
 invalid:
   - |
     jobs:

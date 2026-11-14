@@ -22,6 +22,15 @@ valid:
     jobs:
       call:
         uses: owner/repo/.github/workflows/lint.yml@main
+  - |
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        defaults:
+          run:
+            shell: bash
+        steps:
+          - run: echo hi
 invalid:
   - |
     jobs:

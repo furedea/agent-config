@@ -30,6 +30,18 @@ valid:
         runs-on: ubuntu-latest
         steps:
           - run: echo hi
+  - |
+    on:
+      workflow_dispatch:
+        inputs:
+          event:
+            description: pull_request or push
+            default: push
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        steps:
+          - run: echo hi
 invalid:
   - |
     on:

@@ -19,7 +19,16 @@ rule:
           regex: ^"?on"?$
       - has:
           field: value
-          regex: \b(push|pull_request)\b
+          any:
+            - regex: ^(push|pull_request)$
+            - regex: ^\[[^\]]*\b(push|pull_request)\b
+            - has:
+                kind: block_mapping
+                has:
+                  kind: block_mapping_pair
+                  has:
+                    field: key
+                    regex: ^(push|pull_request)$
   not:
     has:
       kind: block_mapping_pair

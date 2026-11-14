@@ -21,7 +21,7 @@ rule:
     - has:
         kind: new_expression
         stopBy: end
-        regex: "^new\\s+\\w*(Client|Service|Repository|Connection|Session|Parser|Engine|Manager|Adapter|Gateway|Store|Factory|Handler|Loader|Reader|Writer|Server|Pool|Provider|Runner)\\b"
+        regex: "^new\\s+([A-Za-z_$][\\w$]*\\.)*[\\w$]*(Client|Service|Repository|Connection|Session|Parser|Engine|Manager|Adapter|Gateway|Store|Factory|Handler|Loader|Reader|Writer|Server|Pool|Provider|Runner)\\b"
 ask: >-
   This function creates and configures its own collaborators and then also runs the logic that uses them.
 criteria:

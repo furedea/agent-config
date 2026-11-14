@@ -110,6 +110,10 @@ function label(): string {
   return this.text;
 }
 
+function qualified(): number {
+  return new sdk.ApiClient().count();
+}
+
 function local(): number {
   return new Map<string, number>().size;
 }
@@ -241,7 +245,11 @@ EXPECTED = {
 }
 
 # A Python docstring is a string, not a comment, and the rule selects it too: `documented` is the second subject.
-EXPECTED_OVERRIDES = {"python": {"no-comment-restating-code": 2}}
+EXPECTED_OVERRIDES = {
+    "python": {"no-comment-restating-code": 2},
+    # `qualified` builds `new sdk.ApiClient()`: a namespace-qualified collaborator is a construction too.
+    "typescript": {"construction-separate-from-execution": 2},
+}
 
 
 @pytest.fixture

@@ -10,6 +10,7 @@ from tests.runtime import REPO_ROOT
 
 sys.path.insert(0, str(REPO_ROOT / "agents/hooks/lib"))
 import model_rules_gate
+import model_rules_report
 import model_rules_run
 from model_rules_outcome import Finding, Judgement, Plan, Prevented
 
@@ -147,3 +148,10 @@ def test_a_run_with_a_failed_review_saves_no_receipt_so_the_next_stop_retries_it
 
 def test_a_complete_run_saves_its_receipt(monkeypatch: pytest.MonkeyPatch) -> None:
     assert model_rules_gate.RECEIPT_KEY in advise_with(Judgement(()), monkeypatch)
+
+
+def test_a_run_with_a_failed_review_is_reported_as_incomplete_not_passed() -> None:
+    line = model_rules_report.describe_line(Judgement((), failed_reviews=1))
+
+    assert "incomplete" in line
+    assert "passed" not in line

@@ -17,6 +17,9 @@ rule:
         - all:
             - kind: arrow_function
             - inside: { kind: variable_declarator }
+    - has:
+        field: return_type
+        regex: "(\\[\\]|Array<|Map<|Set<|Record<)"
     - has: { pattern: return this.$F, stopBy: end }
 ask: >-
   This function hands the caller the object's own mutable collection, so the caller can change its state without the

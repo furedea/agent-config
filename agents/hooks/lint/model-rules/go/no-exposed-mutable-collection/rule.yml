@@ -14,6 +14,9 @@ rule:
     - any:
         - kind: function_declaration
         - kind: method_declaration
+    - has:
+        field: result
+        regex: "^(\\[\\]|map\\[)"
     - has: { pattern: return $R.$F, stopBy: end }
 ask: >-
   This function hands the caller the object's own mutable collection, so the caller can change its state without the

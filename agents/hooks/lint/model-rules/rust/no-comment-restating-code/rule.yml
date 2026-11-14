@@ -1,7 +1,7 @@
 # M-33 minimal comments (agents/AGENTS.md: "minimize comments and docstrings; use them for public APIs, TODOs,
 # non-obvious constraints, and intent that code cannot express"). Advisory: the Stop hook reports findings and never
-# promotes this rule to a gate (ADR-0021). Selected by a comment inside the function; a comment that restates the next
-# line is the violation.
+# promotes this rule to a gate (ADR-0021). Selected by a comment or docstring inside the function that is not a tool
+# directive or TODO; a comment that restates the next line is the violation.
 id: no-comment-restating-code
 language: Rust
 kind: noul
@@ -14,8 +14,14 @@ rule:
   all:
     - kind: function_item
     - any:
-        - has: { kind: line_comment, stopBy: end }
-        - has: { kind: block_comment, stopBy: end }
+        - has:
+            kind: line_comment
+            stopBy: end
+            not: { regex: "^//\\s*(TODO|FIXME|XXX|HACK|SAFETY|noqa|type:|pragma|pylint|ruff|nosec|nolint|clippy|rustfmt|eslint|oxlint|ts-|prettier|biome|@ts|go:|#!)" }
+        - has:
+            kind: block_comment
+            stopBy: end
+            not: { regex: "^/\\*\\s*(TODO|FIXME|XXX|HACK|SAFETY|noqa|type:|pragma|pylint|ruff|nosec|nolint|clippy|rustfmt|eslint|oxlint|ts-|prettier|biome|@ts|go:|#!)" }
 ask: >-
   A comment in this function restates what the code beside it already says.
 criteria:

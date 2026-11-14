@@ -44,6 +44,19 @@ def plain(a, b):
     return a + b
 
 
+def documented(a):
+    'Return a.'
+    return a
+
+
+def tagged(a):
+    return a  # noqa: E501
+
+
+def label(self):
+    return self.text
+
+
 def fail():
     raise ValueError("bad")
 
@@ -84,6 +97,11 @@ function plain(a: number, b: number): number {
 
 const arrow = (a: number): number => a + 1;
 
+function label(): string {
+  // eslint-disable-next-line no-console
+  return this.text;
+}
+
 function local(): number {
   return new Map<string, number>().size;
 }
@@ -116,6 +134,10 @@ func (b *Box) Total() int {
 
 func City(order Order) string {
 	return order.Customer.Address.City.String()
+}
+
+func (b *Box) Name() string {
+	return b.name
 }
 
 func Plain(a, b int) int {
@@ -160,6 +182,11 @@ pub fn plain(a: i32, b: i32) -> i32 {
     a + b
 }
 
+pub fn tagged() -> usize {
+    // TODO: remove
+    1
+}
+
 pub fn local() -> usize {
     Vec::<i32>::new().len()
 }
@@ -201,6 +228,9 @@ EXPECTED = {
     "no-exposed-mutable-collection": 1,
 }
 
+# A Python docstring is a string, not a comment, and the rule selects it too: `documented` is the second subject.
+EXPECTED_OVERRIDES = {"python": {"no-comment-restating-code": 2}}
+
 
 @pytest.fixture
 def repository(tmp_path: Path) -> Path:
@@ -236,4 +266,4 @@ def test_each_rule_selects_the_functions_it_asks_about(language: str, repository
     report = json.loads(result.stdout)
     counts = {entry["rule"]: entry["subjects"] for entry in report["byRule"] if entry["rule"] in RULE_IDS}
 
-    assert {rule: counts.get(rule, 0) for rule in RULE_IDS} == EXPECTED
+    assert {rule: counts.get(rule, 0) for rule in RULE_IDS} == {**EXPECTED, **EXPECTED_OVERRIDES.get(language, {})}

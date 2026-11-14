@@ -15,6 +15,7 @@ from tests.hooks.model_rules_fakes import Tools, install_tools
 from tests.runtime import REPO_ROOT, StubWriter
 
 sys.path.insert(0, str(REPO_ROOT / "agents/hooks/lib"))
+import model_rules_gate
 import model_rules_programs
 import model_rules_run
 import session_gate
@@ -29,6 +30,8 @@ def install_fakes(executable: StubWriter, tmp_path: Path, monkeypatch: pytest.Mo
     fakes = install_tools(executable, tmp_path.parent / f"{tmp_path.name}-fakes")
     # The hook names `timeout` by absolute path, so the fake has to stand at the path it uses.
     monkeypatch.setattr(model_rules_run, "TIMEOUT_PROGRAM", str(fakes.timeout))
+    # One tier of rules keeps each test about one review; `test_model_rules_tiers` covers the tiers themselves.
+    monkeypatch.setattr(model_rules_gate, "rule_tiers", lambda directory: ((directory,),))
     # The programs are looked up only in trusted places, so the fake directory stands in for the Nix store: it is the
     # one trusted directory, its real path is the store root, and the test user is the trusted owner.
     programs = tmp_path / "bin"

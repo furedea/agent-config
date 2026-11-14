@@ -12,7 +12,8 @@ severity: warning
 rule:
   all:
     - kind: function_definition
-    - has: { pattern: return self.$F, stopBy: end }
+    - has: { kind: return_statement, regex: "^return self\\._", stopBy: end }
+    - has: { field: name, regex: "^[^_]" }
 ask: >-
   This function hands the caller the object's own mutable collection, so the caller can change its state without the
   object noticing.

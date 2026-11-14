@@ -165,23 +165,37 @@ class _Changes:
         return self.committed.withheld | self.uncommitted.withheld
 
     def reviews(self, record: SessionRecord, programs: Programs) -> tuple[model_rules_run.Review, ...]:
-        """The commits made since the session started, then the changes not committed yet.
+        """For each tier of rules, the commits made since the session started, then the changes not committed yet.
 
         `jev-lint review` judges `base...HEAD` or, without a base, the working tree against HEAD; neither covers both.
+        The tuned tier comes first so that it takes the subject cap before the untuned rules do.
         """
         cache = model_rules_run.cache_path(state_directory())
         reviews = []
-        if self.committed.sendable:
-            reviews.append(
-                model_rules_run.Review(
-                    record.root, record.head, RULES_DIRECTORY, cache, programs, self.committed.sendable
+        for rules in rule_tiers(RULES_DIRECTORY):
+            if self.committed.sendable:
+                reviews.append(
+                    model_rules_run.Review(record.root, record.head, rules, cache, programs, self.committed.sendable)
                 )
-            )
-        if self.uncommitted.sendable:
-            reviews.append(
-                model_rules_run.Review(record.root, None, RULES_DIRECTORY, cache, programs, self.uncommitted.sendable)
-            )
+            if self.uncommitted.sendable:
+                reviews.append(
+                    model_rules_run.Review(record.root, None, rules, cache, programs, self.uncommitted.sendable)
+                )
         return tuple(reviews)
+
+
+def rule_tiers(directory: Path) -> tuple[tuple[Path, ...], ...]:
+    """The rules to review with, in the order they claim the subject cap: rules with an eval baseline, then the rest.
+
+    A file that does not fit the cap is skipped whole, so rules that were never fitted must not displace the tuned
+    ones. When every rule is of one kind there is one tier: the whole directory.
+    """
+    folders = sorted(path.parent for path in directory.glob("*/*/rule.yml"))
+    tuned = tuple(folder for folder in folders if (folder / "baseline.json").is_file())
+    untuned = tuple(folder for folder in folders if folder not in tuned)
+    if not tuned or not untuned:
+        return ((directory,),)
+    return (tuned, untuned)
 
 
 def _repository_gate(root: Path) -> Prevented | None:

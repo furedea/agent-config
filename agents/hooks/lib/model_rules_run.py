@@ -67,7 +67,7 @@ class Review:
 
     root: Path
     base: str | None
-    rules: Path
+    rules: tuple[Path, ...]
     cache: Path
     programs: Programs
     paths: tuple[str, ...] = ()
@@ -140,6 +140,9 @@ class Review:
             return Prevented(f"{REVIEWER} printed a plan that cannot be read")
         return report
 
+    def _rule_arguments(self) -> tuple[str, ...]:
+        return tuple(word for path in self.rules for word in ("-R", str(path)))
+
     def _arguments(self, *extra: str) -> tuple[str, ...]:
         base = ("--base", self.base) if self.base else ()
         return (
@@ -150,8 +153,7 @@ class Review:
             "--fail-on",
             "error",
             *base,
-            "-R",
-            str(self.rules),
+            *self._rule_arguments(),
             "-c",
             str(self.cache),
         )

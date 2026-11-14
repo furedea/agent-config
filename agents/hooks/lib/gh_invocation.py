@@ -43,6 +43,7 @@ REPOSITORY_SPEC = re.compile(
     r"(?:(?P<host>[A-Za-z0-9.-]+\.[A-Za-z]+)/)?(?P<owner>[A-Za-z0-9-]+)/(?P<name>[A-Za-z0-9_.-]+)"
 )
 DOT_SEGMENT = re.compile(r"(?:^|/)(?:\.|%2e){1,2}(?:/|$)", re.IGNORECASE)
+SUBSTITUTION = re.compile(r"\$\(|`")
 STDIN_PATHS = re.compile(r"/dev/stdin|/dev/fd/0|/proc/self/fd/0")
 # A run-time endpoint that starts with a literal path segment and slash, which no expansion can turn into a URL.
 LITERAL_PATH_START = re.compile(r"[\"']?/?[A-Za-z0-9_.-]+/")
@@ -161,8 +162,8 @@ def _check_read_repositories(words: tuple[Word, ...]) -> None:
     owner, a name without a dot, as a host.
     """
     for word in words:
-        if word.dynamic and (word.source.startswith("-") or _may_name_url(word)):
-            raise UnclassifiableError("a read takes an option value or URL known only at run time")
+        if word.dynamic and (word.source.startswith("-") or _may_name_url(word) or SUBSTITUTION.search(word.source)):
+            raise UnclassifiableError("a read takes an option value, URL, or command output known only at run time")
     for word in _repository_words(words):
         if word.dynamic and not OWNER_PREFIX.match(word.source):
             raise UnclassifiableError("a read names its repository only at run time")
@@ -207,6 +208,8 @@ def _classify_write(words: tuple[Word, ...], spec: CommandSpec, single_call: boo
     targets = scan.values_of(REPOSITORY_OPTIONS | spec.repositories)
     targets += tuple(word for word in scan.positionals if _is_url(word.value))
     repositories = tuple(None if word.dynamic else repository(word.value) for word in targets)
+    if spec.required and not scan.values_of(spec.required):
+        raise UnclassifiableError(f"'{spec.operation}' needs one of {', '.join(sorted(spec.required))}")
     if scan.flags & spec.read_flags:
         return GhCall((spec.operation,), Effect.READ)
     effect = Effect.IRREVERSIBLE if scan.flags & spec.irreversible_flags else spec.effect
@@ -344,8 +347,8 @@ def _names_file(word: Word) -> bool:
 def _may_name_url(word: Word) -> bool:
     """Whether a run-time word could become a URL: it holds a colon, or its literal start begins a scheme.
 
-    A word that starts with an expansion is judged elsewhere: as an option for a write, and for a read
-    the sandbox's network allowlist and gh's per-host login keep it from reaching another host.
+    A word that starts with an expansion is judged elsewhere: a write asks for it as a possible option,
+    and a read asks when it holds command output; a plain parameter holds the harness environment.
     """
     if not word.dynamic:
         return False

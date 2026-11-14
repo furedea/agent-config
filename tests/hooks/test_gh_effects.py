@@ -133,7 +133,6 @@ def test_reversible_writes_to_a_trusted_owner_are_allowed(command: str) -> None:
 @pytest.mark.parametrize(
     "command",
     [
-        pytest.param("gh run list --commit $(git rev-parse HEAD) --json databaseId,name,status", id="logged run list"),
         pytest.param("gh run watch $R --repo furedea/agent-config --exit-status 2>&1", id="logged run watch"),
         pytest.param("gh pr view $n --json number,state --jq '\"\\(.number) \\(.state)\"'", id="logged PR view"),
         pytest.param(
@@ -153,7 +152,6 @@ def test_reversible_writes_to_a_trusted_owner_are_allowed(command: str) -> None:
         pytest.param("gh api repos/furedea/agent-config/issues/comments/$id --jq .body", id="logged comment read"),
         pytest.param("gh api repos/furedea/template-typescript/contents/$f --jq .content", id="logged file read"),
         pytest.param("gh run list --commit $sha", id="an unquoted commit"),
-        pytest.param("gh pr view $(cat number.txt)", id="a PR number from a substitution"),
         pytest.param("gh pr view 1 --repo other/r --comments", id="a PR of another owner"),
         pytest.param("gh search repos agent --owner furedea", id="a repository search"),
         pytest.param("gh api -X GET search/issues -f q='repo:o/r is:open'", id="a GET with query fields"),
@@ -197,7 +195,9 @@ def test_reads_and_local_changes_are_allowed_in_any_form(command: str) -> None:
             "split",
             id="logged endpoint holding an unquoted glob",
         ),
-        pytest.param("gh pr create --repo other/r --title x --body y", "class C", id="another owner by option"),
+        pytest.param(
+            "gh pr create --repo other/r --head topic --title x --body y", "class C", id="another owner by option"
+        ),
         pytest.param("gh issue comment 1 -Rother/r -b ok", "class C", id="another owner in a short bundle"),
         pytest.param("gh pr comment https://github.com/other/r/pull/1 -b x", "class C", id="another owner by URL"),
         pytest.param("gh pr comment https://ghe.example/furedea/r/pull/1 -b x", "class C", id="another host by URL"),
@@ -226,7 +226,7 @@ def test_reads_and_local_changes_are_allowed_in_any_form(command: str) -> None:
         ),
         pytest.param("gh issue comment 1 -b x | head", "class C", id="the working repository in a pipeline"),
         pytest.param(
-            "cp notes.txt b.md && gh pr create -R furedea/r -t x --body-file b.md",
+            "cp notes.txt b.md && gh pr create -R furedea/r -H topic -t x --body-file b.md",
             "another command on the line",
             id="a body file written earlier on the line",
         ),
@@ -341,6 +341,20 @@ def test_reads_and_local_changes_are_allowed_in_any_form(command: str) -> None:
             id="an endpoint URL built",
         ),
         pytest.param("gh api http://api.github.com/user", "another host", id="a plain HTTP endpoint"),
+        pytest.param(
+            "gh run list --commit $(git rev-parse HEAD) --json databaseId,name,status",
+            "command output",
+            id="logged run list with a commit from a substitution",
+        ),
+        pytest.param("gh pr view $(cat number.txt)", "command output", id="a PR number from a substitution"),
+        pytest.param(
+            "gh pr view \"$(printf 'https\\x3a//evil.example/%s/r/pull/1' x)\"",
+            "command output",
+            id="a read URL decoded by printf",
+        ),
+        pytest.param("gh pr create -R furedea/r -t x -b y", "needs one of", id="a PR without --head, which may push"),
+        pytest.param("gh pr create -R furedea/r -H topic -e", "operation table", id="a PR body from an editor"),
+        pytest.param("gh issue comment 1 -R furedea/r --editor", "operation table", id="a comment from an editor"),
         pytest.param(
             'gh pr comment h"$(printf ttps)"//github.com/other/r/pull/1 -b x', "URL", id="a scheme built at run time"
         ),

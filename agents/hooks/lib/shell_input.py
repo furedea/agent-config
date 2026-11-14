@@ -1,7 +1,8 @@
 """Find the scripts a shell reads from its standard input: a pipe, a heredoc, a here-string, or a file."""
 
 import re
-from dataclasses import dataclass
+from collections.abc import Callable
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Self
 
@@ -20,14 +21,15 @@ class InputSources:
     `feeds` maps a statement on the reading side of a pipe to the statement writing into it, and
     `enclosing` maps a statement inside a compound command, such as `( ... )` or `{ ...; }`, to the
     compound statement whose input redirection it inherits. Records list an outer node before the
-    nodes inside it, so the nearest source wins. `in_functions` holds the statements of function
-    bodies, which inherit whatever input each call of the function is given.
+    nodes inside it, so the nearest source wins. `in_functions` maps each statement of a function
+    body to that body; such a statement inherits whatever input each call of the function is given,
+    so only a source inside the same body is its own.
     """
 
     data: bytes
     feeds: dict[int, dict]
     enclosing: dict[int, dict]
-    in_functions: frozenset[int] = frozenset()
+    in_functions: dict[int, int] = field(default_factory=dict)
 
     @classmethod
     def of(cls, records: tuple[dict, ...], data: bytes) -> Self:
@@ -46,7 +48,7 @@ class InputSources:
             if "Cmd" in statement
         }
         bodies = (node["Body"] for node in records if node.get("Type") == "FuncDecl")
-        in_functions = frozenset(id(statement) for body in bodies for statement in nodes(body) if "Cmd" in statement)
+        in_functions = {id(statement): id(body) for body in bodies for statement in nodes(body) if "Cmd" in statement}
         return cls(data, feeds, enclosing, in_functions)
 
     def scripts(self, owner: dict, directories: tuple[Path | None, ...]) -> list[str]:
@@ -60,7 +62,7 @@ class InputSources:
             raise _computed_input()
         if _redirected_inputs(owner, self.data):
             return redirected_scripts(owner, self.data, directories)
-        outer, feed = self.enclosing.get(id(owner)), self.feeds.get(id(owner))
+        outer, feed = self._own(owner, self.enclosing.get(id(owner))), self._own(owner, self.feeds.get(id(owner)))
         if outer is not None and feed is not None:
             raise _computed_input()
         if outer is not None:
@@ -68,6 +70,11 @@ class InputSources:
         if feed is None and id(owner) in self.in_functions:
             raise _computed_input()
         return [piped_script(feed, self.data)] if feed is not None else []
+
+    def _own(self, owner: dict, source: dict | None) -> dict | None:
+        """The source, unless the statement sits in a function body that the source lies outside of."""
+        body = self.in_functions.get(id(owner))
+        return source if source is None or body is None or self.in_functions.get(id(source)) == body else None
 
 
 def is_pipe(node: dict, data: bytes) -> bool:
@@ -171,3 +178,13 @@ def _computed_input() -> UnsupportedSyntaxError:
     return UnsupportedSyntaxError(
         "a shell reading a computed script from its input requires explicit review", "wrapper"
     )
+
+
+def input_scripts(read: Callable[[], list[str]], tolerant: bool) -> list[str]:
+    """The scripts a shell reads from its input; a tolerant caller already marked its call for review."""
+    try:
+        return read()
+    except UnsupportedSyntaxError:
+        if tolerant:
+            return []
+        raise

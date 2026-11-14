@@ -3,7 +3,6 @@
 import json
 import re
 import subprocess
-from collections.abc import Callable
 from contextlib import suppress
 from dataclasses import dataclass, replace
 from functools import partial
@@ -12,6 +11,7 @@ from typing import Self
 
 import code_text
 import fish_script
+import function_calls
 import powershell_options
 import shell_input
 from shell_words import UnsupportedSyntaxError, literal_word, nodes, single_quoted_source, source_text, spreads
@@ -211,7 +211,7 @@ def parse(source: str, depth: int = 0, directories: tuple[Path | None, ...] = ()
         scripts = [(script, layer.wrapper_depth + 1) for layer in layers for script in shell_scripts(layer)]
         unreviewed = name in FOREIGN_SHELLS or any(takes_foreign_option(layer) for layer in layers)
         if (name in SHELLS and not scripts) or _is_foreign_shell(name):
-            inputs = input_scripts(partial(sources.scripts, owner, reachable), tolerant=bool(scripts))
+            inputs = shell_input.input_scripts(partial(sources.scripts, owner, reachable), tolerant=bool(scripts))
             scripts += [(script, innermost.wrapper_depth + 1) for script in inputs]
             unreviewed = unreviewed or (name not in SHELLS and bool(inputs))
         if name == "fish":
@@ -219,10 +219,14 @@ def parse(source: str, depth: int = 0, directories: tuple[Path | None, ...] = ()
         if unreviewed:
             layers[-1] = replace(innermost, unreviewed=True)
         commands += layers
+        scripts = [(function_calls.with_definitions(records, data, script), level) for script, level in scripts]
         nested = [item for script, nested_depth in scripts for item in parse(script, nested_depth, reachable)]
         directories = unsettled(directories, nested + (layers if deferred else []))
         commands += nested
-    return tuple(commands)
+    calls = [
+        function_calls.with_definitions(records, data, call) for call in function_calls.respelled_calls(records, data)
+    ]
+    return (*commands, *(item for call in calls for item in parse(call, depth + 1, (*directories, None))))
 
 
 def fish_file_commands(command: Command, directories: tuple[Path | None, ...]) -> list[Command]:
@@ -232,16 +236,6 @@ def fish_file_commands(command: Command, directories: tuple[Path | None, ...]) -
         with suppress(UnsupportedSyntaxError):
             nested += parse(script, command.wrapper_depth + 1, directories)
     return nested
-
-
-def input_scripts(read: Callable[[], list[str]], tolerant: bool) -> list[str]:
-    """The scripts a shell reads from its input; a tolerant caller already marked its call for review."""
-    try:
-        return read()
-    except UnsupportedSyntaxError:
-        if tolerant:
-            return []
-        raise
 
 
 def hidden_from_provider(records: tuple[dict, ...]) -> set[int]:

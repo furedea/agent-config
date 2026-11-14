@@ -32,6 +32,7 @@ known_first_party = [
   "dev_shell",
   "explicit_targets",
   "fish_script",
+  "function_calls",
   "foreign_shell_policy",
   "powershell_options",
   "primary_workspaces",

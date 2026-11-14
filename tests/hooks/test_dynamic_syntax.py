@@ -94,7 +94,7 @@ def test_text_that_the_shell_runs_as_code_asks_when_computed(kind: str, command:
 
 @pytest.mark.parametrize(
     "command",
-    ["trap 'gh pr merge 1' EXIT", "builtin eval 'gh pr merge 1'"],
+    ["trap 'gh pr merge 1' EXIT", "trap '-x; gh pr merge 1' EXIT", "builtin eval 'gh pr merge 1'"],
 )
 def test_a_literal_trap_or_eval_script_is_judged_as_a_script(command: str) -> None:
     assert decide("allowed", command).decision == "ask"
@@ -288,3 +288,56 @@ def test_a_relative_script_read_after_a_repeated_or_hidden_cd_asks(
     (isolated_project / "nested/script.sh").write_text("echo safe\n")
     (isolated_project / "nested/nested/script.sh").write_text("git commit --no-verify -m x\n")
     assert decide(kind, template).decision == "ask"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "trap '-x; git commit --no-verify -m x' EXIT",
+        'f(){ find . "$@"; }; f -delete',
+        'f(){ find . -"$1"; }; f delete',
+        "f(){ find . $*; }; f -delete",
+        'f(){ find . "${1}"; }; f -delete',
+        "f(){ find . \"$@\"; }; eval 'f -delete'",
+        "f(){ find . \"$@\"; }; trap 'f -delete' EXIT",
+        'f(){ find . "$@"; }; g(){ f -delete; }; g',
+        'f(){ shift; find . "$1"; }; f x -delete',
+        "f(){ find . \"$1\"; }; f '-delete'",
+    ],
+)
+def test_denials_see_a_function_body_with_the_arguments_of_each_call(command: str) -> None:
+    assert decide("forbidden", command).decision == "deny"
+
+
+@pytest.mark.parametrize("kind", ["allowed", "forbidden"])
+@pytest.mark.parametrize(
+    "command",
+    [
+        "printf -vBASH_ALIASES[g] gh",
+        "print -valiases[g] gh",
+        "hash -rp ./evil gh",
+        "declare -n x=BASH_ALIASES; x[g]=gh",
+        "x='BASH_ALIASES[g]'; printf -v \"$x\" gh",
+        'printf -v "$NAME" gh',
+    ],
+)
+def test_dash_led_trap_actions_inherited_input_and_indirect_parameter_writes_ask(
+    kind: str, command: str, isolated_project: Path
+) -> None:
+    (isolated_project / "script.sh").write_text("echo safe\n")
+    (isolated_project / "evil.sh").write_text("git commit --no-verify -m x\n")
+    assert decide(kind, command).decision == "ask"
+
+
+@pytest.mark.parametrize("kind", ["allowed", "forbidden"])
+@pytest.mark.parametrize("command", ["trap -p EXIT", "trap -l", "trap -- 'echo hi' EXIT", "hash -r"])
+def test_trap_and_hash_inspection_forms_run_unprompted(kind: str, command: str) -> None:
+    assert decide(kind, command).decision == "allow"
+
+
+@pytest.mark.parametrize("kind", ["allowed", "forbidden"])
+def test_a_shell_in_a_function_body_trusts_no_input_from_outside_the_body(kind: str, isolated_project: Path) -> None:
+    (isolated_project / "script.sh").write_text("echo safe\n")
+    (isolated_project / "evil.sh").write_text("git commit --no-verify -m x\n")
+    command = f"{{ f(){{ sh; }}; }} < {isolated_project / 'script.sh'}; f < {isolated_project / 'evil.sh'}"
+    assert decide(kind, command).decision == "ask"

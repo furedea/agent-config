@@ -1,0 +1,16 @@
+id: bash_usage_function
+language: bash
+severity: warning
+message: "Define a `usage` function that prints the script's documentation."
+note: "Only files with a `sh` or `bash` shebang are checked: a sourced library has none, and a `bats` file keeps its own."
+rule:
+  kind: program
+  has:
+    kind: comment
+    regex: ^#!.*\b(ba)?sh\b
+  not:
+    has:
+      kind: function_definition
+      has:
+        field: name
+        regex: ^usage$

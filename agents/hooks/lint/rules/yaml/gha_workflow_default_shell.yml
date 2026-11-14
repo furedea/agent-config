@@ -1,0 +1,51 @@
+id: gha_workflow_default_shell
+language: yaml
+severity: warning
+message: "Set `defaults.run.shell` to `bash` (or a shell command that enables `pipefail`) so steps fail on a broken pipe."
+note: "Only workflows with a `run:` step are checked: a workflow of reusable-workflow calls has none, and a caller's `defaults` do not reach the called workflow. A `defaults.run.shell` at the workflow or at any job satisfies the rule; whether every job is covered is not judged."
+files:
+  - "**/.github/workflows/**"
+rule:
+  kind: block_mapping
+  inside:
+    kind: block_node
+    inside:
+      kind: document
+  has:
+    kind: block_mapping_pair
+    has:
+      field: key
+      regex: ^jobs$
+  all:
+    - has:
+        stopBy: end
+        kind: block_mapping_pair
+        has:
+          field: key
+          regex: ^run$
+        inside:
+          kind: block_mapping
+          inside:
+            kind: block_node
+            inside:
+              kind: block_sequence_item
+    - not:
+        has:
+          stopBy: end
+          kind: block_mapping_pair
+          all:
+            - has:
+                field: key
+                regex: ^defaults$
+            - has:
+                field: value
+                has:
+                  stopBy: end
+                  kind: block_mapping_pair
+                  all:
+                    - has:
+                        field: key
+                        regex: ^shell$
+                    - has:
+                        field: value
+                        regex: ^["']?bash["']?$|pipefail

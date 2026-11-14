@@ -1,0 +1,42 @@
+# bash-style: "For requested help (`--help`/`-h`), call `usage` and `exit 0`. For missing or invalid arguments, call
+# `usage >&2` and `exit 1`." Advisory; the prose stays until the rule is promoted (ADR-0021).
+id: usage-help-and-error-exits
+language: Bash
+kind: noul
+subject: node
+state: located
+threshold: 0.5
+axis: file
+severity: warning
+# The script's own argument handling: a `case` branch or an `if` that tests a help flag or calls `usage`. A branch that
+# handles help without calling `usage` is a subject too, since that is the clearest way to break the rule.
+rule:
+  any:
+    - all:
+        - kind: case_item
+        - regex: "(--help|(^|[\\s|(])-h([\\s|)]|$))"
+    - all:
+        - kind: case_item
+        - has: { kind: command, regex: "^usage\\b", stopBy: end }
+    # The catch-all and the empty-argument branches, which handle a missing or invalid argument.
+    - all:
+        - kind: case_item
+        - has: { field: value, regex: "^(\\*|\"\"|'')$" }
+    - all:
+        - kind: if_statement
+        - has: { field: condition, regex: "(--help|(^|[\\s\"])-h([\\s\"\\]]|$))", stopBy: end }
+        - not: { inside: { kind: if_statement, stopBy: end } }
+    - all:
+        - kind: if_statement
+        - has: { kind: command, regex: "^usage\\b", stopBy: end }
+        - not: { has: { kind: if_statement, stopBy: end } }
+ask: >-
+  This argument handling prints usage for a requested help with a non-zero exit, or for a missing or invalid argument
+  with exit status 0 or on standard output.
+criteria:
+  "true": >-
+    A `--help`/`-h` request calls `usage` and then exits with a non-zero status or does not exit, or a missing or
+    invalid argument calls `usage` without redirecting it to standard error (`usage >&2`) or exits with status 0.
+  "false": >-
+    A requested help calls `usage` and exits 0, and a missing or invalid argument calls `usage >&2` and exits 1, or the
+    branch handles neither case.

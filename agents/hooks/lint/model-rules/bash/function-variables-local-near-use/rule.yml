@@ -1,0 +1,35 @@
+# bash-style: "Declare function-local variables with `local`" and "Define variables just before first use". Advisory;
+# the prose stays until the rule is promoted (ADR-0021). The cutoff is the 0.5 starting value and is not fitted.
+id: function-variables-local-near-use
+language: Bash
+kind: noul
+subject: node
+# The function plus the same file's imports and enclosing declarations; no other file is sent.
+state: local
+threshold: 0.5
+axis: file
+severity: warning
+rule:
+  all:
+    - kind: function_definition
+    - has:
+        any:
+          - kind: variable_assignment
+          - kind: for_statement
+          # Builtins that assign without an assignment node.
+          - kind: command
+            regex: "^(read|mapfile|readarray|printf\\s+-v)\\b"
+        stopBy: end
+ask: >-
+  A variable that this function assigns is not declared with `local`, or is declared and assigned far above the place
+  where it is first used.
+criteria:
+  "true": >-
+    The function assigns a variable that is meant for its own use (a temporary, an argument copy, a loop result) without
+    declaring it `local`, so it leaks into the caller's scope, or it declares and assigns a variable many lines before
+    the first statement that reads it, with unrelated statements in between.
+  "false": >-
+    Every variable the function assigns for its own use is declared `local` and sits just before its first use. A
+    variable that the function deliberately sets for its caller or for the script (a documented global, or an output
+    variable named in a comment), and an environment variable assigned only for one command (`VAR=value cmd`), are not
+    violations.

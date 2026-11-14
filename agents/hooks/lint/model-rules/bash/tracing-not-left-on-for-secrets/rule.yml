@@ -1,0 +1,25 @@
+# bash-style: "keep it disabled by default for scripts handling secrets or user input" and "suppress tracing around noisy
+# or sensitive sections". Advisory; the prose stays until the rule is promoted (ADR-0021).
+id: tracing-not-left-on-for-secrets
+language: Bash
+kind: noul
+subject: node
+state: located
+threshold: 0.5
+axis: file
+severity: warning
+rule:
+  all:
+    - kind: command
+    - has: { field: name, regex: "^set$" }
+    - regex: "^set\\s+-[a-zA-Z]*x"
+ask: >-
+  This script turns on `set -x` and then runs commands that handle a secret (a token, a password, a key) or raw user
+  input while tracing is on.
+criteria:
+  "true": >-
+    Tracing is enabled unconditionally, and a later command in the file expands a secret or user-supplied value into
+    its arguments or environment with tracing still on, so the value reaches standard error.
+  "false": >-
+    Tracing is enabled only behind a debug switch, or turned off with `set +x` before every command that handles a
+    secret or user input, or the script handles neither.

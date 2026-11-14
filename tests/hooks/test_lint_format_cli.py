@@ -24,8 +24,13 @@ def additional_context(output: str) -> str:
     [
         ("py", "x = 1\n", "x = 1\n", ""),
         ("py", "x=1\ny  =   2\n", "x = 1\ny = 2\n", ""),
-        ("sh", '#!/bin/bash\nset -eo pipefail\necho "hello"\n', 'echo "hello"', ""),
-        ("sh", '#!/bin/bash\nset -eo pipefail\nif true\nthen\necho "x"\nfi\n', "if true; then", ""),
+        ("sh", '#!/usr/bin/env bash\nset -euCo pipefail\nusage() { :; }\necho "hello"\n', 'echo "hello"', ""),
+        (
+            "sh",
+            '#!/usr/bin/env bash\nset -euCo pipefail\nusage() { :; }\nif true\nthen\necho "x"\nfi\n',
+            "if true; then",
+            "",
+        ),
         ("js", "const x = 1;\nconsole.log(x);\n", "const x = 1;", ""),
         ("js", "const   x=1\nconst y  =  2;\nconsole.log(x,y);\n", "const x = 1;", ""),
         ("rs", 'fn main(){let x=1;println!("{}",x);}\n', "fn main() {", ""),

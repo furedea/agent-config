@@ -1,0 +1,39 @@
+id: bash_strict_mode_header
+valid:
+  - |
+    #!/usr/bin/env bash
+    set -euCo pipefail
+    echo hi
+  - |
+    #!/usr/bin/env bash
+    # comments and function definitions may come before it
+    usage() { :; }
+    set -euCo pipefail
+    echo hi
+  - |
+    #!/usr/bin/env bats
+    @test "x" { true; }
+  - |
+    # sourced library without a shebang
+    helper() { :; }
+invalid:
+  - |
+    #!/usr/bin/env bash
+    echo hi
+  - |
+    #!/usr/bin/env bash
+    set -eu
+    echo hi
+  - |
+    #!/usr/bin/env bash
+    main() {
+      set -euCo pipefail
+    }
+  - |
+    #!/usr/bin/env bash
+    echo hi
+    set -euCo pipefail
+  - |
+    #!/usr/bin/env bash
+    cd /tmp
+    set -euCo pipefail

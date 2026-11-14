@@ -1,0 +1,13 @@
+id: bash_shebang_env_bash
+language: bash
+severity: warning
+message: "Start executable Bash scripts with `#!/usr/bin/env bash`."
+note: "Only shebangs that name `sh` or `bash` are checked; `bats` and `zsh` files that ast-grep reads as Bash keep their own interpreter. `env` resolves Bash from PATH, and naming `bash` runs the script with Bash and not with `sh`."
+rule:
+  kind: comment
+  regex: ^#!.*\b(ba)?sh\b
+  not:
+    regex: ^#!/usr/bin/env bash$
+  inside:
+    kind: program
+    stopBy: neighbor

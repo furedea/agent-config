@@ -1,0 +1,33 @@
+id: gha_job_timeout_minutes
+language: yaml
+severity: warning
+message: "Set `timeout-minutes` on the job; the default is 6 hours."
+note: "A job that calls a reusable workflow (`uses:`) has no `runs-on` and cannot set it, so it is not checked."
+files:
+  - "**/.github/workflows/**"
+rule:
+  kind: block_mapping
+  inside:
+    kind: block_node
+    inside:
+      kind: block_mapping_pair
+      inside:
+        kind: block_mapping
+        inside:
+          kind: block_node
+          inside:
+            kind: block_mapping_pair
+            has:
+              field: key
+              regex: ^jobs$
+  has:
+    kind: block_mapping_pair
+    has:
+      field: key
+      regex: ^["']?runs-on["']?$
+  not:
+    has:
+      kind: block_mapping_pair
+      has:
+        field: key
+        regex: ^["']?timeout-minutes["']?$

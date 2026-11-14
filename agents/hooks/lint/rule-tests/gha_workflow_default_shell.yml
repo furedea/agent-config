@@ -1,0 +1,88 @@
+id: gha_workflow_default_shell
+valid:
+  - |
+    defaults:
+      run:
+        shell: bash
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        steps:
+          - run: echo hi
+  - |
+    defaults:
+      run:
+        shell: nix develop --command bash -eo pipefail {0}
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        steps:
+          - run: echo hi
+  - |
+    jobs:
+      call:
+        uses: owner/repo/.github/workflows/lint.yml@main
+  - |
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        steps:
+          - uses: owner/action@v1
+            with:
+              run: value
+  - |
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        defaults:
+          run:
+            shell: bash
+        steps:
+          - run: echo hi
+invalid:
+  - |
+    defaults:
+      run:
+        shell: bash -e {0}
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        steps:
+          - run: echo hi
+  - |
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        steps:
+          - run: echo hi
+  - |
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        steps:
+          - run: echo hi
+  - |
+    defaults:
+      run:
+        working-directory: app
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        steps:
+          - run: echo hi
+  - |
+    defaults:
+      run:
+        shell: sh
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        steps:
+          - run: echo hi
+  - |
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        steps:
+          - run: |
+              echo hi

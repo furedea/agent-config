@@ -1,0 +1,120 @@
+id: gha_workflow_concurrency
+valid:
+  - |
+    on:
+      pull_request:
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        steps:
+          - run: echo hi
+  - |
+    on:
+      workflow_call:
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        steps:
+          - run: echo hi
+  - |
+    on:
+      push:
+    concurrency:
+      group: deploy
+      cancel-in-progress: false
+    jobs:
+      deploy:
+        runs-on: ubuntu-latest
+        steps:
+          - run: echo hi
+  - |
+    on:
+      workflow_dispatch:
+        inputs:
+          event:
+            description: pull_request or push
+            default: push
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        steps:
+          - run: echo hi
+  - |
+    on:
+      pull_request:
+    concurrency: {group: "ci-${{ github.ref }}", cancel-in-progress: true}
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        steps:
+          - run: echo hi
+invalid:
+  - |
+    'on': push
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        steps:
+          - run: echo hi
+  - |
+    on: "push"
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        steps:
+          - run: echo hi
+  - |
+    on:
+      "pull_request":
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        steps:
+          - run: echo hi
+  - |
+    on:
+      pull_request:
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        steps:
+          - run: echo hi
+  - |
+    on: [push, workflow_dispatch]
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        steps:
+          - run: echo hi
+  - |
+    on:
+      push:
+        branches:
+          - main
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        steps:
+          - run: echo hi
+  - |
+    on:
+      pull_request:
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        steps:
+          - run: echo hi
+  - |
+    on:
+      pull_request:
+    concurrency: ci
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        steps:
+          - run: echo hi

@@ -51,6 +51,9 @@ RUN_TIME_FILE = re.compile(r'^<\s*"[^"`]*\$[^"`]*"$')
 INPUT_REDIRECT = re.compile(r"""(?:^|\s)(0?<(?:<<|<-?|>|&)?\s*(?:'[^']*'|"[^"]*"|\S+))""")
 # A substitution holding only an input redirection, such as `$(< .env)`, reads that file in bash.
 REDIRECT_SUBSTITUTION = re.compile(r"\$\(\s*<|`\s*<")
+# A run-time path the guard would expand differently from the shell: a glob, substitution, tilde,
+# escape, parameter operator or subscript, or a zsh modifier such as `$f:h`.
+UNEXPANDABLE_PATH = re.compile(r"[`*?\[~\\]|\$\(|\$\{[^}]*[^A-Za-z0-9_}]|\$\{?[A-Za-z_][A-Za-z0-9_]*\}?:")
 # Programs a body substitution may run without changing anything gh reads: the directory, remotes, or files.
 PRINTING_PROGRAMS = frozenset({"cat", "echo", "printf"})
 IRREVERSIBLE_REASON = "cannot be taken back or promotes work (class D)"
@@ -205,7 +208,7 @@ def _with_expanded_paths(call: GhCall) -> GhCall:
 
 def _expanded_path(source: str) -> str | None:
     """The file a run-time path names after quote removal and plain parameter expansion, when it exists."""
-    if re.search(r"[`*?\[]|\$\(|\$\{[^}]*[^A-Za-z0-9_}]", source):
+    if UNEXPANDABLE_PATH.search(source):
         return None
     path = Path(os.path.expandvars(re.sub(r"[\"']", "", source))).expanduser()
     return str(path) if "$" not in str(path) and path.exists() else None

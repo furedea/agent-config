@@ -151,3 +151,20 @@ def test_a_run_time_path_the_environment_expands_is_scanned(
     assert decide('gh api repos/furedea/r/issues/1/comments -F body=@"$BODY_DIR/body.md"') == "ask"
     (tmp_path / "clean.md").write_text("No secrets.\n")
     assert decide('gh pr comment 1 -R furedea/r --body-file "$BODY_DIR/clean.md"') == "allow"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_run_time_path_expanding_to_a_device_asks(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("DEVICE_DIR", "/dev")
+    assert decide('gh pr comment 1 -R furedea/r --body-file "$DEVICE_DIR/null"') == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+@pytest.mark.parametrize("path", ['"$BODY_DIR:h/body.md"', '"$BODY_DIR"/../body.md\\x', '~"$BODY_DIR"/body.md'])
+def test_a_run_time_path_the_shell_may_expand_differently_stays_unscanned(
+    secret_samples: dict[str, str], tmp_path: Path, monkeypatch: pytest.MonkeyPatch, path: str
+) -> None:
+    monkeypatch.setenv("BODY_DIR", str(tmp_path))
+    (tmp_path / "body.md").write_text(f"config = {secret_samples['aws_key']}\n")
+    # Scanning the file the guard would wrongly expand to would ask; left unscanned, a trusted write passes.
+    assert decide(f"gh pr comment 1 -R furedea/r --body-file {path}") == "allow"

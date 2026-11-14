@@ -29,22 +29,26 @@ def diagnostics(paths: Iterable[Path]) -> tuple[str, ...]:
     for path in paths:
         if not path.is_file():
             continue
-        root = scan_root(path)
         for config in configs_for(path):
+            root = scan_root(path, config)
             by_scope.setdefault((config, root), []).append(str(path.relative_to(root)))
     return tuple(message for (config, root), files in by_scope.items() for message in scan(config, root, files))
 
 
-def scan_root(path: Path) -> Path:
-    """Pick the directory that rule `files:` globs match against: the repository, else the project, else the file.
+def scan_root(path: Path, config: Path) -> Path:
+    """Pick the directory that the `files:` globs of a configuration match against.
 
-    Matching repository-relative paths keeps directories above the repository, such as `~/common/`, out of the globs.
+    A project configuration matches paths relative to its own directory. The shared configuration matches paths
+    relative to the repository, else the project, else the file, so directories above the repository, such as
+    `~/common/`, stay out of the globs.
     """
+    if config != SHARED_CONFIG:
+        return config.parent
     repository = next((d for d in path.parents if (d / ".git").exists()), None)
     if repository is not None:
         return repository
-    config = project_config(path)
-    return config.parent if config is not None else path.parent
+    project = project_config(path)
+    return project.parent if project is not None else path.parent
 
 
 def configs_for(path: Path) -> tuple[Path, ...]:

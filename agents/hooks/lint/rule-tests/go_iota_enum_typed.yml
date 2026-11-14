@@ -28,6 +28,11 @@ valid:
 invalid:
   - |
     const (
+        StateReady = max(iota, 1)
+        StateDone
+    )
+  - |
+    const (
         _ = iota
         StateReady
         StateDone

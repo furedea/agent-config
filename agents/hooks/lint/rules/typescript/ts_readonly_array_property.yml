@@ -21,10 +21,13 @@ rule:
                   - all:
                       - kind: object_type
                       - inside:
-                          any:
-                            - kind: type_alias_declaration
-                            - kind: union_type
-                            - kind: intersection_type
+                          kind: type_alias_declaration
+                          stopBy:
+                            not:
+                              any:
+                                - kind: union_type
+                                - kind: intersection_type
+                                - kind: parenthesized_type
           - kind: union_type
             inside:
               kind: type_annotation
@@ -36,7 +39,10 @@ rule:
                     - all:
                         - kind: object_type
                         - inside:
-                            any:
-                              - kind: type_alias_declaration
-                              - kind: union_type
-                              - kind: intersection_type
+                            kind: type_alias_declaration
+                            stopBy:
+                              not:
+                                any:
+                                  - kind: union_type
+                                  - kind: intersection_type
+                                  - kind: parenthesized_type

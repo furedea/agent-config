@@ -11,6 +11,8 @@ valid:
       return parts;
     }
   - |
+    function open(options: { paths: string[] } | null): void {}
+  - |
     type Load = { readonly result: Promise<string[]> };
   - |
     function open(options: { paths: string[] }): void {}

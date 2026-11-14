@@ -378,6 +378,14 @@ def test_go_rules_select_the_functions_they_ask_about(repository: Path) -> None:
     }
 
 
+def test_main_is_thin_selects_func_main_of_package_main(repository: Path) -> None:
+    (repository / "main.go").write_text("package main\n\nfunc main() {}\n")
+
+    counts = subjects_by_rule(plan(repository))
+
+    assert counts["main-is-thin"] == 1
+
+
 def test_rust_rules_select_the_functions_they_ask_about(repository: Path) -> None:
     (repository / "sample.rs").write_text(RUST_SOURCE)
 

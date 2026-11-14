@@ -1,0 +1,29 @@
+# agents/skills/python-style/references/testing.md: use `@pytest.mark.parametrize` when tests run the same logic on
+# different inputs. The whole file is sent to compare sibling tests. Advisory and unfitted (ADR-0021).
+id: repeated-tests-use-parametrize
+language: Python
+kind: noul
+subject: node
+state: located
+threshold: 0.5
+axis: file
+severity: warning
+rule:
+  all:
+    - kind: module
+    - has:
+        kind: function_definition
+        stopBy: end
+        has:
+          field: name
+          regex: ^test_
+ask: >-
+  Several tests in this file repeat one body and differ only in their inputs and expected values, without being
+  parametrized.
+criteria:
+  "true": >-
+    Two or more test functions have the same steps (same calls and assertions) and differ only in literal inputs or
+    expected values, and none of them uses `@pytest.mark.parametrize`.
+  "false": >-
+    The tests exercise different behavior, are already parametrized, or differ in setup or assertions in a way a single
+    parametrized body could not express.

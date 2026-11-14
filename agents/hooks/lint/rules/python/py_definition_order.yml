@@ -1,0 +1,46 @@
+id: py_definition_order
+language: python
+severity: warning
+message: "Define Enums before the classes and functions of the module; move this definition after the Enum it precedes."
+note: "An Enum that also inherits another user-defined class (a mixin) is skipped, because that class must come first. Decorated definitions count as their definition. Known limit: a definition that the Enum body or its decorators use (a member value, a local decorator) must stay first, and the rule cannot see that use; leave it in place. Only the Enum-first half of `Enum -> class -> function` is judged. A class before a function is common (decorators, helpers a class body calls) and is left to review."
+utils:
+  enum_class:
+    kind: class_definition
+    has:
+      field: superclasses
+      kind: argument_list
+      all:
+        - has:
+            any:
+              - kind: identifier
+              - kind: attribute
+            regex: ^(enum\.)?(Enum|IntEnum|StrEnum|Flag|IntFlag)$
+        - not:
+            has:
+              any:
+                - kind: identifier
+                - kind: attribute
+                - kind: subscript
+                - kind: call
+              not:
+                regex: ^((enum\.)?(Enum|IntEnum|StrEnum|Flag|IntFlag)|str|int)$
+rule:
+  all:
+    - any:
+        - kind: function_definition
+        - kind: class_definition
+        - kind: decorated_definition
+    - inside:
+        kind: module
+    - not:
+        any:
+          - matches: enum_class
+          - has:
+              matches: enum_class
+    - precedes:
+        stopBy: end
+        any:
+          - matches: enum_class
+          - kind: decorated_definition
+            has:
+              matches: enum_class

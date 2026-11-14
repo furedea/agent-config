@@ -1,0 +1,27 @@
+id: py_logging_dict_message
+valid:
+  - |
+    logger.info(payload)
+  - |
+    logger.info(msg={"action": "save"})
+  - |
+    logger.info({"action": "save", "csv_file": csv_file, "status": "run"})
+  - |
+    self.logger.error({"action": "load", "status": "failed"}, exc_info=True)
+  - |
+    logging.warning({"action": "retry", "attempt": attempt})
+  - |
+    print("saving")
+invalid:
+  - |
+    request.logger.info("saving")
+  - |
+    logger.info(extra={"request": request_id}, msg="saving")
+  - |
+    logger.info(msg="saving")
+  - |
+    logger.info("saving %s", csv_file)
+  - |
+    logging.error(f"failed to save {csv_file}")
+  - |
+    self.logger.debug("start")

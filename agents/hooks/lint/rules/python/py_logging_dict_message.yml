@@ -1,0 +1,24 @@
+id: py_logging_dict_message
+language: python
+severity: warning
+message: "Log a dictionary such as `{\"action\": \"save\", \"status\": \"run\"}` instead of a format string."
+note: "Only a call whose message is a string literal (also `msg=`) is judged, so a variable that already holds a dictionary passes. Only calls on a receiver named `logger`, `log` or `logging` (or such a field) are judged."
+rule:
+  kind: call
+  all:
+    - has:
+        field: function
+        kind: attribute
+        regex: ^([A-Za-z_][A-Za-z0-9_]*\.)*_?(logger|log|logging)\.(debug|info|warning|warn|error|exception|critical)$
+    - has:
+        field: arguments
+        kind: argument_list
+        any:
+          - has:
+              nthChild: 1
+              any:
+                - kind: string
+                - kind: concatenated_string
+          - has:
+              kind: keyword_argument
+              regex: ^msg\s*=\s*[A-Za-z]{0,2}["']

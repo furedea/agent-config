@@ -1,0 +1,49 @@
+id: py_plain_class_slots
+valid:
+  - |
+    class Registry:
+        def __init__(self, items: list[str]) -> None:
+            validate(items)
+  - |
+    class Foo:
+        __slots__ = ("name", "age")
+
+        def __init__(self, name: str, age: int) -> None:
+            self.name = name
+            self.age = age
+  - |
+    class Foo:
+        __slots__: tuple[str, ...] = ("name",)
+
+        def __init__(self, name: str) -> None:
+            self.name = name
+  - |
+    @dataclass(frozen=True, slots=True)
+    class Age:
+        value: int
+  - |
+    class Foo(Base):
+        def __init__(self, name: str) -> None:
+            self.name = name
+  - |
+    class Namespace:
+        def run(self) -> None: ...
+invalid:
+  - |
+    class Pair:
+        def __init__(self, pair: tuple[int, int]) -> None:
+            self.left, self.right = pair
+  - |
+    class Foo:
+        def __init__(self, count: int) -> None:
+            self.count: int = count
+  - |
+    class Foo:
+        def __init__(self, name: str) -> None:
+            self.name = name
+  - |
+    class Foo:
+        limit = 3
+
+        def __init__(self) -> None:
+            self.items = []

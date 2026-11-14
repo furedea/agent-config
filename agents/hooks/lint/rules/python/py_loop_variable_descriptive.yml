@@ -1,0 +1,16 @@
+id: py_loop_variable_descriptive
+language: python
+severity: warning
+message: "Name the loop variable when the body spans three or more lines; a single character is for short bodies."
+note: "A tuple target (`for k, v in ...`) and `_` are skipped. Whether a descriptive name is also needed for a two-line body is not judged."
+rule:
+  kind: for_statement
+  all:
+    - has:
+        field: left
+        kind: identifier
+        regex: ^[A-Za-z]$
+    - has:
+        field: body
+        kind: block
+        regex: (?s)\n[^\n]*\n

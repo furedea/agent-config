@@ -1,0 +1,7 @@
+id: py_no_nonlocal
+language: python
+severity: warning
+message: "Avoid `nonlocal`; return the new value, or keep the state in an object that owns it."
+note: "`global` is judged by ruff PLW0603, which template-python enables."
+rule:
+  kind: nonlocal_statement

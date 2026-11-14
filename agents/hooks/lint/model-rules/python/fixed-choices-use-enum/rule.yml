@@ -1,0 +1,41 @@
+# agents/skills/python-style/references/models.md: "Use Enum/StrEnum for fixed choices instead of raw string literals or
+# dict maps". Advisory and unfitted (ADR-0021); the Stop hook reports findings and never gates on this rule.
+id: fixed-choices-use-enum
+language: Python
+kind: noul
+subject: node
+state: local
+threshold: 0.5
+axis: file
+severity: warning
+rule:
+  all:
+    - kind: function_definition
+    - any:
+        - has:
+            kind: comparison_operator
+            stopBy: end
+            has:
+              kind: string
+        - has:
+            kind: match_statement
+            stopBy: end
+        - has:
+            kind: dictionary
+            stopBy: end
+            has:
+              kind: pair
+              nthChild: 2
+              has:
+                field: key
+                kind: string
+ask: >-
+  This function selects behavior among a fixed set of choices by raw string literals instead of an Enum.
+criteria:
+  "true": >-
+    The function compares a value against two or more string literals that name the allowed choices of one concept (a
+    mode, kind, status, provider, or command name), or matches or maps such literals to behavior with if-chains, a
+    match statement, or a dict, and no Enum or StrEnum defines those choices.
+  "false": >-
+    The literals are not a closed set of choices: a single comparison against a sentinel or an empty string, free text,
+    paths, keys of external data, or values that are already compared through an Enum member.

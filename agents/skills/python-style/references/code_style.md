@@ -4,7 +4,7 @@
 
 - Keep functions focused and small
 - Use Pythonic syntax (comprehensions, `with` statements, etc.)
-- Don't use `global`, `nonlocal` (not explicit enough)
+- Don't use `global` (not explicit enough); `nonlocal` is judged by `py_no_nonlocal`
 - Use built-in generics (e.g., `tuple`, `list`, `dict`) instead of `typing.Tuple`, `typing.List`, `typing.Dict`
 
 ## Formatting
@@ -13,7 +13,7 @@ Let `ruff format` decide quotes and operator spacing; do not hand-format against
 
 ## Logging
 
-Write in dictionary format. Add extensive logging at critical system points where failures would be hard to diagnose (CSV file references, before/after raise statements, etc.).
+Log dictionaries, not format strings. Add extensive logging at critical system points where failures would be hard to diagnose (CSV file references, before/after raise statements, etc.).
 
 ```python
 logger.info({"action": "save", "csv_file": self.csv_file, "status": "run"})

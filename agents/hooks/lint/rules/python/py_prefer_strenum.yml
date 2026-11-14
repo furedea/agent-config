@@ -1,0 +1,18 @@
+id: py_prefer_strenum
+language: python
+severity: warning
+message: "Inherit `StrEnum` instead of mixing `str` into `Enum`."
+rule:
+  kind: class_definition
+  has:
+    field: superclasses
+    kind: argument_list
+    all:
+      - has:
+          kind: identifier
+          regex: ^str$
+      - has:
+          any:
+            - kind: identifier
+            - kind: attribute
+          regex: ^(enum\.)?Enum$

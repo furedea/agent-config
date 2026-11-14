@@ -22,6 +22,8 @@ PANE_INPUTS = frozenset({("pane", "send-text"), ("pane", "send-keys"), ("pane", 
 # Keys that move within or submit the agent's input; interrupt, end-of-input, and suspend keys could
 # end the agent and leave later input to the shell beneath it, which runs outside the sandbox.
 SAFE_KEYS = frozenset({"enter", "esc", "escape", "tab", "up", "down", "left", "right", "backspace", "space"})
+# Text that ends the agent; Herdr may still list it for a moment, so the next input could reach the shell.
+EXIT_WORDS = frozenset({"/exit", "/quit", "/logout", "exit", "quit", "logout"})
 TERMINAL_INPUTS = PANE_INPUTS | {("agent", "send-keys")}
 OWNERSHIP_ACTIONS = frozenset(
     {("agent", "start"), ("workspace", "close"), ("worktree", "remove"), ("agent", "rename")}
@@ -287,13 +289,16 @@ def _require_owned_pane(record: SessionRecord, pane: str) -> None:
 
 
 def _require_inert_input(parsed: shell_syntax.Command) -> None:
-    """Keys must be listed safe ones and text one line without control characters, both literal.
+    """Keys must be listed safe ones and text one line without control characters or an exit command, all literal.
 
     The agent was live when this ran, but terminal input that ends it would reach its shell.
     """
     words = list(zip(parsed.arguments[4:], parsed.dynamic[4:], strict=True))
     keys = parsed.arguments[2] == "send-keys"
-    if all(not dynamic and (_is_safe_key(word) if keys else _is_plain_text(word)) for word, dynamic in words):
+    text = " ".join(word for word, _ in words)
+    if all(not dynamic and (_is_safe_key(word) if keys else _is_plain_text(word)) for word, dynamic in words) and (
+        keys or text.strip().split(" ")[0].casefold() not in EXIT_WORDS
+    ):
         return
     kind = "keys" if keys else "text"
     raise ScopeError(f"Herdr {kind} could end the agent and reach its shell outside the sandbox")

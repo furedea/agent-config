@@ -133,8 +133,23 @@ def test_keys_that_keep_the_agent_running_are_sent_to_an_owned_pane(
         "herdr pane send-text p1 'stop\x03'",
         "herdr pane run p1 '/exit\nrm -rf ~'",
         "herdr pane send-text p1 $TEXT",
+        "herdr pane run p1 /exit",
+        "herdr pane send-text p1 ' /quit now'",
+        "herdr pane run p1 exit",
     ],
-    ids=["interrupt", "end of input", "suspend", "run-time key", "newline", "control", "run newline", "run-time text"],
+    ids=[
+        "interrupt",
+        "end of input",
+        "suspend",
+        "run-time key",
+        "newline",
+        "control",
+        "run newline",
+        "run-time text",
+        "exit command",
+        "quit command",
+        "shell exit",
+    ],
 )
 def test_input_that_could_end_the_agent_and_reach_its_shell_asks(repository: Path, herdr: Path, command: str) -> None:
     start_agent(repository, herdr, "w1")

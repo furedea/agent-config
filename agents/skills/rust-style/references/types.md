@@ -49,7 +49,6 @@ impl SkillName {
 - Use enums for fixed states, providers, modes, and policy decisions.
 - Convert user input strings into enums at the boundary.
 - Avoid passing raw string modes through the codebase.
-- Prefer exhaustive `match` statements for domain control flow.
 - Implement `Display` when the enum has a stable user-facing representation.
 - Implement `FromStr` or `TryFrom<&str>` when parsing user input.
 
@@ -90,7 +89,6 @@ pub enum Provider {
 ## Collections
 
 - Use `Vec<T>` for ordered sequences.
-- Use `BTreeMap` or sorted vectors when deterministic output order matters.
 - Use `HashMap` when order is irrelevant and lookup dominates.
 - Do not expose mutable collections directly from domain types.
 
@@ -98,14 +96,12 @@ pub enum Provider {
 
 - Use `&str` for borrowed string input and `String` for owned string storage.
 - Use `format!` when constructing a new owned string from values.
-- Use captured identifiers in formatting when it improves readability: `format!("{name}")`.
 - Avoid unnecessary `to_string()` in hot or repeated code.
 - Keep user-facing text separate from machine-readable output.
 
 ## Numeric Conversions
 
 - Use `usize` for indexing and collection lengths.
-- Do not use `as` for narrowing integer conversions.
 - Use `TryFrom` or `try_into` when a conversion can fail.
 - Use newtypes when a number has a domain unit or invariant.
 - Make lossy conversions explicit in the function or variable name.

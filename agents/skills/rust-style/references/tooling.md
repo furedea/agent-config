@@ -44,7 +44,7 @@ tests/
 - Let `rustfmt` define formatting. Do not hand-format around rustfmt.
 - Keep files focused and cohesive.
 - Keep public items before private helpers when it improves scanning.
-- Use `mod.rs` only when the existing project already uses that style; otherwise prefer `module_name.rs` plus `module_name/child.rs`.
+- Use `mod.rs` only when the existing project already uses that style.
 - Put one top-level concept per file when the concept has real behavior.
 - Keep generated code out of hand-written modules unless the project has a clear generated-code convention.
 
@@ -60,19 +60,4 @@ cargo clippy --all-targets -- -D warnings
 cargo test
 ```
 
-- Forbid `unsafe` by default.
-- Enable `clippy::pedantic` as `warn`, with `priority = -1` so that per-lint entries in the same table override the group. Under the `-D warnings` gate above, a pedantic warning fails the build; fix it or allow that lint with a reason.
-- Allow an individual lint only with a reason: `#[expect(..., reason = "...")]` at the site, or a `Cargo.toml` allow with a comment. A crate-wide `Cargo.toml` allow needs the user's approval, the same as a per-site suppression.
-
-Recommended package-level guard:
-
-```toml
-[lints.rust]
-unsafe_code = "forbid"
-
-[lints.clippy]
-pedantic = { level = "warn", priority = -1 }
-dbg_macro = "deny"
-todo = "deny"
-unimplemented = "deny"
-```
+- Allow a lint in `Cargo.toml` only with a comment that gives the reason. A crate-wide `Cargo.toml` allow needs the user's approval, the same as a per-site suppression.

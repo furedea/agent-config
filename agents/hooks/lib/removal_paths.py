@@ -2,7 +2,8 @@
 
 Provider prefix rules see words, not paths, so this guard resolves each operand instead. Git cannot
 restore what rm deletes, so Git metadata, paths outside those roots, operands known only at run
-time, and recursive removal ask.
+time, and recursive removal ask, and so does rm beside a command that can move the working
+directory or create a link before rm runs.
 """
 
 from pathlib import Path
@@ -17,6 +18,9 @@ PROGRAM = "rm"
 RECURSIVE_SHORT = frozenset("rR")
 RECURSIVE_LONG = "--recursive"
 GIT_DIRECTORY = ".git"
+# Programs that can move the working directory or make a path name another file before rm runs.
+PATH_CHANGERS = frozenset({"cd", "pushd", "popd", "ln", "mv", "cp", "mkdir", "install", "tar", "unzip"})
+CHDIR_OPTIONS = ("--chdir", "-C")
 
 
 def objection(payload: dict, commands: tuple[shell_syntax.Command, ...]) -> Verdict:
@@ -24,13 +28,35 @@ def objection(payload: dict, commands: tuple[shell_syntax.Command, ...]) -> Verd
     calls = [candidate for item in commands if (candidate := command_policy.canonical(item)).arguments[0] == PROGRAM]
     if not calls:
         return hook_decision.ALLOW
+    preview = shell_syntax.command_preview(calls[0].raw)
+    if changer := next((name for item in commands if (name := _path_changer(item))), ""):
+        return hook_decision.ask(
+            f"Needs review: rm shares the command with '{changer}', which can change the file a path names, "
+            f"so its operands cannot be resolved beforehand.\n\nCommand: {preview}",
+            PROGRAM,
+        )
     directory = automation_paths.working_directory(payload)
     roots = automation_paths.writable_roots(directory) if directory is not None else ()
     reason = next((reason for call in calls if (reason := _call_reason(call, directory, roots))), "")
     if not reason:
         return hook_decision.ALLOW
-    preview = shell_syntax.command_preview(calls[0].raw)
     return hook_decision.ask(f"Needs review: rm {reason}.\n\nCommand: {preview}", PROGRAM)
+
+
+def _path_changer(item: shell_syntax.Command) -> str:
+    """The program, if any, that can change the working directory or create links before a later rm runs."""
+    name = command_policy.canonical(item).arguments[0]
+    if name in PATH_CHANGERS:
+        return name
+    if name == "env" and any(_is_chdir_option(word) for word in item.arguments[1:]):
+        return "env --chdir"
+    return ""
+
+
+def _is_chdir_option(word: str) -> bool:
+    if word.startswith("--"):
+        return word.partition("=")[0] == CHDIR_OPTIONS[0]
+    return word.startswith("-") and CHDIR_OPTIONS[1][1] in word[1:]
 
 
 def _call_reason(call: shell_syntax.Command, directory: Path | None, roots: tuple[Path, ...]) -> str:

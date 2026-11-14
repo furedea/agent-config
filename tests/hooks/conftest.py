@@ -162,3 +162,28 @@ def merged(
     heads = Heads()
     state.write_text("[]")
     return heads
+
+
+@pytest.fixture
+def plain_gh_environment(monkeypatch: pytest.MonkeyPatch) -> None:
+    """gh resolves its host and repository from these; the guard tests set them only on purpose."""
+    for name in ("GH_REPO", "GH_HOST"):
+        monkeypatch.delenv(name, raising=False)
+
+
+@pytest.fixture
+def furedea_checkout(isolated_project: Path) -> Path:
+    """A repository whose only remote belongs to a trusted owner."""
+    subprocess.run(["git", "init", "--quiet"], check=True)
+    subprocess.run(
+        ["git", "remote", "add", "origin", "https://github.com/furedea/agent-config.git"],
+        check=True,
+        capture_output=True,
+    )
+    return isolated_project
+
+
+@pytest.fixture
+def secret_samples() -> dict[str, str]:
+    """Public synthetic secrets, one per scanned pattern."""
+    return json.loads(Path(__file__).with_name("secret_content_samples.json").read_text())

@@ -284,9 +284,11 @@ def _option(word: Word, following: tuple[Word, ...], table: OptionTable) -> tupl
             names.add(name)
             continue
         _require_value_option(name, table)
-        rest = word.value[position + 1 :].removeprefix("=")
-        _, value, consumed = (frozenset(), Word(rest, rest), 0) if rest else _with_following(name, following)
-        return frozenset(names | {name}), value, consumed
+        rest = word.value[position + 1 :]
+        if not rest:
+            return frozenset(names | {name}), *_with_following(name, following)[1:]
+        value = rest.removeprefix("=")
+        return frozenset(names | {name}), Word(value, value), 0
     return frozenset(names), None, 0
 
 
@@ -308,7 +310,7 @@ def _classify_api(words: tuple[Word, ...], catalog: Catalog, single_call: bool) 
         return _classify_graphql(request, catalog)
     if request.method in READ_METHODS:
         _check_read_files(request)
-        return GhCall(("api.read",), Effect.READ, files=request.files)
+        return GhCall(("api.read",), Effect.READ, files=request.files, reads_stdin=request.reads_stdin)
     if request.endpoint.dynamic:
         raise _UnclassifiableError("a gh api write names its endpoint only at run time")
     if DOT_SEGMENT.search(request.path):
@@ -404,7 +406,7 @@ def _classify_graphql(request: ApiRequest, catalog: Catalog) -> GhCall:
     ]
     if not mutated:
         _check_read_files(request)
-        return GhCall(("graphql.query",), Effect.READ, files=request.files)
+        return GhCall(("graphql.query",), Effect.READ, files=request.files, reads_stdin=request.reads_stdin)
     unknown = [field for field in mutated if field not in catalog.mutations]
     if unknown:
         return GhCall(

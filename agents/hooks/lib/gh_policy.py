@@ -38,8 +38,14 @@ GH_VARIABLE = r"(?:(?:GH|GITHUB|GIT)_[A-Z_]+|XDG_CONFIG_HOME)"
 # removal, as `export`, `read`, or `env` take it; a name inside prose is neither.
 ASSIGNED_VARIABLE = re.compile(rf"(?:^|[\s;&|(]){GH_VARIABLE}\+?=")
 VARIABLE_ARGUMENT = re.compile(rf"{GH_VARIABLE}(?:\+?=.*)?", re.DOTALL)
-# Standard input read from a file: `<`, `0<`, or `<>`, not a heredoc, herestring, or descriptor copy.
-STDIN_FILE = re.compile(r"(?:^|\s)0?<>?(?![<&(])\s*(\S+)")
+# Input redirections in a call's trailer: a heredoc whose delimiter is quoted keeps its body literal
+# and in the line; a file is read at run time; anything else, a herestring, an unquoted heredoc, or a
+# descriptor copy, may carry text the guard cannot read.
+QUOTED_HEREDOC = re.compile(r"""^<<-?\s*(?:'[^']+'|"[^"]+"|\\\w+)$""")
+INPUT_FILE = re.compile(r"^0?<>?\s*([^\s$`'\"\\*?\[~<&(]+)$")
+INPUT_REDIRECT = re.compile(r"""(?:^|\s)(0?<(?:<<|<-?|>|&)?\s*(?:'[^']*'|"[^"]*"|\S+))""")
+# A substitution holding only an input redirection, such as `$(< .env)`, reads that file in bash.
+REDIRECT_SUBSTITUTION = re.compile(r"\$\(\s*<|`\s*<")
 # Programs a body substitution may run without changing anything gh reads: the directory, remotes, or files.
 PRINTING_PROGRAMS = frozenset({"cat", "echo", "printf"})
 IRREVERSIBLE_REASON = "cannot be taken back or promotes work (class D)"
@@ -107,7 +113,9 @@ def _declares_gh_variable(clause: str) -> bool:
 def _is_single_call(source: str, commands: tuple[shell_syntax.Command, ...]) -> bool:
     """One statement holding one call; any other command only prints text into its words."""
     head, *substituted = commands
-    if head.wrapper_depth or not all(_only_prints(item) for item in substituted):
+    if head.wrapper_depth or REDIRECT_SUBSTITUTION.search(source):
+        return False
+    if not all(_only_prints(item) for item in substituted):
         return False
     statements = shell_syntax.syntax_tree(source).get("Stmts", [])
     if len(statements) != 1:
@@ -127,6 +135,8 @@ def _only_prints(command: shell_syntax.Command) -> bool:
     name = Path(command.arguments[0]).name
     if name not in PRINTING_PROGRAMS or command.wrapper_depth or command.writes or command.has_dynamic_words:
         return False
+    if any(not QUOTED_HEREDOC.match(redirect) for redirect in input_redirects(command)):
+        return False
     return name != "cat" or all(argument.startswith("-") for argument in command.arguments[1:])
 
 
@@ -143,20 +153,30 @@ def is_gh(command: shell_syntax.Command) -> bool:
 def verdict(candidate: shell_syntax.Command, line: CommandLine, rules: GhRules) -> Verdict:
     """Allow a gh call a grant covers and that sends no secret; ask for every other one."""
     preview = shell_syntax.command_preview(candidate.raw)
-    if line.hides_code:
-        return _ask("zsh may evaluate a subscript or assignment on this line as code the guard cannot see", preview)
-    if line.redirects_gh:
-        return _ask("the line names a variable that sends gh to another host or repository", preview)
-    call = gh_invocation.classify(candidate, rules.catalog, single_call=line.single_call)
-    if isinstance(call, Unclassified):
-        return _ask(f"cannot classify this gh call: {call.reason}", preview)
-    call = _with_stdin(call, candidate)
+    call = _judged_call(candidate, line, rules)
+    if isinstance(call, str):
+        return _ask(call, preview)
     if problem := _ungranted(call, line, rules):
         return _ask(f"'{call.label}' {problem}", preview, call.label)
     match = secret_content.first_match(_sent_text(call, line), rules.secret_patterns)
     if match is None:
         return hook_decision.ALLOW
     return _ask(f"{match.message} ({match.name}) in what this gh call sends to GitHub", preview, call.label)
+
+
+def _judged_call(candidate: shell_syntax.Command, line: CommandLine, rules: GhRules) -> GhCall | str:
+    """The classified call with its standard input resolved, or why the guard cannot judge it."""
+    if line.hides_code:
+        return "zsh may evaluate a subscript or assignment on this line as code the guard cannot see"
+    if line.redirects_gh:
+        return "the line names a variable that sends gh to another host or repository"
+    call = gh_invocation.classify(candidate, rules.catalog, single_call=line.single_call)
+    if isinstance(call, Unclassified):
+        return f"cannot classify this gh call: {call.reason}"
+    stdin = _with_stdin(call, candidate)
+    if isinstance(stdin, str):
+        return f"this gh call {stdin or 'reads its body from a pipe or terminal'}"
+    return stdin
 
 
 def _ask(reason: str, preview: str, operation: str = "") -> Verdict:
@@ -170,20 +190,37 @@ def _ungranted(call: GhCall, line: CommandLine, rules: GhRules) -> str:
         return IRREVERSIBLE_REASON if call.effect is Effect.IRREVERSIBLE else TARGET_REASONS[target]
     if (call.files or call.unscanned_files) and not line.single_call:
         return "sends a file another command on the line may write after the guard reads it"
-    if call.unscanned_files and target is not TargetClass.TRUSTED:
-        return "sends a file named only at run time to a target outside the trusted owners"
+    if call.unscanned_files and (call.effect is Effect.READ or target is not TargetClass.TRUSTED):
+        return "sends input the guard cannot read to a target outside the trusted owners"
     return ""
 
 
-def _with_stdin(call: GhCall, candidate: shell_syntax.Command) -> GhCall:
-    """The call with the file its standard input reads, when it sends that input; a heredoc is in the line."""
-    match = STDIN_FILE.search(candidate.trailer) if call.reads_stdin else None
-    if match is None:
+def _with_stdin(call: GhCall, candidate: shell_syntax.Command) -> GhCall | str:
+    """The call with what its standard input sends, or why the guard cannot read that input.
+
+    Input written in the line, a heredoc or herestring without expansions, is part of the scanned
+    line; one literal file is scanned; a file named at run time counts as unscanned, as a body file
+    would. Expanded input, a descriptor copy, several redirections, or a pipe cannot be read.
+    """
+    if not call.reads_stdin:
         return call
-    path = match[1]
-    if re.search(r"[$`'\"\\*?\[~]", path):
-        return replace(call, unscanned_files=True)
-    return replace(call, files=(*call.files, path))
+    redirects = input_redirects(candidate)
+    if len(redirects) != 1:
+        return "reads its body from input the guard cannot see" if redirects else ""
+    redirect = redirects[0]
+    if redirect.startswith("<<"):
+        expands = not QUOTED_HEREDOC.match(redirect) and re.search(r"[$`]", candidate.trailer)
+        return "sends input that expands at run time" if expands else call
+    if match := INPUT_FILE.match(redirect):
+        return replace(call, files=(*call.files, match[1]))
+    if redirect.startswith(("<&", "0<&")):
+        return "reads its body from a copied descriptor"
+    return replace(call, unscanned_files=True)
+
+
+def input_redirects(command: shell_syntax.Command) -> list[str]:
+    """Each input redirection in a call's trailer, as written."""
+    return [match[1] for match in INPUT_REDIRECT.finditer(command.trailer.split("\n", 1)[0])]
 
 
 def _target(call: GhCall, line: CommandLine, trusted: trusted_owners.TrustedOwners) -> TargetClass:

@@ -20,7 +20,9 @@ ask: >-
   cost needs.
 criteria:
   "true": >-
-    The file defines the tests, only one of them uses the fixture, and it has no teardown after `yield` and no external resource; or the setup is
+    Fewer than two tests use the fixture (a fixture used by two or more tests is never a violation, whatever its cost or
+    scope). The file defines the tests, only one of them uses the fixture, and it has no teardown after `yield` and no
+    external resource; or the setup is
     lightweight, or the tests need to pass arguments to it, so a helper function would do; or its scope is `module` or
     `session` although the setup is cheap; none of this applies to a fixture defined in `conftest.py`.
   "false": >-

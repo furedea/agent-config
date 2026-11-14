@@ -1,6 +1,14 @@
 id: py_plain_class_slots
 valid:
   - |
+    class Report:
+        def __init__(self, rows: list[int]) -> None:
+            self.rows = rows
+
+        @cached_property
+        def total(self) -> int:
+            return sum(self.rows)
+  - |
     class Registry:
         def __init__(self, items: list[str]) -> None:
             validate(items)

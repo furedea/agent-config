@@ -16,6 +16,8 @@ valid:
     print("saving")
 invalid:
   - |
+    logger.log(logging.INFO, msg="saving")
+  - |
     logger.log(logging.INFO, "saving")
   - |
     request.logger.info("saving")

@@ -5,7 +5,14 @@ message: "Use `@pytest.mark.anyio` with the `anyio_backend` fixture instead of p
 rule:
   any:
     - pattern: pytest.mark.asyncio
-    - pattern: mark.asyncio
+    - all:
+        - pattern: mark.asyncio
+        - inside:
+            kind: module
+            stopBy: end
+            has:
+              kind: import_from_statement
+              regex: (?s)^from\s+pytest\s+import\b.*\bmark\b
     - pattern: import pytest_asyncio
     - pattern: import pytest_asyncio as $ALIAS
     - pattern: from pytest_asyncio import $$$NAMES

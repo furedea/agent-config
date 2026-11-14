@@ -31,8 +31,12 @@ rule:
         - has:
             field: arguments
             kind: argument_list
-            has:
-              nthChild: 2
-              any:
-                - kind: string
-                - kind: concatenated_string
+            any:
+              - has:
+                  nthChild: 2
+                  any:
+                    - kind: string
+                    - kind: concatenated_string
+              - has:
+                  kind: keyword_argument
+                  regex: ^msg\s*=\s*[A-Za-z]{0,2}["']

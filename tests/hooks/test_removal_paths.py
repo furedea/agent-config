@@ -161,3 +161,12 @@ def test_recursive_removal_stays_denied(git_project: Path, command: str) -> None
 @pytest.mark.parametrize("command", ["echo rm ~/.zshrc", "git rm scratch.txt", "rmdir empty"])
 def test_other_programs_are_not_judged_as_removal(git_project: Path, command: str) -> None:
     assert judged(git_project, command) == "allow"
+
+
+@pytest.mark.parametrize("command", ["rm '~zz/x' ~/.zshrc", "rm '~nosuchuser/x' /etc/hosts"])
+def test_a_quoted_tilde_operand_does_not_stop_the_check(git_project: Path, command: str) -> None:
+    assert judged(git_project, command) == "ask"
+
+
+def test_a_quoted_tilde_names_a_file_in_the_working_directory(git_project: Path) -> None:
+    assert judged(git_project, "rm '~/notes'") == "allow"

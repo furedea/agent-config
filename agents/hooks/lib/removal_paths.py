@@ -103,7 +103,7 @@ def _operand_reason(operand: tuple[str, bool], directory: Path, roots: tuple[Pat
 
 def _removed_entry(directory: Path, word: str) -> Path | None:
     """The entry rm unlinks: its parent resolved through links, its own name kept, as rm removes a link itself."""
-    path = Path(word).expanduser()
+    path = Path(word)
     if path.name in {"", ".", ".."}:
         return automation_paths.resolved_target(directory, word)
     parent = automation_paths.resolved_target(directory, str(path.parent))

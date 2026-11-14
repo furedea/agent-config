@@ -94,7 +94,6 @@ def reason(command: str) -> str:
             '"PRRT_x"}) { thread { isResolved } } }\'',
             id="logged spaced resolution beside an unresolution",
         ),
-        pytest.param("gh api repos/furedea/agent-config/issues/2/sub_issues -F sub_issue_id=9", id="a sub-issue link"),
         pytest.param('gh pr create --head topic -t x --body-file "$D/pr.md"', id="a quoted run-time body file"),
         pytest.param(
             "gh pr create --head topic --title 'fix: x' "
@@ -340,6 +339,11 @@ def test_reads_and_local_changes_are_allowed_in_any_form(command: str) -> None:
         pytest.param("gh api -X PUT repos/furedea/r/pulls/1/merge", "class D", id="a REST merge"),
         pytest.param("gh api -X PATCH repos/furedea/r -f private=false", "class D", id="a repository setting"),
         pytest.param("gh api repos/furedea/r/releases -f tag_name=v1", "class D", id="a REST release"),
+        pytest.param(
+            "gh api repos/furedea/agent-config/issues/2/sub_issues -F sub_issue_id=9",
+            "class D",
+            id="a REST sub-issue link, whose linked issue cannot be traced",
+        ),
         pytest.param(
             "gh api graphql -f query='mutation{mergePullRequest(input:{pullRequestId:\"x\"}){clientMutationId}}'",
             "class D",

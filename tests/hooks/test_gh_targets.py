@@ -75,3 +75,14 @@ def test_a_related_issue_does_not_stand_in_for_the_working_repository(origin: st
     subprocess.run(["git", "init", "--quiet"], check=True)
     add_remote("origin", origin)
     assert decide("gh issue edit 1 --parent https://github.com/furedea/x/issues/2") == expected
+
+
+@pytest.mark.parametrize(
+    ("origin", "expected"),
+    [("https://github.com/other/r", "ask"), ("https://github.com/furedea/agent-config", "allow")],
+)
+@pytest.mark.usefixtures("isolated_project")
+def test_a_branch_repository_does_not_stand_in_for_the_issue_repository(origin: str, expected: str) -> None:
+    subprocess.run(["git", "init", "--quiet"], check=True)
+    add_remote("origin", origin)
+    assert decide("gh issue develop 5 --branch-repo furedea/agent-config") == expected

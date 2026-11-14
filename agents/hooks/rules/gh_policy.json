@@ -592,12 +592,6 @@
     },
     {
       "method": "POST",
-      "path": "repos/{owner}/{repo}/issues/{number}/sub_issues",
-      "operation": "issue.sub_issue",
-      "effect": "reversible"
-    },
-    {
-      "method": "POST",
       "path": "repos/{owner}/{repo}/pulls",
       "operation": "pr.create",
       "effect": "reversible"

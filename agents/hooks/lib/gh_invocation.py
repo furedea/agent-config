@@ -211,13 +211,12 @@ def _classify_write(words: tuple[Word, ...], spec: CommandSpec, single_call: boo
     scan = gh_options.scan(words, OptionTable(spec.value_options | REPOSITORY_OPTIONS, flags))
     _check_write_words(scan)
     _check_sent_values(scan.values_of(spec.values | spec.texts) + scan.positionals, single_call)
-    targets = scan.values_of(REPOSITORY_OPTIONS | spec.repositories)
+    targets = scan.values_of(REPOSITORY_OPTIONS)
     targets += tuple(word for word in scan.positionals if _is_url(word.value))
     repositories = tuple(None if word.dynamic else repository(word.value) for word in targets)
-    related = tuple(
-        None if word.dynamic else repository(word.value)
-        for word in _reference_targets(scan.values_of(spec.references))
-    )
+    # Linked issues and --branch-repo name further repositories the write changes, never its own target.
+    linked = scan.values_of(spec.repositories) + _reference_targets(scan.values_of(spec.references))
+    related = tuple(None if word.dynamic else repository(word.value) for word in linked)
     data_options = spec.texts | spec.files
     for group in spec.required:
         # A body may be computed text or a run-time file the scan judges; any other required value must be literal.

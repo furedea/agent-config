@@ -12,7 +12,7 @@ severity: warning
 rule:
   all:
     - kind: block_mapping_pair
-    - has: { field: key, regex: "^permissions$" }
+    - has: { field: key, regex: "^[\"']?permissions[\"']?$" }
     - has: { field: value, not: { regex: "^\\{\\s*\\}$" } }
     # Only the workflow's own `permissions:` or a job's: a direct key of the top-level mapping of a file that has `jobs`,
     # or of a job mapping. An action input named `permissions` under `with:` is neither.

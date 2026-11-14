@@ -11,7 +11,7 @@
 - Cast initialisms consistently: `ID`, `URL`, `HTTP`, not `Id`, `Url`, `Http`.
 - Use short receiver names (one or two letters), the same across a type's methods.
 - Let name length match scope: `i` in a short loop, a descriptive name for a package-level identifier.
-- Avoid `manager`, `helper`, `util`, and `common` unless the name is already established locally.
+- Avoid `helper`, `util`, and `common` unless the name is already established locally.
 
 ## Comments and Documentation
 

@@ -10,7 +10,7 @@
 
 ## Naming Conventions
 
-- Avoid `manager`, `helper`, `util`, and `common` unless the name is already established locally.
+- Avoid `helper`, `util`, and `common` unless the name is already established locally.
 
 ### Module Naming
 

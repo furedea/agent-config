@@ -1,7 +1,7 @@
 id: go_no_vague_directory_name
 language: go
-severity: warning
-message: "Name the package directory by its domain, not pkg, util, or common, unless the name is already established locally."
+severity: error
+message: "Do not put packages under pkg, util, or common. Put importable packages at the module root and private ones under internal/, and name each package directory by its domain."
 rule:
   kind: source_file
 files:

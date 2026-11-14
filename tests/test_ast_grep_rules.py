@@ -62,34 +62,21 @@ def test_ast_grep_accepts_every_valid_case_and_reports_every_invalid_case() -> N
 
 # Snippet tests carry no path, so a rule scoped by `files:` is exercised by scanning named files.
 FLAGGED_PATHS = {
-    "ts_no_vague_file_name": [
-        "utils.ts",
-        "src/string_utils.ts",
-        "string.utils.ts",
-        "widget.test.utils.ts",
-        "helper-x.ts",
-    ],
-    "tsx_no_vague_file_name": ["utils.tsx", "button.helpers.tsx"],
-    "py_no_vague_file_name": ["utils.py", "pkg/string_utils.py", "user_manager.py"],
-    "rs_no_vague_file_name": ["utils.rs", "src/string_helpers.rs", "tests/common_setup.rs"],
-    "go_no_vague_file_name": ["utils.go", "string_utils.go", "user.helpers.go"],
     "go_no_vague_directory_name": ["pkg/store/user.go", "internal/util/user.go", "common/user.go"],
 }
 CLEAN_PATHS = {
-    "ts_no_vague_file_name": ["utility.ts", "futile.ts", "user_store.ts", "utils.py"],
-    "tsx_no_vague_file_name": ["button.tsx", "utility.tsx"],
-    "py_no_vague_file_name": ["__init__.py", "user_store.py", "futile.py", "__common__.py"],
-    "rs_no_vague_file_name": ["user_store.rs", "tests/common/mod.rs", "tests/common/setup.rs"],
-    "go_no_vague_file_name": ["user_store.go", "futile.go", "internal/store/user.go"],
-    "go_no_vague_directory_name": ["user_store.go", "futile.go", "internal/store/user.go", "internal/package/user.go"],
+    "go_no_vague_directory_name": ["user_store.go", "util.go", "internal/store/user.go", "internal/package/user.go"],
 }
-SOURCE_TEXT = {
-    ".ts": "export const a = 1\n",
-    ".tsx": "export const a = 1\n",
-    ".py": "a = 1\n",
-    ".rs": "fn a() {}\n",
-    ".go": "package a\n",
-}
+
+
+def require_ast_grep() -> str:
+    executable = shutil.which("ast-grep")
+    if executable is None:
+        reason = "ast-grep is provided by the flake dev shell"
+        if os.environ.get("REQUIRE_AST_GREP") == "1":
+            pytest.fail(reason)
+        pytest.skip(reason)
+    return executable
 
 
 def test_every_file_scoped_rule_has_flagged_and_clean_paths() -> None:
@@ -97,21 +84,12 @@ def test_every_file_scoped_rule_has_flagged_and_clean_paths() -> None:
     assert sorted(CLEAN_PATHS) == FILE_SCOPED_RULE_IDS
 
 
-def test_file_scoped_rules_flag_exactly_the_vaguely_named_files(tmp_path: Path) -> None:
-    executable = shutil.which("ast-grep")
-    if executable is None:
-        reason = "ast-grep is provided by the flake dev shell"
-        if os.environ.get("REQUIRE_AST_GREP") == "1":
-            pytest.fail(reason)
-        pytest.skip(reason)
-
-    expected: dict[str, set[str]] = {}
+def test_file_scoped_rules_flag_exactly_the_vaguely_named_paths(tmp_path: Path) -> None:
+    executable = require_ast_grep()
     for rule_id in FILE_SCOPED_RULE_IDS:
         for relative in FLAGGED_PATHS[rule_id] + CLEAN_PATHS[rule_id]:
-            path = tmp_path / relative
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(SOURCE_TEXT[path.suffix])
-        expected[rule_id] = set(FLAGGED_PATHS[rule_id])
+            (tmp_path / relative).parent.mkdir(parents=True, exist_ok=True)
+            (tmp_path / relative).write_text("package a\n")
 
     result = subprocess.run(
         [executable, "scan", "--config", str(SG_CONFIG), "--json=compact", "."],
@@ -125,34 +103,21 @@ def test_file_scoped_rules_flag_exactly_the_vaguely_named_files(tmp_path: Path) 
     for hit in json.loads(result.stdout):
         if hit["ruleId"] in flagged:
             flagged[hit["ruleId"]].add(Path(hit["file"]).as_posix().removeprefix("./"))
-    assert flagged == expected, result.stderr
-
-
-ANCESTOR_SEGMENTS = ("common", "pkg", "util", "tests")
+    assert flagged == {rule_id: set(FLAGGED_PATHS[rule_id]) for rule_id in FILE_SCOPED_RULE_IDS}, result.stderr
 
 
 def test_directories_above_the_repository_do_not_change_what_the_hook_flags(tmp_path: Path) -> None:
-    executable = shutil.which("ast-grep")
-    if executable is None:
-        reason = "ast-grep is provided by the flake dev shell"
-        if os.environ.get("REQUIRE_AST_GREP") == "1":
-            pytest.fail(reason)
-        pytest.skip(reason)
+    require_ast_grep()
     static_rule_scan = load_script_module("agents/hooks/lint_format.py", "lint_format_for_ancestors").static_rule_scan
-    repository = tmp_path.joinpath(*ANCESTOR_SEGMENTS, "common", "repo")
-    for relative, text in {
-        "src/user.go": "package a\n",
-        "src/user.rs": "fn a() {}\n",
-        "src/utils.rs": "fn a() {}\n",
-    }.items():
-        (repository / relative).parent.mkdir(parents=True, exist_ok=True)
-        (repository / relative).write_text(text)
+    repository = tmp_path.joinpath("common", "pkg", "util", "tests", "repo")
+    clean, flagged = repository / "src/user.go", repository / "pkg/user.go"
+    for path in (clean, flagged):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("package a\n")
     (repository / ".git").mkdir()
 
-    messages = static_rule_scan.diagnostics(
-        [repository / "src/user.go", repository / "src/user.rs", repository / "src/utils.rs"]
-    )
+    messages = static_rule_scan.diagnostics([clean, flagged])
 
-    assert [(m.split(" · ")[0], m.split(" · ")[1].split(":")[0]) for m in messages] == [
-        ("Static rule rs_no_vague_file_name", str(repository / "src/utils.rs"))
+    assert [message.split("\n")[0] for message in messages] == [
+        f"Static rule go_no_vague_directory_name · {flagged}:1"
     ]

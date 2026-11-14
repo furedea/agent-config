@@ -156,7 +156,7 @@ def _only_prints(command: shell_syntax.Command) -> bool:
         return False
     if any(not QUOTED_HEREDOC.match(redirect) for redirect in input_redirects(command)):
         return False
-    return name != "cat" or all(argument.startswith("-") for argument in command.arguments[1:])
+    return name != "cat" or len(command.arguments) == 1
 
 
 def load(path: Path, trusted: Path, secret_patterns: Path) -> GhRules:

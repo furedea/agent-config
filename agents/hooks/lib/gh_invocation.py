@@ -43,6 +43,7 @@ REPOSITORY_SPEC = re.compile(
     r"(?:(?P<host>[A-Za-z0-9.-]+\.[A-Za-z]+)/)?(?P<owner>[A-Za-z0-9-]+)/(?P<name>[A-Za-z0-9_.-]+)"
 )
 DOT_SEGMENT = re.compile(r"(?:^|/)(?:\.|%2e){1,2}(?:/|$)", re.IGNORECASE)
+ISSUE_NUMBER = re.compile(r"#?[0-9]+")
 STDIN_PATHS = re.compile(r"/dev/stdin|/dev/fd/0|/proc/self/fd/0")
 # A run-time endpoint that starts with a literal path segment and slash, which no expansion can turn into a URL.
 LITERAL_PATH_START = re.compile(r"[\"']?/?[A-Za-z0-9_.-]+/")
@@ -209,13 +210,7 @@ def _classify_write(words: tuple[Word, ...], spec: CommandSpec, single_call: boo
     _check_sent_values(scan.values_of(spec.values | spec.texts) + scan.positionals, single_call)
     targets = scan.values_of(REPOSITORY_OPTIONS | spec.repositories)
     targets += tuple(word for word in scan.positionals if _is_url(word.value))
-    # A related issue, such as a parent or blocker, named by URL is another repository the write changes.
-    targets += tuple(
-        Word(part, part, word.dynamic)
-        for word in scan.values_of(spec.values)
-        for part in (item.strip() for item in word.value.split(","))
-        if _is_url(part) or (word.dynamic and _may_name_url(word))
-    )
+    targets += _reference_targets(scan.values_of(spec.references))
     repositories = tuple(None if word.dynamic else repository(word.value) for word in targets)
     data_options = spec.texts | spec.files
     for group in spec.required:
@@ -241,6 +236,17 @@ def _classify_write(words: tuple[Word, ...], spec: CommandSpec, single_call: boo
         unscanned_files=tuple(word.source for word in files if word.dynamic),
         reads_stdin="-" in paths,
     )
+
+
+def _reference_targets(words: tuple[Word, ...]) -> tuple[Word, ...]:
+    """The repositories related issues name: none for a bare number, any other form judged as a repository.
+
+    A run-time reference stands for an unknown repository; OWNER/REPO#N and HOST/OWNER/REPO#N lose the number.
+    """
+    dynamic = tuple(word for word in words if word.dynamic)
+    parts = (part.strip() for word in words if not word.dynamic for part in word.value.split(","))
+    names = (part if _is_url(part) else part.partition("#")[0] for part in parts if not ISSUE_NUMBER.fullmatch(part))
+    return dynamic + tuple(Word(name, name) for name in names)
 
 
 def _check_write_words(scan: OptionScan) -> None:

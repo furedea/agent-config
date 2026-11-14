@@ -119,6 +119,8 @@ def reason(command: str) -> str:
             "gh issue edit 123 -R furedea/r --parent https://github.com/furedea/other/issues/1",
             id="a parent issue in another trusted repository",
         ),
+        pytest.param("gh issue edit 123 -R furedea/r --add-sub-issue 4,#5", id="sub-issues by number"),
+        pytest.param("gh issue edit 123 -R furedea/r --add-label bug,https://x", id="a label holding a URL"),
         pytest.param("gh issue comment 1 --repo=github.com/furedea/agent-config -b ok", id="a host-qualified repo"),
         pytest.param("gh issue comment 1 -R furedea/r -b ok | head -1", id="a write piped through a filter"),
         pytest.param(
@@ -220,6 +222,12 @@ def test_reads_and_local_changes_are_allowed_in_any_form(command: str) -> None:
             "gh issue close 1 -R furedea/r --duplicate-of https://ghe.example/o/r/issues/1",
             "class C",
             id="a duplicate on another host",
+        ),
+        pytest.param(
+            "gh issue edit 123 -R furedea/r --add-blocked-by other/r#5", "class C", id="a blocker as OWNER/REPO#N"
+        ),
+        pytest.param(
+            'gh issue edit 123 -R furedea/r --parent "$(printf x)"', "class C", id="a parent computed at run time"
         ),
         pytest.param('gh issue comment 1 -R "$R" -b x', "class C", id="a repository known only at run time"),
         pytest.param("gh api repos/other/r/issues/1/comments -f body=x", "class C", id="another owner by REST"),

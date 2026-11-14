@@ -35,6 +35,7 @@ WRAPPERS: dict[str, tuple[frozenset[str], frozenset[str]]] = {
     "nice": (frozenset(), frozenset({"-n", "--adjustment"})),
     "nohup": (frozenset(), frozenset()),
     "busybox": (frozenset(), frozenset()),
+    "builtin": (frozenset(), frozenset()),
     "ionice": (frozenset({"-t", "--ignore"}), frozenset({"-c", "-n", "--class", "--classdata"})),
     "script": (
         frozenset({"-a", "-e", "-f", "-q", "-k", "-r", "--append", "--return", "--flush", "--force", "--quiet"}),

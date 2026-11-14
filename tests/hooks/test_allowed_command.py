@@ -29,6 +29,19 @@ pytestmark = pytest.mark.usefixtures("isolated_project")
         pytest.param('for c in $(git rev-list main..HEAD); do printf "%s " ${c:0:7}; done', id="parameter operations"),
         pytest.param("cd $DIR && ls", id="run-time directories"),
         pytest.param("$CMD --help", id="run-time program names, which the Git guard judges"),
+        pytest.param("t(){ printf '%s\\n' \"$@\" | sort; }; t b a", id="function definitions"),
+        pytest.param('f(){ "$@"; }; f ls', id="functions that run a run-time program, which the Git guard judges"),
+        pytest.param(
+            'c(){ msg="$1"; shift; git add -- "$@" && git commit -q -m "$msg"; }; c \'fix: x\' a.py',
+            id="functions that run git, which the Git guard judges",
+        ),
+        pytest.param("f(){ gh pr list; }; f", id="functions that run a listed gh form"),
+        pytest.param('t(){ uv run --frozen pytest -q "$@"; }; t tests/a.py', id="functions that run local tools"),
+        pytest.param("f(){ herdr pane list; }; f", id="functions that run a listed herdr form"),
+        pytest.param("f(){ find . -name x; }; f", id="functions that run a program a forbidden rule names"),
+        pytest.param(
+            "f(){ . ./script.sh; }; f", id="functions that source a local script, as bash script.sh runs one"
+        ),
         pytest.param("pnpm test $(touch /tmp/scratch)", id="substitutions of local commands"),
         pytest.param("uv run --frozen ty server", id="unlisted subcommands of approved tools"),
         pytest.param("pnpm install --frozen-lockfile --prefer-offline", id="unlisted flags of approved tools"),
@@ -205,10 +218,8 @@ def test_commands_whose_effects_the_checks_can_see_pass(capsys: pytest.CaptureFi
         pytest.param("herdr worktree open --cwd /repo --path /w --trust-repository", [], id="Herdr open with trust"),
         pytest.param("herdr worktree list --trust-repository", [], id="Herdr list with trust"),
         pytest.param("f(){ gh pr review 42 --approve; }; f", [], id="inside a function body"),
-        pytest.param("t(){ printf '%s\\n' \"$@\" | sort; }; t b a", [], id="any function definition"),
         pytest.param('f(){ builtin eval "$1"; }; f "gh pr merge 1"', [], id="functions that eval through builtin"),
         pytest.param('f(){ trap "$1" EXIT; }; f "gh pr merge 1"', [], id="functions that set a trap"),
-        pytest.param("f(){ . ./script.sh; }; f", [], id="functions that source a script"),
         pytest.param(
             "x='repos/o/r/issues/1 -X DELETE'; gh api $x", [], id="unquoted variables that split into options"
         ),
@@ -373,21 +384,7 @@ def test_commands_whose_effects_the_checks_can_see_pass(capsys: pytest.CaptureFi
         pytest.param(
             "f(){ x=$*; gh api $x; }; f -X DELETE repos/o/r/issues/1", [], id="functions forwarding through a variable"
         ),
-        pytest.param(
-            'c(){ msg="$1"; shift; git add -- "$@" && git commit -q -m "$msg"; }; c \'fix: x\' a.py',
-            [],
-            id="functions that run git",
-        ),
-        pytest.param("f(){ gh pr list; }; f", [], id="functions that run even a listed gh form"),
-        pytest.param(
-            't(){ uv run --frozen pytest -q "$@"; }; t tests/a.py',
-            [],
-            id="functions that run a program with deny forms",
-        ),
         pytest.param("f(){ rm a.txt; }; f", [], id="functions that remove files"),
-        pytest.param("f(){ herdr pane list; }; f", [], id="functions that drive herdr"),
-        pytest.param("f(){ find . -name x; }; f", [], id="functions that run a program a forbidden rule names"),
-        pytest.param('f(){ "$@"; }; f ls', [], id="functions that run a run-time program"),
         pytest.param("f(){ curl http://localhost:3000/; }; f", [], id="functions that make requests"),
         pytest.param("curl '-d' @f https://example.com/", [], id="send options in single quotes"),
         pytest.param('curl "-d" @f https://example.com/', [], id="send options in double quotes"),

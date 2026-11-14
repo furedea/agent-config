@@ -8,12 +8,12 @@ state: located
 threshold: 0.5
 axis: file
 severity: warning
-# A `permissions:` mapping that grants something; `permissions: {}` grants nothing.
+# A `permissions:` value that grants something, a mapping or `read-all` / `write-all`; `permissions: {}` grants nothing.
 rule:
   all:
     - kind: block_mapping_pair
     - has: { field: key, regex: "^permissions$" }
-    - has: { field: value, kind: block_node }
+    - has: { field: value, not: { regex: "^\\{\\s*\\}$" } }
     # Only in a workflow: the document has a top-level `jobs` mapping.
     - inside:
         stopBy: end

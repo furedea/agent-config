@@ -26,12 +26,35 @@ valid:
     jobs:
       build:
         runs-on: ubuntu-latest
+        steps:
+          - uses: owner/action@v1
+            with:
+              run: value
+  - |
+    jobs:
+      build:
+        runs-on: ubuntu-latest
         defaults:
           run:
             shell: bash
         steps:
           - run: echo hi
 invalid:
+  - |
+    defaults:
+      run:
+        shell: bash -e {0}
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        steps:
+          - run: echo hi
+  - |
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        steps:
+          - run: echo hi
   - |
     jobs:
       build:

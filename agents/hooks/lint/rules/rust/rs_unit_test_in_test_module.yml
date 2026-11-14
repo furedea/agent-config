@@ -6,6 +6,8 @@ files:
   - "**/src/**/*.rs"
 ignores:
   - "**/*tests.rs"
+  - "**/*_test.rs"
+  - "**/test.rs"
   - "**/fixtures.rs"
   - "**/tests/**"
   - "**/test_support.rs"
@@ -22,6 +24,14 @@ rule:
             any:
               - kind: attribute_item
               - kind: line_comment
+    # A file that is itself compiled only for tests (`#![cfg(test)]`).
+    - not:
+        inside:
+          kind: source_file
+          stopBy: end
+          has:
+            kind: inner_attribute_item
+            regex: ^#!\[cfg\(.*\btest\b
     # Inside a module that is compiled only for tests.
     - not:
         inside:

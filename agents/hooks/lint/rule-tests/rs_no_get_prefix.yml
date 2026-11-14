@@ -23,3 +23,7 @@ invalid:
     }
   - |
     fn get_name() -> String { String::new() }
+  - |
+    trait Repository {
+        fn get_item(&self) -> Item;
+    }

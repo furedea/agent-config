@@ -11,3 +11,5 @@ invalid:
     fn f() -> String { "x".to_string() }
   - |
     fn f() { let s = "a b".to_string(); }
+  - |
+    fn f() -> String { r#"a "b""#.to_string() }

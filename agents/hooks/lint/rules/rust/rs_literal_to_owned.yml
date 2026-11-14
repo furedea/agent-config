@@ -6,4 +6,6 @@ rule:
   pattern: $LIT.to_string()
 constraints:
   LIT:
-    kind: string_literal
+    any:
+      - kind: string_literal
+      - kind: raw_string_literal

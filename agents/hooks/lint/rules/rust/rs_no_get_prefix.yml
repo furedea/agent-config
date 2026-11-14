@@ -4,7 +4,9 @@ severity: warning
 message: "Avoid a Java-style `get_` prefix; name the accessor after the value (`len`, `status`) or use `as_*` / `into_*`."
 rule:
   all:
-    - kind: function_item
+    - any:
+        - kind: function_item
+        - kind: function_signature_item
     - has:
         field: name
         kind: identifier

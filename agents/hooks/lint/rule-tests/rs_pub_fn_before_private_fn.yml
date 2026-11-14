@@ -1,0 +1,21 @@
+id: rs_pub_fn_before_private_fn
+valid:
+  - |
+    pub fn run() { step(); }
+    fn step() {}
+  - |
+    fn only_private() {}
+  - |
+    pub fn a() {}
+    pub fn b() {}
+  - |
+    fn step() {}
+    pub(crate) fn run() { step(); }
+invalid:
+  - |
+    fn step() {}
+    pub fn run() { step(); }
+  - |
+    fn step() {}
+    fn other() {}
+    pub fn run() { step(); }

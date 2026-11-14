@@ -1,0 +1,19 @@
+id: rs_no_vague_name
+valid:
+  - |
+    struct Render;
+  - |
+    mod install;
+  - |
+    enum Provider { Claude }
+  - |
+    struct Utility;
+invalid:
+  - |
+    struct ConfigManager;
+  - |
+    mod utils;
+  - |
+    trait FileHelper {}
+  - |
+    mod helper {}

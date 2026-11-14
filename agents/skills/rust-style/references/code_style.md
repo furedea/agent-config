@@ -33,7 +33,6 @@
 ## Whitespace and Line Breaks
 
 - Let rustfmt make final whitespace and wrapping decisions.
-- Use trailing commas in multi-line structs, enums, arrays, match arms, and function calls.
 - Break long method chains at semantic boundaries.
 - Do not fight rustfmt with manual alignment.
 - Keep one blank line between groups of related items when it improves scanning.

@@ -1,0 +1,53 @@
+id: rs_no_io_in_constructor
+valid:
+  - |
+    impl Name {
+        pub fn parse(value: &str) -> Result<Self, NameError> { Ok(Self(value.to_owned())) }
+    }
+  - |
+    pub fn load(path: &Path) -> Result<String> {
+        std::fs::read_to_string(path).context("read")
+    }
+  - |
+    impl Name {
+        pub fn new(value: String) -> Self { Self(value) }
+    }
+  - |
+    impl Endpoint {
+        pub fn new(ip: Ipv4Addr, port: u16) -> Self { Self(std::net::SocketAddr::new(ip.into(), port)) }
+    }
+  - |
+    impl Git {
+        pub fn new(dir: &Path) -> Self {
+            let mut cmd = Command::new("git");
+            cmd.current_dir(dir);
+            Self { cmd }
+        }
+    }
+invalid:
+  - |
+    impl Config {
+        pub fn new(path: &Path) -> Self {
+            let text = std::fs::read_to_string(path).unwrap_or_default();
+            Self(text)
+        }
+    }
+  - |
+    impl Name {
+        pub fn parse(path: &Path) -> Self {
+            let file = File::open(path);
+            Self(file)
+        }
+    }
+  - |
+    impl Probe {
+        fn try_new() -> Self { let out = Command::new("git").output(); Self(out) }
+    }
+  - |
+    impl Reader {
+        pub fn new(path: &Path) -> Self { Self(OpenOptions::new().read(true).open(path)) }
+    }
+  - |
+    impl Client {
+        pub fn new(addr: &str) -> Self { Self(TcpStream::connect(addr)) }
+    }

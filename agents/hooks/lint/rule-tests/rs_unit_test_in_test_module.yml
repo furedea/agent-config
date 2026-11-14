@@ -1,0 +1,35 @@
+id: rs_unit_test_in_test_module
+valid:
+  - |
+    #[cfg(test)]
+    mod tests {
+        #[test]
+        fn works() {}
+    }
+  - |
+    fn helper() {}
+  - |
+    #[cfg(test)]
+    #[allow(clippy::unwrap_used)]
+    mod tests {
+        #[test]
+        fn works() {}
+    }
+  - |
+    #![cfg(test)]
+    #[test]
+    fn works() {}
+invalid:
+  - |
+    #[test]
+    fn works() {}
+  - |
+    // note
+    #[test]
+    #[should_panic]
+    fn panics() {}
+  - |
+    mod internal {
+        #[test]
+        fn works() {}
+    }

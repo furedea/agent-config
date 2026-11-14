@@ -1,0 +1,33 @@
+# rust-style/references/config_serialization.md: reject unknown keys in project-owned input, keep serialized naming
+# consistent with rename_all, default optional input fields, and skip absent optional values in output. Advisory and
+# not fitted.
+id: serde-types-follow-config-conventions
+language: Rust
+kind: noul
+subject: node
+state: local
+threshold: 0.5
+axis: file
+severity: warning
+rule:
+  all:
+    - kind: struct_item
+    - follows:
+        kind: attribute_item
+        regex: (?s)derive\(.*\b(Deserialize|Serialize)\b
+        stopBy:
+          not:
+            any:
+              - kind: attribute_item
+              - kind: line_comment
+ask: >-
+  This serde type owned by the project leaves out an attribute that the project's conventions call for.
+criteria:
+  "true": >-
+    A project-owned input type does not use `deny_unknown_fields` where an unknown key should be an error, its fields
+    use a naming style that differs from the rest of the serialized format without `rename_all`, an optional input
+    field with a stable default lacks `#[serde(default)]`, or an `Option` field in an output type lacks
+    `skip_serializing_if = "Option::is_none"` although absent values should not appear.
+  "false": >-
+    The type models an external tool's config or an open payload (where unknown keys must be kept), it already uses the
+    attributes its fields need, or it is an internal data type that is never read from or written to a file or wire.

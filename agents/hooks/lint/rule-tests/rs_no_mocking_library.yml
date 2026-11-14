@@ -1,0 +1,22 @@
+id: rs_no_mocking_library
+valid:
+  - |
+    trait Clock { fn now(&self) -> u64; }
+    struct FakeClock(u64);
+  - |
+    use std::collections::HashMap;
+  - |
+    #[cfg_attr(test, derive(Debug))]
+    struct Fake;
+invalid:
+  - |
+    use mockall::automock;
+  - |
+    #[automock]
+    trait Clock { fn now(&self) -> u64; }
+  - |
+    #[cfg_attr(test, mockall::automock)]
+    trait Clock { fn now(&self) -> u64; }
+  - |
+    #[cfg_attr(test, automock)]
+    trait Clock { fn now(&self) -> u64; }

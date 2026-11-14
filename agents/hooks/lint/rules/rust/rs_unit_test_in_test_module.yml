@@ -1,0 +1,47 @@
+id: rs_unit_test_in_test_module
+language: rust
+severity: warning
+message: "Put a unit test in `#[cfg(test)] mod tests`, or move it to `tests/` when it exercises the public API."
+files:
+  - "**/src/**/*.rs"
+ignores:
+  - "**/*tests.rs"
+  - "**/*_test.rs"
+  - "**/test.rs"
+  - "**/fixtures.rs"
+  - "**/tests/**"
+  - "**/test_support.rs"
+  - "**/build.rs"
+  - "**/fixtures/**"
+rule:
+  all:
+    - kind: function_item
+    - follows:
+        kind: attribute_item
+        regex: ^#\[test\]
+        stopBy:
+          not:
+            any:
+              - kind: attribute_item
+              - kind: line_comment
+    # A file that is itself compiled only for tests (`#![cfg(test)]`).
+    - not:
+        inside:
+          kind: source_file
+          stopBy: end
+          has:
+            kind: inner_attribute_item
+            regex: ^#!\[cfg\(.*\btest\b
+    # Inside a module that is compiled only for tests.
+    - not:
+        inside:
+          kind: mod_item
+          stopBy: end
+          follows:
+            kind: attribute_item
+            regex: ^#\[cfg\(.*\btest\b
+            stopBy:
+              not:
+                any:
+                  - kind: attribute_item
+                  - kind: line_comment

@@ -1,0 +1,32 @@
+# rust-style/references/filesystem.md: build paths with Path/PathBuf, do not follow symlinks while traversing unless
+# required and tested, use DirEntry::file_type() where symlink behaviour matters, and write through a temporary file
+# when a partial write would be harmful. Advisory and not fitted.
+id: filesystem-code-keeps-paths-and-symlinks-safe
+language: Rust
+kind: noul
+subject: node
+state: local
+threshold: 0.5
+axis: file
+severity: warning
+# Calls that traverse, test a path's kind, or replace file content; a plain read or `fs::write` is left to
+# rs_fs_call_needs_context and is not selected here.
+rule:
+  all:
+    - kind: function_item
+    - has:
+        kind: call_expression
+        stopBy: end
+        regex: (read_dir|WalkDir|\.is_dir\(|\.is_file\(|\.exists\(|symlink|fs::(write|rename|copy|remove_[a-z_]+)\(|File::create)
+ask: >-
+  This function traverses a directory, branches on a path's kind, or replaces a file in a way that mishandles symlinks
+  or partial writes.
+criteria:
+  "true": >-
+    It follows symlinks while walking a source tree without a stated and tested need, branches with `Path::is_dir`,
+    `is_file` or `exists` where a symlink changes the answer (instead of `DirEntry::file_type()`), builds a path by
+    string concatenation or formatting, or overwrites a file in place where a partial write would leave it unusable
+    (instead of writing a temporary file and replacing the target).
+  "false": >-
+    Traversal does not follow symlinks, the kind check does not depend on symlink behaviour, paths are built with
+    `Path::join` or `PathBuf::push`, and a write that can be partial is either harmless or goes through a temporary file.

@@ -1,0 +1,10 @@
+id: rs_no_mocking_library
+language: rust
+severity: warning
+message: "Prefer an explicit fake type behind a trait over a mocking library."
+rule:
+  any:
+    - kind: use_declaration
+      regex: ^use (mockall|mockall_double|unimock|faux)\b
+    - kind: attribute_item
+      regex: ^#\[(cfg_attr\([^\]]*?,\s*)?(mockall::)?automock\b

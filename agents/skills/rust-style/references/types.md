@@ -6,7 +6,6 @@
 - Prefer `type` aliases and enums before structs that use them.
 - Put public structs, enums, and traits before their implementations.
 - Put public functions before private helper functions.
-- Keep `#[cfg(test)] mod tests` at the bottom of the file.
 - Keep related types and their `impl` blocks close together.
 
 ## Structs
@@ -78,7 +77,6 @@ pub enum Provider {
 - Borrowed views use `as_*`: `as_str`, `as_path`, `as_slice`.
 - Consuming conversions use `into_*`: `into_inner`, `into_path_buf`.
 - Cheap copies can use the value name directly: `len`, `status`, `provider`.
-- Avoid Java-style `get_*` unless following an existing local convention.
 - Boolean queries use `is_*`, `has_*`, `can_*`, or `should_*`.
 - Fallible parsing uses `parse`, `try_from`, or `from_str`.
 
@@ -88,7 +86,6 @@ pub enum Provider {
 - Accept `impl Into<String>` for constructors that store owned strings.
 - Do not clone to satisfy the borrow checker until the ownership model is understood.
 - Use `Cow` only when profiling or API shape shows it is worthwhile.
-- Prefer slices over `&Vec<T>` in function parameters.
 
 ## Collections
 
@@ -102,7 +99,6 @@ pub enum Provider {
 - Use `&str` for borrowed string input and `String` for owned string storage.
 - Use `format!` when constructing a new owned string from values.
 - Use captured identifiers in formatting when it improves readability: `format!("{name}")`.
-- Prefer `to_owned()` or `String::from` when converting a string literal to `String`.
 - Avoid unnecessary `to_string()` in hot or repeated code.
 - Keep user-facing text separate from machine-readable output.
 

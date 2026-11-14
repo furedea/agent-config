@@ -1,0 +1,11 @@
+id: rs_no_follow_links
+valid:
+  - |
+    fn walk() { WalkDir::new(".").follow_links(false); }
+  - |
+    fn walk() { WalkDir::new("."); }
+invalid:
+  - |
+    fn walk() { WalkDir::new(".").follow_links(true); }
+  - |
+    fn walk(w: WalkDir) { w.min_depth(1).follow_links(true); }

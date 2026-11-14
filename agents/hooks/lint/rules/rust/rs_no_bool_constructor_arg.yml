@@ -1,0 +1,23 @@
+id: rs_no_bool_constructor_arg
+language: rust
+severity: warning
+message: "Avoid a boolean constructor argument; take an enum or an options struct."
+rule:
+  all:
+    - kind: function_item
+    - has:
+        field: name
+        kind: identifier
+        regex: ^(new|try_new|with_[a-z0-9_]+)$
+    - has:
+        field: parameters
+        kind: parameters
+        not:
+          has:
+            kind: self_parameter
+        has:
+          kind: parameter
+          has:
+            field: type
+            kind: primitive_type
+            regex: ^bool$

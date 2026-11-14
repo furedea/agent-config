@@ -1,0 +1,35 @@
+# rust-style/references/types.md (Getter and Conversion Naming): as_* borrows, into_* consumes, to_* copies or
+# converts, boolean queries start with is_/has_/can_/should_, fallible parsing is parse/try_from/from_str. The get_
+# prefix is judged by rs_no_get_prefix. Complements command-query-naming (M-05), which asks whether the name's verb
+# agrees with the body's effect. Advisory and not fitted.
+id: conversion-and-query-names-follow-rust-convention
+language: Rust
+kind: noul
+subject: node
+state: local
+threshold: 0.5
+axis: file
+severity: warning
+rule:
+  all:
+    - kind: function_item
+    - any:
+        - has:
+            field: return_type
+            regex: ^bool$
+        - has:
+            field: name
+            kind: identifier
+            regex: ^(parse|(as|into|to|try|from|parse)_.*)$
+ask: >-
+  The name of this conversion or boolean query does not follow Rust's naming convention for what the function does.
+criteria:
+  "true": >-
+    An `as_*` function that allocates or consumes `self`, an `into_*` function that only borrows, a `to_*` function that
+    returns a borrowed view, a fallible conversion that does not return `Result` or `Option`, or a function returning
+    `bool` whose name does not read as a yes/no question (not `is_*`, `has_*`, `can_*`, `should_*`, or a verb phrase such
+    as `contains` or `starts_with` that already reads as one).
+  "false": >-
+    The name's prefix matches what the function does (`as_` borrows, `into_` consumes, `to_` copies or converts), or
+    the boolean function's name already reads as a question, or the name follows an established local or standard
+    library convention.

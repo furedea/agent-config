@@ -1,0 +1,6 @@
+id: rs_no_follow_links
+language: rust
+severity: warning
+message: "Do not follow symlinks while traversing a source tree unless the behavior is required and tested."
+rule:
+  pattern: $WALK.follow_links(true)

@@ -1,0 +1,39 @@
+id: rs_fs_call_needs_context
+language: rust
+severity: warning
+message: "Add context naming the operation and the path to a filesystem call; a bare `?` returns \"No such file or directory\" alone."
+ignores:
+  - "**/*tests.rs"
+  - "**/fixtures.rs"
+  - "**/tests/**"
+  - "**/test_support.rs"
+  - "**/build.rs"
+  - "**/fixtures/**"
+rule:
+  kind: try_expression
+  has:
+    kind: call_expression
+    any:
+      - has:
+          field: function
+          kind: scoped_identifier
+          regex: ^((std::)?fs::[a-z_]+|((std::)?fs::)?File::(open|create))$
+      # `path.canonicalize()?`, `path.symlink_metadata()?`: a `Path` method that does I/O.
+      - has:
+          field: function
+          kind: field_expression
+          has:
+            field: field
+            regex: ^(canonicalize|symlink_metadata|read_dir|read_link)$
+      # `OpenOptions::new().read(true).open(path)?`: the fallible call is the `.open` method.
+      - all:
+          - has:
+              field: function
+              kind: field_expression
+              has:
+                field: field
+                regex: ^open$
+          - has:
+              kind: scoped_identifier
+              regex: OpenOptions::new$
+              stopBy: end

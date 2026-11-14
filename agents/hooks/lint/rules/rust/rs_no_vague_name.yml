@@ -1,0 +1,22 @@
+id: rs_no_vague_name
+language: rust
+severity: warning
+message: "Avoid `manager`, `helper` and `util` in names; name the item after the domain concept or action."
+rule:
+  any:
+    - all:
+        - any:
+            - kind: struct_item
+            - kind: enum_item
+            - kind: trait_item
+            - kind: type_item
+        - has:
+            field: name
+            kind: type_identifier
+            regex: (Manager|Helper|Utils?)($|[A-Z0-9_])
+    - all:
+        - kind: mod_item
+        - has:
+            field: name
+            kind: identifier
+            regex: ^(manager|helpers?|utils?)$

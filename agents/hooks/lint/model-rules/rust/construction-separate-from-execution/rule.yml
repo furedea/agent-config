@@ -1,7 +1,7 @@
 # M-31 separate construction from execution (agents/AGENTS.md: "separate object creation/configuration from execution
 # logic"). Advisory: the Stop hook reports findings and never promotes this rule to a gate (ADR-0021). Only functions
-# that construct an object are asked about, to spare the shared Stop subject budget; value objects and plain data are
-# not collaborators.
+# that construct an object are asked about, to spare the shared Stop subject budget; errors, standard collections and
+# plain data are not selected.
 id: construction-separate-from-execution
 language: Rust
 kind: noul
@@ -16,7 +16,9 @@ rule:
     - has:
         kind: call_expression
         stopBy: end
-        regex: "^[A-Za-z_][A-Za-z0-9_:<>]*::(new|builder|default|from|with_\\w+)\\("
+        all:
+          - regex: "^[A-Za-z_][A-Za-z0-9_:<>]*::(new|builder|default|from|with_\\w+)\\("
+          - not: { regex: "^(Vec|String|HashMap|HashSet|BTreeMap|BTreeSet|VecDeque|BinaryHeap|Box|Rc|Arc|Cell|RefCell|Mutex|RwLock|PathBuf|Duration|Option|Result)(<[^>]*>)?::" }
 ask: >-
   This function creates and configures its own collaborators and then also runs the logic that uses them.
 criteria:

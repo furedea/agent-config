@@ -44,6 +44,10 @@ def plain(a, b):
     return a + b
 
 
+def fail():
+    raise ValueError("bad")
+
+
 def run(path):
     client = Client(path)
     client.connect()
@@ -80,6 +84,10 @@ function plain(a: number, b: number): number {
 
 const arrow = (a: number): number => a + 1;
 
+function local(): number {
+  return new Map<string, number>().size;
+}
+
 function run(path: string): number {
   const client = new Client(path);
   client.connect();
@@ -112,6 +120,10 @@ func City(order Order) string {
 
 func Plain(a, b int) int {
 	return a + b
+}
+
+func Fail() error {
+	return errors.New("bad")
 }
 
 func Run(path string) int {
@@ -148,6 +160,10 @@ pub fn plain(a: i32, b: i32) -> i32 {
     a + b
 }
 
+pub fn local() -> usize {
+    Vec::<i32>::new().len()
+}
+
 pub fn run(path: &str) -> i32 {
     let client = Client::new(path);
     client.connect();
@@ -162,6 +178,7 @@ pub fn run(path: &str) -> i32 {
     ),
 }
 
+# Standard collections and errors (`ValueError`, `new Map`, `errors.New`, `Vec::new`) are not constructions.
 # Each sample has three methods, a plain function, and `run`, the only function of ten lines or more and the only one
 # that constructs an object (TypeScript adds an arrow function bound to a name, which no rule selects here). Only
 # `items` returns its own collection, only `total` has a comment, only `city` chains three member accesses into a call.

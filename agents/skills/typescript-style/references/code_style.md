@@ -4,7 +4,6 @@
 
 - Use snake_case file names (enforced by ls-lint), for example `long_run.ts`.
 - Name files by the domain or action, not a role suffix: `format.ts`, not `formatter.ts`.
-- Avoid `helper`, `util`, and `common` unless the name is already established locally.
 
 ## Imports
 

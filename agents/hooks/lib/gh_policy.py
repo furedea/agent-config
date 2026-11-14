@@ -31,6 +31,9 @@ ARITHMETIC_ASSIGNMENT = re.compile(r"[A-Za-z_][A-Za-z0-9_]*=\S*\[[^\]]*\$\(")
 SENT_FILE_LIMIT_BYTES = 100000
 REMOTE_LOOKUP_TIMEOUT_SECONDS = 5
 GITHUB_HOST = "github.com"
+# Variables through which gh picks another host or repository than its words show; the hook's own
+# environment is the harness's, but one set on the line comes from the agent.
+HOST_VARIABLES = re.compile(r"\bGH_(?:HOST|REPO|ENTERPRISE_TOKEN)\b")
 # Programs a body substitution may run without changing anything gh reads: the directory, remotes, or files.
 PRINTING_PROGRAMS = frozenset({"cat", "echo", "printf"})
 IRREVERSIBLE_REASON = "cannot be taken back or promotes work (class D)"
@@ -111,6 +114,8 @@ def verdict(candidate: shell_syntax.Command, line: CommandLine, rules: GhRules) 
     preview = shell_syntax.command_preview(candidate.raw)
     if line.hides_code:
         return _ask("zsh may evaluate a subscript or assignment on this line as code the guard cannot see", preview)
+    if HOST_VARIABLES.search(line.source):
+        return _ask("the line names a variable that sends gh to another host or repository", preview)
     call = gh_invocation.classify(candidate, rules.catalog, single_call=line.single_call)
     if isinstance(call, Unclassified):
         return _ask(f"cannot classify this gh call: {call.reason}", preview)
@@ -131,8 +136,7 @@ def _ungranted(call: GhCall, line: CommandLine, rules: GhRules) -> str:
     target = _target(call, line, rules.trusted)
     if not all(rules.catalog.grant(target, operation, call.effect) for operation in call.operations):
         return IRREVERSIBLE_REASON if call.effect is Effect.IRREVERSIBLE else TARGET_REASONS[target]
-    writes = call.effect not in {Effect.READ, Effect.LOCAL}
-    if writes and (call.files or call.unscanned_files) and not line.single_call:
+    if (call.files or call.unscanned_files) and not line.single_call:
         return "sends a file another command on the line may write after the guard reads it"
     return ""
 

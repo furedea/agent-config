@@ -127,3 +127,19 @@ def test_directories_above_the_repository_do_not_change_what_the_hook_flags(tmp_
     assert [message.split("\n")[0] for message in messages] == [
         f"Static rule go_no_vague_directory_name · {flagged}:1"
     ]
+
+
+def test_a_project_without_git_is_matched_from_its_manifest_directory(tmp_path: Path) -> None:
+    require_ast_grep()
+    static_rule_scan = load_script_module("agents/hooks/lint_format.py", "lint_format_for_manifests").static_rule_scan
+    project = tmp_path / "common" / "project"
+    flagged = project / "util" / "user.go"
+    flagged.parent.mkdir(parents=True)
+    flagged.write_text("package a\n")
+    (project / "go.mod").write_text("module example.com/project\n")
+
+    messages = static_rule_scan.diagnostics([flagged])
+
+    assert [message.split("\n")[0] for message in messages] == [
+        f"Static rule go_no_vague_directory_name · {flagged}:1"
+    ]

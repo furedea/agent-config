@@ -12,6 +12,7 @@ from lib.formatter_policy import Step
 SCANNER = "ast-grep"
 CONFIG_NAME = "sgconfig.yml"
 SHARED_CONFIG = Path(__file__).resolve().parent.parent / "lint" / CONFIG_NAME
+PROJECT_MARKERS = ("go.mod", "go.work", "Cargo.toml", "pyproject.toml", "package.json")
 FAILURE_OUTPUT_LINES = 8
 TRUNCATED = "Static rule output truncated\nThe scanner output exceeded the size limit; some findings may be missing."
 
@@ -39,8 +40,8 @@ def scan_root(path: Path, config: Path) -> Path:
     """Pick the directory that the `files:` globs of a configuration match against.
 
     A project configuration matches paths relative to its own directory. The shared configuration matches paths
-    relative to the repository, else the project, else the file, so directories above the repository, such as
-    `~/common/`, stay out of the globs.
+    relative to the repository, else the directory of the project configuration or manifest, else the file, so
+    directories above the project, such as `~/common/`, stay out of the globs.
     """
     if config != SHARED_CONFIG:
         return config.parent
@@ -48,7 +49,10 @@ def scan_root(path: Path, config: Path) -> Path:
     if repository is not None:
         return repository
     project = project_config(path)
-    return project.parent if project is not None else path.parent
+    if project is not None:
+        return project.parent
+    manifest_directory = next((d for d in path.parents if any((d / m).is_file() for m in PROJECT_MARKERS)), None)
+    return manifest_directory or path.parent
 
 
 def configs_for(path: Path) -> tuple[Path, ...]:

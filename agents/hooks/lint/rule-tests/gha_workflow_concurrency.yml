@@ -44,6 +44,21 @@ valid:
           - run: echo hi
 invalid:
   - |
+    on: "push"
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        steps:
+          - run: echo hi
+  - |
+    on:
+      "pull_request":
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        steps:
+          - run: echo hi
+  - |
     on:
       pull_request:
     jobs:

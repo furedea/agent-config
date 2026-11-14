@@ -68,7 +68,8 @@ class GhCall:
     known only at run time or outside github.com, and `node` a target named by GraphQL node ID.
     `files` are local files, named by literal paths, whose content the call sends, and
     `unscanned_files` are the source texts of sent file paths known only at run time, and `reads_stdin` a
-    body read from standard input.
+    body read from standard input. `related` are repositories of issues the write links to, which must
+    be trusted beside the target, whether that target is named or the working directory's.
     """
 
     operations: tuple[str, ...]
@@ -79,6 +80,7 @@ class GhCall:
     files: tuple[str, ...] = ()
     unscanned_files: tuple[str, ...] = ()
     reads_stdin: bool = False
+    related: tuple[Repository, ...] = ()
 
     @property
     def label(self) -> str:
@@ -88,7 +90,7 @@ class GhCall:
     @property
     def implicit(self) -> bool:
         """Whether the call acts on the repository gh picks from the working directory."""
-        return not (self.repositories or self.unknown_target or self.node)
+        return not (self.repositories or self.node)
 
 
 @dataclass(frozen=True, slots=True)
@@ -198,8 +200,9 @@ def _classify_local(words: tuple[Word, ...], spec: CommandSpec) -> GhCall:
         raise UnclassifiableError("a local change takes a word known only at run time")
     _check_read_repositories(words)
     scan = gh_options.scan(words, OptionTable(spec.value_options, spec.flags))
-    if any("/" in word.value and repository(word.value) is None for word in scan.positionals[:1]):
-        raise UnclassifiableError("a local change names another host than github.com")
+    clone_source = scan.positionals[:1] if spec.operation == "repo.clone" else ()
+    if any("/" in word.value and repository(word.value) is None for word in clone_source):
+        raise UnclassifiableError("a clone names another host than github.com")
     return GhCall((spec.operation,), spec.effect)
 
 
@@ -210,8 +213,11 @@ def _classify_write(words: tuple[Word, ...], spec: CommandSpec, single_call: boo
     _check_sent_values(scan.values_of(spec.values | spec.texts) + scan.positionals, single_call)
     targets = scan.values_of(REPOSITORY_OPTIONS | spec.repositories)
     targets += tuple(word for word in scan.positionals if _is_url(word.value))
-    targets += _reference_targets(scan.values_of(spec.references))
     repositories = tuple(None if word.dynamic else repository(word.value) for word in targets)
+    related = tuple(
+        None if word.dynamic else repository(word.value)
+        for word in _reference_targets(scan.values_of(spec.references))
+    )
     data_options = spec.texts | spec.files
     for group in spec.required:
         # A body may be computed text or a run-time file the scan judges; any other required value must be literal.
@@ -231,10 +237,11 @@ def _classify_write(words: tuple[Word, ...], spec: CommandSpec, single_call: boo
         (spec.operation,),
         effect,
         tuple(repository for repository in repositories if repository),
-        None in repositories,
+        None in repositories or None in related,
         files=tuple(path for path in paths if path != "-"),
         unscanned_files=tuple(word.source for word in files if word.dynamic),
         reads_stdin="-" in paths,
+        related=tuple(repository for repository in related if repository),
     )
 
 
@@ -319,6 +326,8 @@ def _api_request(words: tuple[Word, ...]) -> ApiRequest:
     endpoint = scan.positionals[0]
     if endpoint.dynamic and not LITERAL_PATH_START.match(endpoint.source):
         raise UnclassifiableError("a gh api endpoint known at run time must start with a literal path segment")
+    if endpoint.dynamic and re.search(r"\$[A-Za-z_{(]|`", endpoint.source.partition("?")[2]):
+        raise UnclassifiableError("a gh api query string holds a parameter expansion")
     if any(word.dynamic for word in scan.values_of(METHOD_OPTIONS | HEADER_OPTIONS | {"--hostname"})):
         raise UnclassifiableError("a gh api method, header, or host is known only at run time")
     if any(METHOD_OVERRIDE.match(word.value) for word in scan.values_of(HEADER_OPTIONS)):

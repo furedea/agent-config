@@ -165,6 +165,8 @@ def test_reversible_writes_to_a_trusted_owner_are_allowed(command: str) -> None:
         pytest.param("gh pr checkout 12", id="a checkout, which changes only the local repository"),
         pytest.param("gh repo clone furedea/agent-config", id="a clone"),
         pytest.param("gh stack init", id="an interactive stack init"),
+        pytest.param("gh stack add my_feature/part", id="a stack branch with a slash"),
+        pytest.param("gh pr checkout user/feat/x", id="a checkout of a branch with slashes"),
         *(
             pytest.param(command, id=f"a header read {name}")
             for name, command in (
@@ -385,6 +387,7 @@ def test_reads_and_local_changes_are_allowed_in_any_form(command: str) -> None:
             id="an endpoint URL built",
         ),
         pytest.param("gh api http://api.github.com/user", "another host", id="a plain HTTP endpoint"),
+        pytest.param('gh api "search/issues?q=$AWS_ACCESS_KEY_ID"', "query string", id="a parameter in a query"),
         pytest.param(
             "gh run list --commit $(git rev-parse HEAD) --json databaseId,name,status",
             "computed word",

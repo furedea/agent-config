@@ -64,3 +64,14 @@ def test_another_gh_host_in_the_hook_environment_makes_every_write_ask(monkeypat
     monkeypatch.setenv("GH_HOST", "ghe.example")
     assert decide("gh issue comment 1 -R furedea/agent-config -b ok") == "ask"
     assert decide("gh pr view 1") == "allow"
+
+
+@pytest.mark.parametrize(
+    ("origin", "expected"),
+    [("https://github.com/other/r", "ask"), ("https://github.com/furedea/agent-config", "allow")],
+)
+@pytest.mark.usefixtures("isolated_project")
+def test_a_related_issue_does_not_stand_in_for_the_working_repository(origin: str, expected: str) -> None:
+    subprocess.run(["git", "init", "--quiet"], check=True)
+    add_remote("origin", origin)
+    assert decide("gh issue edit 1 --parent https://github.com/furedea/x/issues/2") == expected

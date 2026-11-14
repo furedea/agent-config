@@ -37,7 +37,7 @@ GITHUB_HOST = "github.com"
 # harness environment the guard judged. The hook's own environment is the harness's.
 ASSIGNING_PROGRAMS = frozenset(
     {"declare", "eval", "export", "getopts", "let", "local", "mapfile", "read", "readarray", "readonly"}
-    | {"set", "source", ".", "typeset", "unset", "vared", "zparseopts"}
+    | {"alias", "hash", "set", "source", ".", "trap", "typeset", "unalias", "unset", "vared", "zparseopts"}
 )
 # Syntax that assigns: a declaration, a loop variable, arithmetic, or a ${name:=value} default.
 ASSIGNING_NODES = frozenset({"DeclClause", "ForClause", "CStyleLoop", "ArithmCmd", "ArithmExp"})
@@ -310,6 +310,7 @@ def _target(call: GhCall, line: CommandLine, trusted: trusted_owners.TrustedOwne
         repositories = _working_repositories() if line.single_call else ()
     if not repositories:
         return TargetClass.UNRESOLVED
+    repositories = (*repositories, *call.related)
     owners_trusted = all(repository.owner.lower() in trusted.owners for repository in repositories)
     return TargetClass.TRUSTED if owners_trusted else TargetClass.UNTRUSTED
 

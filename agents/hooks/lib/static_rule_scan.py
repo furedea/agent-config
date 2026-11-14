@@ -69,7 +69,7 @@ def project_config(path: Path) -> Path | None:
 
 def scan(config: Path, root: Path, files: list[str]) -> tuple[str, ...]:
     """Run the scanner once, from `root`, for files sharing one configuration."""
-    step = Step("ast-grep scan", (SCANNER, "scan", "--config", str(config), "--json=stream", *files), cwd=root)
+    step = Step("ast-grep scan", (SCANNER, "scan", "--config", str(config), "--json=stream", "--", *files), cwd=root)
     try:
         result = process_runner.run_process(step, root / files[0], dict(os.environ))
     except OSError as error:

@@ -123,6 +123,7 @@ def test_findings_are_returned_as_context_with_rule_file_line_and_message(
         "--config",
         str(lint_directory / "sgconfig.yml"),
         "--json=stream",
+        "--",
         "src/source.py",
     ]
 
@@ -343,7 +344,7 @@ def test_each_configuration_matches_globs_against_its_own_base_directory(
     hook.run(source)
 
     calls = [json.loads(line) for line in scanner_calls.read_text().splitlines()]
-    assert {call[2]: call[4] for call in calls} == {
+    assert {call[2]: call[5] for call in calls} == {
         str(shared_config): "packages/app/src/source.py",
         str(project / "sgconfig.yml"): "src/source.py",
     }

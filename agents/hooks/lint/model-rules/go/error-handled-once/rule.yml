@@ -8,12 +8,13 @@ state: local
 threshold: 0.5
 axis: file
 severity: warning
-# Only functions that log are asked about; a function that never logs cannot log and return the same error.
+# Only functions (including function literals) that log are asked about; a function that never logs cannot log and return the same error.
 rule:
   all:
     - any:
         - kind: function_declaration
         - kind: method_declaration
+        - kind: func_literal
     - has:
         kind: call_expression
         regex: ^(slog|log)\.|[lL]og(ger)?\.(Debug|Info|Warn|Error)(Context)?\(

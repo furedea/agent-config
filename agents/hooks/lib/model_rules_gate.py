@@ -217,4 +217,7 @@ def _inputs(record: SessionRecord) -> str:
     for path in sorted(RULES_DIRECTORY.rglob("*.yml")):
         digest.update(os.fsencode(path.relative_to(RULES_DIRECTORY)))
         digest.update(path.read_bytes())
+    # A baseline moves a rule between tiers, so its presence changes what the cap leaves for it.
+    for path in sorted(RULES_DIRECTORY.rglob("baseline.json")):
+        digest.update(os.fsencode(path.relative_to(RULES_DIRECTORY)))
     return digest.hexdigest()

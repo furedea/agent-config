@@ -7,11 +7,15 @@ judgement is advisory (ADR-0021) and is not tested here.
 import json
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
 
 from tests.runtime import REPO_ROOT
+
+sys.path.insert(0, str(REPO_ROOT / "agents/hooks/lib"))
+import model_rules_gate
 
 RULES = REPO_ROOT / "agents/hooks/lint/model-rules"
 RULE_IDS = (
@@ -182,6 +186,10 @@ pub fn plain(a: i32, b: i32) -> i32 {
     a + b
 }
 
+pub fn counter(&mut self) -> &mut i32 {
+    &mut self.count
+}
+
 pub fn tagged() -> usize {
     // TODO: remove
     1
@@ -267,3 +275,24 @@ def test_each_rule_selects_the_functions_it_asks_about(language: str, repository
     counts = {entry["rule"]: entry["subjects"] for entry in report["byRule"] if entry["rule"] in RULE_IDS}
 
     assert {rule: counts.get(rule, 0) for rule in RULE_IDS} == {**EXPECTED, **EXPECTED_OVERRIDES.get(language, {})}
+
+
+def test_the_tiers_together_plan_the_same_subjects_as_the_whole_directory(repository: Path) -> None:
+    (repository / "sample.py").write_text(SAMPLES["python"][1].replace("{PAD}", PADDING["python"] * 25))
+
+    def subjects(rules: tuple[Path, ...]) -> int:
+        arguments = [word for path in rules for word in ("-R", str(path))]
+        result = subprocess.run(
+            ["jev-lint", "review", "--json", "--dry-run", "--no-config", "-c", "none", *arguments],
+            cwd=repository,
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        return json.loads(result.stdout)["subjects"]
+
+    tiers = model_rules_gate.rule_tiers(RULES)
+
+    assert len(tiers) == 2
+    assert sum(subjects(tier) for tier in tiers) == subjects((RULES,))

@@ -12,7 +12,9 @@ severity: warning
 rule:
   all:
     - kind: function_item
-    - has: { field: return_type, regex: "&\\s*mut\\b" }
+    - has:
+        field: return_type
+        regex: "&\\s*mut\\s+(\\[|[A-Za-z_:]*(Vec|Map|Set|Deque|Heap)\\b)"
 ask: >-
   This function hands the caller the object's own mutable collection, so the caller can change its state without the
   object noticing.

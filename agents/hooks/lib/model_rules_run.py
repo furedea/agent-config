@@ -163,16 +163,21 @@ def review_all(reviews: tuple[Review, ...], credentials: Credentials, deadline: 
     """Judge each review in turn, sharing one cap of SUBJECT_CAP subjects among them."""
     combined = Judgement(())
     cap = SUBJECT_CAP
-    for review in reviews:
+    for position, review in enumerate(reviews):
         plan = review.plan(deadline, cap)
         if isinstance(plan, Prevented):
-            return plan
-        cap = max(0, cap - plan.cost)
+            return _failed_review(plan, position, combined)
         outcome = review.judge(plan, credentials, deadline) if plan.judged else _unjudged(plan)
         if isinstance(outcome, Prevented):
-            return outcome
+            return _failed_review(outcome, position, combined)
+        cap = max(0, cap - plan.cost)
         combined = combined.combined(outcome)
     return combined
+
+
+def _failed_review(prevented: Prevented, position: int, combined: Judgement) -> Judgement | Prevented:
+    """The first review failing prevents the run; a later one keeps the earlier findings, as one skipped file."""
+    return prevented if position == 0 else combined.combined(Judgement((), skipped_files=1))
 
 
 def cache_path(state_directory: Path) -> Path:

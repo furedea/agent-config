@@ -2,14 +2,16 @@
 
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any, cast
 
+import pytest
 from tests.runtime import REPO_ROOT
 
 sys.path.insert(0, str(REPO_ROOT / "agents/hooks/lib"))
 import model_rules_gate
 import model_rules_run
-from model_rules_outcome import Judgement, Plan
+from model_rules_outcome import Finding, Judgement, Plan, Prevented
 
 REAL_RULES = REPO_ROOT / "agents/hooks/lint/model-rules"
 
@@ -73,3 +75,52 @@ def test_the_cap_is_spent_on_the_first_review_before_the_next_is_offered_what_is
     model_rules_run.review_all(cast(Any, reviews), cast(Any, None), cast(Any, None))
 
     assert offered == [model_rules_run.SUBJECT_CAP, model_rules_run.SUBJECT_CAP - 15]
+
+
+class FailingReview:
+    def __init__(self, cost: int) -> None:
+        self.cost = cost
+
+    def plan(self, _deadline: object, cap: int) -> Plan:
+        return Plan((), self.cost, min(self.cost, cap))
+
+    def judge(self, _plan: Plan, _credentials: object, _deadline: object) -> Prevented:
+        return Prevented("jev-lint timed out")
+
+
+def test_a_later_review_that_fails_keeps_what_the_first_one_found() -> None:
+    finding = Finding("command-query-naming", "a.py", 1, "m")
+
+    class Finding1(FakeReview):
+        def judge(self, plan: Plan, _credentials: object, _deadline: object) -> Judgement:
+            return Judgement((finding,), plan.subjects)
+
+    reviews = (Finding1(3, []), FailingReview(3))
+
+    outcome = model_rules_run.review_all(cast(Any, reviews), cast(Any, None), cast(Any, None))
+
+    assert isinstance(outcome, Judgement)
+    assert outcome.findings == (finding,)
+    assert outcome.skipped_files == 1
+
+
+def test_the_first_review_that_fails_still_prevents_the_run() -> None:
+    reviews = (FailingReview(3), FakeReview(3, []))
+
+    outcome = model_rules_run.review_all(cast(Any, reviews), cast(Any, None), cast(Any, None))
+
+    assert outcome == Prevented("jev-lint timed out")
+
+
+def test_adding_a_baseline_changes_the_input_fingerprint(
+    git_project: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    rules = tmp_path / "rules"
+    folder = rule_folder(rules, "python", "fitted", baseline=False)
+    monkeypatch.setattr(model_rules_gate, "RULES_DIRECTORY", rules)
+    record = cast(Any, SimpleNamespace(root=git_project, head=None))
+
+    before = model_rules_gate._inputs(record)
+    (folder / "baseline.json").write_text("{}")
+
+    assert model_rules_gate._inputs(record) != before

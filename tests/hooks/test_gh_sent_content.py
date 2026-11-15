@@ -303,3 +303,10 @@ def test_a_secret_split_across_quotes_is_scanned_as_the_shell_joins_it(secret_sa
 def test_a_secret_split_by_quotes_inside_a_substitution_is_scanned(secret_samples: dict[str, str]) -> None:
     token = secret_samples["github_token"]
     assert decide(f"gh issue comment 1 -R furedea/r -b \"$(printf '{token[:2]}''{token[2:]}')\"") == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+@pytest.mark.parametrize("value", ["-", "/dev/stdin", "/dev/fd/3"])
+def test_a_run_time_path_expanding_to_standard_input_asks(monkeypatch: pytest.MonkeyPatch, value: str) -> None:
+    monkeypatch.setenv("BODY_FILE", value)
+    assert decide('gh issue comment 1 -R furedea/r -F "$BODY_FILE" < .env') == "ask"

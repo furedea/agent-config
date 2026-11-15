@@ -119,6 +119,9 @@ def test_a_read_of_the_working_repository_follows_its_remote_host(origin: str, e
         "git remote set-url origin https://evil.example/o/r && gh pr list",
         "chdir ../other && gh pr list",
         "../other; gh pr list",
+        "printf x > .git/config; gh pr list",
+        "./head x; gh pr list",
+        "sort -o .git/config x; gh pr list",
     ],
 )
 @pytest.mark.usefixtures("furedea_checkout")

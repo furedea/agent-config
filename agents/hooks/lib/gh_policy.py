@@ -35,9 +35,10 @@ ARITHMETIC_ASSIGNMENT = re.compile(r"[A-Za-z_][A-Za-z0-9_]*=\S*\[[^\]]*\$\(")
 SENT_FILE_LIMIT_BYTES = 100000
 REMOTE_LOOKUP_TIMEOUT_SECONDS = 5
 GITHUB_HOST = "github.com"
-# Programs that only print or filter output; beside them nothing on the line can change the directory or remotes.
+# Programs that only print or filter output and cannot write a file; beside them nothing on the line can change
+# the directory or remotes. sort -o and uniq's output argument write files, so neither is here.
 OUTPUT_FILTERS = frozenset(
-    {"cat", "column", "cut", "echo", "grep", "head", "jq", "printf", "sort", "tail", "tr", "true", "uniq", "wc"}
+    {"cat", "column", "cut", "echo", "grep", "head", "jq", "printf", "tail", "tr", "true", "wc"}
 )
 # Programs that set shell variables, or run code that may: on a line holding one, a variable gh reads,
 # such as GH_REPO, GH_HOST, GH_TOKEN, HTTPS_PROXY, SSL_CERT_FILE, or HOME, may differ from the

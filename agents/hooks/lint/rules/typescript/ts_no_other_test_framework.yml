@@ -1,6 +1,6 @@
 id: ts_no_other_test_framework
 language: typescript
-severity: warning
+severity: error
 message: "Use vitest as the only test framework."
 note: "Imports of jest, mocha and `node:test`, and `jest.*` calls; a Jest dependency in `package.json` is not seen."
 rule:

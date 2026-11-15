@@ -1,6 +1,6 @@
 id: ts_catch_rethrow_requires_cause
 language: typescript
-severity: warning
+severity: error
 message: "Pass the caught error as `cause`: `new Error(message, { cause })`."
 note: "Only a one-argument `new XError(message)` thrown inside a `catch` is reported; a function declared inside the `catch` is a new scope."
 rule:

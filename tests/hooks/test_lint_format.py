@@ -357,7 +357,7 @@ def test_provider_diagnostics_are_bounded_without_losing_truncation_notice(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     messages = tuple(f"diagnostic {index}: {'x' * 2000}" for index in range(20))
-    lint_format.emit(messages)
+    lint_format.emit(lint_format.Report(advice=messages))
     output = capsys.readouterr().out
     row = json.loads(output)
     context = row["hookSpecificOutput"]["additionalContext"]
@@ -400,7 +400,7 @@ def test_dispatcher_selects_files_from_a_codex_patch_and_deduplicates(tmp_path: 
         },
     }
 
-    assert lint_format.diagnostics(payload) == ()
+    assert lint_format.diagnostics(payload) == lint_format.Report()
     assert check.call_args_list == [mocker.call("py", first), mocker.call("sh", second)]
 
 
@@ -411,7 +411,7 @@ def test_dispatcher_uses_only_the_file_tool_path(tmp_path: Path, mocker: MockerF
 
     assert (
         lint_format.diagnostics({"tool_name": "Write", "tool_input": {"file_path": str(path), "content": "secret"}})
-        == ()
+        == lint_format.Report()
     )
     check.assert_called_once_with("py", path)
 
@@ -421,7 +421,9 @@ def test_dispatcher_skips_unsupported_files(tmp_path: Path, mocker: MockerFixtur
     path.touch()
     check = mocker.patch.object(lint_format, "check_file", return_value=())
 
-    assert lint_format.diagnostics({"tool_name": "Write", "tool_input": {"file_path": str(path)}}) == ()
+    assert (
+        lint_format.diagnostics({"tool_name": "Write", "tool_input": {"file_path": str(path)}}) == lint_format.Report()
+    )
     check.assert_not_called()
 
 

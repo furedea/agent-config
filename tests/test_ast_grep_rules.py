@@ -5,6 +5,7 @@ import os
 import re
 import shutil
 import subprocess
+from collections.abc import Callable
 from pathlib import Path
 
 import pytest
@@ -20,6 +21,29 @@ FILE_SCOPED_RULE_IDS = sorted(path.stem for path in RULE_FILES if path not in SN
 CASE_DIRECTORY = LINT_ROOT / "rule-tests"
 ID_PATTERN = re.compile(r"^id:\s*(\S+)\s*$", re.MULTILINE)
 CASE_SECTION_PATTERN = re.compile(r"^(valid|invalid):\s*\n\s+- ", re.MULTILINE)
+SEVERITY_PATTERN = re.compile(r"^severity:\s*(\S+)\s*$", re.MULTILINE)
+# A top-level `note:` with an inline value, or a block scalar followed by an indented non-empty line.
+NOTE_PATTERN = re.compile(r"^note:[ \t]*(?:[|>][+-]?[ \t]*\n[ \t]+\S|[^\s|>])", re.MULTILINE)
+
+
+def blocks_without_fix(rule: str) -> bool:
+    """Whether a rule blocks edits (severity error) without a `note` that tells the exact fix."""
+    return SEVERITY_PATTERN.findall(rule) == ["error"] and NOTE_PATTERN.search(rule) is None
+
+
+@pytest.mark.parametrize(
+    "rule,expected",
+    [
+        ("severity: error\nmessage: Why.\n", True),
+        ("severity: error\nmessage: Why.\nnote: Use y.\n", False),
+        ("severity: error\nmessage: Why.\nnote: |\n  Use y.\n", False),
+        ("severity: error\nmessage: Why.\nnote: |\n", True),
+        ("severity: warning\nmessage: Why.\n", False),
+    ],
+    ids=["error without note", "inline note", "block note", "empty block note", "warning"],
+)
+def test_a_blocking_rule_without_a_note_is_recognized(rule: str, expected: bool) -> None:
+    assert blocks_without_fix(rule) is expected
 
 
 @pytest.mark.parametrize("rule_file", RULE_FILES, ids=lambda path: path.stem)
@@ -132,7 +156,9 @@ def test_file_scoped_rules_flag_exactly_the_vaguely_named_paths(tmp_path: Path) 
     assert flagged == {rule_id: set(FLAGGED_PATHS[rule_id]) for rule_id in FILE_SCOPED_RULE_IDS}, result.stderr
 
 
-def test_directories_above_the_repository_do_not_change_what_the_hook_flags(tmp_path: Path) -> None:
+def test_directories_above_the_repository_do_not_change_what_the_hook_flags(
+    tmp_path: Path, checkout_of: Callable[[Path], Path]
+) -> None:
     require_ast_grep()
     static_rule_scan = load_script_module("agents/hooks/lint_format.py", "lint_format_for_ancestors").static_rule_scan
     repository = tmp_path.joinpath("common", "pkg", "util", "tests", "repo")
@@ -140,50 +166,28 @@ def test_directories_above_the_repository_do_not_change_what_the_hook_flags(tmp_
     for path in (clean, flagged):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text("package a\n")
-    (repository / ".git").mkdir()
+    checkout_of(repository)
 
-    messages = static_rule_scan.diagnostics([clean, flagged])
+    report = static_rule_scan.diagnostics([clean, flagged])
 
-    assert [message.split("\n")[0] for message in messages] == [
+    assert [message.split("\n")[0] for message in report.errors + report.advice] == [
         f"Static rule go_no_vague_directory_name · {flagged}:1"
     ]
 
 
-def test_a_project_without_git_is_matched_from_its_manifest_directory(tmp_path: Path) -> None:
-    require_ast_grep()
-    static_rule_scan = load_script_module("agents/hooks/lint_format.py", "lint_format_for_manifests").static_rule_scan
-    project = tmp_path / "common" / "project"
-    flagged = project / "util" / "user.go"
-    flagged.parent.mkdir(parents=True)
-    flagged.write_text("package a\n")
-    (project / "go.mod").write_text("module example.com/project\n")
-
-    messages = static_rule_scan.diagnostics([flagged])
-
-    assert [message.split("\n")[0] for message in messages] == [
-        f"Static rule go_no_vague_directory_name · {flagged}:1"
-    ]
-
-
-def test_a_file_name_that_looks_like_an_option_is_scanned_as_a_path(tmp_path: Path) -> None:
+def test_a_file_name_that_looks_like_an_option_is_scanned_as_a_path(
+    tmp_path: Path, checkout_of: Callable[[Path], Path]
+) -> None:
     require_ast_grep()
     static_rule_scan = load_script_module("agents/hooks/lint_format.py", "lint_format_for_options").static_rule_scan
-    (tmp_path / ".git").mkdir()
+    checkout_of(tmp_path)
     option_like = tmp_path / "-U.go"
     option_like.write_text("package a\n")
 
-    assert static_rule_scan.diagnostics([option_like]) == ()
+    assert static_rule_scan.diagnostics([option_like]) == static_rule_scan.Report()
     assert option_like.read_text() == "package a\n"
 
 
-NOTE_PATTERN = re.compile(r"^note:\s*\S", re.MULTILINE)
-ERROR_PATTERN = re.compile(r"^severity:\s*error\s*$", re.MULTILINE)
-
-
-@pytest.mark.parametrize(
-    "rule_file",
-    [path for path in RULE_FILES if ERROR_PATTERN.search(path.read_text())],
-    ids=lambda path: path.stem,
-)
+@pytest.mark.parametrize("rule_file", RULE_FILES, ids=lambda path: path.stem)
 def test_blocking_rule_states_its_fix_in_a_note(rule_file: Path) -> None:
-    assert NOTE_PATTERN.search(rule_file.read_text())
+    assert not blocks_without_fix(rule_file.read_text())

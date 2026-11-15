@@ -3,6 +3,7 @@ status: proposed
 date: 2026-11-10
 amended:
   - "2026-11-11: the hook behaviour, the two reviews, the Keychain"
+  - "2026-11-15: static rules block on edit; suppression; shared rules only in trusted repositories"
 ---
 
 # ADR-0021: Enforce prose rules with each tool's own checks that report before they block
@@ -11,14 +12,17 @@ In the context of turning the prose rules of `AGENTS.md` and the style skills in
 that differ in how they can be judged (existing linter, ast-grep, model, prose only) and a model judge whose cutoffs
 are not yet fitted (ADR-0020), we decided for making each tool's own configuration the single source of truth (linter
 config, ast-grep rule YAML with its native tests, jev-lint rule files), deleting a prose rule in the same change that
-replaces it with a check (a model-judged rule keeps its prose until it is promoted), showing findings to the agent by blocking Stop once for each set of inputs and never blocking again on the same inputs, promoting a rule to a gate that blocks every time only after
+replaces it with a check (a model-judged rule keeps its prose until it is promoted), blocking every edit that leaves a
+static (ast-grep) finding of severity error, with no advisory tier for static rules, running the shared static rules
+only in repositories of trusted owners, leaving a real exception to a suppression comment that only the user approves, showing model-judged findings to the agent by blocking Stop once for each set of inputs and never blocking again on the same inputs, promoting a model-judged rule to a gate that blocks every time only after
 its example tests show no false positive, running model-judged rules once at Stop as `jev-lint review` over the changed functions of trusted
 repositories, reusing `jev-lint`'s own verdict cache stored outside the repository, and building and pinning `jev-lint` with its dependencies through Nix as `packages.<system>.jev-lint` in this
-repository (agent-config), and against a separate rule registry, blocking on edit, judging per edit, and running without a cache,
-to achieve one place per rule and no prose that can drift from its check, accepting that an unpromoted rule can be
+repository (agent-config), and against a separate rule registry, advisory static rules, blocking on edit for model-judged rules, judging per edit, and running without a cache,
+to achieve one place per rule and no prose that can drift from its check, accepting that a static rule with a false
+positive stops the agent until the rule is fixed or deleted or the user approves a suppression, that an unpromoted model-judged rule can be
 ignored by the agent after it has seen the finding once, that a Stop block delays the end of a turn once per change, that an unpromoted model-judged rule exists both as prose and as a check until its promotion, that a Stop-time verdict arrives after the edits it judges, that there is no single inventory
 of rules across tools, that the hook depends on `jev-lint`'s cache and batching behaviour, and that only the owner's
-own repositories get model judgement.
+own repositories get model judgement and the shared static rules.
 
 ## Decisions
 
@@ -32,13 +36,34 @@ own repositories get model judgement.
     until the promotion change, which then deletes it. The
     prose-to-check mapping (original text, location, tool, tests) is recorded in that PR's body only, not in the
     repository.
-- **Hook behaviour.** Static rules return findings as feedback after an edit and never block. A model-judged finding
+- **Static rules block.** A static (ast-grep) rule is either on, with `severity: error`, or deleted; there is no
+    advisory tier and no advisory-then-promote path for static rules. An edit that leaves an error finding is
+    blocked after the edit (`decision: block` with the findings as the reason), like a linter error, so the agent
+    fixes it before it goes on. A rule that cannot meet that bar is not added. Findings of a lower severity and a
+    scanner that fails, with any findings it printed before failing, are still only feedback, so a broken or
+    timed-out scan cannot trap the agent. A scan that finished and reported errors through its exit status blocks
+    even when its output was cut before the error records, so a large output cannot hide them. A rule is set to error only
+    after its hits in the owner's repositories have been audited (#190–#195, #202). Every error rule carries a
+    `note` with the exact fix, which the rule tests require; the block shows each finding's rule, location, message
+    and fix, then tells the agent once to fix the code as shown and not to move or split it to avoid the rule.
+- **Whose style.** The shared rules shipped with the hooks are the owner's style, so they run only in repositories
+    whose origin owner `trusted_owners` trusts, as model rules do. In any other repository they do not run at all:
+    that project's own style takes precedence, and blocking there would make the agent rewrite code it was not
+    asked to touch or ask for suppressions in someone else's codebase. Rules from a project's own `sgconfig.yml`
+    run everywhere.
+- **Suppression.** A rare real exception is suppressed at the site with an `ast-grep-ignore` comment that names the
+    rule and states the reason. Whether the exception is real is the user's judgment: the suppression guard asks the
+    user for every edit that adds such a comment, changes the rules one names, or may give a first-line marker the
+    whole file, as it does for the other lint suppressions including Go's `//nolint`, and the agent never adds one
+    on its own. The guard runs before edits in every provider. Claude Code asks; the others cannot ask, so a new
+    suppression is denied there and the user adds the exception.
+- **Hook behaviour.** A model-judged finding
     at Stop follows the rule that the verification receipts already use: findings on inputs not judged before block
     Stop once (`decision: block` with the findings as the reason), so that the agent sees them, because the only
     non-blocking Stop output, `systemMessage`, reaches the user and not the agent. The same findings on unchanged
     inputs are only a message (`unchanged; not rerun`) and never block again, so a finding the agent declines to
     fix cannot trap it; nothing blocks while `stop_hook_active` is set, and findings that it kept from blocking are recorded as not yet shown, so that they block once at the next Stop on the same inputs; and anything that prevents a run is only a
-    message. A rule becomes a gate that blocks every time only when its example tests pass with no false positive on
+    message. A model-judged rule becomes a gate that blocks every time only when its example tests pass with no false positive on
     the conforming examples and on the repository's own files; the promotion is a reviewed change to the tool's
     config. Model-judged rules are not promoted until their cutoff has been fitted on a larger corpus, as ADR-0020
     requires.
@@ -179,8 +204,12 @@ Rules with fewer threads that were also removed (for example `py_frozen_base_mod
 - **Block at every Stop that has findings.** Rejected: an agent that declines a finding would be stopped again on
     the same inputs; blocking only for inputs not judged before, as the verification receipts do, cannot loop.
 - **A second Stop hook for the model rules.** Rejected: see Where it runs.
-- **Block on edit.** Rejected: an unproven rule would stop the agent on false positives, and the model judge is
-    not yet precise enough (ADR-0020).
+- **Block on edit for model-judged rules.** Rejected: the model judge is not yet precise enough (ADR-0020), and a
+    false positive would stop the agent on every edit.
+- **Advisory static rules, promoted to blocking after their tests pass.** Rejected (amended 2026-11-15): an advisory
+    finding after an edit is easy for the agent to ignore, so the rule does not hold, and a second tier keeps rules
+    that are not trusted enough to block. A structural rule's precision can be checked before it is added, so a rule
+    that cannot block is deleted instead.
 - **Judge per edit.** Rejected: cost and latency grow with every edit, and most intermediate states are rewritten
     before they matter.
 - **No cache.** Rejected: Stop fires more than once in a session, and each firing would

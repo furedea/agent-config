@@ -1,0 +1,124 @@
+"""A suppression cannot reach the user's review by another route: a move, a wider scope, or another tool's fields."""
+
+from pathlib import Path
+
+import pytest
+from tests.runtime import load_script_module
+
+guard = load_script_module("agents/hooks/guard_suppression.py", "guard_suppression_for_scope")
+
+
+def decide(tool: str, values: dict) -> str:
+    return guard.decide({"tool_name": tool, "tool_input": values}).decision
+
+
+@pytest.mark.parametrize("text", ["//nolint", "//nolint:errcheck // closing a read-only file", "// nolint:all"])
+def test_a_new_go_nolint_asks(text: str) -> None:
+    values = {"file_path": "pkg/store/user.go", "old_string": "f()", "new_string": f"f() {text}"}
+    assert decide("Edit", values) == "ask"
+
+
+def test_a_patch_that_moves_a_file_into_code_and_adds_a_suppression_asks() -> None:
+    patch = (
+        "*** Begin Patch\n*** Update File: docs/notes.md\n*** Move to: src/notes.py\n@@\n-x = 1\n"
+        "+x = 1  # ast-grep-ignore\n*** End Patch"
+    )
+    assert decide("apply_patch", {"input": patch}) == "ask"
+
+
+def test_moving_a_file_whose_existing_markers_take_effect_at_the_destination_asks(tmp_path: Path) -> None:
+    source = tmp_path / "notes.md"
+    source.write_text("# ast-grep-ignore\nx = 1\n")
+    patch = f"*** Begin Patch\n*** Update File: {source}\n*** Move to: {tmp_path / 'notes.py'}\n*** End Patch"
+    assert decide("apply_patch", {"input": patch}) == "ask"
+
+
+def test_moving_a_code_file_with_its_existing_markers_passes(tmp_path: Path) -> None:
+    source = tmp_path / "old.py"
+    source.write_text("x = 1  # noqa: E501\n")
+    patch = f"*** Begin Patch\n*** Update File: {source}\n*** Move to: {tmp_path / 'new.py'}\n*** End Patch"
+    assert decide("apply_patch", {"input": patch}) == "allow"
+
+
+@pytest.mark.parametrize(
+    "before,old,new",
+    [
+        (
+            "# ast-grep-ignore: rule_a\nbad()\n",
+            "# ast-grep-ignore: rule_a\nbad()",
+            "# ast-grep-ignore: rule_a\n\nbad()",
+        ),
+        ("# ast-grep-ignore: rule_a\nx = 1\n\nbad()\n", "x = 1\n", ""),
+    ],
+    ids=["blank line added", "line removed"],
+)
+def test_an_edit_that_turns_a_line_marker_into_a_file_marker_asks(
+    tmp_path: Path, before: str, old: str, new: str
+) -> None:
+    target = tmp_path / "app.py"
+    target.write_text(before)
+    assert decide("Edit", {"file_path": str(target), "old_string": old, "new_string": new}) == "ask"
+
+
+def test_an_edit_below_an_unchanged_file_marker_passes(tmp_path: Path) -> None:
+    target = tmp_path / "app.py"
+    target.write_text("# ast-grep-ignore: rule_a\n\nx = 1\n")
+    assert decide("Edit", {"file_path": str(target), "old_string": "x = 1", "new_string": "x = 2"}) == "allow"
+
+
+def test_a_patch_hunk_beside_a_top_marker_asks(tmp_path: Path) -> None:
+    target = tmp_path / "app.py"
+    target.write_text("# ast-grep-ignore: rule_a\nbad()\n")
+    patch = f"*** Begin Patch\n*** Update File: {target}\n@@\n # ast-grep-ignore: rule_a\n+\n bad()\n*** End Patch"
+    assert decide("apply_patch", {"input": patch}) == "ask"
+
+
+def test_any_patch_to_a_file_with_a_top_marker_asks(tmp_path: Path) -> None:
+    """The patch applier matches context loosely, so the guard cannot tell where a hunk lands; it fails closed."""
+    target = tmp_path / "app.py"
+    target.write_text("# ast-grep-ignore: rule_a\nbad()\n\n\n\n\nx = 1\n")
+    patch = f"*** Begin Patch\n*** Update File: {target}\n@@\n-x = 1\n+x = 2\n*** End Patch"
+    assert decide("apply_patch", {"input": patch}) == "ask"
+
+
+def test_a_patch_to_a_file_without_a_top_marker_passes(tmp_path: Path) -> None:
+    target = tmp_path / "app.py"
+    target.write_text("x = 1\nbad()  # ast-grep-ignore: rule_a\n")
+    patch = f"*** Begin Patch\n*** Update File: {target}\n@@\n-x = 1\n+x = 2\n*** End Patch"
+    assert decide("apply_patch", {"input": patch}) == "allow"
+
+
+@pytest.mark.parametrize(
+    "values",
+    [
+        {"path": "src/app.py", "command": "str_replace", "old_str": "x = 1", "new_str": "x = 1  # noqa"},
+        {"path": "src/app.py", "command": "create", "file_text": "x = 1  # noqa\n"},
+    ],
+    ids=["str_replace", "create"],
+)
+def test_editor_tool_fields_are_inspected(values: dict) -> None:
+    assert decide("Edit", values) == "ask"
+
+
+@pytest.mark.parametrize(
+    "hunk", ["@@\n+\n bad()", "@@ bad()\n+\n bad()"], ids=["context on the second line", "anchor on the second line"]
+)
+def test_a_patch_hunk_anchored_below_a_top_marker_asks(tmp_path: Path, hunk: str) -> None:
+    target = tmp_path / "app.py"
+    target.write_text("# ast-grep-ignore: rule_a\nbad()\n")
+    patch = f"*** Begin Patch\n*** Update File: {target}\n{hunk}\n*** End Patch"
+    assert decide("apply_patch", {"input": patch}) == "ask"
+
+
+def test_an_editor_insert_of_a_blank_line_after_a_top_marker_asks(tmp_path: Path) -> None:
+    target = tmp_path / "app.py"
+    target.write_text("# ast-grep-ignore: rule_a\nbad()\n")
+    values = {"path": str(target), "command": "insert", "insert_line": 1, "new_str": ""}
+    assert decide("Edit", values) == "ask"
+
+
+def test_lines_are_split_as_the_scanner_splits_them(tmp_path: Path) -> None:
+    target = tmp_path / "app.py"
+    target.write_text("x = 1\u2028# ast-grep-ignore: rule_a\nbad()\n")
+    values = {"file_path": str(target), "old_string": "\nbad()", "new_string": "\n\nbad()"}
+    assert decide("Edit", values) == "ask"

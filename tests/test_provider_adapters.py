@@ -189,3 +189,29 @@ def test_commit_escalations_are_denied_for_providers_whose_hooks_cannot_ask(run_
     assert result.returncode == 2
     assert result.stdout == ""
     assert "repository" in result.stderr
+
+
+NATIVE_WRITE_TOOLS = {"codex": "Write", "devin": "write", "dsh": "write", "hermes": "write_file", "pi": "write"}
+
+
+@pytest.mark.parametrize("provider", PROVIDERS)
+@pytest.mark.usefixtures("harness")
+def test_a_new_suppression_is_denied_for_providers_whose_hooks_cannot_ask(run_cli: CliRunner, provider: str) -> None:
+    values = {"file_path": "src/app.py", "content": "x = 1  # noqa: E501\n"}
+    payload = {"session_id": "adapter-session", "tool_name": NATIVE_WRITE_TOOLS[provider], "tool_input": values}
+    result = run_cli(script(provider), "content", "suppression", payload=payload)
+    assert result.returncode == 2
+    assert "suppression" in result.stderr
+
+
+def test_every_pre_edit_content_guard_is_paired_with_the_suppression_guard() -> None:
+    providers = json.loads((REPO_ROOT / "agents/hooks.json").read_text())
+    unpaired = [
+        (provider, group.get("matcher"))
+        for provider in PROVIDERS
+        for groups in providers[provider]["hooks"].values()
+        for group in groups
+        if any(hook["command"].endswith((" content write", " content apply-patch")) for hook in group["hooks"])
+        and not any(hook["command"].endswith(" content suppression") for hook in group["hooks"])
+    ]
+    assert unpaired == []

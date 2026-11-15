@@ -60,6 +60,21 @@ valid:
         if use_json:
             data = json.loads(raw)
         return Order.model_validate(data)
+  - |
+    from json import loads as parse_json
+    from tomllib import loads
+
+
+    def read(text):
+        return Config.model_validate(loads(text))
+  - |
+    from json import loads as parse_json
+    from tomllib import loads
+
+
+    def read(text):
+        data = loads(text)
+        return Config.model_validate(data)
 invalid:
   - |
     order = Order.model_validate(json.loads(payload))

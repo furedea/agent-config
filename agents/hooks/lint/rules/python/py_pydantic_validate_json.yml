@@ -39,7 +39,7 @@ rule:
             stopBy: end
             has:
               kind: import_from_statement
-              regex: (?s)^from\s+json\s+import\b.*\bloads\b
+              regex: (?s)^from\s+json\s+import\b.*\bloads\s*(,|\)|$)
     # passed through a variable assigned from the loader earlier in the nearest function, and not reassigned
     - all:
         - any:
@@ -219,4 +219,4 @@ rule:
             stopBy: end
             has:
               kind: import_from_statement
-              regex: (?s)^from\s+json\s+import\b.*\bloads\b
+              regex: (?s)^from\s+json\s+import\b.*\bloads\s*(,|\)|$)

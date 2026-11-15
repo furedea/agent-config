@@ -32,6 +32,8 @@ def install_fakes(executable: StubWriter, tmp_path: Path, monkeypatch: pytest.Mo
     monkeypatch.setattr(model_rules_run, "TIMEOUT_PROGRAM", str(fakes.timeout))
     # One tier of rules keeps each test about one review; `test_model_rules_tiers` covers the tiers themselves.
     monkeypatch.setattr(model_rules_gate, "rule_tiers", lambda directory: ((directory,),))
+    # These tests plan a few dozen subjects to exercise the cap's mechanism, not its production value.
+    monkeypatch.setattr(model_rules_run, "SUBJECT_CAP", 20)
     # The programs are looked up only in trusted places, so the fake directory stands in for the Nix store: it is the
     # one trusted directory, its real path is the store root, and the test user is the trusted owner.
     programs = tmp_path / "bin"

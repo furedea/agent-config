@@ -21,7 +21,9 @@ from model_rules_programs import Programs
 from session_store import LockTimeoutError, StateError, file_lock, private_directory
 
 REVIEWER = "jev-lint"
-SUBJECT_CAP = 20
+# Measured: the largest merged PR of this repository plans 104 subjects in 10 requests (about 0.0025 USD), and real
+# Stop runs took 3 to 8 seconds whatever the subject count, because requests run concurrently. Twice that fits whole.
+SUBJECT_CAP = 250
 PLAN_TIMEOUT_SECONDS = 20.0
 JUDGE_TIMEOUT_SECONDS = 60.0
 LOCK_TIMEOUT_SECONDS = 30.0

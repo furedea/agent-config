@@ -21,9 +21,12 @@ NAME_OPERAND_BUILTINS = frozenset({"read", "vared", "mapfile", "readarray", "get
 NAME_OPTION = re.compile(r"-[A-Za-z]*[vAa]")
 # The options trap takes; any other word before the signals is the action, as zsh reads it.
 TRAP_OPTIONS = frozenset({"-l", "-p", "-P"})
-# A trap action reading or replacing the positional parameters, which are a running function's under set -E or -T.
+# A trap action reading or replacing the positional parameters, which are a running function's under set -E or -T:
+# directly, through ${!name} (spelled $!name once braces go), argv, or a builtin that assigns them.
 TRAP_ARGUMENT_TEXT = re.compile(
-    r"\$(?:[0-9@*_]|argv\b|BASH_ARG[VC])|(?<![\w-])(?:shift|getopts)(?![\w-])|(?<![\w-])set\s+(?:--|[^-+\s])"
+    r"\$(?:[0-9@*_!]|argv\b|BASH_ARG[VC])"
+    r"|(?<![\w-])(?:shift|getopts|zparseopts|argv|BASH_ARG[VC]|read|mapfile|readarray|vared|source|\.)(?![\w-])"
+    r"|(?<![\w-])set(?:\s+[-+]\S*)*\s+(?:--|[^-+\s])"
 )
 # Quotes, escapes, and braces, which spell a word without writing it plainly.
 SPELLING = re.compile(r"[\\'\"{},]")

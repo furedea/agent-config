@@ -28,6 +28,10 @@ SHELL_HOOKS = re.compile(
 # Parameters holding a function's arguments: zsh's argv, bash's BASH_ARGV and BASH_ARGC under extdebug, and $_,
 # the last word of the call.
 ARGUMENT_ARRAYS = frozenset({"argv", "BASH_ARGV", "BASH_ARGC", "_"})
+# zsh precommand modifiers, which run the function named after them; builtin and command skip functions.
+FUNCTION_MODIFIERS = frozenset({"noglob", "nocorrect", "-"})
+# Builtins that assign a parameter named by an operand or an option, which may hold or replace the arguments.
+NAME_ASSIGNERS = ASSIGNING_BUILTINS | frozenset({"zformat", "zstyle", "zregexparse", "zparseopts"})
 # Words before a builtin that still run it, as in builtin shift, command -p shift, or zsh's noglob shift.
 BUILTIN_PREFIXES = frozenset({"builtin", "command", "noglob", "nocorrect", "-"})
 # Text eval or trap runs that may read or replace a function's arguments, at any depth of eval, once unquoted.
@@ -90,8 +94,9 @@ def respelled_calls(records: tuple[dict, ...], data: bytes) -> list[str]:
         raise UnsupportedSyntaxError("calling a function after changing IFS requires explicit review", "expansion")
     respelled = []
     for call in (node for node in records if node.get("Type") == "CallExpr" and node.get("Args")):
-        name, dynamic = literal_word(call["Args"][0], data)
-        words = call["Args"][1:]
+        start = _modifier_count(call, data)
+        name, dynamic = literal_word(call["Args"][start], data) if start < len(call["Args"]) else ("", True)
+        words = call["Args"][start + 1 :]
         for body in [] if dynamic else bodies.get(name, []):
             respelled += _body_respellings(body, words, data)
     return respelled
@@ -118,6 +123,14 @@ def operands(arguments: tuple[str, ...]) -> tuple[str, ...]:
         if argument[:1] not in {"-", "+"}:
             return arguments[index:]
     return ()
+
+
+def _modifier_count(call: dict, data: bytes) -> int:
+    """How many zsh precommand modifiers, which still run a function, lead the call."""
+    count = 0
+    while count < len(call["Args"]) and literal_word(call["Args"][count], data)[0] in FUNCTION_MODIFIERS:
+        count += 1
+    return count
 
 
 def _body_respellings(body: dict, words: list[dict], data: bytes) -> list[str]:
@@ -214,6 +227,11 @@ def _followed(body: dict, records: tuple[dict, ...], data: bytes) -> dict:
     unfollowed = (
         any(_reads(part, copies) and any(map(part.get, PARAMETER_MODIFIERS)) for part in nodes(body))
         or any(part.get("Param", {}).get("Value") in ARGUMENT_ARRAYS for part in nodes(body))
+        or any(
+            "Type" not in node and isinstance(node.get("Name"), dict) and node["Name"].get("Value") in ARGUMENT_ARRAYS
+            for node in nodes(body)
+        )
+        or any(_assigns_arguments(statement, copies, data) for statement in _statements(body))
         or any(part.get("Type") == "ParamExp" and part.get("Excl") for part in nodes(body))
         or any(_runs_unseen(call, copies, data) for call in _calls(body, data))
         or any(_iterates_arguments(node, copies) for node in nodes(body) if node.get("Type") == "WordIter")
@@ -225,6 +243,17 @@ def _followed(body: dict, records: tuple[dict, ...], data: bytes) -> dict:
     if unfollowed:
         raise UnsupportedSyntaxError("a function reading its arguments this way requires explicit review", "expansion")
     return body
+
+
+def _assigns_arguments(statement: dict, copies: dict[str, str], data: bytes) -> bool:
+    """Whether a builtin such as printf -v or read copies the arguments where the respelling cannot follow."""
+    if not statement["Cmd"].get("Args"):
+        return False
+    words = _program(statement["Cmd"], data)
+    assigning = words[0] in NAME_ASSIGNERS - {"print", "printf"} or (
+        words[0] in {"print", "printf"} and any(map(NAME_OPTION.fullmatch, words))
+    )
+    return assigning and any(_reads(part, copies) for part in nodes(_respelled_nodes(statement)))
 
 
 def _attributed(body: dict, data: bytes) -> set[str]:
@@ -256,9 +285,13 @@ def _iterates_arguments(loop: dict, copies: dict[str, str]) -> bool:
 
 
 def _reassigns(words: list[str]) -> bool:
-    """Whether a call may replace the arguments: getopts, set with an operand or --, or code text."""
+    """Whether a call may replace the arguments: getopts, zparseopts, set, code text, or assigning argv."""
     program, arguments = words[0], words[1:]
-    if program == "getopts":
+    if program in {"getopts", "zparseopts"}:
+        return True
+    if program in NAME_ASSIGNERS and any(
+        not ARGUMENT_ARRAYS.isdisjoint(re.findall(r"[A-Za-z_]\w*", word)) for word in arguments
+    ):
         return True
     if program in {"eval", "trap"}:
         return bool(ARGUMENT_TEXT.search(SPELLING.sub("", " ".join(arguments))))

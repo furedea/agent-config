@@ -7,7 +7,7 @@ In the context of #169 item D, where `issue-workflow`, `git-workflow`, and `proj
 the same development cycle and handed off to each other by prose, facing a choice between keeping them separate,
 merging them into one skill, and merging `tsdd` in as well, we decided for merging the three into one skill
 `development-cycle` whose `SKILL.md` is the map (the stages in order, a routing table, and the authorization rules
-stated once) and whose references hold the former content (`start.md`, `repository_setup.md`, `dev_environment.md`,
+stated once) and whose references hold the former content (`project_setup.md`, `repository_setup.md`, `dev_environment.md`,
 `issue_plan.md`, `branches.md`, `commits.md`, `delivery.md`, `stacked_prs.md`), for keeping `tsdd` and
 `herdr-delegation` as separate skills, and against keeping all skills separate and against merging `tsdd` too, to
 achieve one trigger for the whole cycle (a request such as "start a new project" enters the cycle at its start stage

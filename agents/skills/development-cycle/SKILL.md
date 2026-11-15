@@ -31,7 +31,7 @@ branch or PR can be associated with them.
 
 | Task                                                              | Read                                                     |
 | ----------------------------------------------------------------- | -------------------------------------------------------- |
-| Create a GitHub repository or start a new project                 | [Start a project](references/start.md)                   |
+| Create a GitHub repository or start a new project                 | [Start a project](references/project_setup.md)           |
 | Apply standard GitHub settings to an existing repository          | [Repository setup](references/repository_setup.md)       |
 | Introduce or complete a project Nix environment                   | [Development environment](references/dev_environment.md) |
 | Issue creation/reuse, Issue content, plan comments, resume        | [Issues and plans](references/issue_plan.md)             |

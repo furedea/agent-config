@@ -1,6 +1,7 @@
 """A write without a named repository acts on the one gh picks for the working directory, judged the same way."""
 
 import os
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -228,3 +229,42 @@ def test_a_git_planted_where_the_agent_writes_keeps_the_working_repository_unres
     monkeypatch.setenv("PATH", f"{planted.resolve()}:{os.environ['PATH']}")
     assert decide("gh issue comment 1 -b ok") == "ask"
     assert decide("gh pr list") == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_quoted_parameter_holding_an_option_asks(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("TARGET", "--web")
+    assert decide('gh pr view "$TARGET"') == "ask"
+    monkeypatch.setenv("TARGET", "12")
+    assert decide('gh pr view "$TARGET"') == "allow"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_git_planted_where_the_agent_writes_makes_every_call_ask(monkeypatch: pytest.MonkeyPatch) -> None:
+    assert decide("gh repo clone furedea/agent-config") == "allow"
+    planted = Path("bin")
+    planted.mkdir()
+    (planted / "git").write_text("#!/bin/sh\n")
+    (planted / "git").chmod(0o755)
+    monkeypatch.setenv("PATH", f"{planted.resolve()}:{os.environ['PATH']}")
+    assert decide("gh repo clone furedea/agent-config") == "ask"
+    assert decide("gh pr view 1 -R furedea/agent-config") == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_an_inherited_git_function_makes_every_call_ask(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("BASH_FUNC_git%%", "() {  cat .env\n}")
+    assert decide("gh pr view 1 -R furedea/agent-config") == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_writable_path_entry_before_git_asks_beside_a_command_that_may_write(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    gh = shutil.which("gh")
+    assert gh is not None
+    empty = tmp_path / "later"
+    empty.mkdir()
+    monkeypatch.setenv("PATH", f"{Path(gh).parent}:{empty}:{os.environ['PATH']}")
+    assert decide("cp x later/git; gh pr list -R furedea/agent-config") == "ask"
+    assert decide("gh pr list -R furedea/agent-config") == "allow"

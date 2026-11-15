@@ -176,8 +176,8 @@ def _check_read_repositories(words: tuple[Word, ...]) -> None:
             raise UnclassifiableError("a read takes an option value, URL, or computed word known only at run time")
         if word.dynamic and "/" in word.source and not OWNER_PREFIX.match(word.source):
             raise UnclassifiableError("a read takes a path whose host part is known only at run time")
-    if any(_names_foreign_host_once_expanded(word) for word in words if word.dynamic):
-        raise UnclassifiableError("a read names another host than github.com once its parameters expand")
+    if any(_is_unsafe_once_expanded(word) for word in words if word.dynamic):
+        raise UnclassifiableError("a read becomes an option or names another host once its parameters expand")
     for word in repository_words(words):
         if word.dynamic and not OWNER_PREFIX.match(word.source):
             raise UnclassifiableError("a read names its repository only at run time")
@@ -403,12 +403,12 @@ def _names_file(word: Word) -> bool:
     return word.value.partition("=")[2].startswith("@")
 
 
-def _names_foreign_host_once_expanded(word: Word) -> bool:
-    """Whether a plain-parameter word, expanded from the hook environment, names a host other than github.com."""
+def _is_unsafe_once_expanded(word: Word) -> bool:
+    """Whether a plain-parameter word, expanded from the hook environment, is an option or names another host."""
     expand = lambda part: PLAIN_PARAMETER.sub(lambda m: os.environ.get(m[1] or m[2], ""), part.strip('"'))  # noqa: E731
     parts = re.findall(r"""'[^']*'|"[^"]*"|[^'"]+""", word.source)
     value = "".join(part[1:-1] if part.startswith("'") else expand(part) for part in parts)
-    return (is_url(value) or value.count("/") >= 2) and repository(value) is None
+    return value.startswith("-") or ((is_url(value) or value.count("/") >= 2) and repository(value) is None)
 
 
 def _plain_parameters(word: Word) -> bool:

@@ -107,18 +107,27 @@ def _judged_call(candidate: shell_syntax.Command, line: CommandLine, rules: GhRu
 
 def _environment_problem(line: CommandLine) -> str:
     """Why the environment may run something else than gh against github.com, or an empty string."""
-    if not line.single_call and has_writable_path_entry_before(PROGRAM):
-        return "another command on the line could place a gh earlier on PATH"
-    if has_inherited_function(PROGRAM):
-        return "the environment carries a shell function that bash would run instead of gh"
+    # gh runs git for clones, checkouts, and to find the working repository, so git must be as safe as gh.
+    for name in (PROGRAM, "git"):
+        if problem := _stand_in_problem(name, line):
+            return problem
     if os.environ.get("GH_FORCE_TTY"):
         return "the environment forces a terminal, so gh would start the pager program it names"
-    if not is_outside_agent_roots(PROGRAM):
-        return "PATH finds a gh in a directory the agent can write"
     configured_repository = os.environ.get("GH_REPO")
     foreign_repository = configured_repository and gh_repository.repository(configured_repository) is None
     if os.environ.get("GH_HOST", GITHUB_HOST).lower() != GITHUB_HOST or foreign_repository:
         return "the environment sends gh to another host than github.com"
+    return ""
+
+
+def _stand_in_problem(name: str, line: CommandLine) -> str:
+    """Why something else than the installed program may run under its name, or an empty string."""
+    if not line.single_call and has_writable_path_entry_before(name):
+        return f"another command on the line could place a {name} earlier on PATH"
+    if has_inherited_function(name):
+        return f"the environment carries a shell function that bash would run instead of {name}"
+    if not is_outside_agent_roots(name):
+        return f"PATH finds a {name} in a directory the agent can write"
     return ""
 
 

@@ -16,14 +16,20 @@ from pathlib import Path
 
 ROOT_UID = 0
 EXPORTED_FUNCTION_PREFIX = "BASH_FUNC_"
+STARTUP_FILE_VARIABLES = ("BASH_ENV", "ENV")
 WRITABLE_BY_OTHERS = stat.S_IWGRP | stat.S_IWOTH
 # Directories trusted besides root-owned ones; tests stand one in for a system directory.
 TRUSTED_DIRECTORIES: frozenset[Path] = frozenset()
 
 
 def inherits_shell_functions() -> bool:
-    """Whether bash inherits exported functions, which run before builtins and PATH lookups of the same name."""
-    return any(name.startswith(EXPORTED_FUNCTION_PREFIX) for name in os.environ)
+    """Whether bash may define functions before the command runs, which shadow builtins and PATH lookups.
+
+    Exported functions arrive as BASH_FUNC_ variables, and BASH_ENV or ENV names a file the shell
+    sources first, where any function or alias can be defined.
+    """
+    exported = any(name.startswith(EXPORTED_FUNCTION_PREFIX) for name in os.environ)
+    return exported or any(os.environ.get(name) for name in STARTUP_FILE_VARIABLES)
 
 
 def is_system_program(word: str) -> bool:

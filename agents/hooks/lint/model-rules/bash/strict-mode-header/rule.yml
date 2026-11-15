@@ -9,9 +9,14 @@ state: located
 threshold: 0.5
 axis: file
 severity: warning
-# The whole script, since the header's position relative to the first command is the question.
+# The whole script, since the header's position relative to the first command is the question. Only a script whose first
+# line is an `sh` or `bash` shebang: a zsh script or a bats test has its own header, and a sourced library has no shebang.
 rule:
   kind: program
+  has:
+    kind: comment
+    nthChild: 1
+    regex: "^#!.*\\b(ba)?sh\\b"
 ask: >-
   This script does not enable errexit, nounset and pipefail before its first executable statement, or it turns one of
   them off for the rest of the script.
@@ -23,4 +28,4 @@ criteria:
     follow.
   "false": >-
     All three options are enabled before the first command that does work, and any option that is switched off is
-    switched back on before the commands that depend on it, or the file is a sourced library with no shebang.
+    switched back on before the commands that depend on it, or the shebang names another interpreter (zsh, bats).

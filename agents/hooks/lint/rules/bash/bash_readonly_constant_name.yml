@@ -21,7 +21,7 @@ rule:
       - regex: ^readonly\b
       # `readonly -f` names a function, not a constant.
       - not:
-          regex: ^readonly\s+(\S+\s+)*-[a-zA-Z]*f
+          regex: ^readonly(\s+-[a-zA-Z]+)*\s+-[a-zA-Z]*f\b
       - not:
           inside:
             kind: function_definition

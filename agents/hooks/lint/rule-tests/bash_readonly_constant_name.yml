@@ -28,3 +28,7 @@ invalid:
   - |
     value=1
     readonly value
+  - |
+    readonly usage="usage: foo -f FILE"
+  - |
+    readonly listing="$(ls -lf)"

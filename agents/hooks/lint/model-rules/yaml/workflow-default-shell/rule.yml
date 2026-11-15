@@ -14,7 +14,11 @@ rule:
   all:
     - kind: block_mapping_pair
     - has: { field: key, regex: "^[\"']?run[\"']?$" }
-    - inside: { kind: block_sequence_item, stopBy: end }
+    # A key of a step mapping itself, not of a nested `with:` or `env:` mapping.
+    - inside:
+        kind: block_mapping
+        stopBy: neighbor
+        inside: { kind: block_node, stopBy: neighbor, inside: { kind: block_sequence_item, stopBy: neighbor } }
 ask: >-
   This `run:` step executes under a shell that does not enable `pipefail`, because neither the workflow nor the job sets
   `defaults.run.shell` and the step sets no `shell:` of its own.

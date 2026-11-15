@@ -15,6 +15,10 @@ guard = load_script_module("agents/hooks/guard_command.py", "guard_command")
 @pytest.fixture(autouse=True)
 def system_rm(tmp_path_factory: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch) -> None:
     """rm and the external wrappers resolve to root-owned system programs, as on a deployed machine."""
+    for name in [name for name in os.environ if name.startswith(("LD_", "DYLD_", "BASH_FUNC_"))]:
+        monkeypatch.delenv(name)
+    for name in ("BASH_ENV", "ENV"):
+        monkeypatch.delenv(name, raising=False)
     directory = tmp_path_factory.mktemp("system") / "bin"
     use_system_programs(directory, monkeypatch, "rm", "nohup", "nice", "timeout", "stdbuf")
     trust_directory(directory, monkeypatch)
@@ -366,7 +370,13 @@ def test_an_inherited_loader_setting_asks(git_project: Path, monkeypatch: pytest
 
 @pytest.mark.parametrize(
     "command",
-    ["echo $((PATH=0)) && rm scratch.txt", "((PATH=0)); rm scratch.txt", "let PATH=0; rm scratch.txt"],
+    [
+        "echo $((PATH=0)) && rm scratch.txt",
+        "((PATH=0)); rm scratch.txt",
+        "let PATH=0; rm scratch.txt",
+        "echo ${x[PATH=1]} && rm scratch.txt",
+        "echo ${PATH:=evil} && rm scratch.txt",
+    ],
 )
 def test_an_arithmetic_assignment_beside_rm_asks(git_project: Path, command: str) -> None:
     assert judged(git_project, command) == "ask"

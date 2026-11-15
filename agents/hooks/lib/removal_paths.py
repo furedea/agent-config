@@ -55,9 +55,10 @@ def objection(payload: dict, command: str, commands: tuple[shell_syntax.Command,
             f"file a path names, so its operands cannot be resolved beforehand.\n\nCommand: {preview}",
             PROGRAM,
         )
-    if shell_inspection.changes_variables(command):
+    if shell_inspection.changes_variables(command) or any(any(item.dynamic) for item in commands):
         return hook_decision.ask(
-            f"Needs review: rm runs beside a variable change, such as PATH, that can swap the program it runs."
+            f"Needs review: rm runs beside a variable change or an expansion, which can change PATH and so the "
+            f"program it runs."
             f"\n\nCommand: {preview}",
             PROGRAM,
         )

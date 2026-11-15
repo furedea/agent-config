@@ -33,6 +33,14 @@ valid:
     const StateReady = State[int](iota)
   - |
     const First, Second = State(iota), State(iota)
+  - |
+    const Step State = 1
+    const StateReady = iota + Step
+  - |
+    const (
+        StateReady = iota + 1
+        StateDone
+    )
 invalid:
   - |
     const (
@@ -42,11 +50,6 @@ invalid:
   - |
     const (
         Zero = iota
-    )
-  - |
-    const (
-        StateReady = iota + 1
-        StateDone
     )
   - |
     const (

@@ -2,13 +2,13 @@ id: go_iota_enum_typed
 language: go
 severity: error
 message: "Declare the `iota` constant with its own type, e.g. `StatePending State = iota`."
-note: "Only the plain forms `X = iota` and `X = iota + N` are judged; any other value (a conversion, a builtin call, a shift, a list of values) is skipped, so the rule has no false positive on them. A blank `_ = iota` is judged only when the next spec writes neither a type nor a value of its own. Whether the type has a `String()` method is not judged."
+note: "Only the plain form `X = iota` is judged. Any expression (`iota + Step`, a conversion, a builtin call, a shift, a list of values) is skipped, because a syntactic matcher cannot tell whether an operand is typed. A blank `_ = iota` is judged only when the next spec writes neither a type nor a value of its own. Whether the type has a `String()` method is not judged."
 rule:
   kind: const_spec
   has:
     field: value
     kind: expression_list
-    regex: ^iota(\s*[-+*/]\s*\w+)?$
+    regex: ^iota$
   not:
     any:
       - has:

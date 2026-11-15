@@ -134,3 +134,17 @@ def has_parameter(source: str) -> bool:
         node.get("Type") == "ParamExp" and not shell_words.is_home_parameter(node)
         for node in shell_words.word_nodes(tree)
     )
+
+
+def is_one_substitution(source: str) -> bool:
+    """Whether a word is exactly one command substitution, so no output joins other text the scan saw apart."""
+    tree = shell_syntax.syntax_tree(": " + source)
+    arguments = tree.get("Stmts", [{}])[0].get("Cmd", {}).get("Args", [])
+    parts = arguments[1].get("Parts", []) if len(arguments) == 2 else []
+    if len(parts) == 1 and parts[0].get("Type") == "DblQuoted":
+        parts = parts[0].get("Parts", [])
+    if len(parts) != 1 or parts[0].get("Type") != "CmdSubst":
+        return False
+    # One plain call inside, so no second command, pipe, or list adds output after the first.
+    statements = parts[0].get("Stmts", [])
+    return len(statements) == 1 and (statements[0].get("Cmd") or {}).get("Type") == "CallExpr"

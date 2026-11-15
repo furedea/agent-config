@@ -115,6 +115,8 @@ def _environment_problem(line: CommandLine) -> str:
             return problem
     if os.environ.get("GH_FORCE_TTY"):
         return "the environment forces a terminal, so gh would start the pager program it names"
+    if not is_outside_agent_roots("rg"):
+        return "PATH finds an rg in a directory the agent can write, so the secret scan cannot be trusted"
     if any(os.environ.get(name) for name in STARTUP_FILE_VARIABLES):
         return "the environment names a startup file the shell sources first, which may redefine gh or git"
     configured_repository = os.environ.get("GH_REPO")

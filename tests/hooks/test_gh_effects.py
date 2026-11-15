@@ -224,6 +224,14 @@ def test_reads_and_local_changes_are_allowed_in_any_form(command: str) -> None:
             "gh api -X POST repos/furedea/../issues -f title=x", "dot segment", id="a dot segment in a REST path"
         ),
         pytest.param(
+            "gh api repos/furedea/r/issues -F title=x -F parent_issue_id=123456",
+            "links an issue",
+            id="a REST issue under a parent named by ID",
+        ),
+        pytest.param(
+            "gh api repos/furedea/r/issues -X POST --input body.json", "--input", id="a REST issue with an input body"
+        ),
+        pytest.param(
             f"gh api --hostname ghe.example graphql -f query='mutation{{{RESOLVE}}}'",
             "another host",
             id="an allowlisted mutation on another host",
@@ -463,3 +471,7 @@ def test_writes_that_widen_authority_promote_or_hide_their_target_ask(command: s
     verdict = guard.decide("allowed", {"tool_input": {"command": command}})
     assert verdict.decision == "ask"
     assert fragment in verdict.reason
+
+
+def test_a_rest_issue_without_a_linking_field_stays_allowed() -> None:
+    assert decide("gh api repos/furedea/r/issues -f title=x -f body=y") == "allow"

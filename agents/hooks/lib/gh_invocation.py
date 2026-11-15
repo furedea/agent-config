@@ -21,6 +21,7 @@ from gh_options import (
     UnclassifiableError,
     Word,
     has_parameter,
+    is_one_substitution,
     stays_one_word,
 )
 from gh_repository import (
@@ -44,6 +45,8 @@ API_FLAGS = frozenset(
 READ_METHODS = frozenset({"GET", "HEAD"})
 GRAPHQL_PATHS = frozenset({"graphql", "api/graphql"})
 METHOD_OVERRIDE = re.compile(r"\s*x-(?:http-)?method(?:-override)?\s*:", re.IGNORECASE)
+# Body fields that link an issue by ID, whose repository the path does not name.
+LINKING_FIELDS = frozenset({"parent_issue_id"})
 FIELD_KEY = re.compile(r"[A-Za-z_][A-Za-z0-9_]*=")
 DOT_SEGMENT = re.compile(r"(?:^|/)(?:\.|%2e){1,2}(?:/|$)", re.IGNORECASE)
 # --web, or a short option bundle holding -w, which opens the browser gh is configured with.
@@ -287,22 +290,8 @@ def _check_sent_values(words: tuple[Word, ...], single_call: bool, *, fields: bo
             raise UnclassifiableError("a value sent to GitHub is built by a command that does more than print")
         key = FIELD_KEY.match(word.source) if fields else None
         value = word.source[key.end() :] if key else word.source
-        if word.dynamic and not _is_one_substitution(value):
+        if word.dynamic and not is_one_substitution(value):
             raise UnclassifiableError("a value sent to GitHub joins a substitution's output to other text")
-
-
-def _is_one_substitution(source: str) -> bool:
-    """Whether a word is exactly one command substitution, so no output joins other text the scan saw apart."""
-    tree = shell_syntax.syntax_tree(": " + source)
-    arguments = tree.get("Stmts", [{}])[0].get("Cmd", {}).get("Args", [])
-    parts = arguments[1].get("Parts", []) if len(arguments) == 2 else []
-    if len(parts) == 1 and parts[0].get("Type") == "DblQuoted":
-        parts = parts[0].get("Parts", [])
-    if len(parts) != 1 or parts[0].get("Type") != "CmdSubst":
-        return False
-    # One plain call inside, so no second command, pipe, or list adds output after the first.
-    statements = parts[0].get("Stmts", [])
-    return len(statements) == 1 and (statements[0].get("Cmd") or {}).get("Type") == "CallExpr"
 
 
 def _classify_api(words: tuple[Word, ...], catalog: Catalog, single_call: bool) -> GhCall:
@@ -323,6 +312,8 @@ def _classify_api(words: tuple[Word, ...], catalog: Catalog, single_call: bool) 
     route = catalog.route(request.method, request.path)
     if route is None:
         return GhCall((f"api.{request.method.lower()}",), Effect.IRREVERSIBLE, unknown_target=True)
+    if route.operation.startswith("issue."):
+        _check_issue_fields(request)
     match = REPOSITORY_PATH.match(request.path)
     repositories = (Repository(match["owner"], match["name"]),) if match else ()
     unknown = not repositories
@@ -335,6 +326,17 @@ def _classify_api(words: tuple[Word, ...], catalog: Catalog, single_call: bool) 
         unscanned_files=request.unscanned_files,
         reads_stdin=request.reads_stdin,
     )
+
+
+def _check_issue_fields(request: ApiRequest) -> None:
+    """Refuse a REST issue write whose body may link an issue the path does not name, such as a parent by ID."""
+    if request.sends_input:
+        raise UnclassifiableError("a gh api write sends an --input body the guard does not parse")
+    for _, word in request.fields:
+        if word.dynamic and not FIELD_KEY.match(word.source):
+            raise UnclassifiableError("a gh api write field names its key only at run time")
+        if re.split(r"[\[=]", word.value, maxsplit=1)[0] in LINKING_FIELDS:
+            raise UnclassifiableError("a gh api write links an issue whose repository the guard cannot resolve")
 
 
 def _check_read_files(request: ApiRequest) -> None:

@@ -34,6 +34,7 @@ known_first_party = [
   "foreign_shell_policy",
   "gh_catalog",
   "gh_command_line",
+  "gh_environment",
   "gh_invocation",
   "gh_options",
   "gh_policy",

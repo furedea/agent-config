@@ -487,6 +487,11 @@
     "tests/hooks/test_gh_environment.py",
     "tests/hooks/test_gh_targets.py"
   ],
+  "agents/hooks/lib/gh_environment.py": [
+    "tests/hooks/test_gh_targets.py",
+    "tests/hooks/test_gh_environment.py",
+    "tests/hooks/test_gh_effects.py"
+  ],
   "agents/hooks/lib/graphql_document.py": [
     "tests/hooks/test_graphql_document.py",
     "tests/hooks/test_allowed_graphql.py",

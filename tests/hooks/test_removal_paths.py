@@ -25,7 +25,7 @@ def judged(project: Path | None, command: str, kind: str = "allowed") -> str:
         "rm -- -odd-name",
         "rm ./build/out.o",
         "rm -d empty-directory",
-        "ls -la && rm scratch.txt",
+        "echo start && rm scratch.txt",
         "rm scratch.txt; echo done",
         "nohup rm scratch.txt",
         "/bin/rm scratch.txt",
@@ -40,7 +40,7 @@ def test_removing_a_file_in_the_session_temporary_directory_runs_unprompted(
     git_project: Path, tmp_path_factory: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     session = tmp_path_factory.mktemp("session-tmp")
-    monkeypatch.setenv("TMPDIR", str(session))
+    monkeypatch.setenv("CLAUDE_CODE_TMPDIR", str(session))
     assert judged(git_project, f"rm -f {session.resolve()}/scratch.txt") == "allow"
 
 
@@ -141,6 +141,8 @@ def test_removal_after_a_directory_change_the_guard_cannot_follow_asks(git_proje
         "env PATH=. ls && rm scratch.txt",
         "BASH_ENV=x true && rm scratch.txt",
         "printf -v PATH evil && rm scratch.txt",
+        "ls && rm safe/.zshrc",
+        "cat notes && rm scratch.txt",
     ],
 )
 def test_removal_beside_a_program_not_listed_as_read_only_asks(git_project: Path, command: str) -> None:
@@ -205,3 +207,21 @@ def test_the_per_user_system_temporary_directory_is_not_a_session_root(
     monkeypatch.setenv("TMPDIR", shared)
     monkeypatch.setattr(tempfile, "tempdir", shared)
     assert judged(git_project, f"rm {shared}/other-app.sock") == "ask"
+
+
+@pytest.mark.parametrize("value", ["/", "~/.tmp", "/Users/shared-tmp"])
+def test_a_general_tmpdir_is_not_a_session_root(
+    git_project: Path, monkeypatch: pytest.MonkeyPatch, value: str
+) -> None:
+    for name in ("CLAUDE_TMPDIR", "CLAUDE_CODE_TMPDIR"):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("TMPDIR", value)
+    target = Path(value).expanduser().resolve() / "other-session-file"
+    assert judged(git_project, f"rm {target}") == "ask"
+
+
+def test_the_claude_session_tmpdir_is_a_session_root(git_project: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    for name in ("CLAUDE_TMPDIR", "CLAUDE_CODE_TMPDIR"):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("TMPDIR", "/tmp/claude-501")
+    assert judged(git_project, f"rm {Path('/tmp/claude-501').resolve()}/scratch.txt") == "allow"

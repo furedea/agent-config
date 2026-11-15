@@ -1,6 +1,8 @@
 """uv dependency changes run inside the age limit; anything that could escape it or the project asks."""
 
 import json
+import os
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -8,6 +10,17 @@ from tests.runtime import REPO_ROOT, load_script_module
 
 guard = load_script_module("agents/hooks/guard_command.py", "guard_command")
 POLICY = json.loads((REPO_ROOT / "agents/command_permissions.json").read_text())["rules"]
+
+
+@pytest.fixture(autouse=True)
+def user_age_limit(tmp_path_factory: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch) -> None:
+    """The user's uv configuration refuses versions younger than a week, as the deployed one does."""
+    config = tmp_path_factory.mktemp("config")
+    (config / "uv").mkdir()
+    (config / "uv" / "uv.toml").write_text('exclude-newer = "1 week"\n')
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(config))
+    for name in [name for name in os.environ if name.startswith("UV_")]:
+        monkeypatch.delenv(name)
 
 
 def judged(project: Path, command: str, kind: str) -> str:
@@ -29,7 +42,7 @@ def decisions(prefix: tuple[str, ...]) -> set[str]:
         "uv lock --upgrade-package ruff",
         "uv lock --upgrade-package ruff==0.5.0",
         "uv add httpx && uv run --frozen pytest",
-        "ls && uv add httpx",
+        "echo start && uv add httpx",
         "uv add 'httpx[http2]>=0.27,<1'",
         "uv add --group audit vulture --no-sync",
         "uv lock --upgrade",
@@ -202,3 +215,31 @@ def test_a_project_with_harmless_uv_settings_runs(git_project: Path) -> None:
 def test_uv_lock_without_an_upgrade_is_not_a_dependency_change(git_project: Path, command: str) -> None:
     (git_project / "pyproject.toml").write_text('[tool.uv]\nexclude-newer = "1 week"\n')
     assert judged(git_project, command, "allowed") == "allow"
+
+
+@pytest.mark.parametrize(
+    "name", ["UV_NO_CONFIG", "UV_EXCLUDE_NEWER", "UV_INDEX_URL", "UV_DEFAULT_INDEX", "UV_CONFIG_FILE"]
+)
+def test_an_inherited_uv_setting_asks(git_project: Path, monkeypatch: pytest.MonkeyPatch, name: str) -> None:
+    monkeypatch.setenv(name, "1")
+    assert judged(git_project, "uv add httpx", "allowed") == "ask"
+
+
+def test_a_missing_user_age_limit_asks(git_project: Path, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "empty-config"))
+    assert judged(git_project, "uv add httpx", "allowed") == "ask"
+
+
+def test_a_project_above_the_worktree_asks(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    outer = tmp_path / "outer"
+    inner = outer / "inner"
+    inner.mkdir(parents=True)
+    (outer / "pyproject.toml").write_text('[project]\nname = "outer"\n')
+    subprocess.run(["git", "init", "--quiet", str(inner)], check=True)
+    monkeypatch.setenv("AGENT_COMMAND_PERMISSIONS", str(REPO_ROOT / "agents/command_permissions.json"))
+    assert judged(inner, "uv add httpx", "allowed") == "ask"
+
+
+@pytest.mark.parametrize("program", ["ls", "cat file", "stat file"])
+def test_a_program_found_through_path_beside_uv_asks(git_project: Path, program: str) -> None:
+    assert judged(git_project, f"{program} && uv add httpx", "allowed") == "ask"

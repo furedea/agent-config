@@ -7,6 +7,7 @@ limit or point uv at another project, and the parsed words alone do not show mos
 a git reference, a local path, or another index carries no upload time the limit could judge.
 """
 
+import os
 import re
 import tomllib
 from collections.abc import Iterator
@@ -53,14 +54,18 @@ ARCHIVE_SUFFIXES = frozenset(
 DIRECT_REFERENCE = re.compile(r"@|://|^\s*[./~]")
 # Project files and the uv settings in them that replace the user's limit or add a package source.
 PROJECT_SETTINGS = ("pyproject.toml", "uv.toml")
+# The user's limit, and the variables that override any configuration file.
+AGE_LIMIT = "exclude-newer"
+ENVIRONMENT_PREFIX = "UV_"
 OVERRIDING_SETTINGS = frozenset(
     {"exclude-newer", "exclude-newer-package", "index", "index-url", "extra-index-url", "find-links", "sources"}
     | {"no-index", "index-strategy", "no-build-isolation", "config-settings", "dependency-metadata"}
     | {"override-dependencies", "constraint-dependencies", "build-constraint-dependencies", "dev-dependencies"}
 )
-# Programs that may share the command: none moves the directory, sets variables, or writes files.
+# Shell builtins that may share the command: none moves the directory, sets variables, or writes files,
+# and none is looked up through an inherited PATH that could hold another program of the same name.
 # uv itself counts only as a dependency change or after the last one, since `uv run` runs any program.
-COMPANIONS = frozenset({"echo", "true", "false", "test", "[", "ls", "cat", "pwd", "stat"})
+COMPANIONS = frozenset({"echo", "true", "false", "test", "[", "pwd"})
 # Declarations the parser keeps out of its commands, which set variables for the rest of the command.
 DECLARATION = re.compile(r"(^|[\s;&|(){}`])(export|declare|typeset|readonly|local)(\s|$)")
 # An assignment where a command word can start, which `set -a` or a later export hands to uv.
@@ -73,7 +78,7 @@ def objection(payload: dict, command: str, commands: tuple[shell_syntax.Command,
     changes = [item for item in calls if _changes_dependencies(item)]
     reason = _argument_reason(calls)
     if changes and not reason:
-        reason = _neighbour_reason(command, commands, changes) or _project_reason(payload)
+        reason = _neighbour_reason(command, commands, changes) or _environment_reason() or _project_reason(payload)
     if not reason:
         return hook_decision.ALLOW
     preview = shell_syntax.command_preview(calls[0].raw)
@@ -143,10 +148,25 @@ def _project_reason(payload: dict) -> str:
     except session_snapshot.SnapshotError:
         return "runs outside a repository"
     for folder in (directory, *directory.parents):
-        if any(_sets_age_limit(folder / name) for name in PROJECT_SETTINGS):
+        found = [folder / name for name in PROJECT_SETTINGS if (folder / name).exists()]
+        if found and not folder.is_relative_to(root):
+            return f"may resolve the project at {folder}, outside the worktree"
+        if any(_sets_age_limit(path) for path in found):
             return f"runs in a project whose settings replace the package-age limit or its sources ({folder})"
-        if folder == root:
-            break
+    return ""
+
+
+def _environment_reason() -> str:
+    """Inherited uv variables override every setting, and the limit holds only if the user's configuration sets it."""
+    if inherited := sorted(name for name in os.environ if name.startswith(ENVIRONMENT_PREFIX)):
+        return f"inherits {inherited[0]}, which may override the package-age limit or its sources"
+    base = os.environ.get("XDG_CONFIG_HOME") or str(Path.home() / ".config")
+    try:
+        settings = tomllib.loads((Path(base) / "uv" / "uv.toml").read_text())
+    except OSError, UnicodeDecodeError, tomllib.TOMLDecodeError:
+        return "runs without a readable user uv configuration that sets the package-age limit"
+    if AGE_LIMIT not in settings:
+        return "runs without a package-age limit in the user's uv configuration"
     return ""
 
 

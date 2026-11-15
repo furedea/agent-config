@@ -13,7 +13,6 @@ from pathlib import Path
 import automation_paths
 import command_policy
 import hook_decision
-import hook_input
 import session_snapshot
 import shell_syntax
 from hook_decision import Verdict
@@ -24,14 +23,18 @@ RECURSIVE_LONG = "--recursive"
 GIT_DIRECTORY = ".git"
 # Programs that may share a command with rm: they neither move the working directory nor create
 # files, so rm's operands still name what they named when the guard resolved them. A wrapper here
-# runs its rm, which the guard judges as its own call. Each counts only as a bare name without an
-# assignment before it, so neither a path nor PATH can swap in another program.
-COMPANIONS = frozenset({"echo", "true", "false", "test", "[", "ls", "cat", "pwd", "stat"})
+# runs its rm, which the guard judges as its own call. Each is a shell builtin named bare without an
+# assignment before it, so neither a path nor an inherited PATH can swap in another program.
+COMPANIONS = frozenset({"echo", "true", "false", "test", "[", "pwd"})
 WRAPPERS = frozenset({"command", "nohup", "nice", "time", "timeout", "stdbuf"})
 # System temporary roots other programs and users share; only a session's own directory below one counts.
 SHARED_TEMPORARY_ROOTS = frozenset(
     Path(path).resolve() for path in ("/tmp", "/private/tmp", "/var/tmp", "/private/var/tmp", "/dev/shm")
 )
+# Variables a provider sets to its own session's directory; a general TMPDIR counts only as a
+# provider directory directly below a shared root, such as Claude's /tmp/claude-<uid>.
+PROVIDER_TEMPORARY_VARIABLES = ("CLAUDE_TMPDIR", "CLAUDE_CODE_TMPDIR")
+PROVIDER_TEMPORARY_PREFIX = "claude-"
 # macOS's per-user temporary directory, which every program the user runs shares.
 PER_USER_TEMPORARY_ROOT = re.compile(r"/(private/)?var/folders/[^/]+/[^/]+/T")
 
@@ -66,9 +69,12 @@ def _writable_roots(directory: Path) -> tuple[Path, ...]:
 
 
 def _session_temporary_roots() -> tuple[Path, ...]:
-    """Temporary directories the environment names for this session; the system default is shared, so never one."""
-    values = (os.environ.get(name) for name in hook_input.TEMPORARY_DIRECTORY_VARIABLES)
-    roots = (Path(value).expanduser().resolve() for value in values if value)
+    """Temporary directories the provider issued for this session; a general TMPDIR may be any shared tree."""
+    issued = [os.environ.get(name) for name in PROVIDER_TEMPORARY_VARIABLES]
+    general = os.environ.get("TMPDIR")
+    roots = [Path(value).expanduser().resolve() for value in issued if value]
+    if general and (root := Path(general).expanduser().resolve()).parent in SHARED_TEMPORARY_ROOTS:
+        roots += [root] if root.name.startswith(PROVIDER_TEMPORARY_PREFIX) else []
     return tuple(
         root
         for root in roots

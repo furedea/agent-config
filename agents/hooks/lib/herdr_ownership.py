@@ -17,6 +17,9 @@ from herdr_grammar import has_global_option
 from session_store import ScopeError, SessionRecord, atomic_json, file_lock, read_json
 
 AGENTS_FILE = "herdr_agents.json"
+OWNERSHIP_ACTIONS = frozenset(
+    {("agent", "start"), ("agent", "prompt"), ("workspace", "close"), ("worktree", "remove"), ("agent", "rename")}
+)
 LIST_TIMEOUT_SECONDS = 5
 
 
@@ -33,14 +36,7 @@ def check(record: SessionRecord, command: str) -> None:
             or Path(parsed.arguments[0]).name != "herdr"
             or (
                 not has_global_option(parsed.arguments)
-                and action
-                not in {
-                    ("agent", "start"),
-                    ("agent", "prompt"),
-                    ("workspace", "close"),
-                    ("worktree", "remove"),
-                    ("agent", "rename"),
-                }
+                and (action not in OWNERSHIP_ACTIONS or parsed.arguments[3:] == ("--help",))
             )
         ):
             continue

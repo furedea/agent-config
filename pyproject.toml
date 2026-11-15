@@ -55,6 +55,7 @@ known_first_party = [
   "model_rules_run",
   "patch_input",
   "provider_adapter",
+  "removal_paths",
   "rust_targets",
   "secret_path_policy",
   "shell_input",
@@ -68,6 +69,7 @@ known_first_party = [
   "session_store",
   "source_listing",
   "static_rule_scan",
+  "system_programs",
   "trusted_owners",
   "verification_session",
 ]

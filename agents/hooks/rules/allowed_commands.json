@@ -114,6 +114,7 @@
         "^herdr status( |$)",
         "^herdr --help( |$)",
         "^herdr --version( |$)",
+        "^herdr [a-z][a-z-]*( [a-z][a-z-]*)? --help$",
         "^herdr pane list( |$)",
         "^herdr pane read( |$)",
         "^herdr pane current( |$)",

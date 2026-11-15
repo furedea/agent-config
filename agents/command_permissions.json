@@ -2109,7 +2109,7 @@
         "uv",
         "add"
       ],
-      "justification": "Ask before changing dependencies or lock files; the request should name the change."
+      "justification": "Ask before changing dependencies; the guard cannot see every setting that lifts the package-age limit or points the change at another source."
     },
     {
       "decision": "ask",
@@ -2118,7 +2118,7 @@
         "lock",
         "--upgrade-package"
       ],
-      "justification": "Ask before changing dependencies or lock files; the request should name the change."
+      "justification": "Ask before changing dependencies; the guard cannot see every setting that lifts the package-age limit or points the change at another source."
     },
     {
       "decision": "ask",
@@ -2127,7 +2127,7 @@
         "lock",
         "--upgrade"
       ],
-      "justification": "Ask before changing dependencies or lock files; the request should name the change."
+      "justification": "Ask before changing dependencies; the guard cannot see every setting that lifts the package-age limit or points the change at another source."
     },
     {
       "decision": "ask",
@@ -2151,7 +2151,7 @@
         "cargo",
         "add"
       ],
-      "justification": "Ask before changing dependencies or lock files; the request should name the change."
+      "justification": "Ask before changing dependencies that no package-age limit guards; a version published minutes ago could be malicious."
     },
     {
       "decision": "ask",
@@ -2159,7 +2159,7 @@
         "cargo",
         "update"
       ],
-      "justification": "Ask before changing dependencies or lock files; the request should name the change."
+      "justification": "Ask before changing dependencies that no package-age limit guards; a version published minutes ago could be malicious."
     },
     {
       "decision": "ask",
@@ -2167,7 +2167,7 @@
         "go",
         "get"
       ],
-      "justification": "Ask before changing dependencies or lock files; the request should name the change."
+      "justification": "Ask before changing dependencies that no package-age limit guards; a version published minutes ago could be malicious."
     },
     {
       "decision": "ask",
@@ -2176,7 +2176,7 @@
         "mod",
         "tidy"
       ],
-      "justification": "Ask before changing dependencies or lock files; the request should name the change."
+      "justification": "Ask before changing dependencies that no package-age limit guards; a version published minutes ago could be malicious."
     },
     {
       "decision": "ask",
@@ -2184,7 +2184,7 @@
         "pnpm",
         "add"
       ],
-      "justification": "Ask before changing dependencies or lock files; the request should name the change."
+      "justification": "Ask before changing dependencies that no package-age limit guards; a version published minutes ago could be malicious."
     },
     {
       "decision": "ask",
@@ -2201,7 +2201,7 @@
         "flake",
         "update"
       ],
-      "justification": "Ask before changing dependencies or lock files; the request should name the change."
+      "justification": "Ask before changing dependencies that no package-age limit guards; a version published minutes ago could be malicious."
     },
     {
       "decision": "allow",
@@ -2259,11 +2259,11 @@
       "justification": "Ask before running scripts or fetched packages that policy cannot inspect."
     },
     {
-      "decision": "ask",
+      "decision": "allow",
       "prefix": [
         "rm"
       ],
-      "justification": "Ask before removing files that Git cannot restore; recursive removal stays denied."
+      "justification": "Allow removing files; the command guard asks for Git metadata, paths outside the worktree and temporary directories, and run-time paths."
     },
     {
       "decision": "allow",
@@ -2396,7 +2396,7 @@
         "pane",
         "send-text"
       ],
-      "justification": "Ask before controlling other panes; their commands run outside this policy."
+      "justification": "Ask before typing into a pane; raw terminal input can answer an agent's approval prompt or reach the shell beneath it, outside the sandbox."
     },
     {
       "decision": "ask",
@@ -2405,7 +2405,7 @@
         "pane",
         "send-keys"
       ],
-      "justification": "Ask before controlling other panes; their commands run outside this policy."
+      "justification": "Ask before typing into a pane; raw terminal input can answer an agent's approval prompt or reach the shell beneath it, outside the sandbox."
     },
     {
       "decision": "ask",
@@ -2414,16 +2414,7 @@
         "pane",
         "run"
       ],
-      "justification": "Ask before controlling other panes; their commands run outside this policy."
-    },
-    {
-      "decision": "ask",
-      "prefix": [
-        "herdr",
-        "pane",
-        "create"
-      ],
-      "justification": "Ask before controlling other panes; their commands run outside this policy."
+      "justification": "Ask before typing into a pane; raw terminal input can answer an agent's approval prompt or reach the shell beneath it, outside the sandbox."
     },
     {
       "decision": "allow",
@@ -2459,7 +2450,7 @@
         "agent",
         "send-keys"
       ],
-      "justification": "Ask before controlling other panes; their commands run outside this policy."
+      "justification": "Ask before typing into a pane; raw terminal input can answer an agent's approval prompt or reach the shell beneath it, outside the sandbox."
     },
     {
       "decision": "allow",

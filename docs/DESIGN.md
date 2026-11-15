@@ -215,3 +215,21 @@ Without the items, the hook reports `Model rules skipped` at every Stop and does
 - The supplementary guards judge only statically determinable shell text and ask for the rest; see
     [ADR-0015](adr/0015_judge_only_statically_determinable_shell_text_in_the_guards.md) and
     [ADR-0016](adr/0016_inspect_shell_syntax_in_the_supplementary_command_guards.md).
+- The provider's own `ask` prefixes are kept for commands that widen authority (fetched or
+    unpinned code, containers, other people's workspaces, outside hosts) or promote work and cannot be
+    undone (merge, release, stash drop, remote changes, signals, the Herdr server); an `ask` rule still
+    prompts in Claude Code's auto mode. Dependency changes (`uv add`, `uv lock --upgrade`, `pnpm add`,
+    `cargo add`, `cargo update`, `go get`, `go mod tidy`, `nix flake update`) keep asking: the guard
+    cannot see every setting that lifts the package-age limit or points the change elsewhere.
+- `rm` runs unprompted for files inside the worktree and the session's own temporary directories
+    (named by `CLAUDE_TMPDIR`, or a `TMPDIR` such as `/tmp/claude-<uid>`; never a shared `/tmp`,
+    `/var/tmp`, or macOS's per-user temporary directory). The command guard asks for Git metadata,
+    any other path (resolved through links in its parent directories), a path known only at run time, xargs
+    operands, recursive forms the deny prefixes do not list, and rm beside any program other than a
+    listed shell builtin (`echo`, `test`, `pwd`, ...), since it may change the working directory or
+    create a link first. So does an `rm` or wrapper that PATH resolves to anything but a root-owned
+    system program, an inherited shell function or `BASH_ENV`, and a worktree on which git and the
+    `.git` on disk disagree.
+- Typing into a Herdr pane (`pane send-text`, `pane send-keys`, `pane run`, `agent send-keys`)
+    always asks, even for an agent this session started: keys or text can answer that agent's
+    approval prompt or end it and reach the shell beneath it. Hand work over with `agent prompt`.

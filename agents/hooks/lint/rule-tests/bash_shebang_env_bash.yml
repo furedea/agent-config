@@ -2,6 +2,15 @@ id: bash_shebang_env_bash
 valid:
   - |
     #!/usr/bin/env bash
+    # an old shebang kept as a comment
+    #!/bin/bash
+    echo hi
+  - |
+    # a comment first
+    #!/bin/sh
+    echo hi
+  - |
+    #!/usr/bin/env bash
     echo hi
   - |
     # not a shebang

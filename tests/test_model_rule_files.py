@@ -80,6 +80,10 @@ describe("stamp", () => {
   it("returns a number", () => {});
 });
 
+describe.each([1, 2])("stamp table", () => {
+  it("returns a number", () => {});
+});
+
 describe.concurrent("stamp again", () => {
   it("returns a number", () => {});
 });
@@ -388,7 +392,8 @@ def test_typescript_rules_select_the_functions_they_ask_about(repository: Path) 
     # outside any function; `stamp` and the arrow function `expiresAt` read the clock; `as const` is not an
     # assertion to judge, and the angle-bracket form `<Request>` has its own rule; `load`, the field arrow
     # function `Loader.load`, the callback passed to `register` and the function expression `loadLater` throw; the
-    # `describe` and `describe.concurrent` blocks and the top level of the file, which holds two `it.concurrent`
+    # `describe`, `describe.each(..)(..)` and `describe.concurrent` blocks (not the bare table call inside
+    # `describe.each`) and the top level of the file, which holds two `it.concurrent`
     # calls, are the groups of tests; `vi.mock` and `vi.doMock` are both mocks.
     assert counts == {
         "angle-bracket-assertion-follows-validation": 1,
@@ -399,7 +404,7 @@ def test_typescript_rules_select_the_functions_they_ask_about(repository: Path) 
         "inject-time-and-randomness": 2,
         "known-defect-marker-names-removal": 1,
         "mock-only-external-boundaries": 2,
-        "repeated-cases-use-it-each": 3,
+        "repeated-cases-use-it-each": 4,
         "states-modeled-as-discriminated-union": 1,
         "type-assertion-follows-validation": 1,
     }

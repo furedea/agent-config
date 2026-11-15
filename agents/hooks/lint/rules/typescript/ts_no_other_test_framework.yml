@@ -12,3 +12,9 @@ rule:
             kind: string
             regex: ^["'](jest|@jest/globals|mocha|node:test)["']$
     - pattern: jest.$METHOD($$$ARGS)
+    - all:
+        - kind: call_expression
+        - has: { field: function, regex: ^(import|require)$ }
+        - has:
+            field: arguments
+            regex: ^\(["'](jest|@jest/globals|mocha|node:test)["']\)$

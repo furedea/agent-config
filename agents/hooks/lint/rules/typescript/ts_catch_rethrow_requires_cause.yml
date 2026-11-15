@@ -11,8 +11,18 @@ rule:
     - inside:
         kind: throw_statement
         inside:
-          kind: catch_clause
-          has: { field: parameter, regex: '.' }
+          any:
+            - kind: catch_clause
+              has: { field: parameter, regex: '.' }
+            - all:
+                - any:
+                    - kind: arrow_function
+                    - kind: function_expression
+                - inside:
+                    kind: arguments
+                    inside:
+                      kind: call_expression
+                      has: { field: function, kind: member_expression, regex: '\.catch$' }
           stopBy:
             any:
               - kind: function_declaration

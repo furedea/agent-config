@@ -13,6 +13,14 @@ valid:
       throw error;
     }
   - |
+    request().catch((error) => {
+      throw new Error("request failed", { cause: error });
+    });
+  - |
+    request().then((value) => {
+      throw new Error("bad value");
+    });
+  - |
     try {
       run();
     } catch {
@@ -35,6 +43,14 @@ invalid:
     } catch (error) {
       throw new Error("read config");
     }
+  - |
+    request().catch((error) => {
+      throw new Error("request failed");
+    });
+  - |
+    request().catch(function (error) {
+      throw new TypeError("request failed");
+    });
   - |
     try {
       run();

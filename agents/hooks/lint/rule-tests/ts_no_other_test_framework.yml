@@ -6,6 +6,10 @@ valid:
     import { readFile } from "node:fs/promises";
   - |
     vi.fn();
+  - |
+    const { it } = await import("vitest");
+  - |
+    const path = require("node:path");
 invalid:
   - |
     import { describe, it } from "node:test";
@@ -13,3 +17,7 @@ invalid:
     import { jest } from "@jest/globals";
   - |
     const spy = jest.fn();
+  - |
+    const { test } = await import("node:test");
+  - |
+    const jest = require("jest");

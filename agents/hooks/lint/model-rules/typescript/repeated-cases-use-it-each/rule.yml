@@ -12,6 +12,8 @@ rule:
     - all:
         - kind: call_expression
         - has: { field: function, regex: '^describe(\.|$)' }
+        - not:
+            has: { field: function, kind: member_expression, regex: '\.each$' }
     - all:
         - kind: program
         - has:

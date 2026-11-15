@@ -24,6 +24,7 @@ LANGUAGES = {
     **dict.fromkeys((".yml", ".yaml"), "yaml"),
 }
 COMMENT_KINDS = {"rust": ("line_comment", "block_comment")}
+STAND_IN = "guardcommentmarkerstandin"
 
 
 def comment_spans(text: str, suffix: str, word: str) -> list[tuple[int, int]] | None:
@@ -35,16 +36,20 @@ def comment_spans(text: str, suffix: str, word: str) -> list[tuple[int, int]] | 
     if language is None or shutil.which(SCANNER) is None:
         return None
     encoded = text.encode()
+    # ast-grep would apply the suppressions in the text to this scan too and hide comments below a marker, so the
+    # word is replaced by a stand-in of the same length, which keeps every offset.
+    stand_in = STAND_IN[: len(word)].ljust(len(word), "_")
     try:
-        # A neutral directory, so no project sgconfig.yml changes how the rule is read.
-        result = subprocess.run(
-            (SCANNER, "scan", "--stdin", "--inline-rules", _rule(language, word), "--json=stream"),
-            input=encoded,
-            capture_output=True,
-            timeout=TIMEOUT_SECONDS,
-            check=False,
-            cwd=tempfile.gettempdir(),
-        )
+        # A fresh private directory, so no sgconfig.yml there changes how the rule is read.
+        with tempfile.TemporaryDirectory() as directory:
+            result = subprocess.run(
+                (SCANNER, "scan", "--stdin", "--inline-rules", _rule(language, stand_in), "--json=stream"),
+                input=text.replace(word, stand_in).encode(),
+                capture_output=True,
+                timeout=TIMEOUT_SECONDS,
+                check=False,
+                cwd=directory,
+            )
         records = [json.loads(line) for line in result.stdout.decode().splitlines() if line.strip()]
         offsets = [record["range"]["byteOffset"] for record in records]
         spans = [(_characters(encoded, offset["start"]), _characters(encoded, offset["end"])) for offset in offsets]

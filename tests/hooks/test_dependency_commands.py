@@ -30,6 +30,10 @@ def decisions(prefix: tuple[str, ...]) -> set[str]:
         "uv lock --upgrade-package ruff==0.5.0",
         "uv add httpx && uv run --frozen pytest",
         "ls && uv add httpx",
+        "uv add 'httpx[http2]>=0.27,<1'",
+        "uv add --group audit vulture --no-sync",
+        "uv lock --upgrade",
+        "uv lock -P ruff",
     ],
 )
 def test_uv_dependency_changes_inside_the_age_limit_run(git_project: Path, command: str) -> None:
@@ -98,6 +102,16 @@ def test_dependency_changes_no_age_limit_guards_ask(prefix: tuple[str, ...]) -> 
         "uv add pkg --rev main",
         "uv add pkg --branch main",
         "uv add pkg --tag v1",
+        "uv add -r /other/requirements.txt",
+        "uv add --requirements=/other/requirements.txt",
+        "uv add -c constraints.txt httpx",
+        "uv add -ihttps://evil.example/simple httpx",
+        "uv add -i https://evil.example/simple httpx",
+        "uv add --frozen-but-unknown httpx",
+        "uv add 'httpx; python_version > \"3\"'",
+        "uv add pkg@https://example.com/pkg.whl",
+        "uv add owner/repo",
+        "uv add 'C:\\pkg'",
     ],
 )
 def test_a_uv_change_that_could_escape_the_limit_or_the_project_asks(git_project: Path, command: str) -> None:
@@ -140,8 +154,17 @@ def test_global_installs_and_the_legacy_dev_group_are_denied_wherever_the_flag_s
         '[[tool.uv.index]]\nurl = "https://evil.example/simple"\n',
         '[tool.uv.sources]\npkg = { git = "https://github.com/someone/pkg" }\n',
         'index-url = "https://evil.example/simple"\n',
+        '[tool.uv]\nindex = [{ url = "https://evil.example/simple" }]\n',
+        '[tool.uv]\n"index-url" = "https://evil.example/simple"\n',
+        '[tool]\nuv = { sources = { pkg = { path = "/opt/pkg" } } }\n',
+        "[tool.uv\nbroken",
     ],
 )
 def test_a_project_that_adds_its_own_package_sources_asks(git_project: Path, settings: str) -> None:
     (git_project / "pyproject.toml").write_text(settings)
     assert judged(git_project, "uv add httpx", "allowed") == "ask"
+
+
+def test_a_project_with_harmless_uv_settings_runs(git_project: Path) -> None:
+    (git_project / "pyproject.toml").write_text('[project]\nname = "x"\n\n[tool.uv]\npackage = false\n')
+    assert judged(git_project, "uv add httpx", "allowed") == "allow"

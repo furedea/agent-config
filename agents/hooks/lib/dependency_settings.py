@@ -8,6 +8,8 @@ a git reference, a local path, or another index carries no upload time the limit
 """
 
 import re
+import tomllib
+from collections.abc import Iterator
 from pathlib import Path
 
 import command_policy
@@ -19,19 +21,20 @@ from hook_decision import Verdict
 
 PROGRAM = "uv"
 SUBCOMMANDS = frozenset({"add", "lock"})
-# Options that point uv at another project, script, or configuration.
-LOCATION_OPTIONS = frozenset({"--project", "--directory", "--script", "--config-file"})
-# Options that lift the configured package-age limit or fetch from a source it does not cover:
-# a URL, a git reference, a local path, or an index that reports its own upload times.
-AGE_OPTIONS = frozenset(
-    {"--exclude-newer", "--exclude-newer-package", "--no-config", "--index", "--default-index", "--index-url"}
-    | {"--extra-index-url", "-f", "--find-links", "-e", "--editable", "--rev", "--tag", "--branch", "--path"}
-)
-# A requirement the age limit cannot judge: a URL, a VCS reference, a direct reference, or a local path.
-UNTIMED_REQUIREMENT = re.compile(r"://|^git\+| @ |^[./~]|\.(whl|zip|tar\.gz|tgz)$")
-# Project files whose settings replace the user's limit or add package sources it does not cover.
+# The only options a dependency change may carry unprompted, by whether each takes a name as its value;
+# any other option could point uv at another project, configuration, index, or source.
+FLAGS = frozenset({"--no-sync", "--frozen", "--locked", "--upgrade", "-U", "--quiet", "-q", "--verbose", "-v"})
+NAMED_OPTIONS = frozenset({"--group", "--optional", "--extra", "--upgrade-package", "-P"})
+NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
+# A registry requirement: a name, optional extras, and version specifiers, with no marker, URL, or path.
+SPECIFIER = r"(===|==|!=|~=|>=|<=|>|<)[A-Za-z0-9.*+!_-]+"
+REQUIREMENT = re.compile(rf"{NAME.pattern}(\[[A-Za-z0-9._,-]+\])?({SPECIFIER}(,{SPECIFIER})*)?")
+# Project files and the uv settings in them that replace the user's limit or add a package source.
 PROJECT_SETTINGS = ("pyproject.toml", "uv.toml")
-PROJECT_OVERRIDES = ("exclude-newer", "tool.uv.index", "tool.uv.sources", "index-url", "find-links", "[[index]]")
+OVERRIDING_SETTINGS = frozenset(
+    {"exclude-newer", "exclude-newer-package", "index", "index-url", "extra-index-url", "find-links", "sources"}
+    | {"no-index", "index-strategy", "no-build-isolation", "config-settings", "dependency-metadata"}
+)
 # Programs that may share the command: none moves the directory, sets variables, or writes files.
 COMPANIONS = frozenset({PROGRAM, "echo", "printf", "true", "false", "test", "[", "ls", "cat", "pwd", "stat"})
 # Declarations the parser keeps out of its commands, which set variables for the rest of the command.
@@ -53,18 +56,28 @@ def objection(payload: dict, command: str, commands: tuple[shell_syntax.Command,
 
 
 def _argument_reason(changes: list[shell_syntax.Command]) -> str:
-    """Why the dependency change's own options or requirements escape the project or the age limit."""
-    words = [
-        (word, dynamic) for item in changes for word, dynamic in zip(item.arguments[2:], item.dynamic[2:], strict=True)
-    ]
-    options = {word.partition("=")[0] for word, _ in words if word.startswith("-")}
-    if options & LOCATION_OPTIONS:
-        return "names another project, script, or configuration"
-    if options & AGE_OPTIONS:
-        return "replaces the package-age limit or fetches from a source it does not cover"
-    if any(dynamic or UNTIMED_REQUIREMENT.search(word) for word, dynamic in words if not word.startswith("-")):
-        return "names a requirement the package-age limit cannot judge"
+    """Why the dependency change's own words may escape the project or the age limit; unknown words ask."""
+    for item in changes:
+        words = iter(zip(item.arguments[2:], item.dynamic[2:], strict=True))
+        if word := next((word for word, dynamic in words if not _is_known_word(word, dynamic, words)), ""):
+            return f"names '{word}', which may lift the package-age limit or point uv elsewhere"
     return ""
+
+
+def _is_known_word(word: str, dynamic: bool, rest: Iterator[tuple[str, bool]]) -> bool:
+    """Whether the word is a listed flag, a listed option with a plain name, or a registry requirement.
+
+    A listed option without `=` takes the next word from `rest` as its value.
+    """
+    if dynamic:
+        return False
+    if word in FLAGS:
+        return True
+    option, attached, value = word.partition("=")
+    if option in NAMED_OPTIONS:
+        value, dynamic = (value, False) if attached else next(rest, ("", True))
+        return not dynamic and bool(REQUIREMENT.fullmatch(value))
+    return not word.startswith("-") and bool(REQUIREMENT.fullmatch(word))
 
 
 def _neighbour_reason(
@@ -100,11 +113,19 @@ def _project_reason(payload: dict) -> str:
 
 
 def _sets_age_limit(path: Path) -> bool:
+    """Whether the file sets a uv setting that overrides the limit or a source, at the top or under tool.uv.
+
+    A file that cannot be read or parsed counts, since uv may still read it differently.
+    """
     try:
-        text = path.read_text(errors="replace")
-    except OSError:
+        settings = tomllib.loads(path.read_text())
+    except FileNotFoundError:
         return False
-    return any(setting in text for setting in PROJECT_OVERRIDES)
+    except OSError, UnicodeDecodeError, tomllib.TOMLDecodeError:
+        return True
+    tool = settings.get("tool")
+    tables = (settings, tool.get("uv") if isinstance(tool, dict) else None)
+    return any(isinstance(table, dict) and not OVERRIDING_SETTINGS.isdisjoint(table) for table in tables)
 
 
 def _is_dependency_change(item: shell_syntax.Command) -> bool:

@@ -25,8 +25,11 @@ GITHUB_HOST = "github.com"
 REMOTE_LOOKUP_TIMEOUT_SECONDS = 5
 # Variables naming a file or directory a non-interactive shell sources before the command runs.
 STARTUP_FILE_VARIABLES = ("BASH_ENV", "ENV", "ZDOTDIR")
-# git settings that run a program for a transport, rewrite a URL to another transport, or enable one.
-TRANSPORT_SETTINGS = r"^(core\.(sshcommand|gitproxy)|url\..*\.(insteadof|pushinsteadof)|protocol\.(.*\.)?allow)$"
+# git settings that run a program for a transport, rewrite a URL to another transport, enable one,
+# or pick a git-remote-<vcs> helper for a remote.
+TRANSPORT_SETTINGS = (
+    r"^(core\.(sshcommand|gitproxy)|url\..*\.(insteadof|pushinsteadof)|protocol\.(.*\.)?allow|remote\..*\.vcs)$"
+)
 # git settings that give a new clone hooks, or a filter program its checkout runs.
 CHECKOUT_SETTINGS = (
     r"^(init\.templatedir|core\.(hookspath|fsmonitor|alternaterefscommand)|filter\..*\.(smudge|process))$"

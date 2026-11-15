@@ -27,7 +27,7 @@ Existing project style takes precedence over these rules.
 - Keep classes and modules single-purpose, cohesive, loosely coupled, and minimally public.
 - Name classes by responsibility; order methods public-to-private; use DTOs at component boundaries.
 - Keep domain-specific enums and exception classes near their owning class; use one exception class per domain failure concept unless it is shared across modules.
-- Keep functions single-purpose at one abstraction level, with short variable lifetimes and guard clauses over nested conditionals.
+- Keep functions single-purpose at one abstraction level, with short variable lifetimes.
 - Extract a function when its name states intent the inline code does not; do not split merely to shorten a function.
 - Treat argument, nesting, and complexity limits as design signals: split responsibilities, drop derivable arguments, or move logic to the object that owns the data; group arguments only into a named type for a real domain concept, never into an anonymous object, tuple, dict, or a type that merely mirrors one function's parameters.
 - Split duplicated logic, control structures, mixed responsibilities, and command/query behavior into named functions or objects.

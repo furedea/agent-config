@@ -70,7 +70,6 @@ pub enum Provider {
 - Use associated functions for pure construction.
 - Keep I/O in module-level functions or dedicated service structs, not inside Value Object constructors.
 - Prefer `Result<T, E>` for expected failures.
-- Prefer early returns for guard clauses.
 - Avoid `async` unless the project has real concurrency or nonblocking I/O requirements.
 
 ## Getter and Conversion Naming

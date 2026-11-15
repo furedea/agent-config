@@ -123,6 +123,49 @@ own repositories get model judgement.
     are still Proposed. Model-judged rules are never
     skipped silently: a skip or failure is reported as in Failure behaviour.
 
+## Which rules ast-grep may block
+
+A blocking ast-grep rule must judge one construct, locally and reliably. A rule that needs any of the following goes to
+the language's own linter, compiler, or test runner when one can judge it, and otherwise to `jev-lint` only if the
+function, its file's imports, and its enclosing declarations (all that `jev-lint` is given) are enough. A rule that no
+tool can judge with the context it has stays as prose:
+
+1. Information outside the file: configuration, `conftest.py`, other modules.
+2. Data flow or execution order: values passed through assignments, scopes, or a class hierarchy.
+3. Parsing a nested grammar or expression with a regular expression: boolean `cfg(...)` predicates, escape sequences,
+    quoting. Matching a fixed name, or a literal prefix of one string or attribute path, is a local check and may
+    block: `go_error_no_failed_to_prefix` (the literal prefix of one error string) stays. The `cfg_attr` branch of
+    `rs_no_mocking_library` parses a nested attribute with a regular expression, so it falls under this type and is a
+    candidate to narrow or move (#196).
+4. Many equivalent spellings that a rule cannot list completely: YAML quoting, flow and block forms, import aliases
+    combined with other cases. A rule that only detects a short, closed list of spellings of one name, such as the
+    aliases of one import, may still block.
+
+The evidence is the review of PRs #192-#195. The rules below were removed or demoted to `jev-lint` after drawing 8 to 34
+review threads each without converging, and each needs one or more of the cases above. The rules that stayed as
+blocking ast-grep rules, which judge one local construct, drew 7 or fewer threads (3 to 7 for the Bash and GitHub
+Actions rules of #194, whose misses were sent to #196 instead of being patched). The types are the numbers above.
+Thread counts are those in the "ast-grep から外した規則と理由" tables of the merged PR bodies of #192, #193, #194,
+and #195.
+
+| Rule                                     | Threads | Type    | Destination                                             |
+| ---------------------------------------- | ------- | ------- | ------------------------------------------------------- |
+| `py_async_test_anyio_marker` (#192)      | 34      | 1, 4    | pytest itself (fails an async test no plugin runs)      |
+| `ts_no_unvalidated_json_cast` (#195)     | 26      | 1, 4    | oxlint `no-unsafe-type-assertion` and related rules     |
+| `rs_unit_test_in_test_module` (#193)     | 21      | 1, 3, 4 | clippy `tests_outside_test_module`                      |
+| `py_pydantic_validate_json` (#192)       | 17      | 2, 4    | `jev-lint` `json-parse-uses-model-validate-json`        |
+| `gha_workflow_default_shell` (#194)      | 15      | 2, 3, 4 | `jev-lint` `workflow-default-shell`                     |
+| `gha_workflow_concurrency` (#194)        | 12      | 3, 4    | `jev-lint` `workflow-concurrency`                       |
+| `ts_no_other_test_framework` (#195)      | 12      | 2       | oxlint `no-restricted-globals`, `no-restricted-imports` |
+| `py_plain_class_slots` (#192)            | 11      | 2, 4    | `jev-lint` `plain-class-defines-slots`                  |
+| `bash_strict_mode_header` (#194)         | 11      | 2, 3, 4 | `jev-lint` `strict-mode-header`                         |
+| `ts_catch_rethrow_requires_cause` (#195) | 11      | 2, 4    | oxlint `preserve-caught-error`                          |
+| `py_frozen_base_model_config` (#192)     | 8       | 2, 4    | `jev-lint` `frozen-base-model-sets-all-settings`        |
+| `rs_no_path_from_format` (#193)          | 8       | 3, 4    | `jev-lint` `paths-are-joined-not-formatted`             |
+
+Rules with fewer threads that were also removed (for example `py_frozen_base_model_no_override`, `rs_no_get_prefix`,
+`rs_fs_call_needs_context`) are listed in the same PR bodies; they fall under the same cases.
+
 ## Alternatives considered
 
 - **A rule registry (one YAML file per rule with source link, method, threshold, and examples).** Rejected: it

@@ -14,7 +14,13 @@ import pytest
 from tests.runtime import REPO_ROOT, CliRunner
 
 SKILLS = REPO_ROOT / "agents/skills"
-SKILL_NAMES = sorted(path.name for path in SKILLS.iterdir() if path.is_dir())
+
+
+def skill_names(root: Path) -> list[str]:
+    return sorted(path.name for path in root.iterdir() if path.is_dir() and not path.name.startswith("."))
+
+
+SKILL_NAMES = skill_names(SKILLS)
 SKILL_RENDERING = REPO_ROOT / "agents/skill_rendering.json"
 FENCED_CODE_PATTERN = re.compile(r"^(```|~~~).*?^\1\s*$", re.MULTILINE | re.DOTALL)
 INLINE_CODE_PATTERN = re.compile(r"`[^`\n]*`")
@@ -54,6 +60,14 @@ def test_every_skill_renders_with_its_name_and_description(
         frontmatter = _frontmatter((output / skill / "SKILL.md").read_text())
         assert frontmatter.get("name") == skill, skill
         assert frontmatter.get("description"), skill
+
+
+def test_skill_names_skip_hidden_directories(tmp_path: Path) -> None:
+    (tmp_path / "tsdd").mkdir()
+    (tmp_path / ".claude").mkdir()
+    (tmp_path / "README.md").write_text("not a skill")
+
+    assert skill_names(tmp_path) == ["tsdd"]
 
 
 @pytest.mark.parametrize("skill", SKILL_NAMES)

@@ -25,5 +25,5 @@ rule:
             regex: ^["']?permissions["']?$
         - has:
             field: value
-            # An empty flow mapping, possibly with comments inside.
-            regex: ^\{(\s|#[^\n]*)*\}$
+            # An empty flow mapping, possibly with comments inside, or an alias that is resolved elsewhere.
+            regex: ^(\{(\s|#[^\n]*)*\}|\*\S+)$

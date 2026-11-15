@@ -24,7 +24,7 @@ rule:
         - has: { field: value, regex: "^(\\*|\"\"|'')$" }
     - all:
         - kind: if_statement
-        - has: { field: condition, regex: "(--help|(^|[\\s\"])-h([\\s\"\\]]|$))", stopBy: end }
+        - has: { field: condition, regex: "(--help|(^|[\\s\"'])-h([\\s\"'\\]]|$))", stopBy: end }
         - not: { inside: { kind: if_statement, stopBy: end } }
     - all:
         - kind: if_statement

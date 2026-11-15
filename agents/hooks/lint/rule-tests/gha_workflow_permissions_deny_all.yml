@@ -27,6 +27,15 @@ valid:
         runs-on: ubuntu-latest
         steps:
           - run: echo hi
+  - |
+    on: push
+    env: &deny {}
+    permissions: *deny
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        steps:
+          - run: echo hi
 invalid:
   - |
     on: push

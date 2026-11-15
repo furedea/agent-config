@@ -77,7 +77,9 @@ def _advise(record: SessionRecord, stop_hook_active: bool, deadline: model_rules
     details = model_rules_report.describe_details(outcome)
     blocking = bool(outcome.findings) and not stop_hook_active
     state = CLEAN if not outcome.findings else SHOWN if blocking else UNSHOWN
-    _save(record, _receipt(inputs, outcome, state))
+    if not outcome.failed_reviews:
+        # A review that failed is not a result to reuse: the next Stop on the same inputs runs it again.
+        _save(record, _receipt(inputs, outcome, state))
     return Advice(message, blocking, details if blocking else "")
 
 
@@ -165,23 +167,37 @@ class _Changes:
         return self.committed.withheld | self.uncommitted.withheld
 
     def reviews(self, record: SessionRecord, programs: Programs) -> tuple[model_rules_run.Review, ...]:
-        """The commits made since the session started, then the changes not committed yet.
+        """For each tier of rules, the commits made since the session started, then the changes not committed yet.
 
         `jev-lint review` judges `base...HEAD` or, without a base, the working tree against HEAD; neither covers both.
+        The tuned tier comes first so that it takes the subject cap before the untuned rules do.
         """
         cache = model_rules_run.cache_path(state_directory())
         reviews = []
-        if self.committed.sendable:
-            reviews.append(
-                model_rules_run.Review(
-                    record.root, record.head, RULES_DIRECTORY, cache, programs, self.committed.sendable
+        for rules in rule_tiers(RULES_DIRECTORY):
+            if self.committed.sendable:
+                reviews.append(
+                    model_rules_run.Review(record.root, record.head, rules, cache, programs, self.committed.sendable)
                 )
-            )
-        if self.uncommitted.sendable:
-            reviews.append(
-                model_rules_run.Review(record.root, None, RULES_DIRECTORY, cache, programs, self.uncommitted.sendable)
-            )
+            if self.uncommitted.sendable:
+                reviews.append(
+                    model_rules_run.Review(record.root, None, rules, cache, programs, self.uncommitted.sendable)
+                )
         return tuple(reviews)
+
+
+def rule_tiers(directory: Path) -> tuple[tuple[Path, ...], ...]:
+    """The rules to review with, in the order they claim the subject cap: rules with an eval baseline, then the rest.
+
+    A file that does not fit the cap is skipped whole, so rules that were never fitted must not displace the tuned
+    ones. When every rule is of one kind there is one tier: the whole directory.
+    """
+    folders = sorted(path.parent for path in directory.glob("*/*/rule.yml"))
+    tuned = tuple(folder for folder in folders if (folder / "baseline.json").is_file())
+    untuned = tuple(folder for folder in folders if folder not in tuned)
+    if not tuned or not untuned:
+        return ((directory,),)
+    return (tuned, untuned)
 
 
 def _repository_gate(root: Path) -> Prevented | None:
@@ -203,4 +219,7 @@ def _inputs(record: SessionRecord) -> str:
     for path in sorted(RULES_DIRECTORY.rglob("*.yml")):
         digest.update(os.fsencode(path.relative_to(RULES_DIRECTORY)))
         digest.update(path.read_bytes())
+    # A baseline moves a rule between tiers, so its presence changes what the cap leaves for it.
+    for path in sorted(RULES_DIRECTORY.rglob("baseline.json")):
+        digest.update(os.fsencode(path.relative_to(RULES_DIRECTORY)))
     return digest.hexdigest()

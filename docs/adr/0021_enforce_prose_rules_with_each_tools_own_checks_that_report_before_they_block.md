@@ -55,7 +55,11 @@ own repositories get model judgement.
 - **Subjects and context.** `jev-lint` selects the subjects with each rule's ast-grep matcher and judges per function
     (the rule's `subject:`). Each subject is judged with the function plus the same file's imports and enclosing
     declarations (state arm `local`); no other file is sent. Only functions changed in the session are judged, at most
-    20 per Stop at first, and the hook reports how many were skipped.
+    250 per Stop, and the hook reports how many were skipped. The value comes from measurement: over this
+    repository's merged PRs, `jev-lint review --dry-run` planned at most 104 subjects in 10 requests (about 0.0025
+    USD), and 30 recorded Stop runs took 2.7 to 7.9 seconds for 1 to 8 requests, because requests run concurrently
+    and wall time follows the request count, not the subject count. 250 holds twice the largest measured session
+    whole, costs about 0.006 USD per Stop at the cap, and leaves the 90-second Stop budget a wide margin.
 - **Cache.** The hook does not keep a cache of its own. It passes `jev-lint` its verdict cache (`-c <path>`) stored
     outside the repository, under the agent state directory, because `jev-lint` documents the cache as trusted input
     that can silence rules, and a file inside the repository could be committed. Keeping it under the state directory

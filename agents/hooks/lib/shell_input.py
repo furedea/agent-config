@@ -18,6 +18,10 @@ DIRECTORY_CHANGE = re.compile(r"(?<![\w-])(?:cd|pushd|popd|chdir|autocd|setopt|e
 PROGRAM_PREFIXES = frozenset({"builtin", "command", "noglob", "nocorrect", "-", "exec", "time"})
 # Line continuations, quotes, escapes, and underscores, which spell a word or a zsh option without writing it plainly.
 SPELLING = re.compile(r"\\\n|[\\'\"_]")
+# Text eval or trap runs that may read or replace a function's arguments, at any depth of eval, once unquoted.
+ARGUMENT_TEXT = re.compile(r"[$`]|(?<![\w-])(?:shift|set|getopts|read|mapfile|readarray|vared|source|\.)(?![\w-])")
+# Quotes, escapes, braces, and glob characters, which spell a word in code text without writing it plainly.
+CODE_SPELLING = re.compile(r"[\\'\"{},?*\[\]]")
 # An input redirection, with the descriptor it replaces; only descriptor 0 is the shell's script.
 INPUT_REDIRECTION = re.compile(r"(\d*)(<<<|<<|<&|<>|<(?!\())")
 
@@ -253,3 +257,26 @@ def runs_unseen(call: dict, data: bytes) -> bool:
         if not _passes_over(value):
             return False
     return False
+
+
+def unpassed(scripts: list[str], passed: tuple[str, ...]) -> list[str]:
+    """The scripts a shell runs, unless one may read the arguments the shell is handed after them.
+
+    Raises:
+        UnsupportedSyntaxError: A script reads arguments that the nested judgement cannot see.
+    """
+    if passed and any(ARGUMENT_TEXT.search(CODE_SPELLING.sub("", script)) for script in scripts):
+        raise UnsupportedSyntaxError(
+            "running a shell script that reads arguments passed to it requires explicit review"
+        )
+    return scripts
+
+
+def operands(arguments: tuple[str, ...]) -> tuple[str, ...]:
+    """The words a shell takes as arguments: from its first non-option word, or after a - or -- ending options."""
+    for index, argument in enumerate(arguments[1:], 1):
+        if argument in {"-", "--"}:
+            return arguments[index + 1 :]
+        if argument[:1] not in {"-", "+"}:
+            return arguments[index:]
+    return ()

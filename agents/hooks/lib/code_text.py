@@ -3,8 +3,10 @@
 import re
 import secrets
 from collections.abc import Callable
+from pathlib import Path
 
 from shell_words import UnsupportedSyntaxError, nodes
+from shell_wrappers import wrapped_index
 
 # bash and zsh parameters whose elements define an alias or a function, or the file a command name runs.
 CODE_PARAMETERS = frozenset(
@@ -92,19 +94,17 @@ def names_code_parameter(arguments: tuple[str, ...], dynamic: tuple[bool, ...]) 
 def _imports_function(arguments: tuple[str, ...], dynamic: tuple[bool, ...]) -> bool:
     """Whether env or sudo may hand a child a function: a BASH_FUNC_ word, or a name built at run time.
 
-    Only the words before the program are environment words; the program's own arguments are not.
+    Only the words before the program, as the wrapper's own options place it, are environment words.
     """
-    if arguments[0] not in ENVIRONMENT_SETTERS:
+    if Path(arguments[0]).name not in ENVIRONMENT_SETTERS:
         return False
     if any(IMPORTED_FUNCTION in argument for argument in arguments[1:]):
         return True
-    for argument, computed in zip(arguments[1:], dynamic[1:], strict=True):
-        named = re.match(r"[A-Za-z_]\w*=", argument) is not None
-        if computed and not named:
-            return True
-        if not named and argument[:1] != "-":
-            return False
-    return False
+    end = wrapped_index(arguments, dynamic) or len(arguments)
+    return any(
+        computed and re.match(r"[A-Za-z_]\w*=", argument) is None
+        for argument, computed in zip(arguments[1:end], dynamic[1:end], strict=True)
+    )
 
 
 def _names_by(arguments: tuple[str, ...], index: int) -> bool:

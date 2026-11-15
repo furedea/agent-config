@@ -44,8 +44,6 @@ CALLBACK_TAKERS = frozenset(
 HOOK_VARIABLES = re.compile(r"PROMPT_COMMAND|(?:precmd|preexec|chpwd|periodic|zshexit|zshaddhistory)_functions")
 # Words before a builtin that still run it, as in builtin shift, command -p shift, or zsh's noglob shift.
 BUILTIN_PREFIXES = frozenset({"builtin", "command", "noglob", "nocorrect", "-"})
-# Text eval or trap runs that may read or replace a function's arguments, at any depth of eval, once unquoted.
-ARGUMENT_TEXT = re.compile(r"[$`]|(?<![\w-])(?:shift|set|getopts|read|mapfile|readarray|vared|source|\.)(?![\w-])")
 # Quotes, escapes, braces, and glob characters, which spell a name without writing it plainly.
 SPELLING = re.compile(r"[\\'\"{},?*\[\]]")
 # Builtins that may assign a variable named only at run time, or run code that does.
@@ -116,29 +114,6 @@ def respelled_calls(records: tuple[dict, ...], data: bytes) -> list[str]:
         for body in [] if dynamic else bodies.get(name, []):
             respelled += _body_respellings(body, words, data)
     return respelled
-
-
-def unpassed(scripts: list[str], passed: tuple[str, ...]) -> list[str]:
-    """The scripts a shell runs, unless one may read the arguments the shell is handed after them.
-
-    Raises:
-        UnsupportedSyntaxError: A script reads arguments that the nested judgement cannot see.
-    """
-    if passed and any(ARGUMENT_TEXT.search(SPELLING.sub("", script)) for script in scripts):
-        raise UnsupportedSyntaxError(
-            "running a shell script that reads arguments passed to it requires explicit review"
-        )
-    return scripts
-
-
-def operands(arguments: tuple[str, ...]) -> tuple[str, ...]:
-    """The words a shell takes as arguments: from its first non-option word, or after a - or -- ending options."""
-    for index, argument in enumerate(arguments[1:], 1):
-        if argument in {"-", "--"}:
-            return arguments[index + 1 :]
-        if argument[:1] not in {"-", "+"}:
-            return arguments[index:]
-    return ()
 
 
 def _modifier_count(call: dict, data: bytes) -> int:
@@ -221,7 +196,14 @@ def _defined_name(definition: dict) -> str:
 def _followed(body: dict, records: tuple[dict, ...], data: bytes) -> dict:
     """The body, once it is known to read its arguments only plainly, directly or through a plain copy."""
     copies = _copies(body)
-    reading = [node for node in _assignments(body) if any(_reads(part, copies) for part in nodes(node["Value"]))]
+    # Any assignment that reads the arguments, an array or an element among them, unless it is a plain copy.
+    reading = [
+        node
+        for node in nodes(body)
+        if "Type" not in node
+        and isinstance(node.get("Name"), dict)
+        and any(_reads(part, copies) for key, value in node.items() if key != "Name" for part in nodes(value))
+    ]
     unfollowed = (
         any(
             part.get("Type") == "ParamExp"
@@ -242,7 +224,10 @@ def _followed(body: dict, records: tuple[dict, ...], data: bytes) -> dict:
         or any(_runs_unseen(call, copies, data) for call in _calls(body, data))
         or any(_iterates_arguments(node, copies) for node in nodes(body) if node.get("Type") == "WordIter")
         or any(_reassigns(_program(call, data)) for call in _calls(body, data))
-        or any(_copied(node) is None for node in reading)
+        or any(
+            not isinstance(node.get("Value"), dict) or node.get("Array") or node.get("Index") or _copied(node) is None
+            for node in reading
+        )
         or _reassigned(copies, records, data)
         or not _attributed(body, data).isdisjoint(copies)
         or _leaks(body, records, data)
@@ -323,7 +308,7 @@ def _reassigns(words: list[str]) -> bool:
     ):
         return True
     if program in {"eval", "trap"}:
-        return bool(ARGUMENT_TEXT.search(SPELLING.sub("", " ".join(arguments))))
+        return bool(shell_input.ARGUMENT_TEXT.search(SPELLING.sub("", " ".join(arguments))))
     return program == "set" and any(word[:1] not in {"-", "+"} or word == "--" for word in arguments)
 
 

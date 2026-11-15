@@ -213,7 +213,7 @@ def parse(source: str, depth: int = 0, directories: tuple[Path | None, ...] = ()
         if (name in SHELLS and not scripts) or _is_foreign_shell(name):
             read = partial(sources.scripts, owner, reachable)
             inputs = shell_input.input_scripts(read, tolerant=bool(scripts) or name not in SHELLS)
-            inputs = function_calls.unpassed(inputs or [], function_calls.operands(innermost.arguments)) or inputs
+            inputs = shell_input.unpassed(inputs or [], shell_input.operands(innermost.arguments)) or inputs
             scripts += [(script, innermost.wrapper_depth + 1) for script in inputs or []]
             unreviewed = unreviewed or (name not in SHELLS and inputs != [])
         if name == "fish":
@@ -418,7 +418,7 @@ def shell_scripts(command: Command) -> list[str]:
     script = script_index(arguments, option)
     if command.dynamic[script]:
         raise UnsupportedSyntaxError("a shell wrapper running a computed script requires explicit review", "wrapper")
-    return function_calls.unpassed([arguments[script]], arguments[script + 1 :])
+    return shell_input.unpassed([arguments[script]], arguments[script + 1 :])
 
 
 def _is_foreign_shell(executable: str) -> bool:

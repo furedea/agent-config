@@ -136,6 +136,25 @@ rule:
             kind: expression_statement
             has:
               matches: anyio_pytestmark
+      - all:
+          - inside:
+              kind: module
+              stopBy: end
+              has:
+                pattern: import pytest as $ALIAS
+          - inside:
+              stopBy: end
+              any:
+                - kind: module
+                  has:
+                    kind: expression_statement
+                    regex: (?s)^pytestmark\s*=.*\w+\.mark\.usefixtures\(.*["']anyio_backend["']
+                - kind: class_definition
+                  has:
+                    kind: block
+                    has:
+                      kind: expression_statement
+                      regex: (?s)^pytestmark\s*=.*\w+\.mark\.usefixtures\(.*["']anyio_backend["']
       - inside:
           kind: class_definition
           stopBy: end

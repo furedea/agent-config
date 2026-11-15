@@ -1,6 +1,7 @@
 """rm runs unprompted inside the worktree and the session's temporary directories; elsewhere it asks."""
 
 import os
+import subprocess
 import tempfile
 from pathlib import Path
 
@@ -297,13 +298,6 @@ def test_an_inherited_shell_function_asks(git_project: Path, monkeypatch: pytest
     assert judged(git_project, "echo hi && rm scratch.txt") == "ask"
 
 
-def test_a_git_found_in_a_directory_the_session_writes_asks(
-    git_project: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    use_own_program(git_project / ".venv" / "bin", monkeypatch, "git")
-    assert judged(git_project, "rm scratch.txt") == "ask"
-
-
 def test_a_path_directory_linked_to_a_system_directory_asks(
     git_project: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -312,12 +306,12 @@ def test_a_path_directory_linked_to_a_system_directory_asks(
     assert judged(git_project, "rm scratch.txt") == "ask"
 
 
-@pytest.mark.parametrize("name", ["GIT_WORK_TREE", "GIT_DIR"])
-def test_an_inherited_git_location_asks(git_project: Path, monkeypatch: pytest.MonkeyPatch, name: str) -> None:
-    monkeypatch.setenv(name, "/")
-    assert judged(git_project, "rm scratch.txt") == "ask"
-
-
 @pytest.mark.parametrize("command", ["rm {x,~/.zshrc}", "rm a{,/../../../../etc/hosts}", "rm {a,b}.txt"])
 def test_an_operand_brace_expansion_can_spread_asks(git_project: Path, command: str) -> None:
     assert judged(git_project, command) == "ask"
+
+
+def test_a_git_worktree_setting_cannot_widen_the_worktree(git_project: Path) -> None:
+    subprocess.run(["git", "config", "core.worktree", "/"], cwd=git_project, check=True)
+    assert judged(git_project, "rm /etc/hosts") == "ask"
+    assert judged(git_project, "rm scratch.txt") == "allow"

@@ -19,7 +19,6 @@ ROOT_UID = 0
 NIX_STORE = Path("/nix/store")
 EXPORTED_FUNCTION_PREFIX = "BASH_FUNC_"
 STARTUP_FILE_VARIABLES = ("BASH_ENV", "ENV")
-GIT_LOCATION_VARIABLES = ("GIT_DIR", "GIT_WORK_TREE", "GIT_COMMON_DIR")
 WRITABLE_BY_OTHERS = stat.S_IWGRP | stat.S_IWOTH
 # Directories trusted besides root-owned ones; tests stand one in for a system directory.
 TRUSTED_DIRECTORIES: frozenset[Path] = frozenset()
@@ -33,11 +32,6 @@ def inherits_shell_functions() -> bool:
     """
     exported = any(name.startswith(EXPORTED_FUNCTION_PREFIX) for name in os.environ)
     return exported or any(os.environ.get(name) for name in STARTUP_FILE_VARIABLES)
-
-
-def inherits_git_location() -> bool:
-    """Whether git inherits variables that make even the system git report another repository or worktree."""
-    return any(os.environ.get(name) for name in GIT_LOCATION_VARIABLES)
 
 
 def is_system_program(word: str) -> bool:

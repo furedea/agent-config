@@ -345,14 +345,6 @@ def test_a_system_uv_configuration_that_adds_a_source_asks(
     assert judged(git_project, "uv add httpx", "allowed") == "ask"
 
 
-@pytest.mark.parametrize("name", ["GIT_WORK_TREE", "GIT_DIR"])
-def test_an_inherited_git_location_before_uv_asks(
-    git_project: Path, monkeypatch: pytest.MonkeyPatch, name: str
-) -> None:
-    monkeypatch.setenv(name, "/")
-    assert judged(git_project, "uv add httpx", "allowed") == "ask"
-
-
 def test_the_default_system_configuration_directory_is_read(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("XDG_CONFIG_DIRS", raising=False)
     assert Path("/etc/xdg/uv/uv.toml") in dependency_settings._system_settings()
@@ -385,3 +377,18 @@ def test_an_explicitly_false_variable_is_not_denied(git_project: Path) -> None:
 def test_an_inherited_global_variable_is_denied(git_project: Path, monkeypatch: pytest.MonkeyPatch, name: str) -> None:
     monkeypatch.setenv(name, "true")
     assert judged(git_project, "pnpm add cowsay", "allowed") == "deny"
+
+
+@pytest.mark.parametrize("command", ["pnpm add --global=false cowsay", "pnpm add -g=false cowsay"])
+def test_an_explicitly_false_global_flag_is_not_denied(git_project: Path, command: str) -> None:
+    assert judged(git_project, command, "forbidden") == "allow"
+
+
+@pytest.mark.parametrize("setting", ["global=maybe", "global", "global = 'yes'"])
+def test_a_pnpm_global_setting_that_is_not_false_is_denied(git_project: Path, setting: str) -> None:
+    (git_project / ".npmrc").write_text(setting + "\n")
+    assert judged(git_project, "pnpm add cowsay", "allowed") == "deny"
+
+
+def test_an_unknown_global_variable_value_is_denied(git_project: Path) -> None:
+    assert judged(git_project, "npm_config_global=maybe pnpm add cowsay", "allowed") == "deny"

@@ -16,7 +16,7 @@ from pathlib import Path
 
 import command_policy
 import hook_decision
-import session_snapshot
+import removal_paths
 import shell_inspection
 import shell_syntax
 import system_programs
@@ -62,9 +62,10 @@ MINIMUM_AGE = timedelta(days=7)
 SPAN = re.compile(r"(?P<count>\d+)\s*(?P<unit>weeks?|days?)|p(?P<iso_count>\d+)(?P<iso_unit>[wd])")
 ENVIRONMENT_PREFIX = "UV_"
 # pnpm's global setting, from the environment or a settings file it reads.
-TRUTHY = r"(true|1|yes|on)"
-PNPM_GLOBAL_VARIABLE = re.compile(rf"npm_config_global\s*=\s*[\"']?{TRUTHY}\b", re.IGNORECASE)
-PNPM_GLOBAL_SETTING = re.compile(rf"^\s*global\s*[=:]\s*[\"']?{TRUTHY}\b", re.MULTILINE | re.IGNORECASE)
+# Values pnpm reads as off; every other value, or none, may turn the setting on.
+FALSY = frozenset({"false", "0", "null", "undefined"})
+PNPM_GLOBAL_VARIABLE = re.compile(r"npm_config_global\s*=\s*(?P<value>\S*)", re.IGNORECASE)
+PNPM_GLOBAL_SETTING = re.compile(r"^\s*global\s*(?:[=:]\s*(?P<value>.*?))?\s*$", re.MULTILINE | re.IGNORECASE)
 PNPM_GLOBAL_ENVIRONMENT = "npm_config_global"
 PNPM_SETTINGS = (".npmrc", "pnpm-workspace.yaml")
 DEFAULT_SYSTEM_CONFIG = "/etc/xdg"
@@ -174,9 +175,8 @@ def _project_reason(payload: dict) -> str:
     if not isinstance(cwd, str) or not Path(cwd).is_absolute():
         return "runs from an unknown working directory"
     directory = Path(cwd).resolve()
-    try:
-        root = session_snapshot.repository_root(directory)
-    except session_snapshot.SnapshotError:
+    root = removal_paths.worktree_root(directory)
+    if root is None:
         return "runs outside a repository"
     for folder in (directory, *directory.parents):
         found = [folder / name for name in PROJECT_SETTINGS if (folder / name).exists()]
@@ -227,12 +227,7 @@ def _overrides(path: Path) -> bool:
 
 
 def _program_reason(changes: list[shell_syntax.Command]) -> str:
-    """A uv found in a directory the session writes could drop the limit before it runs the real one.
-
-    git finds the worktree the project checks rely on, so it must be a system program too.
-    """
-    if not system_programs.is_system_program("git") or system_programs.inherits_git_location():
-        return "runs where git, which finds the worktree, does not resolve to a root-owned system program"
+    """A uv found in a directory the session writes could drop the limit before it runs the real one."""
     program = next(
         (item.arguments[0] for item in changes if not system_programs.is_system_program(item.arguments[0])), ""
     )
@@ -307,11 +302,8 @@ def _is_pnpm_add(item: shell_syntax.Command) -> bool:
 
 def _pnpm_global_source(payload: dict, command: str) -> str:
     """What turns pnpm's global setting on: a variable in the command or a settings file pnpm reads."""
-    inherited = any(
-        name.casefold() == PNPM_GLOBAL_ENVIRONMENT and re.fullmatch(TRUTHY, value.strip(), re.IGNORECASE)
-        for name, value in os.environ.items()
-    )
-    if inherited or PNPM_GLOBAL_VARIABLE.search(command):
+    inherited = any(name.casefold() == PNPM_GLOBAL_ENVIRONMENT and _is_on(value) for name, value in os.environ.items())
+    if inherited or any(_is_on(match["value"]) for match in PNPM_GLOBAL_VARIABLE.finditer(command)):
         return "npm_config_global"
     cwd = payload.get("cwd")
     directory = Path(cwd).resolve() if isinstance(cwd, str) and Path(cwd).is_absolute() else Path.cwd()
@@ -323,9 +315,15 @@ def _pnpm_global_source(payload: dict, command: str) -> str:
 
 def _sets_pnpm_global(path: Path) -> bool:
     try:
-        return bool(PNPM_GLOBAL_SETTING.search(path.read_text(errors="replace")))
+        text = path.read_text(errors="replace")
     except OSError:
         return False
+    return any(_is_on(match["value"] or "true") for match in PNPM_GLOBAL_SETTING.finditer(text))
+
+
+def _is_on(value: str) -> bool:
+    """Whether a pnpm setting value may be on: anything but a value pnpm reads as off, quotes removed."""
+    return value.strip().strip("\"'").casefold() not in FALSY
 
 
 def _is_dependency_call(item: shell_syntax.Command) -> bool:

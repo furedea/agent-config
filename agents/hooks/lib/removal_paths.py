@@ -13,7 +13,6 @@ from pathlib import Path
 import automation_paths
 import command_policy
 import hook_decision
-import session_snapshot
 import shell_inspection
 import shell_syntax
 import system_programs
@@ -62,11 +61,10 @@ def objection(payload: dict, command: str, commands: tuple[shell_syntax.Command,
             PROGRAM,
         )
     programs = [item.arguments[0] for item in commands if not _runs_a_system_program(item)]
-    trusted_git = system_programs.is_system_program("git") and not system_programs.inherits_git_location()
-    if program := next(iter(programs), "") or ("" if trusted_git else "git"):
+    if program := next(iter(programs), ""):
         return hook_decision.ask(
             f"Needs review: '{program}' does not resolve to a system program, so it may not be the program the "
-            f"guard judged, or git may report another worktree.\n\nCommand: {preview}",
+            f"guard judged.\n\nCommand: {preview}",
             PROGRAM,
         )
     directory = automation_paths.working_directory(payload)
@@ -79,11 +77,17 @@ def objection(payload: dict, command: str, commands: tuple[shell_syntax.Command,
 
 def _writable_roots(directory: Path) -> tuple[Path, ...]:
     """The worktree holding the directory, if any, and the session's own temporary directories."""
-    try:
-        worktree: tuple[Path, ...] = (session_snapshot.repository_root(directory),)
-    except session_snapshot.SnapshotError:
-        worktree = ()
-    return worktree + _session_temporary_roots()
+    root = worktree_root(directory)
+    return (() if root is None else (root,)) + _session_temporary_roots()
+
+
+def worktree_root(directory: Path) -> Path | None:
+    """The nearest directory at or above `directory` that holds a `.git` entry.
+
+    Git's own answer follows settings such as core.worktree that a session can change, so the
+    filesystem decides instead; a `.git` the session plants lower only narrows the root.
+    """
+    return next((folder for folder in (directory, *directory.parents) if os.path.lexists(folder / ".git")), None)
 
 
 def _session_temporary_roots() -> tuple[Path, ...]:

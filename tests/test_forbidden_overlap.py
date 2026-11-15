@@ -40,7 +40,9 @@ HERDR = r"^herdr[[:space:]]+agent[[:space:]]+start([[:space:]].*)?[[:space:]]--(
 CARGO = "^cargo mutants .*--in-place"
 MUTMUT = "^uv run .*mutmut apply"
 STRYKER = "^pnpm exec stryker .*--inPlace"
-PNPM_GLOBAL_FLAG = "(-[A-Za-z]*g[A-Za-z]*(=[^ ]*)?|--(config\\.)?(g|gl|glo|glob[a-z-]*)(=[^ ]*)?)"
+PNPM_GLOBAL_FLAG = (
+    "(-[A-Za-z]*g[A-Za-z]*(=(true|1|yes|on))?|--(config\\.)?(g|gl|glo|glob[a-z-]*)(=(true|1|yes|on|[^ft ][^ ]*))?)"
+)
 PNPM_OPTIONS = "^pnpm( -[^ ]+( [^ -][^ ]*)?)*"
 PNPM_GLOBAL = PNPM_OPTIONS + " add( .*)? " + PNPM_GLOBAL_FLAG + "( |$)"
 PNPM_GLOBAL_FIRST = PNPM_OPTIONS + " " + PNPM_GLOBAL_FLAG + "( [^ ]+)*? add( |$)"

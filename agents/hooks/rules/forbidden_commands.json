@@ -46,8 +46,8 @@
         "uv"
       ],
       "patterns": [
-        "^pnpm( -[^ ]+( [^ -][^ ]*)?)* add( .*)? (-[A-Za-z]*g[A-Za-z]*(=[^ ]*)?|--(config\\.)?glob[a-z-]*(=[^ ]*)?)( |$)",
-        "^pnpm( -[^ ]+( [^ -][^ ]*)?)* (-[A-Za-z]*g[A-Za-z]*(=[^ ]*)?|--(config\\.)?glob[a-z-]*(=[^ ]*)?)( [^ ]+)*? add( |$)",
+        "^pnpm( -[^ ]+( [^ -][^ ]*)?)* add( .*)? (-[A-Za-z]*g[A-Za-z]*(=[^ ]*)?|--(config\\.)?(g|gl|glo|glob[a-z-]*)(=[^ ]*)?)( |$)",
+        "^pnpm( -[^ ]+( [^ -][^ ]*)?)* (-[A-Za-z]*g[A-Za-z]*(=[^ ]*)?|--(config\\.)?(g|gl|glo|glob[a-z-]*)(=[^ ]*)?)( [^ ]+)*? add( |$)",
         "^uv add( .*)? --dev( |$)"
       ],
       "justification": "Nix owns globally installed tools, and dependencies go into named groups instead of the legacy dev group; the deny prefixes catch these flags only right after the subcommand, and pnpm also takes any abbreviation of --global, a value, or the config. form."

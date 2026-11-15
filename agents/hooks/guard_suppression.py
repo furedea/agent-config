@@ -130,14 +130,18 @@ def _adds(name: str, pattern: re.Pattern[str], change: _Change) -> bool:
     return bool(Counter(added) - Counter(removed))
 
 
-def _marked_text(pattern: re.Pattern[str], text: str, openers: tuple[str, ...]) -> list[str]:
-    """Each marker's comment from its opener on, or the whole line when the marker is not inside a comment."""
-    marked = []
-    for line in _lines(text):
-        if match := pattern.search(line):
-            start = _comment_start(line, openers)
-            marked.append(line[start:].strip() if start is not None and start <= match.start() else line.strip())
-    return marked
+def _marked_text(pattern: re.Pattern[str], text: str, openers: tuple[str, ...]) -> list[tuple[bool, str]]:
+    """Whether each marker is inside a comment, with the comment from its opener on or else the whole line."""
+    return [marked for line in _lines(text) if (marked := _marked_line(pattern, line, openers)) is not None]
+
+
+def _marked_line(pattern: re.Pattern[str], line: str, openers: tuple[str, ...]) -> tuple[bool, str] | None:
+    if (match := pattern.search(line)) is None:
+        return None
+    start = _comment_start(line, openers)
+    if start is None or start > match.start():
+        return False, line.strip()
+    return True, line[start:].strip()
 
 
 def _comment_openers(suffix: str) -> tuple[str, ...]:
@@ -247,13 +251,30 @@ class _Hunks:
 
 
 def _newly_honored(text: str, source: str, destination: str) -> str:
-    """The lines of a moved file with a marker that the destination suffix honors and the source suffix did not."""
+    """The lines of a moved file whose markers may take effect only at the destination.
+
+    These are markers the source suffix did not honor, and ast-grep markers that only the destination's comment syntax
+    reads as a comment, such as a Go line starting with `#` that becomes a Python comment.
+    """
     honored = [
         pattern
         for name, pattern in MARKERS.items()
         if destination in (suffixes := MARKER_SUFFIXES.get(name, CODE_SUFFIXES)) and source not in suffixes
     ]
-    return "\n".join(line for line in _lines(text) if any(pattern.search(line) for pattern in honored))
+    return "\n".join(
+        line
+        for line in _lines(text)
+        if any(pattern.search(line) for pattern in honored) or _becomes_comment(line, source, destination)
+    )
+
+
+def _becomes_comment(line: str, source: str, destination: str) -> bool:
+    """Whether an ast-grep marker on the line is in a comment at the destination that the source did not read so."""
+    if source == destination or destination not in MARKER_SUFFIXES["ast-grep-ignore"]:
+        return False
+    pattern = MARKERS["ast-grep-ignore"]
+    after = _marked_line(pattern, line, _comment_openers(destination))
+    return after is not None and after[0] and after != _marked_line(pattern, line, _comment_openers(source))
 
 
 def _holds_ast_grep_marker(text: str) -> bool:

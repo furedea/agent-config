@@ -161,9 +161,17 @@ def test_moving_a_file_between_extensions_where_its_markers_already_apply_passes
     assert decide("apply_patch", {"input": patch}) == "allow"
 
 
-def test_moving_an_ast_grep_marker_between_code_extensions_passes(tmp_path: Path) -> None:
-    source = tmp_path / "tool.py"
-    source.write_text("x = 1\n# ast-grep-ignore: rule_a\nbad()\n")
+@pytest.mark.parametrize(
+    "source_name,text",
+    [
+        ("tool.ts", "x()\n// ast-grep-ignore: rule_a\nbad()\n"),
+        ("tool.py", "x = 1\n# ast-grep-ignore: rule_a\nbad()\n"),
+    ],
+    ids=["a comment in both", "not a comment at the destination"],
+)
+def test_moving_an_ast_grep_marker_between_code_extensions_passes(tmp_path: Path, source_name: str, text: str) -> None:
+    source = tmp_path / source_name
+    source.write_text(text)
     patch = f"*** Begin Patch\n*** Update File: {source}\n*** Move to: {tmp_path / 'tool.go'}\n*** End Patch"
     assert decide("apply_patch", {"input": patch}) == "allow"
 
@@ -179,3 +187,20 @@ def test_editing_code_with_an_escaped_quote_beside_an_unchanged_marker_passes(tm
     target = tmp_path / "app.py"
     target.write_text('x = "a\\"b"  # ast-grep-ignore: rule_a\n')
     assert decide("Edit", {"file_path": str(target), "old_string": "x =", "new_string": "y ="}) == "allow"
+
+
+@pytest.mark.parametrize(
+    "source_name,text,destination_name",
+    [
+        ("tool.go", "# ast-grep-ignore\nbad()\n", "tool.py"),
+        ("tool.py", 'DOC = """\n// ast-grep-ignore\n"""\n', "tool.go"),
+    ],
+    ids=["not a comment in Go, a comment in Python", "inside a Python string, a comment in Go"],
+)
+def test_a_move_that_turns_an_inert_marker_into_a_comment_asks(
+    tmp_path: Path, source_name: str, text: str, destination_name: str
+) -> None:
+    source = tmp_path / source_name
+    source.write_text(text)
+    patch = f"*** Begin Patch\n*** Update File: {source}\n*** Move to: {tmp_path / destination_name}\n*** End Patch"
+    assert decide("apply_patch", {"input": patch}) == "ask"

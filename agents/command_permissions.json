@@ -2109,7 +2109,7 @@
         "uv",
         "add"
       ],
-      "justification": "Allow dependency changes; they rewrite manifests and lock files Git restores, any build or install script they run stays inside the sandbox, and the package-age limits still apply."
+      "justification": "Allow uv dependency changes; the user's uv configuration refuses versions younger than a week, and the command guard asks when the command or project overrides that limit."
     },
     {
       "decision": "allow",
@@ -2118,7 +2118,7 @@
         "lock",
         "--upgrade-package"
       ],
-      "justification": "Allow dependency changes; they rewrite manifests and lock files Git restores, any build or install script they run stays inside the sandbox, and the package-age limits still apply."
+      "justification": "Allow uv dependency changes; the user's uv configuration refuses versions younger than a week, and the command guard asks when the command or project overrides that limit."
     },
     {
       "decision": "allow",
@@ -2127,7 +2127,7 @@
         "lock",
         "--upgrade"
       ],
-      "justification": "Allow dependency changes; they rewrite manifests and lock files Git restores, any build or install script they run stays inside the sandbox, and the package-age limits still apply."
+      "justification": "Allow uv dependency changes; the user's uv configuration refuses versions younger than a week, and the command guard asks when the command or project overrides that limit."
     },
     {
       "decision": "ask",
@@ -2146,45 +2146,45 @@
       "justification": "Ask before running scripts or fetched packages that policy cannot inspect."
     },
     {
-      "decision": "allow",
+      "decision": "ask",
       "prefix": [
         "cargo",
         "add"
       ],
-      "justification": "Allow dependency changes; they rewrite manifests and lock files Git restores, any build or install script they run stays inside the sandbox, and the package-age limits still apply."
+      "justification": "Ask before changing dependencies that no package-age limit guards; a version published minutes ago could be malicious."
     },
     {
-      "decision": "allow",
+      "decision": "ask",
       "prefix": [
         "cargo",
         "update"
       ],
-      "justification": "Allow dependency changes; they rewrite manifests and lock files Git restores, any build or install script they run stays inside the sandbox, and the package-age limits still apply."
+      "justification": "Ask before changing dependencies that no package-age limit guards; a version published minutes ago could be malicious."
     },
     {
-      "decision": "allow",
+      "decision": "ask",
       "prefix": [
         "go",
         "get"
       ],
-      "justification": "Allow dependency changes; they rewrite manifests and lock files Git restores, any build or install script they run stays inside the sandbox, and the package-age limits still apply."
+      "justification": "Ask before changing dependencies that no package-age limit guards; a version published minutes ago could be malicious."
     },
     {
-      "decision": "allow",
+      "decision": "ask",
       "prefix": [
         "go",
         "mod",
         "tidy"
       ],
-      "justification": "Allow dependency changes; they rewrite manifests and lock files Git restores, any build or install script they run stays inside the sandbox, and the package-age limits still apply."
+      "justification": "Ask before changing dependencies that no package-age limit guards; a version published minutes ago could be malicious."
     },
     {
-      "decision": "allow",
+      "decision": "ask",
       "prefix": [
         "pnpm",
         "add"
       ],
-      "justification": "Allow dependency changes; they rewrite manifests and lock files Git restores, any build or install script they run stays inside the sandbox, and the package-age limits still apply."
+      "justification": "Ask before changing dependencies that no package-age limit guards; a version published minutes ago could be malicious."
     },
     {
       "decision": "ask",
@@ -2195,13 +2195,13 @@
       "justification": "Ask before changing dependencies or lock files; the request should name the change."
     },
     {
-      "decision": "allow",
+      "decision": "ask",
       "prefix": [
         "nix",
         "flake",
         "update"
       ],
-      "justification": "Allow dependency changes; they rewrite manifests and lock files Git restores, any build or install script they run stays inside the sandbox, and the package-age limits still apply."
+      "justification": "Ask before changing dependencies that no package-age limit guards; a version published minutes ago could be malicious."
     },
     {
       "decision": "allow",

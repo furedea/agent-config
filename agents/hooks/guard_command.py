@@ -162,7 +162,7 @@ def whole_command_objection(command: str, payload: dict, commands: tuple[shell_s
         lambda: automation_options.objection(commands),
         lambda: automation_paths.objection(payload, commands),
         lambda: removal_paths.objection(payload, commands),
-        lambda: dependency_settings.objection(command, commands),
+        lambda: dependency_settings.objection(payload, command, commands),
         lambda: command_objections.settings_objection(command, commands),
     )
     return next((verdict for check in checks if (verdict := check()).decision != "allow"), hook_decision.ALLOW)

@@ -162,12 +162,10 @@
         "^go list( |$)",
         "^go version( |$)",
         "^go mod download( |$)",
-        "^go mod tidy( |$)",
-        "^go get( |$)",
         "^go env( -json| -changed| [A-Z][A-Za-z0-9_]*)*$",
         "^go run( [^@ ]+)*$"
       ],
-      "justification": "Allow local Go builds, verification, inspection, and dependency changes in go.mod; go env -w and -u change user-level Go configuration, and go run pkg@version fetches and executes a remote module the project's go.mod does not pin, so those forms ask."
+      "justification": "Allow local Go builds, verification, and inspection; go env -w and -u change user-level Go configuration, and go run pkg@version fetches and executes a remote module the project's go.mod does not pin, so those forms ask."
     },
     {
       "programs": [

@@ -214,10 +214,12 @@ Without the items, the hook reports `Model rules skipped` at every Stop and does
 - The provider's own `ask` prefixes are kept for commands that widen authority (fetched or
     unpinned code, containers, other people's workspaces, outside hosts) or promote work and cannot be
     undone (merge, release, stash drop, remote changes, signals, the Herdr server); an `ask` rule still
-    prompts in Claude Code's auto mode. Dependency changes run unprompted, except beside an
-    assignment, `env`, `export`, or a sourced file, whose settings could install outside the
-    project, or with an option naming another project (`--dir`, `--project`, `--manifest-path`, `-C`,
-    `--flake`, ...); global flags (`pnpm add -g` in any spelling, `uv add --dev`) are denied wherever they sit.
+    prompts in Claude Code's auto mode. `uv add` and `uv lock --upgrade` run unprompted, because the
+    user's uv configuration refuses versions younger than a week; they ask when an option, an
+    assignment, `env`, `export`, a sourced file, another program in the command, or the project's own
+    `exclude-newer` could lift that limit or point uv elsewhere. Dependency changes that no age limit
+    guards (`pnpm add`, `cargo add`, `cargo update`, `go get`, `go mod tidy`, `nix flake update`)
+    ask. Global flags (`pnpm add -g` in any spelling, `uv add --dev`) are denied wherever they sit.
 - `rm` runs unprompted for files inside the worktree and the session's own temporary directories
     (named by `TMPDIR` or `CLAUDE_TMPDIR`, never a shared `/tmp`, `/var/tmp`, or macOS's per-user
     temporary directory). The command guard asks for Git metadata, any other

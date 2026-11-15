@@ -148,6 +148,12 @@ def test_docker_catch_all_is_a_hook_rule_because_a_prefix_ask_would_override_the
 # work or cannot be undone. Every other external effect stays inside the session's grant and runs.
 WIDENING_AUTHORITY = {
     ("uv", "run", "--with"),
+    ("pnpm", "add"),
+    ("cargo", "add"),
+    ("cargo", "update"),
+    ("go", "get"),
+    ("go", "mod", "tidy"),
+    ("nix", "flake", "update"),
     ("uvx",),
     ("npm", "install"),
     ("nix", "run"),
@@ -191,12 +197,6 @@ WITHIN_THE_GRANT = [
     ("uv", "add"),
     ("uv", "lock", "--upgrade-package"),
     ("uv", "lock", "--upgrade"),
-    ("cargo", "add"),
-    ("cargo", "update"),
-    ("go", "get"),
-    ("go", "mod", "tidy"),
-    ("pnpm", "add"),
-    ("nix", "flake", "update"),
     ("rm",),
 ]
 
@@ -291,18 +291,22 @@ GO_ALLOW = [
     "golangci-lint run",
     "golangci-lint fmt",
     "govulncheck",
-    "go mod tidy",
-    "go get",
 ]
+GO_ASK = ["go mod tidy", "go get"]
 
 
 @pytest.mark.parametrize("prefix", GO_ALLOW)
-def test_go_builds_verification_inspection_and_dependency_changes_are_allowed(
-    generated_permissions: dict, prefix: str
-) -> None:
+def test_go_builds_verification_and_inspection_are_allowed(generated_permissions: dict, prefix: str) -> None:
     assert tuple(prefix.split()) in ALLOW
     assert prefix in bash_prefixes(generated_permissions, "allow")
     assert prefix not in bash_prefixes(generated_permissions, "ask")
+
+
+@pytest.mark.parametrize("prefix", GO_ASK)
+def test_go_dependency_changes_require_approval(generated_permissions: dict, prefix: str) -> None:
+    assert tuple(prefix.split()) in ASK
+    assert tuple(prefix.split()) not in ALLOW
+    assert prefix in bash_prefixes(generated_permissions, "ask")
 
 
 def test_go_install_stays_denied() -> None:

@@ -225,12 +225,12 @@ def unknown_references(adrs: list[Adr]) -> list[Finding]:
 
 
 def unsuperseded_adrs(adrs: list[Adr]) -> list[Finding]:
-    """Report an ADR that names its replacement in `Superseded by` but whose own Status is not `Superseded`."""
+    """Report an ADR that names a replacement in `Superseded by` but is not `Superseded`."""
     return [
-        Finding(adr.path, line, f"Superseded by ADR-{identifier} requires `- Status: Superseded`.")
+        Finding(adr.path, line, "Superseded by requires `- Status: Superseded`.")
         for adr in adrs
-        for line, identifier in adr.references("Superseded by")
-        if "Superseded" not in adr.values("Status")
+        for line, name, value in adr.metadata
+        if name == "Superseded by" and REFERENCE.search(value) and "Superseded" not in adr.values("Status")
     ]
 
 

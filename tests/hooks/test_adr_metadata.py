@@ -191,7 +191,7 @@ def test_deleting_an_adr_reports_references_that_now_dangle(adr_directory: Path)
 
 def test_superseded_by_requires_superseded_status(adr_directory: Path) -> None:
     write_adr(adr_directory, "0001_first_decision.md", extra="- Superseded by: ADR-0002\n")
-    assert "Superseded by ADR-0002 requires `- Status: Superseded`" in messages(adr_directory)
+    assert "Superseded by requires `- Status: Superseded`" in messages(adr_directory)
 
 
 def test_deleting_the_readme_is_not_an_adr_deletion(adr_directory: Path) -> None:
@@ -225,6 +225,11 @@ def test_link_targets_are_not_scanned_for_references(adr_directory: Path) -> Non
     extra = "- Supersedes: [dotfiles ADR-0016](https://example.test/docs/ADR-0016.md)\n"
     write_adr(adr_directory, "0003_third_decision.md", extra=extra)
     assert messages(adr_directory) == ""
+
+
+def test_superseded_by_another_repositorys_adr_requires_superseded_status(adr_directory: Path) -> None:
+    write_adr(adr_directory, "0001_first_decision.md", extra="- Superseded by: dotfiles ADR-0042\n")
+    assert "Superseded by requires `- Status: Superseded`" in messages(adr_directory)
 
 
 def test_this_repositorys_adr_history_conforms() -> None:

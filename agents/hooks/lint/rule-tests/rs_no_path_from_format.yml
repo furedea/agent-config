@@ -25,3 +25,7 @@ invalid:
     fn f(root: String) -> PathBuf { PathBuf::from(root + "/child") }
   - |
     fn f(dir: &str, name: &str) -> PathBuf { PathBuf::from(format!("{dir}/{name}.rs")) }
+  - |
+    fn f(dir: &str) -> PathBuf { PathBuf::from(format!(r#"{dir}/child"#)) }
+  - |
+    fn f(dir: &str) { let p = Path::new(&format!(r"{dir}\child")); }

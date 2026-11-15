@@ -7,8 +7,11 @@ rule:
   all:
     - has:
         stopBy: end
-        kind: string_literal
-        regex: "[/\\\\]"
+        any:
+          - kind: string_literal
+            regex: "[/\\\\]"
+          - kind: raw_string_literal
+            regex: "[/\\\\]"
     - any:
         - pattern: PathBuf::from(format!($$$ARGS))
         - pattern: std::path::PathBuf::from(format!($$$ARGS))

@@ -12,7 +12,7 @@ rule:
     - kind: function_item
     - follows:
         kind: attribute_item
-        regex: ^#\[(cfg_attr\([^\]]*,\s*)?((([A-Za-z_][A-Za-z0-9_]*::)*test)|rstest|test_case)\b
+        regex: (?s)^#\[((([A-Za-z_][A-Za-z0-9_]*::)*test|rstest|test_case)\b|cfg_attr\(.*,\s*(([A-Za-z_][A-Za-z0-9_]*::)*test|rstest|test_case)(\(.*\))?\s*\)\]$)
         stopBy:
           not:
             any:

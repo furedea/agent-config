@@ -25,6 +25,12 @@ valid:
         #[test]
         fn works() {}
     }
+  - |
+    #[cfg_attr(all(unix, test), allow(dead_code))]
+    fn helper() {}
+  - |
+    #[cfg_attr(any(feature = "x", test), allow(dead_code))]
+    fn helper() {}
 invalid:
   - |
     #[test]
@@ -63,3 +69,6 @@ invalid:
         #[test]
         fn works() {}
     }
+  - |
+    #[cfg_attr(all(unix, test), test)]
+    fn it_works() {}

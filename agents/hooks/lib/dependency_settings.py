@@ -61,6 +61,7 @@ AGE_LIMIT = "exclude-newer"
 MINIMUM_AGE = timedelta(days=7)
 SPAN = re.compile(r"(?P<count>\d+)\s*(?P<unit>weeks?|days?)|p(?P<iso_count>\d+)(?P<iso_unit>[wd])")
 ENVIRONMENT_PREFIX = "UV_"
+DEFAULT_SYSTEM_CONFIG = "/etc/xdg"
 OVERRIDING_SETTINGS = frozenset(
     {"exclude-newer", "exclude-newer-package", "index", "index-url", "extra-index-url", "find-links", "sources"}
     | {"no-index", "index-strategy", "no-build-isolation", "config-settings", "dependency-metadata"}
@@ -194,8 +195,9 @@ def _environment_reason() -> str:
 
 
 def _system_settings() -> list[Path]:
-    """The system uv.toml files uv merges beneath the user's: each XDG_CONFIG_DIRS entry, then /etc."""
-    directories = [entry for entry in os.environ.get("XDG_CONFIG_DIRS", "").split(os.pathsep) if entry]
+    """The system uv.toml files uv merges under the user's: each XDG_CONFIG_DIRS entry (default /etc/xdg), /etc."""
+    configured = os.environ.get("XDG_CONFIG_DIRS") or DEFAULT_SYSTEM_CONFIG
+    directories = [entry for entry in configured.split(os.pathsep) if entry]
     return [Path(directory) / "uv" / "uv.toml" for directory in [*directories, "/etc"]]
 
 

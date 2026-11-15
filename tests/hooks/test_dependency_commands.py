@@ -3,11 +3,15 @@
 import json
 import os
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
 from tests.hooks.system_programs import trust_directory, use_own_program, use_system_programs
 from tests.runtime import REPO_ROOT, load_script_module
+
+sys.path.insert(0, str(REPO_ROOT / "agents/hooks/lib"))
+import dependency_settings
 
 guard = load_script_module("agents/hooks/guard_command.py", "guard_command")
 POLICY = json.loads((REPO_ROOT / "agents/command_permissions.json").read_text())["rules"]
@@ -347,3 +351,8 @@ def test_an_inherited_git_location_before_uv_asks(
 ) -> None:
     monkeypatch.setenv(name, "/")
     assert judged(git_project, "uv add httpx", "allowed") == "ask"
+
+
+def test_the_default_system_configuration_directory_is_read(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("XDG_CONFIG_DIRS", raising=False)
+    assert Path("/etc/xdg/uv/uv.toml") in dependency_settings._system_settings()

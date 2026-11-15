@@ -28,7 +28,6 @@ from gh_repository import (
     REPOSITORY_OPTIONS,
     Repository,
     is_url,
-    names_repository_option,
     repository,
     repository_words,
 )
@@ -66,8 +65,9 @@ class GhCall:
     `unscanned_files` are the source texts of sent file paths known only at run time, and `reads_stdin` a
     body read from standard input. `related` are repositories of issues the write links to, which must
     be trusted beside the target, whether that target is named or the working directory's.
-    `reads_working_repository` marks a read or local change that names no repository, so gh picks one
-    from the working directory's remotes.
+    `reads_working_repository` marks a read or local change, whose working-directory remotes must keep
+    gh on github.com even when an option seems to name a repository, since the guard does not parse
+    every read option.
     """
 
     operations: tuple[str, ...]
@@ -152,7 +152,7 @@ def _classify_words(words: tuple[Word, ...], catalog: Catalog, single_call: bool
         _check_read_repositories(words[2:])
         if spec.operation == "repo.view":
             _check_repository_arguments(words[2:])
-        return GhCall((spec.operation,), spec.effect, reads_working_repository=not names_repository_option(words[2:]))
+        return GhCall((spec.operation,), spec.effect, reads_working_repository=True)
     if spec.effect is Effect.LOCAL:
         return _classify_local(words[2:], spec)
     return _classify_write(words[2:], spec, single_call)
@@ -197,7 +197,7 @@ def _classify_local(words: tuple[Word, ...], spec: CommandSpec) -> GhCall:
     scan = gh_options.scan(words, OptionTable(spec.value_options, spec.flags))
     if spec.operation == "repo.clone":
         _check_repository_arguments(scan.positionals[:1])
-    return GhCall((spec.operation,), spec.effect, reads_working_repository=not names_repository_option(words))
+    return GhCall((spec.operation,), spec.effect, reads_working_repository=True)
 
 
 def _classify_write(words: tuple[Word, ...], spec: CommandSpec, single_call: bool) -> GhCall:

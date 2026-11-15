@@ -23,17 +23,6 @@ class Repository:
     name: str
 
 
-def names_repository_option(words: tuple[Word, ...]) -> bool:
-    """Whether a -R or --repo option picks the repository; a URL elsewhere, such as in a search, does not."""
-    return any(
-        word.value in REPOSITORY_OPTIONS
-        or word.value.startswith("--repo=")
-        or (word.value.startswith("-") and not word.value.startswith("--") and "R" in word.value)
-        for word in words
-        if not word.dynamic
-    )
-
-
 def repository_words(words: tuple[Word, ...]) -> list[Word]:
     """The repository words of a call: -R and --repo values in any spelling, URLs, and HOST/OWNER/REPO arguments."""
     found: list[Word] = []

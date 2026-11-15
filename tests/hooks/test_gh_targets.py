@@ -107,7 +107,8 @@ def test_a_read_of_the_working_repository_follows_its_remote_host(origin: str, e
     subprocess.run(["git", "init", "--quiet"], check=True)
     add_remote("origin", origin)
     assert decide("gh pr list") == expected
-    assert decide("gh pr list -R furedea/agent-config") == "allow"
+    # Reads do not parse every option, so a named repository does not skip the remote check either.
+    assert decide("gh pr list -R furedea/agent-config") == expected
     assert decide("gh pr list | head -3") == expected
     assert decide("gh issue list --search https://github.com/foo/bar") == expected
 

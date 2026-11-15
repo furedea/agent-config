@@ -13,6 +13,7 @@ from pathlib import Path
 import automation_paths
 import command_policy
 import hook_decision
+import session_snapshot
 import shell_inspection
 import shell_syntax
 import system_programs
@@ -82,12 +83,33 @@ def _writable_roots(directory: Path) -> tuple[Path, ...]:
 
 
 def worktree_root(directory: Path) -> Path | None:
-    """The nearest directory at or above `directory` that holds a `.git` entry.
+    """The narrower of git's worktree and the nearest directory holding a valid `.git`, or None if they disagree.
 
-    Git's own answer follows settings such as core.worktree that a session can change, so the
-    filesystem decides instead; a `.git` the session plants lower only narrows the root.
+    Git's answer follows settings such as core.worktree, and a `.git` can be planted, so neither alone
+    is trusted: each can only narrow what the other reports.
     """
-    return next((folder for folder in (directory, *directory.parents) if os.path.lexists(folder / ".git")), None)
+    on_disk = next((folder for folder in (directory, *directory.parents) if _is_git_entry(folder / ".git")), None)
+    try:
+        reported = session_snapshot.repository_root(directory).resolve()
+    except session_snapshot.SnapshotError:
+        return None
+    if on_disk is None:
+        return None
+    if on_disk.is_relative_to(reported):
+        return on_disk
+    return reported if reported.is_relative_to(on_disk) else None
+
+
+def _is_git_entry(path: Path) -> bool:
+    """A repository directory with HEAD and objects, or a gitfile naming a git directory with HEAD."""
+    if path.is_dir() and not path.is_symlink():
+        return (path / "HEAD").is_file() and (path / "objects").is_dir()
+    try:
+        text = path.read_text() if path.is_file() and not path.is_symlink() else ""
+    except OSError:
+        return False
+    prefix, _, target = text.strip().partition("gitdir:")
+    return not prefix and bool(target.strip()) and ((path.parent / target.strip()) / "HEAD").is_file()
 
 
 def _session_temporary_roots() -> tuple[Path, ...]:

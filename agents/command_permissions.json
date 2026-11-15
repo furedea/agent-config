@@ -2104,30 +2104,30 @@
       "justification": "Allow read-only checks of the esa session; publishing asks first."
     },
     {
-      "decision": "allow",
+      "decision": "ask",
       "prefix": [
         "uv",
         "add"
       ],
-      "justification": "Allow uv dependency changes; the user's uv configuration refuses versions younger than a week, and the command guard asks when the command or project overrides that limit."
+      "justification": "Ask before changing dependencies; the guard cannot see every setting that lifts the package-age limit or points the change at another source."
     },
     {
-      "decision": "allow",
+      "decision": "ask",
       "prefix": [
         "uv",
         "lock",
         "--upgrade-package"
       ],
-      "justification": "Allow uv dependency changes; the user's uv configuration refuses versions younger than a week, and the command guard asks when the command or project overrides that limit."
+      "justification": "Ask before changing dependencies; the guard cannot see every setting that lifts the package-age limit or points the change at another source."
     },
     {
-      "decision": "allow",
+      "decision": "ask",
       "prefix": [
         "uv",
         "lock",
         "--upgrade"
       ],
-      "justification": "Allow uv dependency changes; the user's uv configuration refuses versions younger than a week, and the command guard asks when the command or project overrides that limit."
+      "justification": "Ask before changing dependencies; the guard cannot see every setting that lifts the package-age limit or points the change at another source."
     },
     {
       "decision": "ask",

@@ -40,13 +40,6 @@ HERDR = r"^herdr[[:space:]]+agent[[:space:]]+start([[:space:]].*)?[[:space:]]--(
 CARGO = "^cargo mutants .*--in-place"
 MUTMUT = "^uv run .*mutmut apply"
 STRYKER = "^pnpm exec stryker .*--inPlace"
-PNPM_GLOBAL_FLAG = (
-    "(-[A-Za-z]*g[A-Za-z]*(=(true|1|yes|on))?|--(config\\.)?(g|gl|glo|glob[a-z-]*)(=(true|1|yes|on|[^ft ][^ ]*))?)"
-)
-PNPM_OPTIONS = "^pnpm( -[^ ]+( [^ -][^ ]*)?)*"
-PNPM_GLOBAL = PNPM_OPTIONS + " add( .*)? " + PNPM_GLOBAL_FLAG + "( |$)"
-PNPM_GLOBAL_FIRST = PNPM_OPTIONS + " " + PNPM_GLOBAL_FLAG + "( [^ ]+)*? add( |$)"
-UV_DEV = "^uv( -[^ ]+( [^ -][^ ]*)?)* add( .*)? --dev( |$)"
 VENV_PYTHON = r"(^|[[:space:]])([^[:space:]]*/)?\.venv/bin/python([0-9.]*)?([[:space:]]|$)"
 BROWSER_URL = "(^|[^a-z0-9+.-])(file|chrome):"
 DESKTOP_APP = (
@@ -80,7 +73,6 @@ REVIEWED = {
     ("python", PIP),
     ("find", FIND),
     ("herdr agent start", HERDR),
-    ("uv add", UV_DEV),
     ("xargs", VENV_PYTHON),
     ("xargs", "^" + GIT_ADD),
     ("xargs", "(^|[[:space:]])" + GIT_ADD),
@@ -94,9 +86,6 @@ REVIEWED = {
     ("xargs", MUTMUT),
     ("xargs", BROWSER_URL),
     ("xargs", DESKTOP_APP),
-    ("xargs", PNPM_GLOBAL),
-    ("xargs", PNPM_GLOBAL_FIRST),
-    ("xargs", UV_DEV),
 }
 
 

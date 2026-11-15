@@ -148,6 +148,9 @@ def test_docker_catch_all_is_a_hook_rule_because_a_prefix_ask_would_override_the
 # work or cannot be undone. Every other external effect stays inside the session's grant and runs.
 WIDENING_AUTHORITY = {
     ("uv", "run", "--with"),
+    ("uv", "add"),
+    ("uv", "lock", "--upgrade-package"),
+    ("uv", "lock", "--upgrade"),
     ("pnpm", "add"),
     ("cargo", "add"),
     ("cargo", "update"),
@@ -194,9 +197,6 @@ PROMOTING_OR_IRREVERSIBLE = {
     ("docker", "compose", "down"),
 }
 WITHIN_THE_GRANT = [
-    ("uv", "add"),
-    ("uv", "lock", "--upgrade-package"),
-    ("uv", "lock", "--upgrade"),
     ("rm",),
 ]
 

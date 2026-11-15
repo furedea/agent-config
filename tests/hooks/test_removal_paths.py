@@ -315,3 +315,32 @@ def test_a_git_worktree_setting_cannot_widen_the_worktree(git_project: Path) -> 
     subprocess.run(["git", "config", "core.worktree", "/"], cwd=git_project, check=True)
     assert judged(git_project, "rm /etc/hosts") == "ask"
     assert judged(git_project, "rm scratch.txt") == "allow"
+
+
+@pytest.mark.usefixtures("isolated_project")
+def test_a_planted_git_directory_outside_the_worktree_does_not_widen_it(
+    tmp_path_factory: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    without_session_temporary_roots(monkeypatch)
+    outside = tmp_path_factory.mktemp("planted")
+    (outside / ".git" / "objects").mkdir(parents=True)
+    (outside / ".git" / "HEAD").write_text("ref: refs/heads/main\n")
+    (outside / "work").mkdir()
+    assert judged(outside / "work", f"rm {outside}/victim.txt") == "ask"
+
+
+@pytest.mark.usefixtures("isolated_project")
+def test_a_git_file_without_a_git_directory_is_not_a_worktree(
+    tmp_path_factory: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    without_session_temporary_roots(monkeypatch)
+    outside = tmp_path_factory.mktemp("gitfile")
+    (outside / ".git").write_text("gitdir: /nowhere\n")
+    assert judged(outside, f"rm {outside}/victim.txt") == "ask"
+
+
+def without_session_temporary_roots(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Leave no temporary directory that could count as the session's, so only the worktree is writable."""
+    for name in ("CLAUDE_TMPDIR", "CLAUDE_CODE_TMPDIR"):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("TMPDIR", "/nonexistent-session-tmp")

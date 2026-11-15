@@ -214,21 +214,18 @@ Without the items, the hook reports `Model rules skipped` at every Stop and does
 - The provider's own `ask` prefixes are kept for commands that widen authority (fetched or
     unpinned code, containers, other people's workspaces, outside hosts) or promote work and cannot be
     undone (merge, release, stash drop, remote changes, signals, the Herdr server); an `ask` rule still
-    prompts in Claude Code's auto mode. `uv add` and `uv lock --upgrade` run unprompted, because the
-    user's uv configuration refuses versions younger than a week. They take only listed options and
-    registry requirements, and ask when an inherited `UV_*` variable, a missing user limit, an
-    assignment, `env`, `export`, a sourced file, a file write or another program in the command, a
-    project outside the worktree, or the project's own `exclude-newer`, index, or sources could lift
-    that limit or point uv elsewhere. Dependency changes that no age limit guards (`pnpm add`,
-    `cargo add`, `cargo update`, `go get`, `go mod tidy`, `nix flake update`) ask. Global flags (`pnpm add -g` in any spelling, `uv add --dev`) are denied wherever they sit.
+    prompts in Claude Code's auto mode. Dependency changes (`uv add`, `uv lock --upgrade`, `pnpm add`,
+    `cargo add`, `cargo update`, `go get`, `go mod tidy`, `nix flake update`) keep asking: the guard
+    cannot see every setting that lifts the package-age limit or points the change elsewhere.
 - `rm` runs unprompted for files inside the worktree and the session's own temporary directories
     (named by `CLAUDE_TMPDIR`, or a `TMPDIR` such as `/tmp/claude-<uid>`; never a shared `/tmp`,
     `/var/tmp`, or macOS's per-user temporary directory). The command guard asks for Git metadata,
     any other path (resolved through links in its parent directories), a path known only at run time, xargs
     operands, recursive forms the deny prefixes do not list, and rm beside any program other than a
     listed shell builtin (`echo`, `test`, `pwd`, ...), since it may change the working directory or
-    create a link first. So does an `rm`, wrapper, or `uv` that PATH resolves to anything but a
-    root-owned system program, and a user uv limit shorter than a week.
+    create a link first. So does an `rm` or wrapper that PATH resolves to anything but a root-owned
+    system program, an inherited shell function or `BASH_ENV`, and a worktree on which git and the
+    `.git` on disk disagree.
 - Typing into a Herdr pane (`pane send-text`, `pane send-keys`, `pane run`, `agent send-keys`)
     always asks, even for an agent this session started: keys or text can answer that agent's
     approval prompt or end it and reach the shell beneath it. Hand work over with `agent prompt`.

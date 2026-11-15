@@ -3,8 +3,6 @@ language: rust
 severity: error
 message: "Put a unit test in `#[cfg(test)] mod tests`, or move it to `tests/` when it exercises the public API. A file that a `#[cfg(test)] mod` includes should start with `#![cfg(test)]`."
 note: "Wrap the test in `#[cfg(test)] mod tests { use super::*; ... }`, or move it to `tests/`."
-files:
-  - "**/src/**/*.rs"
 ignores:
   - "**/tests/**"
   - "**/tests.rs"

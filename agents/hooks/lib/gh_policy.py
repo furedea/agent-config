@@ -109,8 +109,9 @@ def _judged_call(candidate: shell_syntax.Command, line: CommandLine, rules: GhRu
 
 def _environment_problem(line: CommandLine) -> str:
     """Why the environment may run something else than gh against github.com, or an empty string."""
-    # gh runs git for clones, checkouts, and to find the working repository, so git must be as safe as gh.
-    for name in (PROGRAM, "git"):
+    # gh runs git for clones, checkouts, and to find the working repository, and git runs ssh for SSH
+    # remotes, so both must be as safe as gh.
+    for name in (PROGRAM, "git", "ssh"):
         if problem := _stand_in_problem(name, line):
             return problem
     if os.environ.get("GH_FORCE_TTY"):

@@ -289,3 +289,14 @@ def test_an_rg_planted_where_the_agent_writes_makes_every_call_ask(monkeypatch: 
     (planted / "rg").chmod(0o755)
     monkeypatch.setenv("PATH", f"{planted.resolve()}:{os.environ['PATH']}")
     assert decide("gh pr view 1 -R furedea/agent-config") == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_an_ssh_planted_where_the_agent_writes_makes_every_call_ask(monkeypatch: pytest.MonkeyPatch) -> None:
+    assert decide("gh repo clone furedea/agent-config") == "allow"
+    planted = Path("bin")
+    planted.mkdir()
+    (planted / "ssh").write_text("#!/bin/sh\n")
+    (planted / "ssh").chmod(0o755)
+    monkeypatch.setenv("PATH", f"{planted.resolve()}:{os.environ['PATH']}")
+    assert decide("gh repo clone furedea/agent-config") == "ask"

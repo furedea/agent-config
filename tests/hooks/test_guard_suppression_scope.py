@@ -145,3 +145,37 @@ def test_an_edit_that_does_not_apply_to_a_file_without_a_marker_passes(tmp_path:
     target.write_text("x = 1\nbad()\n")
     values = {"file_path": str(target), "old_string": "x  =  1\n", "new_string": ""}
     assert decide("Edit", values) == "allow"
+
+
+def test_turning_a_marker_inside_a_string_into_a_comment_asks(tmp_path: Path) -> None:
+    target = tmp_path / "app.py"
+    target.write_text("value = 'ast-grep-ignore'\nbad()\n")
+    values = {"file_path": str(target), "old_string": "value = '", "new_string": "# "}
+    assert decide("Edit", values) == "ask"
+
+
+def test_moving_a_file_between_extensions_where_its_markers_already_apply_passes(tmp_path: Path) -> None:
+    source = tmp_path / "tool.py"
+    source.write_text("x = 1  # noqa: E501\n")
+    patch = f"*** Begin Patch\n*** Update File: {source}\n*** Move to: {tmp_path / 'tool.pyi'}\n*** End Patch"
+    assert decide("apply_patch", {"input": patch}) == "allow"
+
+
+def test_moving_an_ast_grep_marker_between_code_extensions_passes(tmp_path: Path) -> None:
+    source = tmp_path / "tool.py"
+    source.write_text("x = 1\n# ast-grep-ignore: rule_a\nbad()\n")
+    patch = f"*** Begin Patch\n*** Update File: {source}\n*** Move to: {tmp_path / 'tool.go'}\n*** End Patch"
+    assert decide("apply_patch", {"input": patch}) == "allow"
+
+
+def test_a_string_that_holds_a_whole_marker_turned_into_a_comment_asks(tmp_path: Path) -> None:
+    target = tmp_path / "app.py"
+    target.write_text('s = "# ast-grep-ignore"\nbad()\n')
+    values = {"file_path": str(target), "old_string": 's = "', "new_string": ""}
+    assert decide("Edit", values) == "ask"
+
+
+def test_editing_code_with_an_escaped_quote_beside_an_unchanged_marker_passes(tmp_path: Path) -> None:
+    target = tmp_path / "app.py"
+    target.write_text('x = "a\\"b"  # ast-grep-ignore: rule_a\n')
+    assert decide("Edit", {"file_path": str(target), "old_string": "x =", "new_string": "y ="}) == "allow"

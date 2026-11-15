@@ -43,8 +43,13 @@ MARKERS = {
 }
 # The lint hook also scans YAML and Nix, so a project's own ast-grep rules can be suppressed there.
 MARKER_SUFFIXES = {"ast-grep-ignore": CODE_SUFFIXES | {".yml", ".yaml", ".nix"}}
-# An ast-grep marker that names no rule suppresses every rule, so changing the named rules is a new suppression.
+# An ast-grep marker that names no rule suppresses every rule, and the word only counts in a comment, so a marker is
+# compared by its comment's text: changing the named rules, or turning a string that holds the word into a comment,
+# asks.
 COMPARED_BY_TEXT = frozenset({"ast-grep-ignore"})
+COMMENT_OPENERS = {".rs": ("//", "/*"), ".lua": ("--",), ".nix": ("#", "/*")}
+SLASH_COMMENT_SUFFIXES = frozenset({".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs", ".go"})
+QUOTES = frozenset("'\"`")
 # An ast-grep marker on the first line followed by a blank line suppresses its rules for the whole file.
 FILE_SCOPE = "ast-grep-ignore for the whole file"
 PATCH_FILE = re.compile(r"^\*\*\* (?:Add|Update) File: (.+)$")
@@ -117,14 +122,43 @@ def _lines(text: str) -> list[str]:
 
 
 def _adds(name: str, pattern: re.Pattern[str], change: _Change) -> bool:
-    """Count markers, or for markers compared by text, find one whose text from the marker on is new."""
+    """Count markers, or for markers compared by text, find a marker whose text is new."""
     if name not in COMPARED_BY_TEXT:
         return len(pattern.findall(change.added)) > len(pattern.findall(change.removed))
-    return bool(Counter(_marked_text(pattern, change.added)) - Counter(_marked_text(pattern, change.removed)))
+    openers = _comment_openers(Path(change.path).suffix)
+    added, removed = (_marked_text(pattern, text, openers) for text in (change.added, change.removed))
+    return bool(Counter(added) - Counter(removed))
 
 
-def _marked_text(pattern: re.Pattern[str], text: str) -> list[str]:
-    return [line[match.start() :].strip() for line in _lines(text) if (match := pattern.search(line))]
+def _marked_text(pattern: re.Pattern[str], text: str, openers: tuple[str, ...]) -> list[str]:
+    """Each marker's comment from its opener on, or the whole line when the marker is not inside a comment."""
+    marked = []
+    for line in _lines(text):
+        if match := pattern.search(line):
+            start = _comment_start(line, openers)
+            marked.append(line[start:].strip() if start is not None and start <= match.start() else line.strip())
+    return marked
+
+
+def _comment_openers(suffix: str) -> tuple[str, ...]:
+    if suffix in COMMENT_OPENERS:
+        return COMMENT_OPENERS[suffix]
+    return ("//", "/*") if suffix in SLASH_COMMENT_SUFFIXES else ("#",)
+
+
+def _comment_start(line: str, openers: tuple[str, ...]) -> int | None:
+    """Where the first comment outside a quoted string starts; a quote the guard misreads only makes it ask."""
+    quote = ""
+    escaped = False
+    for index, char in enumerate(line):
+        if quote:
+            quote = "" if char == quote and not escaped else quote
+            escaped = not escaped and char == "\\"
+        elif char in QUOTES:
+            quote = char
+        elif line.startswith(openers, index):
+            return index
+    return None
 
 
 def _changes(payload: dict) -> list[_Change]:
@@ -179,7 +213,7 @@ def _field(values: dict, *names: str) -> str:
 def _patch_changes(patch: str) -> list[_Change]:
     """Split an apply_patch body into per-file added and removed text.
 
-    A moved file is judged at its destination too, where markers of a file type that did not honor them take effect.
+    A moved file is judged at its destination too, where markers the source's file type did not honor take effect.
     """
     hunks: dict[str, _Hunks] = {}
     current: _Hunks | None = None
@@ -208,8 +242,18 @@ class _Hunks:
         source = _Change(path, added, removed, rescopes=bool(self.lines) and _holds_ast_grep_marker(existing))
         if not self.destination:
             return [source]
-        carried = existing if Path(path).suffix != Path(self.destination).suffix else ""
+        carried = _newly_honored(existing, Path(path).suffix, Path(self.destination).suffix)
         return [source, _Change(self.destination, f"{carried}\n{added}", removed, rescopes=source.rescopes)]
+
+
+def _newly_honored(text: str, source: str, destination: str) -> str:
+    """The lines of a moved file with a marker that the destination suffix honors and the source suffix did not."""
+    honored = [
+        pattern
+        for name, pattern in MARKERS.items()
+        if destination in (suffixes := MARKER_SUFFIXES.get(name, CODE_SUFFIXES)) and source not in suffixes
+    ]
+    return "\n".join(line for line in _lines(text) if any(pattern.search(line) for pattern in honored))
 
 
 def _holds_ast_grep_marker(text: str) -> bool:

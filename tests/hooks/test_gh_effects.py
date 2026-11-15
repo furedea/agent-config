@@ -388,6 +388,8 @@ def test_reads_and_local_changes_are_allowed_in_any_form(command: str) -> None:
         pytest.param('gh pr list -R "$R"', "run time", id="a read whose repository is only a parameter"),
         pytest.param("gh pr view 1 -cR evil.example/o/r", "another host", id="a read host in a short bundle"),
         pytest.param("gh repo view evil.example/o/r", "another host", id="a repository view on another host"),
+        pytest.param("gh pr view 1 --web", "browser", id="a read that opens the browser"),
+        pytest.param("gh issue list -w", "browser", id="a short read option that opens the browser"),
         pytest.param("gh repo view evil_host/o/r", "another host", id="a repository view on an undotted host"),
         pytest.param("gh repo view git@evil.example:o/r", "another host", id="a repository view by an ssh URL"),
         pytest.param('gh pr view "evil.example/o/$X"', "host part", id="a read path with a run-time host part"),

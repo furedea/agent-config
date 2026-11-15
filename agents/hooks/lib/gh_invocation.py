@@ -46,6 +46,8 @@ GRAPHQL_PATHS = frozenset({"graphql", "api/graphql"})
 METHOD_OVERRIDE = re.compile(r"\s*x-(?:http-)?method(?:-override)?\s*:", re.IGNORECASE)
 FIELD_KEY = re.compile(r"[A-Za-z_][A-Za-z0-9_]*=")
 DOT_SEGMENT = re.compile(r"(?:^|/)(?:\.|%2e){1,2}(?:/|$)", re.IGNORECASE)
+# --web, or a short option bundle holding -w, which opens the browser gh is configured with.
+WEB_OPTION = re.compile(r"--web(?:=.*)?|-[A-Za-z]*w[A-Za-z]*")
 ISSUE_NUMBER = re.compile(r"#?[0-9]+")
 STDIN_PATHS = re.compile(r"/dev/stdin|/dev/fd/0|/proc/self/fd/0")
 # A run-time endpoint that starts with a literal path segment and slash, which no expansion can turn into a URL.
@@ -167,6 +169,8 @@ def _check_read_repositories(words: tuple[Word, ...]) -> None:
     for word in words:
         if word.spreading:
             raise UnclassifiableError("a read takes a word that may split into options at run time")
+        if not word.dynamic and WEB_OPTION.fullmatch(word.value):
+            raise UnclassifiableError("a read opens a browser, which runs a program the guard cannot judge")
         if word.dynamic and (word.source.startswith("-") or _may_name_url(word) or not _plain_parameters(word)):
             raise UnclassifiableError("a read takes an option value, URL, or computed word known only at run time")
         if word.dynamic and "/" in word.source and not OWNER_PREFIX.match(word.source):

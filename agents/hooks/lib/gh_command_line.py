@@ -163,7 +163,10 @@ def is_system_program(name: str) -> bool:
     if found is None or not Path(found).is_absolute():
         return False
     resolved = Path(found).resolve()
-    writable = any(os.access(path, os.W_OK) for path in (resolved, *resolved.parents))
+    # Both the path PATH names and the file it resolves to, with every directory above each, must be locked,
+    # so no symlink hop or parent directory lets this account swap the program.
+    chain = (Path(found), *Path(found).parents, resolved, *resolved.parents)
+    writable = any(os.access(path, os.W_OK) for path in chain)
     return not writable and not resolved.is_relative_to(Path.cwd().resolve())
 
 

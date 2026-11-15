@@ -163,7 +163,7 @@ def _project_reason(payload: dict) -> str:
             return f"would write a project file in {folder} that links outside the worktree"
         if found and not folder.is_relative_to(root):
             return f"may resolve the project at {folder}, outside the worktree"
-        if any(_sets_age_limit(path) for path in found):
+        if any(_has_overriding_settings(path) for path in found):
             return f"runs in a project whose settings replace the package-age limit or its sources ({folder})"
     return ""
 
@@ -212,7 +212,7 @@ def _is_at_least_a_week(value: object) -> bool:
     return moment <= datetime.now(UTC) - MINIMUM_AGE
 
 
-def _sets_age_limit(path: Path) -> bool:
+def _has_overriding_settings(path: Path) -> bool:
     """Whether the file sets a uv setting that overrides the limit or a source, at the top or under tool.uv.
 
     A file that cannot be read or parsed counts, since uv may still read it differently.

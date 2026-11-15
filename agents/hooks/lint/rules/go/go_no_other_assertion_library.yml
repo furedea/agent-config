@@ -1,0 +1,10 @@
+id: go_no_other_assertion_library
+language: go
+severity: error
+message: "A second assertion library splits test style and adds a dependency."
+note: "Use testify: replace the other library's assertion with `assert.Equal(t, want, got)` or `require.NoError(t, err)`."
+rule:
+  kind: import_spec
+  has:
+    field: path
+    regex: ^"(github\.com/onsi/gomega|github\.com/smartystreets/goconvey/convey|github\.com/matryer/is|gotest\.tools(/v3)?/assert|github\.com/frankban/quicktest|github\.com/maxatome/go-testdeep(/td)?)"$

@@ -1,0 +1,30 @@
+id: go_no_context_in_struct
+valid:
+  - |
+    type Server struct {
+        addr string
+    }
+  - |
+    import "context"
+
+    func run(ctx context.Context) {}
+  - |
+    import context "example.com/webctx"
+
+    type Server struct {
+        ctx context.Context
+    }
+invalid:
+  - |
+    import "context"
+
+    type Server struct {
+        ctx context.Context
+    }
+  - |
+    import "context"
+
+    type Server struct {
+        addr string
+        context.Context
+    }

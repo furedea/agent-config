@@ -10,8 +10,6 @@
 
 ## Naming Conventions
 
-- Avoid `manager`, `helper`, `util`, and `common` unless the name is already established locally.
-
 ### Module Naming
 
 - Name modules after the domain or action they contain.

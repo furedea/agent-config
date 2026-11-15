@@ -27,6 +27,7 @@ from gh_command_line import (
     CommandLine,
     has_inherited_function,
     has_writable_path_entry_before,
+    in_agent_roots,
     input_redirects,
     is_system_program,
 )
@@ -62,6 +63,7 @@ CHECKOUT_SETTINGS = (
 # The filter settings `git lfs install` writes; any other filter command may be a shell running anything.
 LFS_FILTER = re.compile(r"filter\.lfs\.(?:smudge git-lfs smudge -- %f|process git-lfs filter-process)")
 BOOLEAN_FSMONITOR = re.compile(r"core\.fsmonitor (?:true|false|yes|no|on|off|1|0)?", re.IGNORECASE)
+UNIX_SOCKET = re.compile(r"^\s*http_unix_socket:\s*[^\s#'\"]", re.MULTILINE)
 CREDENTIAL_HELPERS = r"^credential\..*helper$"
 SAFE_HELPER = re.compile(r"[A-Za-z0-9_./ -]+")
 # The GIT_SSH_COMMAND the sandbox runtime sets: ssh through the proxy command the runtime itself provides.
@@ -158,9 +160,26 @@ def _override_problem() -> str:
     ssh_command = os.environ.get("GIT_SSH_COMMAND", "ssh")
     if any(os.environ.get(name) for name in GIT_OVERRIDE_VARIABLES) or ssh_command not in {"ssh", SANDBOX_SSH_COMMAND}:
         return "the environment tells git to run another program than the checked ssh"
+    if problem := _gh_config_problem():
+        return problem
     transports = _git_output("config", "--get-regexp", TRANSPORT_SETTINGS)
     if transports is None or transports.strip():
         return "git configuration rewrites URLs or names a transport program git may run"
+    return ""
+
+
+def _gh_config_problem() -> str:
+    """Why gh's configuration may send its requests and token elsewhere, or an empty string."""
+    xdg = os.environ.get("XDG_CONFIG_HOME") or str(Path.home() / ".config")
+    directory = Path(os.environ.get("GH_CONFIG_DIR") or Path(xdg) / "gh").absolute()
+    if in_agent_roots(directory) or in_agent_roots(directory.resolve()):
+        return "gh reads its configuration from a directory the agent can write"
+    try:
+        config = (directory / "config.yml").read_text()
+    except OSError:
+        return ""
+    if UNIX_SOCKET.search(config):
+        return "gh's configuration sends its requests through a Unix socket"
     return ""
 
 
@@ -399,33 +418,52 @@ def _file_head(path: Path) -> str:
 
 
 def _clone_may_run_hooks() -> bool:
-    """Whether a new clone may run code on checkout: hooks from a template or hooks path, or a filter program.
+    """Whether a new clone may run code: hooks from a template or hooks path, a filter, or a credential helper.
 
     A filter runs for any path whose .gitattributes, which the cloned repository supplies, names it.
     """
     if os.environ.get("GIT_TEMPLATE_DIR"):
         return True
-    output = _git_output("config", "--get-regexp", CHECKOUT_SETTINGS)
-    helpers = _git_output("config", "--get-regexp", CREDENTIAL_HELPERS)
-    if output is None or helpers is None:
+    settings = _git_settings(CHECKOUT_SETTINGS)
+    helpers = _git_settings(CREDENTIAL_HELPERS)
+    if settings is None or helpers is None:
         return True
-    if any(not _is_trusted_helper(line.partition(" ")[2].strip()) for line in helpers.splitlines() if line.strip()):
+    if not all(_is_trusted_helper(value) for _, value in helpers):
         return True
-    return any(not _is_installed_checkout_program(line.strip()) for line in output.splitlines() if line.strip())
+    return not all(_is_installed_checkout_program(f"{key} {value}") for key, value in settings)
+
+
+def _git_settings(pattern: str) -> list[tuple[str, str]] | None:
+    """Each (key, value) git config reports for the pattern; None when git cannot be asked or a value spans lines."""
+    output = _git_output("config", "-z", "--get-regexp", pattern)
+    if output is None:
+        return None
+    records = [record.partition("\n") for record in output.split("\0") if record]
+    if any("\n" in value or "\r" in value for _, _, value in records):
+        return None
+    return [(key, value) for key, _, value in records]
 
 
 def _is_trusted_helper(value: str) -> bool:
-    """Whether a credential helper runs only a locked program: none, git-credential-<name>, or an absolute path.
+    """Whether a credential helper runs only a locked helper program with no arguments the shell could read.
 
-    git runs a helper through the shell, so a `!` snippet or any shell syntax may run anything.
+    git runs a helper through the shell, so a `!` snippet, shell syntax, or a program such as sh with
+    arguments may run anything. A reset, git-credential-<name>, an absolute git-credential-* path, or
+    gh's own `gh auth git-credential` passes.
     """
-    if not value:
+    words = value.split()
+    if not words:
         return True
     if not SAFE_HELPER.fullmatch(value):
         return False
-    program = value.split(maxsplit=1)[0]
+    program = words[0]
     if program.startswith("/"):
-        return is_system_program(program)
+        is_helper = (len(words) == 1 and Path(program).name.startswith("git-credential-")) or (
+            Path(program).name == PROGRAM and words[1:] == ["auth", "git-credential"]
+        )
+        return is_helper and is_system_program(program)
+    if len(words) != 1:
+        return False
     git = shutil.which("git")
     root = Path(git).resolve().parent.parent if git else Path("/nonexistent")
     bundled = [root / directory / f"git-credential-{program}" for directory in ("libexec/git-core", "lib/git-core")]

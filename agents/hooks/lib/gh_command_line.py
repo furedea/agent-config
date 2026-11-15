@@ -204,14 +204,14 @@ def has_writable_path_entry_before(name: str) -> bool:
     for entry in os.environ.get("PATH", "").split(os.pathsep):
         if not entry or not Path(entry).is_absolute():
             return True
-        if _in_agent_roots(Path(entry).absolute()) or _in_agent_roots(Path(entry).resolve()):
+        if in_agent_roots(Path(entry).absolute()) or in_agent_roots(Path(entry).resolve()):
             return True
         if Path(entry).absolute() == found_directory:
             return False
     return False
 
 
-def _in_agent_roots(path: Path) -> bool:
+def in_agent_roots(path: Path) -> bool:
     """Whether a path lies in the working tree or a temporary directory, where a sandboxed agent writes."""
     roots = [Path.cwd().resolve(), Path("/tmp").resolve(), Path("/private/tmp")]
     roots += [Path(os.environ["TMPDIR"]).resolve()] if os.environ.get("TMPDIR") else []

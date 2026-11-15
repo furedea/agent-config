@@ -32,6 +32,12 @@ ARGUMENT_ARRAYS = frozenset({"argv", "BASH_ARGV", "BASH_ARGC", "_"})
 FUNCTION_MODIFIERS = frozenset({"noglob", "nocorrect", "-"})
 # Builtins that assign a parameter named by an operand or an option, which may hold or replace the arguments.
 NAME_ASSIGNERS = ASSIGNING_BUILTINS | frozenset({"zformat", "zstyle", "zregexparse", "zparseopts", "getln", "popln"})
+# Builtins that call a function they are given by name, with arguments the call never shows.
+CALLBACK_TAKERS = frozenset(
+    "mapfile readarray complete compgen compdef zle add-zsh-hook bind sched zstyle trap".split()
+)
+# Variables naming functions the shell calls on its own.
+HOOK_VARIABLES = re.compile(r"PROMPT_COMMAND|(?:precmd|preexec|chpwd|periodic|zshexit|zshaddhistory)_functions")
 # Words before a builtin that still run it, as in builtin shift, command -p shift, or zsh's noglob shift.
 BUILTIN_PREFIXES = frozenset({"builtin", "command", "noglob", "nocorrect", "-"})
 # Text eval or trap runs that may read or replace a function's arguments, at any depth of eval, once unquoted.
@@ -166,14 +172,28 @@ def _reads_any(body: dict) -> bool:
 
 
 def _named_as_word(name: str, records: tuple[dict, ...], data: bytes) -> bool:
-    """Whether a word other than a command name, or an assigned value, names the function: a callback may call it."""
+    """Whether a word other than a command name, or an assigned value, names the function: a callback may call it.
+
+    A callback builtin or hook variable given a word known only at run time may name it too.
+    """
     token = re.compile(rf"(?<![\w-]){re.escape(name)}(?![\w-])")
-    calls = (node for node in records if node.get("Type") == "CallExpr" and node.get("Args"))
+    calls = [node for node in records if node.get("Type") == "CallExpr" and node.get("Args")]
     # eval and trap text is judged with the definitions in front of it, so a call there is respelled.
     judged = (call for call in calls if _program(call, data)[0] not in {"eval", "trap"})
     words = [word for call in judged for word in call["Args"][_modifier_count(call, data) + 1 :]]
-    values = [record["Value"] for record in records if "Type" not in record and isinstance(record.get("Value"), dict)]
-    return any(token.search(literal_word(word, data)[0]) for word in words + values)
+    values = [record for record in records if "Type" not in record and isinstance(record.get("Value"), dict)]
+    if any(token.search(literal_word(word, data)[0]) for word in words + [value["Value"] for value in values]):
+        return True
+    callbacks = (call for call in calls if _program(call, data)[0] in CALLBACK_TAKERS)
+    if any(literal_word(word, data)[1] for call in callbacks for word in call["Args"]):
+        return True
+    hooks = (value for value in values if HOOK_VARIABLES.fullmatch(value.get("Name", {}).get("Value", "")))
+    return any(literal_word(value["Value"], data)[1] for value in hooks) or any(
+        isinstance(record.get("Name"), dict)
+        and HOOK_VARIABLES.fullmatch(record["Name"].get("Value", ""))
+        and any(part.get("Type") in {"ParamExp", "CmdSubst", "ProcSubst"} for part in nodes(record.get("Array")))
+        for record in records
+    )
 
 
 def _defined_name(definition: dict) -> str:

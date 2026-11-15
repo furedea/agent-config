@@ -218,13 +218,31 @@ def normalized(text: str) -> str:
 
 
 def set_options(calls: list[dict], data: bytes) -> list[str]:
-    """The option words, normalized, that each set call gives, together with the names -o and +o take."""
+    """The option words, normalized, that each set call gives, past prefixes and wrappers, with the names -o takes."""
     options = []
     for call in calls:
         words = [normalized(literal_word(word, data)[0]) for word in call["Args"]]
-        if words[0] == "set":
+        words = words[_program_index(words) :]
+        if words and words[0] == "set":
             options += [word for word in words[1:] if word[:1] in {"-", "+"} or word.isalpha()]
     return options
+
+
+def _program_index(words: list[str]) -> int:
+    """Where the program sits, past prefixes, wrappers, options, and assignments."""
+    for index, value in enumerate(words):
+        if not _passes_over(value):
+            return index
+    return len(words)
+
+
+def _passes_over(value: str) -> bool:
+    return (
+        value in PROGRAM_PREFIXES
+        or value[:1] in {"-", "+"}
+        or Path(value).name in WRAPPERS
+        or ASSIGNMENT.match(value) is not None
+    )
 
 
 def _runs_unseen(call: dict, data: bytes) -> bool:
@@ -232,7 +250,6 @@ def _runs_unseen(call: dict, data: bytes) -> bool:
     for value, dynamic in (literal_word(word, data) for word in call["Args"]):
         if dynamic:
             return True
-        passed = value in PROGRAM_PREFIXES or value[:1] in {"-", "+"} or Path(value).name in WRAPPERS
-        if not passed and ASSIGNMENT.match(value) is None:
+        if not _passes_over(value):
             return False
     return False

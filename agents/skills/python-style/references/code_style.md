@@ -34,7 +34,6 @@ logger.info({"action": "save", "csv_file": self.csv_file, "status": "run"})
 - Name files after the **domain/action** they represent, not the role suffix
     - Prefer `retrieval.py` over `retriever.py`, `prompt.py` over `prompt_builder.py`
     - `-er`/`-or` suffixes belong on **class names** (e.g. `class Retriever`), not file names
-- Avoid `utils.py` / `helpers.py` — name by what the module actually does (e.g. `model.py`, `inference.py`)
 
 ## Whitespace & Layout
 

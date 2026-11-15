@@ -25,7 +25,6 @@
 - Store end-to-end tests in `tests/`.
 - Enforce layer boundaries with `no-restricted-imports` instead of review alone. Example: a pure
   calculation layer such as `src/engine/` imports no copy, data, or UI modules.
-- Avoid `utils.ts` and `helpers.ts`; name modules by domain or action.
 
 ## Quality Gates
 

@@ -53,6 +53,18 @@ rule:
                 has:
                   kind: variable_declarator
                   has: { field: name, kind: identifier, regex: ^jest$ }
+        - not:
+            inside:
+              stopBy: end
+              kind: program
+              has:
+                kind: import_statement
+                has:
+                  kind: import_clause
+                  has:
+                    stopBy: end
+                    kind: identifier
+                    regex: ^jest$
     - all:
         - kind: export_statement
         - has:

@@ -34,6 +34,15 @@ valid:
     function render() {
       return jest.format();
     }
+  - |
+    import jest from "./domain_formatter";
+    jest.format();
+  - |
+    import { jest } from "./domain_formatter";
+    jest.format();
+  - |
+    import * as jest from "./domain_formatter";
+    jest.format();
 invalid:
   - |
     const mock = jest.fn();

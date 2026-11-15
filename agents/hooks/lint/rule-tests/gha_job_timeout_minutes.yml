@@ -20,6 +20,20 @@ valid:
           - uses: owner/action@main
             with:
               runs-on: ubuntu-latest
+  - |
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        steps:
+          - uses: owner/action@main
+            with: {runs-on: ubuntu-latest}
+  - |
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        env: {runs-on: x}
 invalid:
   - |
     jobs:

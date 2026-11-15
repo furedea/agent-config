@@ -34,6 +34,19 @@ rule:
             field: key
             regex: ^["']?timeout-minutes["']?$
     - kind: flow_mapping
+      inside:
+        kind: flow_node
+        inside:
+          kind: block_mapping_pair
+          inside:
+            kind: block_mapping
+            inside:
+              kind: block_node
+              inside:
+                kind: block_mapping_pair
+                has:
+                  field: key
+                  regex: ^["']?jobs["']?$
       has:
         kind: flow_pair
         has:

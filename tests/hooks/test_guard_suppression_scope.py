@@ -459,3 +459,14 @@ def test_without_the_scanner_removing_string_delimiters_around_a_marker_asks(
     target.write_text("const text = `\n// @ts-ignore\n`;\nfoo(1);\n")
     edits = [{"old_string": "const text = `\n", "new_string": ""}, {"old_string": "\n`;\n", "new_string": "\n"}]
     assert decide("MultiEdit", {"file_path": str(target), "edits": edits}) == "ask"
+
+
+def test_a_new_rust_attribute_inside_a_macro_body_asks(tmp_path: Path) -> None:
+    target = tmp_path / "lib.rs"
+    target.write_text("macro_rules! m {\n    () => {\n        fn f() {}\n    };\n}\n")
+    values = {
+        "file_path": str(target),
+        "old_string": "        fn f()",
+        "new_string": "        #[allow(dead_code)]\n        fn f()",
+    }
+    assert decide("Edit", values) == "ask"

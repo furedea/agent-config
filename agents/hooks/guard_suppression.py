@@ -52,7 +52,8 @@ MARKER_SUFFIXES = {"ast-grep-ignore": CODE_SUFFIXES | {".yml", ".yaml", ".nix"}}
 # compared by its comment's text: changing the named rules, or turning a string that holds the word into a comment,
 # asks.
 COMPARED_BY_TEXT = frozenset({"ast-grep-ignore"})
-# Every other marker is a comment directive, counted only inside a comment; a Rust attribute only as an attribute.
+# Every other marker is a comment directive, counted only inside a comment; a Rust attribute anywhere but a string
+# or comment.
 CODE_MARKERS = frozenset({"allow or expect attribute"})
 # A line that may open or close a string or comment, which without a parser may change what a marker line is.
 DELIMITER = re.compile(r"[\"'`]|/\*|\*/|<!--|-->|\[\[|\]\]|<<|[|>][-+]?\s*$")
@@ -146,13 +147,23 @@ def _adds(name: str, pattern: re.Pattern[str], change: _Change) -> bool:
     added_marks, removed_marks = ([mark for marks in found.values() for mark in marks] for found in (added, removed))
     if name in COMPARED_BY_TEXT:
         return bool(Counter(added_marks) - Counter(removed_marks))
-    return sum(comment for comment, _ in added_marks) > sum(comment for comment, _ in removed_marks)
+    return sum(_counts(name, in_node) for in_node, _ in added_marks) > sum(
+        _counts(name, in_node) for in_node, _ in removed_marks
+    )
 
 
 def _span_reader(name: str, suffix: str) -> Callable[[str], list[tuple[int, int]] | None]:
-    """How to find the nodes a marker counts in: Rust attributes for the attribute marker, comments otherwise."""
-    find = comment_nodes.attribute_spans if name in CODE_MARKERS else comment_nodes.comment_spans
+    """How to find the nodes that decide whether a marker counts.
+
+    These are the inert strings and comments for the attribute marker, and the comments for every other marker.
+    """
+    find = comment_nodes.inert_spans if name in CODE_MARKERS else comment_nodes.comment_spans
     return lambda text: find(text, suffix)
+
+
+def _counts(name: str, in_node: bool) -> bool:
+    """A comment directive counts inside a comment node; the attribute marker counts outside the inert nodes."""
+    return in_node != (name in CODE_MARKERS)
 
 
 def _may_add_unparsed(pattern: re.Pattern[str], change: _Change) -> bool:
@@ -374,7 +385,7 @@ def _becomes_comment(text: str, source: str, destination: str) -> set[int]:
         lines |= {
             number
             for number, marks in after.items()
-            if any(comment for comment, _ in marks) and marks != before.get(number)
+            if any(_counts(name, in_node) for in_node, _ in marks) and marks != before.get(number)
         }
     return lines
 

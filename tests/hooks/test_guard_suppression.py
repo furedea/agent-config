@@ -118,6 +118,7 @@ RULE_LANGUAGE_SUFFIXES = {
     "tsx": ".tsx",
     "javascript": ".js",
     "bash": ".sh",
+    "yaml": ".yml",
 }
 
 
@@ -130,7 +131,7 @@ def test_every_static_rule_language_is_inspected_for_suppressions() -> None:
         if line.startswith("language:")
     }
     assert languages <= RULE_LANGUAGE_SUFFIXES.keys(), "map the new rule language to its file suffix"
-    assert {RULE_LANGUAGE_SUFFIXES[language] for language in languages} <= guard.CODE_SUFFIXES
+    assert {RULE_LANGUAGE_SUFFIXES[language] for language in languages} <= guard.MARKER_SUFFIXES["ast-grep-ignore"]
 
 
 def test_a_write_that_adds_a_suppression_asks(tmp_path: Path) -> None:

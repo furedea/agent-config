@@ -1,4 +1,4 @@
-"""Find comments and Rust attributes in source text with ast-grep's tree-sitter grammars, which know every string form.
+"""Find comments, and the strings and comments around Rust code, with ast-grep's tree-sitter grammars.
 
 Hand-written lexers miss block scalars, raw strings and similar constructs, and ast-grep itself honors a
 suppression only in a comment node, so the same parser decides here.
@@ -32,7 +32,7 @@ COMMENT_KINDS = {
 SUPPRESSION = "ast-grep-ignore"
 # Same length as the suppression word, so every offset stays.
 STAND_IN = "ast-grep-ign0re"
-ATTRIBUTE_KINDS = ("attribute_item", "inner_attribute_item")
+RUST_INERT_KINDS = ("string_literal", "raw_string_literal", "char_literal", "line_comment", "block_comment")
 
 
 def comment_spans(text: str, suffix: str) -> list[tuple[int, int]] | None:
@@ -46,13 +46,17 @@ def comment_spans(text: str, suffix: str) -> list[tuple[int, int]] | None:
     return _scan(text, language, COMMENT_KINDS.get(language, ("comment",)))
 
 
-def attribute_spans(text: str, suffix: str) -> list[tuple[int, int]] | None:
-    """The offsets of each Rust attribute in `text`, none outside Rust, or None when they cannot be known."""
+def inert_spans(text: str, suffix: str) -> list[tuple[int, int]] | None:
+    """The offsets of each Rust string or comment, where an attribute cannot apply; none outside Rust.
+
+    Anything else counts, including a macro body, whose attributes take effect once the macro expands. None means
+    they cannot be known.
+    """
     if LANGUAGES.get(suffix) != "rust":
         return []
     if shutil.which(SCANNER) is None:
         return None
-    return _scan(text, "rust", ATTRIBUTE_KINDS)
+    return _scan(text, "rust", RUST_INERT_KINDS)
 
 
 @functools.cache

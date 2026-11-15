@@ -10,7 +10,7 @@ SCRIPT = Path(__file__).resolve()
 sys.path.insert(0, str(SCRIPT.parent))
 sys.path.insert(0, str(SCRIPT.parent / "lib"))
 
-from lib import formatter_policy, hook_input, lint_engine, process_runner, static_rule_scan
+from lib import adr_metadata, formatter_policy, hook_input, lint_engine, process_runner, static_rule_scan
 
 EXTENSIONS = hook_input.EXTENSIONS
 LANGUAGES = frozenset(EXTENSIONS.values())
@@ -51,8 +51,11 @@ def diagnostics(payload: dict, kind: str | None = None) -> tuple[str, ...]:
     if not isinstance(payload, dict):
         raise TypeError("hook payload must be an object")
     targets = lint_engine.supported_targets(target_paths(payload), EXTENSIONS, kind)
-    return lint_engine.diagnostics(targets, check_file) + static_rule_scan.diagnostics(
-        target.path for target in targets
+    paths = tuple(target.path for target in targets)
+    return (
+        lint_engine.diagnostics(targets, check_file)
+        + static_rule_scan.diagnostics(paths)
+        + adr_metadata.diagnostics(paths)
     )
 
 

@@ -60,33 +60,25 @@ docs/
 Rules:
 
 - Use one decision per file.
-- Use sequential four-digit IDs.
-- Never reuse an ID.
 - Never delete old ADRs to hide history.
 - Follow existing repository naming conventions. Otherwise use underscores between the ID and
   decision words, as shown above. Do not rename existing ADRs solely to normalize filenames.
 - Create `docs/adr/` if it does not exist.
+- The hooks check file names, IDs, the title line, status values, metadata keys, ADR references, and
+  supersession consistency after each ADR edit; fix what they report.
 - If the repository has no ADRs yet and the task adopts ADRs as a practice, create `0001_record_architecture_decisions.md` first.
 
 ## Status Rules
 
-Allowed status values:
-
-- `Proposed`
-- `Accepted`
-- `Superseded`
-- `Deprecated`
-
 Default to `Accepted` when the decision is implemented in the same change. Use `Proposed` only when the user asked for a proposal or no implementation change is being made.
 
-Past ADRs are immutable except for metadata status changes. Do not rewrite the body of an accepted ADR to make it match a new decision.
+Past ADRs are immutable except for metadata. Do not rewrite the body of an accepted ADR to make it match a new decision.
 
-When reversing a decision:
+When reversing a decision, create a new ADR with the next ID and `- Supersedes: ADR-NNNN`, and change the old ADR's status to `Superseded` in the same change set.
 
-1. Create a new ADR with the next sequential ID.
-2. Add `- Supersedes: ADR-NNNN` to the new ADR metadata.
-3. Change the old ADR status to `Superseded`.
-4. Keep both ADRs in the same commit or change set.
+Use `- Partly superseded by: ADR-NNNN` on an ADR whose decision still stands except for the part a later ADR replaces; its status stays as it was.
+
+Use `- Amended: <YYYY-MM-DD> (<what>)` when an accepted ADR's body is corrected or extended in place without reversing it, one line per amendment.
 
 ## Preferred Template
 

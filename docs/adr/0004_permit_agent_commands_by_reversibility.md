@@ -1,8 +1,9 @@
 # ADR-0004: Permit agent commands by reversibility
 
-- Status: Superseded by [ADR-0007](0007_ask_only_for_effects_that_escape_the_sandbox.md)
+- Status: Superseded
 - Date: 2026-09-17
 - Originally: furedea/dotfiles ADR-0031
+- Superseded by: [ADR-0007](0007_ask_only_for_effects_that_escape_the_sandbox.md)
 
 In the context of the command policy that Claude Code and Codex enforce through the shared hooks
 from [ADR-0016](0016_inspect_shell_syntax_in_the_supplementary_command_guards.md), facing a deny list that grew from a

@@ -47,7 +47,7 @@ def test_a_write_to_the_working_repository_follows_every_github_remote(remotes: 
 
 
 @pytest.mark.parametrize(
-    ("resolved", "expected"), [("other/project", "ask"), ("furedea/agent-config", "allow"), ("base", "ask")]
+    ("resolved", "expected"), [("other/project", "ask"), ("furedea/agent-config", "allow"), ("base", "allow")]
 )
 def test_a_default_repository_set_by_gh_names_the_working_repository(
     furedea_checkout: Path, resolved: str, expected: str
@@ -205,3 +205,11 @@ def test_a_writable_path_entry_before_gh_asks_beside_another_gh_call(
     empty.mkdir()
     monkeypatch.setenv("PATH", f"{empty}:{os.environ['PATH']}")
     assert decide("gh pr list -R furedea/agent-config && gh pr list -R furedea/agent-config") == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_quoted_parameter_holding_a_foreign_url_asks(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("TARGET", "https://evil.example/o/r/pull/1")
+    assert decide('gh pr view "$TARGET"') == "ask"
+    monkeypatch.setenv("TARGET", "https://github.com/furedea/agent-config/pull/1")
+    assert decide('gh pr view "$TARGET"') == "allow"

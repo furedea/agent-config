@@ -48,6 +48,7 @@ FIELD_KEY = re.compile(r"[A-Za-z_][A-Za-z0-9_]*=")
 DOT_SEGMENT = re.compile(r"(?:^|/)(?:\.|%2e){1,2}(?:/|$)", re.IGNORECASE)
 # --web, or a short option bundle holding -w, which opens the browser gh is configured with.
 WEB_OPTION = re.compile(r"--web(?:=.*)?|-(?!-)[A-Za-z]*w.*")
+PLAIN_PARAMETER = re.compile(r"\$(?:([A-Za-z_][A-Za-z0-9_]*)|\{([A-Za-z_][A-Za-z0-9_]*)\})")
 ISSUE_NUMBER = re.compile(r"#?[0-9]+")
 STDIN_PATHS = re.compile(r"/dev/stdin|/dev/fd/0|/proc/self/fd/0")
 # A run-time endpoint that starts with a literal path segment and slash, which no expansion can turn into a URL.
@@ -175,6 +176,8 @@ def _check_read_repositories(words: tuple[Word, ...]) -> None:
             raise UnclassifiableError("a read takes an option value, URL, or computed word known only at run time")
         if word.dynamic and "/" in word.source and not OWNER_PREFIX.match(word.source):
             raise UnclassifiableError("a read takes a path whose host part is known only at run time")
+    if any(_names_foreign_host_once_expanded(word) for word in words if word.dynamic):
+        raise UnclassifiableError("a read names another host than github.com once its parameters expand")
     for word in repository_words(words):
         if word.dynamic and not OWNER_PREFIX.match(word.source):
             raise UnclassifiableError("a read names its repository only at run time")
@@ -398,6 +401,14 @@ def _sent_files(scan: OptionScan) -> tuple[str, ...]:
 def _names_file(word: Word) -> bool:
     """Whether a -F field value reads a file, as key=@path."""
     return word.value.partition("=")[2].startswith("@")
+
+
+def _names_foreign_host_once_expanded(word: Word) -> bool:
+    """Whether a plain-parameter word, expanded from the hook environment, names a host other than github.com."""
+    expand = lambda part: PLAIN_PARAMETER.sub(lambda m: os.environ.get(m[1] or m[2], ""), part.strip('"'))  # noqa: E731
+    parts = re.findall(r"""'[^']*'|"[^"]*"|[^'"]+""", word.source)
+    value = "".join(part[1:-1] if part.startswith("'") else expand(part) for part in parts)
+    return (is_url(value) or value.count("/") >= 2) and repository(value) is None
 
 
 def _plain_parameters(word: Word) -> bool:

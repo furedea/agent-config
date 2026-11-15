@@ -313,7 +313,7 @@ def _remote_urls() -> set[str] | None:
 
 
 def _resolved_defaults() -> list[str]:
-    """Each repository `gh repo set-default` named in a remote's gh-resolved setting, other than `base`."""
+    """Each repository a remote's gh-resolved setting names; `base` points at that remote itself."""
     try:
         output = subprocess.run(
             ["git", "config", "--get-regexp", r"^remote\..*\.gh-resolved$"],
@@ -325,8 +325,8 @@ def _resolved_defaults() -> list[str]:
     except OSError, subprocess.SubprocessError:
         return ["unreadable"]
     values = [line.split(" ", 1)[-1].strip() for line in output.splitlines()]
-    # `base` makes the fork's parent the default, which no local setting names, so it stays unresolved.
-    return [value if value != "base" else "parent of a fork" for value in values]
+    # `base` marks the remote it is set on, whose URL is already among the remotes.
+    return [value for value in values if value != "base"]
 
 
 def _sent_text(call: GhCall, line: CommandLine) -> str:

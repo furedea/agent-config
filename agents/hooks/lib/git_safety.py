@@ -2,6 +2,7 @@
 
 import re
 import subprocess
+from itertools import pairwise
 from pathlib import Path
 
 PROTECTED_BRANCHES = {"main", "master"}
@@ -74,6 +75,25 @@ VALUED_OPTIONS = {
     "push": frozenset("-o --push-option --repo --receive-pack --exec".split()),
 }
 """The options of each judged verb that read the next argument as their value, which is never an option."""
+HOOK_SKIPPING_OPTIONS = {
+    "commit": {"-n", "--no-verify", "--no-post-rewrite"},
+    "push": {"--no-verify"},
+    "merge": {"--no-verify"},
+    "pull": {"--no-verify"},
+    "am": {"-n", "--no-verify"},
+    "rebase": {"--no-verify"},
+}
+"""The options that make each verb skip client-side hooks, as `git <verb> -h` lists them for this Git."""
+HOOK_SKIPPING_VALUED = {
+    "merge": frozenset("-m -F -s -X --message --file --strategy --strategy-option --into-name --cleanup".split()),
+    "pull": frozenset("-s -X -o --strategy --strategy-option --depth --upload-pack --server-option".split()),
+    "am": frozenset("-p -C -S --directory --exclude --include --whitespace --patch-format --resolvemsg".split()),
+    "rebase": frozenset("-s -X -x -C --strategy --strategy-option --exec --onto --whitespace --empty".split()),
+}
+"""The valued options of the hook-skipping verbs that VALUED_OPTIONS does not list."""
+MIN_ABBREVIATION = len("--no-v")
+HOOKS_PATH_KEY = "core.hookspath"
+HOOK_SKIP_SUFFIX = "skips repository hooks; let the hooks run"
 
 
 def branch(arguments: tuple[str, ...] = ()) -> str:
@@ -167,6 +187,8 @@ def _git_reason(arguments: tuple[str, ...]) -> str:
         return ""
     verb, *rest = command
     remaining = spelled_out(verb, tuple(rest))
+    if skipped := hook_skip_reason(globals_, verb, remaining):
+        return skipped
     if sandboxed := sandbox_form_reason(verb, remaining):
         return sandboxed
     options = {argument.split("=", 1)[0] for argument in remaining}
@@ -181,6 +203,58 @@ def _git_reason(arguments: tuple[str, ...]) -> str:
     if verb == "restore":
         destructive = restores_worktree(remaining)
     return f"destructive git operation: {verb}" if destructive else ""
+
+
+def hook_skip_reason(globals_: tuple[str, ...], verb: str, arguments: tuple[str, ...]) -> str:
+    """Name the option or setting that makes Git skip repository hooks, or nothing when the hooks run."""
+    if overrides_hooks_path(globals_):
+        return f"overriding core.hooksPath {HOOK_SKIP_SUFFIX}"
+    if option := hook_skipping_option(verb, arguments):
+        return f"git {verb} {option} {HOOK_SKIP_SUFFIX}"
+    return ""
+
+
+def overrides_hooks_path(globals_: tuple[str, ...]) -> bool:
+    """Whether the global options set core.hooksPath for this one command, by -c or --config-env."""
+    settings = [value for option, value in pairwise(globals_) if option == "-c"]
+    settings += [option.removeprefix("--config-env=") for option in globals_ if option.startswith("--config-env=")]
+    return any(setting.split("=", 1)[0].lower() == HOOKS_PATH_KEY for setting in settings)
+
+
+def hook_skipping_option(verb: str, arguments: tuple[str, ...]) -> str:
+    """The first option of the verb that skips hooks, reading option values as data; empty when there is none."""
+    skipping = HOOK_SKIPPING_OPTIONS.get(verb, set())
+    valued = VALUED_OPTIONS.get(verb, frozenset()) | HOOK_SKIPPING_VALUED.get(verb, frozenset())
+    end = arguments.index("--") if "--" in arguments else len(arguments)
+    takes_value = False
+    for argument in arguments[:end]:
+        if takes_value:
+            takes_value = False
+        elif option := skipped_in(argument, skipping, valued):
+            return option
+        else:
+            takes_value = reads_next_value(argument, argument, valued)
+    return ""
+
+
+def skipped_in(argument: str, skipping: set[str], valued: frozenset[str]) -> str:
+    """The hook-skipping option an argument spells: a long option or its abbreviation, or a short flag in a cluster."""
+    if argument.startswith("--"):
+        key = argument.split("=", 1)[0]
+        return next((name for name in sorted(skipping) if abbreviates(key, name)), "")
+    if not re.fullmatch(r"-[A-Za-z0-9]+", argument):
+        return ""
+    for flag in argument[1:]:
+        if f"-{flag}" in valued:
+            return ""
+        if f"-{flag}" in skipping:
+            return f"-{flag}"
+    return ""
+
+
+def abbreviates(key: str, name: str) -> bool:
+    """Whether key is name or a prefix long enough that Git could read it as name; a shared prefix over-matches."""
+    return key == name or (name.startswith("--") and len(key) >= MIN_ABBREVIATION and name.startswith(key))
 
 
 def forces_deletion(arguments: tuple[str, ...]) -> bool:

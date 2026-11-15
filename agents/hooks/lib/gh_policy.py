@@ -52,6 +52,11 @@ SHELL_PART = re.compile(r"""'[^']*'|"[^"]*"|[^'"]+""")
 PLAIN_PARAMETER = re.compile(r"\$(?:([A-Za-z_][A-Za-z0-9_]*)|\{([A-Za-z_][A-Za-z0-9_]*)\})")
 # Variables naming a file or directory a non-interactive shell sources before the command runs.
 STARTUP_FILE_VARIABLES = ("BASH_ENV", "ENV", "ZDOTDIR")
+# The GIT_SSH_COMMAND the sandbox runtime sets: ssh through the proxy command the runtime itself provides.
+SANDBOX_SSH_COMMAND = (
+    "ssh -o ControlMaster=no -o ControlPath=none -o ProxyCommand=\"/bin/sh -c 'eval "
+    "\\\"\\${SRT_SSH_PROXY_COMMAND:?unset, but GIT_SSH_COMMAND needs it}\\\"' sh '%h' %p\""
+)
 # Variables that make git run another program, or read configuration from a file the guard does not check.
 GIT_OVERRIDE_VARIABLES = ("GIT_SSH", "GIT_EXEC_PATH", "GIT_PROXY_COMMAND", "GIT_ASKPASS", "SSH_ASKPASS")
 GIT_OVERRIDE_VARIABLES += ("GIT_CONFIG_GLOBAL", "GIT_CONFIG_SYSTEM")
@@ -133,12 +138,13 @@ def _environment_problem(line: CommandLine) -> str:
 def _override_problem() -> str:
     """Why the environment may run code in place of the checked shell, git, or ssh, or an empty string.
 
-    The harness's own GIT_SSH_COMMAND starts with ssh, which PATH finds and the stand-in check covers.
+    GIT_SSH_COMMAND may be only plain ssh or the sandbox runtime's own value, whose ssh PATH finds and the
+    stand-in check covers; any option could name another program, such as a ProxyCommand.
     """
     if any(os.environ.get(name) for name in STARTUP_FILE_VARIABLES):
         return "the environment names a startup file the shell sources first, which may redefine gh or git"
-    ssh_command = os.environ.get("GIT_SSH_COMMAND", "ssh").split(maxsplit=1)
-    if any(os.environ.get(name) for name in GIT_OVERRIDE_VARIABLES) or ssh_command[:1] != ["ssh"]:
+    ssh_command = os.environ.get("GIT_SSH_COMMAND", "ssh")
+    if any(os.environ.get(name) for name in GIT_OVERRIDE_VARIABLES) or ssh_command not in {"ssh", SANDBOX_SSH_COMMAND}:
         return "the environment tells git to run another program than the checked ssh"
     transports = _git_output("config", "--get-regexp", r"^core\.(sshcommand|gitproxy)$")
     if transports is None or transports.strip():

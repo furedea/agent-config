@@ -7,6 +7,7 @@ from urllib.parse import urlsplit
 from gh_options import Word
 
 GITHUB_HOST = "github.com"
+SAFE_SCHEMES = frozenset({"https", "ssh"})
 REPOSITORY_OPTIONS = frozenset({"-R", "--repo"})
 REPOSITORY_SPEC = re.compile(
     r"(?:(?P<host>[A-Za-z0-9.-]+\.[A-Za-z]+)/)?(?P<owner>[A-Za-z0-9-]+)/(?P<name>[A-Za-z0-9_.-]+)"
@@ -46,7 +47,8 @@ def repository(spec: str) -> Repository | None:
     """The github.com repository an OWNER/REPO, HOST/OWNER/REPO, or URL names; None for any other host."""
     if is_url(spec):
         parts = urlsplit(spec if "://" in spec else "https://" + spec)
-        if parts.hostname != GITHUB_HOST:
+        # git runs a git-remote-<scheme> helper from PATH for any other scheme, so only these two are judged.
+        if parts.hostname != GITHUB_HOST or parts.scheme.lower() not in SAFE_SCHEMES:
             return None
         spec = "/".join(parts.path.strip("/").split("/")[:2])
     match = REPOSITORY_SPEC.fullmatch(spec)

@@ -9,6 +9,7 @@ import pytest
 from tests.runtime import load_script_module
 
 guard = load_script_module("agents/hooks/guard_command.py", "guard_command")
+gh_policy = load_script_module("agents/hooks/lib/gh_policy.py", "gh_policy")
 pytestmark = pytest.mark.usefixtures("isolated_project", "plain_gh_environment")
 
 
@@ -309,6 +310,8 @@ def test_an_ssh_planted_where_the_agent_writes_makes_every_call_ask(monkeypatch:
         ("GIT_SSH", "/tmp/evil"),
         ("GIT_SSH_COMMAND", "/tmp/evil"),
         ("GIT_SSH_COMMAND", "sh -c x"),
+        ("GIT_SSH_COMMAND", "ssh -o ProxyCommand=/tmp/evil"),
+        ("GIT_SSH_COMMAND", "ssh -F /tmp/evil"),
         *((name, "/tmp/evil") for name in ("GIT_EXEC_PATH", "GIT_PROXY_COMMAND", "GIT_ASKPASS", "SSH_ASKPASS")),
         *((name, "/tmp/evil") for name in ("GIT_CONFIG_GLOBAL", "GIT_CONFIG_SYSTEM")),
     ],
@@ -318,7 +321,9 @@ def test_an_ssh_override_in_the_hook_environment_makes_every_call_ask(
 ) -> None:
     monkeypatch.delenv("GIT_SSH_COMMAND", raising=False)
     assert decide("gh repo clone furedea/agent-config") == "allow"
-    monkeypatch.setenv("GIT_SSH_COMMAND", "ssh -o ControlMaster=no")
+    monkeypatch.setenv("GIT_SSH_COMMAND", "ssh")
+    assert decide("gh repo clone furedea/agent-config") == "allow"
+    monkeypatch.setenv("GIT_SSH_COMMAND", gh_policy.SANDBOX_SSH_COMMAND)
     assert decide("gh repo clone furedea/agent-config") == "allow"
     monkeypatch.setenv(name, value)
     assert decide("gh repo clone furedea/agent-config") == "ask"
@@ -345,3 +350,17 @@ def test_a_configured_ssh_or_proxy_program_makes_every_call_ask(key: str) -> Non
     assert decide("gh pr view 1 -R furedea/agent-config") == "allow"
     subprocess.run(["git", "config", key, "/tmp/evil"], check=True)
     assert decide("gh pr view 1 -R furedea/agent-config") == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+@pytest.mark.parametrize(
+    ("url", "expected"),
+    [
+        ("evil://github.com/furedea/agent-config", "ask"),
+        ("http://github.com/furedea/agent-config", "ask"),
+        ("https://github.com/furedea/agent-config", "allow"),
+        ("ssh://git@github.com/furedea/agent-config", "allow"),
+    ],
+)
+def test_a_clone_url_must_use_a_known_transport(url: str, expected: str) -> None:
+    assert decide(f"gh repo clone {url}") == expected

@@ -31,6 +31,8 @@ rule:
           stopBy:
             any:
               - kind: function_declaration
+              - kind: generator_function_declaration
+              - kind: generator_function
               - kind: function_expression
               - kind: arrow_function
               - kind: method_definition

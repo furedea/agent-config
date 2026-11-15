@@ -96,6 +96,17 @@ valid:
     } catch (error) {
       throw new Error("read config", options);
     }
+  - |
+    try {
+      run();
+    } catch (error) {
+      function* parse() {
+        throw new Error("bad token");
+      }
+      const gen = function* () {
+        throw new Error("bad token");
+      };
+    }
 invalid:
   - |
     try {

@@ -4,6 +4,18 @@ valid:
     from functools import cached_property as cached
 
 
+    def make() -> None:
+        @dataclass(frozen=True)
+        class Report:
+            rows: tuple[int, ...]
+
+            @cached
+            def total(self) -> int:
+                return sum(self.rows)
+  - |
+    from functools import cached_property as cached
+
+
     @dataclass(frozen=True)
     class Report:
         rows: tuple[int, ...]

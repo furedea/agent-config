@@ -1,6 +1,18 @@
 id: py_pydantic_validate_json
 valid:
   - |
+    order = Order.model_validate(json.loads(payload, object_hook=decode))
+  - |
+    order = Order.model_validate(json.loads(payload, parse_float=Decimal))
+  - |
+    from json import loads as decode_json
+
+    order = Order.model_validate(decode_json(payload, parse_float=Decimal))
+  - |
+    from json import loads
+
+    order = Order.model_validate(loads(payload, object_hook=decode))
+  - |
     order = Order.model_validate_json(payload)
   - |
     order = Order.model_validate(data)

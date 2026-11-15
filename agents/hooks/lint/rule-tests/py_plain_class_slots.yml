@@ -4,6 +4,30 @@ valid:
     from functools import cached_property as cached
 
 
+    @typing.final
+    class Report:
+        def __init__(self, rows: list[int]) -> None:
+            self.rows = rows
+
+        @cached
+        def total(self) -> int:
+            return sum(self.rows)
+  - |
+    from functools import cached_property as cached
+
+
+    def make() -> None:
+        class Report:
+            def __init__(self, rows: list[int]) -> None:
+                self.rows = rows
+
+            @cached
+            def total(self) -> int:
+                return sum(self.rows)
+  - |
+    from functools import cached_property as cached
+
+
     class Report:
         def __init__(self, rows: list[int]) -> None:
             self.rows = rows

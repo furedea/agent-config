@@ -15,6 +15,10 @@ utils:
           field: right
           any:
             - regex: (?s)^(pytest\.)?mark\.usefixtures\(.*["']anyio_backend["']
+            - has:
+                stopBy: end
+                kind: call
+                regex: (?s)^(pytest\.)?mark\.usefixtures\(.*["']anyio_backend["']
             - kind: attribute
               regex: ^(pytest\.)?mark\.anyio$
             - has:
@@ -47,7 +51,20 @@ rule:
           stopBy: end
           has:
             kind: decorator
-            regex: (?s)^@(pytest\.)?mark\.usefixtures\(.*["']anyio_backend["']
+            regex: (?s)^@pytest\.mark\.usefixtures\(.*["']anyio_backend["']
+      - all:
+          - inside:
+              kind: decorated_definition
+              stopBy: end
+              has:
+                kind: decorator
+                regex: (?s)^@mark\.usefixtures\(.*["']anyio_backend["']
+          - inside:
+              kind: module
+              stopBy: end
+              has:
+                kind: import_from_statement
+                regex: (?s)^from\s+pytest\s+import\b.*\bmark\b
       - all:
           - inside:
               kind: decorated_definition

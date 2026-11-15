@@ -1,6 +1,32 @@
 id: py_async_test_anyio_marker
 valid:
   - |
+    from pytest import mark
+
+
+    @mark.usefixtures("anyio_backend")
+    async def test_something() -> None:
+        assert await work() == 1
+  - |
+    from pytest import mark
+
+
+    @mark.anyio
+    async def test_something() -> None:
+        assert await work() == 1
+  - |
+    pytestmark = [pytest.mark.usefixtures("anyio_backend"), pytest.mark.slow]
+
+
+    async def test_something() -> None:
+        assert await work() == 1
+  - |
+    pytestmark = [pytest.mark.anyio, pytest.mark.slow]
+
+
+    async def test_something() -> None:
+        assert await work() == 1
+  - |
     @pytest.mark.usefixtures("anyio_backend")
     async def test_something() -> None:
         assert await work() == 1

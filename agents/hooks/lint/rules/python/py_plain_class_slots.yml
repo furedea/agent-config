@@ -48,6 +48,7 @@ rule:
         all:
           - inside:
               kind: module
+              stopBy: end
               has:
                 pattern: from functools import cached_property as $CACHED
           - has:

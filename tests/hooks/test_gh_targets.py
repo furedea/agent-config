@@ -393,9 +393,29 @@ def test_a_boolean_fsmonitor_keeps_a_clone_allowed(value: str) -> None:
 
 
 @pytest.mark.usefixtures("furedea_checkout")
-@pytest.mark.parametrize(
-    ("program", "expected"), [("cat --x %f", "allow"), ("/tmp/evil %f", "ask"), ("nope-x", "ask")]
-)
-def test_a_filter_program_installed_outside_the_agent_roots_keeps_a_clone_allowed(program: str, expected: str) -> None:
+@pytest.mark.parametrize("program", ["cat --x %f", "sh -c x", "/tmp/evil %f", "git-lfs smudge -- %f; x"])
+def test_a_filter_program_other_than_git_lfs_makes_a_clone_ask(program: str) -> None:
     subprocess.run(["git", "config", "filter.lfs.smudge", program], check=True)
-    assert decide("gh repo clone furedea/agent-config") == expected
+    assert decide("gh repo clone furedea/agent-config") == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+@pytest.mark.skipif(shutil.which("git-lfs") is None, reason="git-lfs is not installed")
+def test_the_git_lfs_filter_keeps_a_clone_allowed() -> None:
+    subprocess.run(["git", "config", "filter.lfs.smudge", "git-lfs smudge -- %f"], check=True)
+    subprocess.run(["git", "config", "filter.lfs.process", "git-lfs filter-process"], check=True)
+    assert decide("gh repo clone furedea/agent-config") == "allow"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+@pytest.mark.parametrize("helper", ["!/tmp/evil", "/tmp/evil", "store; /tmp/evil", "nope-x"])
+def test_a_clone_under_an_untrusted_credential_helper_asks(helper: str) -> None:
+    assert decide("gh repo clone furedea/agent-config") == "allow"
+    subprocess.run(["git", "config", "credential.https://github.com.helper", helper], check=True)
+    assert decide("gh repo clone furedea/agent-config") == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_credential_helper_reset_keeps_a_clone_allowed() -> None:
+    subprocess.run(["git", "config", "credential.helper", ""], check=True)
+    assert decide("gh repo clone furedea/agent-config") == "allow"

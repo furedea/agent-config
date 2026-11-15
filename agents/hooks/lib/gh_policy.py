@@ -28,7 +28,7 @@ from gh_command_line import (
     has_inherited_function,
     has_writable_path_entry_before,
     input_redirects,
-    is_outside_agent_roots,
+    is_system_program,
 )
 from gh_invocation import GhCall, Unclassified
 from gh_repository import Repository
@@ -59,8 +59,11 @@ CHECKOUT_SETTINGS = (
     r"^(init\.templatedir|core\.(hookspath|fsmonitor|alternaterefscommand)|filter\..*\.(smudge|process))$"
 )
 # core.fsmonitor as a boolean selects git's built-in daemon; any other value is a program git runs.
-FILTER_KEY = re.compile(r"filter\..*\.(smudge|process)", re.IGNORECASE)
+# The filter settings `git lfs install` writes; any other filter command may be a shell running anything.
+LFS_FILTER = re.compile(r"filter\.lfs\.(?:smudge git-lfs smudge -- %f|process git-lfs filter-process)")
 BOOLEAN_FSMONITOR = re.compile(r"core\.fsmonitor (?:true|false|yes|no|on|off|1|0)?", re.IGNORECASE)
+CREDENTIAL_HELPERS = r"^credential\..*helper$"
+SAFE_HELPER = re.compile(r"[A-Za-z0-9_./ -]+")
 # The GIT_SSH_COMMAND the sandbox runtime sets: ssh through the proxy command the runtime itself provides.
 SANDBOX_SSH_COMMAND = (
     "ssh -o ControlMaster=no -o ControlPath=none -o ProxyCommand=\"/bin/sh -c 'eval "
@@ -133,8 +136,8 @@ def _environment_problem(line: CommandLine) -> str:
             return problem
     if os.environ.get("GH_FORCE_TTY"):
         return "the environment forces a terminal, so gh would start the pager program it names"
-    if not is_outside_agent_roots("rg"):
-        return "PATH finds an rg in a directory the agent can write, so the secret scan cannot be trusted"
+    if not is_system_program("rg"):
+        return "PATH finds an rg this account could replace, so the secret scan cannot be trusted"
     if problem := _override_problem():
         return problem
     configured_repository = os.environ.get("GH_REPO")
@@ -167,8 +170,8 @@ def _stand_in_problem(name: str, line: CommandLine) -> str:
         return f"another command on the line could place a {name} earlier on PATH"
     if has_inherited_function(name):
         return f"the environment carries a shell function that bash would run instead of {name}"
-    if not is_outside_agent_roots(name):
-        return f"PATH finds a {name} in a directory the agent can write"
+    if shutil.which(name) is not None and not is_system_program(name):
+        return f"PATH finds a {name} that this account could replace"
     return ""
 
 
@@ -241,7 +244,7 @@ def _ungranted(call: GhCall, line: CommandLine, rules: GhRules) -> str:
     if not all(rules.catalog.grant(target, operation, call.effect) for operation in call.operations):
         return IRREVERSIBLE_REASON if call.effect is Effect.IRREVERSIBLE else TARGET_REASONS[target]
     if "repo.clone" in call.operations and _clone_may_run_hooks():
-        return "clones with a hook template, hooks path, or filter that may run code on the checkout"
+        return "clones with a hook template, hooks path, filter, or credential helper that may run code"
     if problem := _file_problem(call, line):
         return problem
     if call.unscanned_files and (call.effect is Effect.READ or target is not TargetClass.TRUSTED):
@@ -403,20 +406,37 @@ def _clone_may_run_hooks() -> bool:
     if os.environ.get("GIT_TEMPLATE_DIR"):
         return True
     output = _git_output("config", "--get-regexp", CHECKOUT_SETTINGS)
-    if output is None:
+    helpers = _git_output("config", "--get-regexp", CREDENTIAL_HELPERS)
+    if output is None or helpers is None:
+        return True
+    if any(not _is_trusted_helper(line.partition(" ")[2].strip()) for line in helpers.splitlines() if line.strip()):
         return True
     return any(not _is_installed_checkout_program(line.strip()) for line in output.splitlines() if line.strip())
 
 
+def _is_trusted_helper(value: str) -> bool:
+    """Whether a credential helper runs only a locked program: none, git-credential-<name>, or an absolute path.
+
+    git runs a helper through the shell, so a `!` snippet or any shell syntax may run anything.
+    """
+    if not value:
+        return True
+    if not SAFE_HELPER.fullmatch(value):
+        return False
+    program = value.split(maxsplit=1)[0]
+    if program.startswith("/"):
+        return is_system_program(program)
+    git = shutil.which("git")
+    root = Path(git).resolve().parent.parent if git else Path("/nonexistent")
+    bundled = [root / directory / f"git-credential-{program}" for directory in ("libexec/git-core", "lib/git-core")]
+    return is_system_program(next((str(path) for path in bundled if path.exists()), f"git-credential-{program}"))
+
+
 def _is_installed_checkout_program(setting: str) -> bool:
-    """Whether a checkout setting runs nothing, or a filter installed outside the agent roots, such as git-lfs."""
-    key, _, value = setting.partition(" ")
+    """Whether a checkout setting runs nothing, or is git-lfs's own filter, installed outside the agent roots."""
     if BOOLEAN_FSMONITOR.fullmatch(setting):
         return True
-    if not FILTER_KEY.fullmatch(key) or not value.split():
-        return False
-    program = value.split()[0]
-    return "/" not in program and shutil.which(program) is not None and is_outside_agent_roots(program)
+    return bool(LFS_FILTER.fullmatch(setting)) and is_system_program("git-lfs")
 
 
 def _git_output(*arguments: str) -> str | None:
@@ -425,7 +445,7 @@ def _git_output(*arguments: str) -> str | None:
     A planted git could tell the guard one remote and gh another, and would run inside the hook itself.
     """
     found = shutil.which("git")
-    if found is None or not is_outside_agent_roots("git"):
+    if found is None or not is_system_program("git"):
         return None
     try:
         return subprocess.run(

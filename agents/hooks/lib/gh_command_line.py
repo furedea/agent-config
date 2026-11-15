@@ -194,17 +194,6 @@ def has_inherited_function(name: str) -> bool:
     return any(key.startswith(f"BASH_FUNC_{name}%%") or key == f"BASH_FUNC_{name}()" for key in os.environ)
 
 
-def is_outside_agent_roots(name: str) -> bool:
-    """Whether the program PATH finds, and what it links to, lies outside where a sandboxed agent can write.
-
-    A program PATH does not find cannot run at all, so it stands in for nothing.
-    """
-    found = shutil.which(name)
-    if found is None:
-        return True
-    return not any(_in_agent_roots(path) for path in (Path(found).absolute(), Path(found).resolve()))
-
-
 def has_writable_path_entry_before(name: str) -> bool:
     """Whether a PATH entry searched before the program is relative, empty, or where the agent can write.
 

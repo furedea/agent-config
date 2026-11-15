@@ -75,6 +75,17 @@ valid:
   - |
     class Namespace:
         def run(self) -> None: ...
+  - |
+    from functools import lru_cache, cached_property as cached
+
+
+    class Report:
+        def __init__(self, rows: tuple[int, ...]) -> None:
+            self.rows = rows
+
+        @cached
+        def total(self) -> int:
+            return sum(self.rows)
 invalid:
   - |
     @functools.total_ordering

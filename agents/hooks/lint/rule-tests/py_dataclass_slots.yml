@@ -43,6 +43,17 @@ valid:
     @functools.total_ordering
     class Age:
         value: int
+  - |
+    from functools import lru_cache, cached_property as cached
+
+
+    @dataclass(frozen=True)
+    class Report:
+        rows: tuple[int, ...]
+
+        @cached
+        def total(self) -> int:
+            return sum(self.rows)
 invalid:
   - |
     @dataclass

@@ -126,7 +126,7 @@ rule:
               stopBy: end
               has:
                 kind: expression_statement
-                regex: ^pytestmark\s*=\s*\w+\.mark\.anyio$
+                regex: ^pytestmark\s*=.*\w+\.mark\.anyio\b
       - inside:
           any:
             - kind: module

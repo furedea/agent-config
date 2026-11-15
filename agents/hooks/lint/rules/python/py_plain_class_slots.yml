@@ -54,7 +54,10 @@ rule:
               kind: module
               stopBy: end
               has:
-                pattern: from functools import cached_property as $CACHED
+                stopBy: end
+                pattern:
+                  context: from functools import cached_property as $CACHED
+                  selector: aliased_import
           - has:
               stopBy: end
               kind: decorator

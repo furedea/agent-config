@@ -29,12 +29,15 @@ justify one for a local, easily reversible choice; use code, tests, or a comment
 
 ## Write
 
+These steps apply to a repository with no ADRs yet or with MADR ADRs. If its ADRs use another format, write in that
+format with its own template, naming, and status values, and mark superseded ADRs the way it does.
+
 1. Copy [references/template.md](references/template.md) to `docs/adr/NNNN_words.md`: NNNN is the highest existing ID
    plus one (`0001` in an empty directory; never reuse an ID), and the words are underscore-separated unless the
    existing files differ. The ID comes from the file name.
 2. Fill the front matter. Use `accepted` when the decision is implemented in the same change, `proposed` when it is
    not. The title line is `# <short title>` without an ID.
-3. Fill the template. Add MADR's full-variant sections only when the minimal ones are too compressed.
+3. Fill the template and delete its source comment and the unused front-matter lines. Add MADR's full-variant sections only when the minimal ones are too compressed.
 4. To supersede, set `supersedes` in the new ADR and `status: superseded` plus `superseded-by` in the old one, in the
    same change. Edit nothing else in an accepted ADR's body; record later changes in `amended`.
 

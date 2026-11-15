@@ -48,6 +48,8 @@ MARKER_SUFFIXES = {"ast-grep-ignore": CODE_SUFFIXES | {".yml", ".yaml", ".nix"}}
 # compared by its comment's text: changing the named rules, or turning a string that holds the word into a comment,
 # asks.
 COMPARED_BY_TEXT = frozenset({"ast-grep-ignore"})
+# Every other marker is a comment directive, counted only inside a comment; a Rust attribute is code.
+CODE_MARKERS = frozenset({"allow or expect attribute"})
 # An ast-grep marker on the first line followed by a blank line suppresses its rules for the whole file.
 FILE_SCOPE = "ast-grep-ignore for the whole file"
 PATCH_FILE = re.compile(r"^\*\*\* (?:Add|Update) File: (.+)$")
@@ -120,15 +122,22 @@ def _lines(text: str) -> list[str]:
 
 
 def _adds(name: str, pattern: re.Pattern[str], change: _Change) -> bool:
-    """Count markers, or for markers compared by text, find a marker whose text is new."""
-    if name not in COMPARED_BY_TEXT:
+    """Count markers in comments, or for markers compared by text, find a marker whose text is new.
+
+    Without the scanner, comments cannot be told from strings: an ast-grep marker in changed text asks, and other
+    markers are counted wherever they appear.
+    """
+    if name in CODE_MARKERS:
         return len(pattern.findall(change.added)) > len(pattern.findall(change.removed))
     suffix = Path(change.path).suffix
     added, removed = (_marked_lines(pattern, text, suffix) for text in (change.added, change.removed))
     if added is None or removed is None:
-        # Comments cannot be told from strings, so any change to text that holds a marker asks.
-        return pattern.search(change.added) is not None and change.added != change.removed
-    return bool(Counter(added.values()) - Counter(removed.values()))
+        if name in COMPARED_BY_TEXT:
+            return pattern.search(change.added) is not None and change.added != change.removed
+        return len(pattern.findall(change.added)) > len(pattern.findall(change.removed))
+    if name in COMPARED_BY_TEXT:
+        return bool(Counter(added.values()) - Counter(removed.values()))
+    return sum(comment for comment, _ in added.values()) > sum(comment for comment, _ in removed.values())
 
 
 def _marked_lines(pattern: re.Pattern[str], text: str, suffix: str) -> dict[int, tuple[bool, str]] | None:
@@ -139,7 +148,7 @@ def _marked_lines(pattern: re.Pattern[str], text: str, suffix: str) -> dict[int,
     """
     if not pattern.search(text):
         return {}
-    spans = comment_nodes.comment_spans(text, suffix, "ast-grep-ignore")
+    spans = comment_nodes.comment_spans(text, suffix)
     if spans is None:
         return None
     marked = {}

@@ -1,13 +1,15 @@
-"""Find the comments that hold a word with ast-grep's tree-sitter grammars, which know every string form.
+"""Find the comments in source text with ast-grep's tree-sitter grammars, which know every string form.
 
 Hand-written lexers miss block scalars, raw strings and similar constructs, and ast-grep itself honors a
 suppression only in a comment node, so the same parser decides here.
 """
 
+import functools
 import json
 import shutil
 import subprocess
 import tempfile
+from pathlib import Path
 
 SCANNER = "ast-grep"
 TIMEOUT_SECONDS = 10
@@ -24,27 +26,44 @@ LANGUAGES = {
     **dict.fromkeys((".yml", ".yaml"), "yaml"),
 }
 COMMENT_KINDS = {"rust": ("line_comment", "block_comment")}
-STAND_IN = "guardcommentmarkerstandin"
+SUPPRESSION = "ast-grep-ignore"
+# Same length as the suppression word, so every offset stays.
+STAND_IN = "ast-grep-ign0re"
 
 
-def comment_spans(text: str, suffix: str, word: str) -> list[tuple[int, int]] | None:
-    """The start and end offsets of each comment in `text` that holds `word`, or None when they cannot be known.
+def comment_spans(text: str, suffix: str) -> list[tuple[int, int]] | None:
+    """The start and end offsets of each comment in `text`, or None when they cannot be known.
 
     None means the suffix has no grammar, the scanner is missing, or it failed; the caller must then fail closed.
     """
     language = LANGUAGES.get(suffix)
     if language is None or shutil.which(SCANNER) is None:
         return None
+    return _scan(text, language, SCANNER)
+
+
+@functools.cache
+def _scan(text: str, language: str, scanner: str) -> list[tuple[int, int]] | None:
+    """Scan once per text, since every marker kind asks about the same text."""
     encoded = text.encode()
-    # ast-grep would apply the suppressions in the text to this scan too and hide comments below a marker, so the
-    # word is replaced by a stand-in of the same length, which keeps every offset.
-    stand_in = STAND_IN[: len(word)].ljust(len(word), "_")
     try:
-        # A fresh private directory, so no sgconfig.yml there changes how the rule is read.
+        # An empty config of its own in a fresh private directory, so ast-grep looks for no sgconfig.yml.
         with tempfile.TemporaryDirectory() as directory:
+            config = Path(directory) / "sgconfig.yml"
+            config.write_text("ruleDirs: []\n")
             result = subprocess.run(
-                (SCANNER, "scan", "--stdin", "--inline-rules", _rule(language, stand_in), "--json=stream"),
-                input=text.replace(word, stand_in).encode(),
+                (
+                    scanner,
+                    "scan",
+                    "--config",
+                    str(config),
+                    "--stdin",
+                    "--inline-rules",
+                    _rule(language),
+                    "--json=stream",
+                ),
+                # ast-grep would apply the suppressions in the text to this scan too and hide the comments below them.
+                input=text.replace(SUPPRESSION, STAND_IN).encode(),
                 capture_output=True,
                 timeout=TIMEOUT_SECONDS,
                 check=False,
@@ -58,9 +77,9 @@ def comment_spans(text: str, suffix: str, word: str) -> list[tuple[int, int]] | 
     return spans if result.returncode == 0 else None
 
 
-def _rule(language: str, word: str) -> str:
+def _rule(language: str) -> str:
     kinds = "".join(f"\n    - kind: {kind}" for kind in COMMENT_KINDS.get(language, ("comment",)))
-    return f"id: comment\nlanguage: {language}\nrule:\n  regex: {json.dumps(word)}\n  any:{kinds}\n"
+    return f"id: comment\nlanguage: {language}\nrule:\n  any:{kinds}\n"
 
 
 def _characters(encoded: bytes, offset: int) -> int:

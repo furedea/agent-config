@@ -283,3 +283,19 @@ def test_without_the_scanner_any_change_to_a_file_with_a_marker_asks(
     target = tmp_path / "app.py"
     target.write_text("x = 1  # ast-grep-ignore: rule_a\n")
     assert decide("Edit", {"file_path": str(target), "old_string": "x = 1", "new_string": "y = 2"}) == "ask"
+
+
+def test_turning_a_go_string_into_a_nolint_comment_asks(tmp_path: Path) -> None:
+    target = tmp_path / "user.go"
+    target.write_text('package a\n\nfunc f() {\n\ts := "//nolint"\n\t_ = s\n}\n')
+    edits = [
+        {"old_string": 's := "//nolint"', "new_string": "//nolint"},
+        {"old_string": "\t_ = s\n", "new_string": ""},
+    ]
+    assert decide("MultiEdit", {"file_path": str(target), "edits": edits}) == "ask"
+
+
+def test_editing_code_beside_an_unchanged_nolint_comment_passes(tmp_path: Path) -> None:
+    target = tmp_path / "user.go"
+    target.write_text("package a\n\nfunc f() {\n\tg() //nolint:errcheck // closing a read-only file\n}\n")
+    assert decide("Edit", {"file_path": str(target), "old_string": "\tg()", "new_string": "\th()"}) == "allow"

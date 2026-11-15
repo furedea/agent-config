@@ -20,3 +20,14 @@ nix develop --command bats tests/bootstrap_server.bats
 Work flows through Issues, task worktrees, and reviewed pull requests; see
 [`docs/DESIGN.md`](docs/DESIGN.md). Commit messages follow Conventional Commits. Record a decision
 that is not obvious from the code as an ADR under [`docs/adr/`](docs/adr/).
+
+## Releases
+
+release-please derives the version from Conventional Commits. The version stays below 1.0.0 until
+the architecture in #181 is complete; 1.0.0 is released together with it. Until then:
+
+| Commit                   | Bump  | Meaning for consumers                                                                                                                           |
+| ------------------------ | ----- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `feat`                   | minor | Agent behavior changes: new or changed rules, hooks, or skills.                                                                                 |
+| `fix`                    | patch | Fixes to existing behavior.                                                                                                                     |
+| breaking (`!` or footer) | minor | Consumers must change something: paths, settings schema, or removed or renamed skills or hooks. Listed under BREAKING CHANGES in the changelog. |

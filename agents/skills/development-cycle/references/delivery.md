@@ -118,33 +118,12 @@ mechanism is in the
 
 ## Local Verification Before Delivery
 
-1. Complete required local verification before delivery without waiting for Stop.
-2. Normally invoke the shared verify entry point while preparing the delivery commit.
-3. Let shared verify reuse valid results when available.
-4. Let the existing pre-commit hooks run normally at commit time.
-5. Refresh necessary evidence if formatting, fixes, rebase, or other changes alter inputs after
-    verification.
-6. After PR creation, check CI and [review on GitHub](#review-on-github) and proceed only to the authorized stage.
+1. Do not run `verification_session.py verify` or `status`; the sandbox protects the verification records, so recording
+    verification stays with Stop, the pre-commit hooks, and CI.
+2. Run the relevant tests directly when you need evidence for a decision.
+3. Let the existing pre-commit hooks run normally at commit time.
+4. Refresh necessary evidence if formatting, fixes, rebase, or other changes alter inputs after a direct test run.
+5. After PR creation, check CI and [review on GitHub](#review-on-github) and proceed only to the authorized stage.
 
-Stop does not necessarily run before commit, push, or merge, so it cannot be the only delivery
-gate. For conditions requiring manual checks, follow
-[TSDD Automatic Verification](../../tsdd/SKILL.md#automatic-verification).
-
-## Verification Commands
-
-Use the current record registered and reported by SessionStart as `<session-record>`. Never select
-a record merely because its modification time is newest.
-
-```bash
-"$HOME/.claude/hooks/verification_session.py" verify "<session-record>"
-```
-
-Normally call verify directly before delivery; a status-then-verify sequence is not required.
-When freshness is unclear, inspect state without starting checks:
-
-```bash
-"$HOME/.claude/hooks/verification_session.py" status "<session-record>"
-```
-
-Status exit code 0 means the query succeeded, not that verification passed. Judge verification
-from the returned state and each result's applicability.
+Stop does not necessarily run before commit, push, or merge, so pre-commit and CI are the delivery gates. For
+conditions requiring manual checks, follow [TSDD Automatic Verification](../../tsdd/SKILL.md#automatic-verification).

@@ -1,8 +1,8 @@
 id: tsx_no_unvalidated_json_cast
 language: tsx
 severity: error
-message: "Parse external input as `unknown` and validate it instead of asserting its type."
-note: "The `.tsx` counterpart of ts_no_unvalidated_json_cast; ast-grep parses `.tsx` files as the separate `tsx` language. `JSON.parse` and `Response.json()` return `any`; asserting or annotating the result skips the validation the boundary needs."
+message: "Asserting the type of `JSON.parse` or `response.json()` output skips validation, so malformed external data enters typed code unchecked."
+note: "Parse as `unknown` and validate it: `const config = parseConfig(JSON.parse(text))` instead of `JSON.parse(text) as Config`."
 rule:
   any:
     - pattern: JSON.parse($$$ARGS) as $TYPE

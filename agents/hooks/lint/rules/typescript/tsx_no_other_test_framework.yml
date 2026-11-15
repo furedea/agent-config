@@ -1,8 +1,8 @@
 id: tsx_no_other_test_framework
 language: tsx
 severity: error
-message: "Use vitest as the only test framework."
-note: "The `.tsx` counterpart of ts_no_other_test_framework; ast-grep parses `.tsx` files as the separate `tsx` language. Imports of jest, mocha and `node:test`, and `jest.*` calls; a Jest dependency in `package.json` is not seen."
+message: "Importing another test framework splits the test suite across runners; this project runs vitest only."
+note: "Import from vitest instead: `import { describe, it, expect, vi } from \"vitest\"`, and use `vi.fn()` where `jest.fn()` was used."
 rule:
   any:
     - all:

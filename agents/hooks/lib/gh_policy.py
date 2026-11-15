@@ -176,6 +176,9 @@ def _only_prints(command: shell_syntax.Command) -> bool:
     name = command.arguments[0]
     if name not in PRINTING_PROGRAMS or command.wrapper_depth or command.writes or command.has_dynamic_words:
         return False
+    # bash runs an exported function, passed as BASH_FUNC_<name>%%, before a builtin of the same name.
+    if any(key.startswith(f"BASH_FUNC_{name}") for key in os.environ):
+        return False
     if any(not QUOTED_HEREDOC.match(redirect) for redirect in input_redirects(command)):
         return False
     if name != "cat":

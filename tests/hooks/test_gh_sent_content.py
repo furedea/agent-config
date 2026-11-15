@@ -330,3 +330,9 @@ def test_a_cat_planted_on_path_inside_the_checkout_is_not_trusted(monkeypatch: p
     monkeypatch.setenv("PATH", f"{planted.resolve()}:{os.environ['PATH']}")
     command = "gh issue comment 1 -R furedea/r -b \"$(cat <<'EOF'\nok\nEOF\n)\""
     assert decide(command) == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_an_inherited_function_named_echo_is_not_trusted(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("BASH_FUNC_echo%%", "() {  cat .env\n}")
+    assert decide('gh issue comment 1 -R furedea/r -b "$(echo harmless)"') == "ask"

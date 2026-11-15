@@ -31,6 +31,24 @@ valid:
   - |
     class Money(FrozenBaseModel):
         amount: int
+  - |
+    import pydantic
+
+
+    class FrozenBaseModel(pydantic.BaseModel, frozen=True):
+        """Freeze a parsed schema and validate it strictly."""
+
+        model_config = pydantic.ConfigDict(
+            extra="forbid", strict=True, validate_default=True, revalidate_instances="always"
+        )
+  - |
+    import pydantic
+
+
+    class FrozenBaseModel(pydantic.BaseModel, extra="forbid", strict=True):
+        """Freeze a parsed schema and validate it strictly."""
+
+        model_config = {"frozen": True, "validate_default": True, "revalidate_instances": "always"}
 invalid:
   - |
     from pydantic import BaseModel

@@ -86,6 +86,48 @@ rule:
               kind: module
               stopBy: end
               has:
+                stopBy: end
+                pattern:
+                  context: from pytest import mark as $MARK
+                  selector: aliased_import
+          - inside:
+              kind: decorated_definition
+              stopBy: end
+              has:
+                kind: decorator
+                has:
+                  any:
+                    - pattern: $MARK.anyio
+                    - all:
+                        - pattern: $MARK.usefixtures($$$ARGS)
+                        - regex: (?s)["']anyio_backend["']
+      - all:
+          - inside:
+              kind: module
+              stopBy: end
+              has:
+                stopBy: end
+                pattern:
+                  context: from pytest import mark as $MARK
+                  selector: aliased_import
+          - inside:
+              stopBy: end
+              any:
+                - kind: module
+                  has:
+                    kind: expression_statement
+                    regex: (?s)^pytestmark\s*=.*\w+\.(anyio\b|usefixtures\(.*["']anyio_backend["'])
+                - kind: class_definition
+                  has:
+                    kind: block
+                    has:
+                      kind: expression_statement
+                      regex: (?s)^pytestmark\s*=.*\w+\.(anyio\b|usefixtures\(.*["']anyio_backend["'])
+      - all:
+          - inside:
+              kind: module
+              stopBy: end
+              has:
                 pattern: import pytest as $ALIAS
           - inside:
               kind: decorated_definition

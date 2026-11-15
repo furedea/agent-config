@@ -3,53 +3,6 @@ language: python
 severity: error
 message: "A `FrozenBaseModel` without all five settings can be mutated or accept unvalidated input."
 note: "Set `model_config = pydantic.ConfigDict(frozen=True, extra=\"forbid\", strict=True, validate_default=True, revalidate_instances=\"always\")`."
-utils:
-  complete_model_config:
-    kind: assignment
-    all:
-      - has:
-          field: left
-          kind: identifier
-          regex: ^model_config$
-      - has:
-          field: right
-          any:
-            - kind: call
-              has:
-                kind: argument_list
-                all:
-                  - has:
-                      kind: keyword_argument
-                      regex: ^frozen\s*=\s*True$
-                  - has:
-                      kind: keyword_argument
-                      regex: ^extra\s*=\s*["']forbid["']$
-                  - has:
-                      kind: keyword_argument
-                      regex: ^strict\s*=\s*True$
-                  - has:
-                      kind: keyword_argument
-                      regex: ^validate_default\s*=\s*True$
-                  - has:
-                      kind: keyword_argument
-                      regex: ^revalidate_instances\s*=\s*["']always["']$
-            - kind: dictionary
-              all:
-                  - has:
-                      kind: pair
-                      regex: '^["'']frozen["'']\s*:\s*True$'
-                  - has:
-                      kind: pair
-                      regex: '^["'']extra["'']\s*:\s*["'']forbid["'']$'
-                  - has:
-                      kind: pair
-                      regex: '^["'']strict["'']\s*:\s*True$'
-                  - has:
-                      kind: pair
-                      regex: '^["'']validate_default["'']\s*:\s*True$'
-                  - has:
-                      kind: pair
-                      regex: '^["'']revalidate_instances["'']\s*:\s*["'']always["'']$'
 rule:
   kind: class_definition
   all:
@@ -132,30 +85,164 @@ rule:
                 has:
                   pattern: $RENAMED
     - not:
-        any:
-          - has:
-              field: body
-              kind: block
-              has:
-                kind: expression_statement
-                has:
-                  matches: complete_model_config
-          - has:
-              field: superclasses
-              kind: argument_list
-              all:
-                - has:
+        all:
+          - any:
+              - has:
+                  field: superclasses
+                  kind: argument_list
+                  has:
                     kind: keyword_argument
                     regex: ^frozen\s*=\s*True$
-                - has:
+              - has:
+                  field: body
+                  kind: block
+                  has:
+                    kind: expression_statement
+                    has:
+                      kind: assignment
+                      all:
+                        - has:
+                            field: left
+                            kind: identifier
+                            regex: ^model_config$
+                        - has:
+                            field: right
+                            any:
+                              - kind: call
+                                has:
+                                  kind: argument_list
+                                  has:
+                                    kind: keyword_argument
+                                    regex: ^frozen\s*=\s*True$
+                              - kind: dictionary
+                                has:
+                                  kind: pair
+                                  regex: '^["'']frozen["'']\s*:\s*True$'
+          - any:
+              - has:
+                  field: superclasses
+                  kind: argument_list
+                  has:
                     kind: keyword_argument
                     regex: ^extra\s*=\s*["']forbid["']$
-                - has:
+              - has:
+                  field: body
+                  kind: block
+                  has:
+                    kind: expression_statement
+                    has:
+                      kind: assignment
+                      all:
+                        - has:
+                            field: left
+                            kind: identifier
+                            regex: ^model_config$
+                        - has:
+                            field: right
+                            any:
+                              - kind: call
+                                has:
+                                  kind: argument_list
+                                  has:
+                                    kind: keyword_argument
+                                    regex: ^extra\s*=\s*["']forbid["']$
+                              - kind: dictionary
+                                has:
+                                  kind: pair
+                                  regex: '^["'']extra["'']\s*:\s*["'']forbid["'']$'
+          - any:
+              - has:
+                  field: superclasses
+                  kind: argument_list
+                  has:
                     kind: keyword_argument
                     regex: ^strict\s*=\s*True$
-                - has:
+              - has:
+                  field: body
+                  kind: block
+                  has:
+                    kind: expression_statement
+                    has:
+                      kind: assignment
+                      all:
+                        - has:
+                            field: left
+                            kind: identifier
+                            regex: ^model_config$
+                        - has:
+                            field: right
+                            any:
+                              - kind: call
+                                has:
+                                  kind: argument_list
+                                  has:
+                                    kind: keyword_argument
+                                    regex: ^strict\s*=\s*True$
+                              - kind: dictionary
+                                has:
+                                  kind: pair
+                                  regex: '^["'']strict["'']\s*:\s*True$'
+          - any:
+              - has:
+                  field: superclasses
+                  kind: argument_list
+                  has:
                     kind: keyword_argument
                     regex: ^validate_default\s*=\s*True$
-                - has:
+              - has:
+                  field: body
+                  kind: block
+                  has:
+                    kind: expression_statement
+                    has:
+                      kind: assignment
+                      all:
+                        - has:
+                            field: left
+                            kind: identifier
+                            regex: ^model_config$
+                        - has:
+                            field: right
+                            any:
+                              - kind: call
+                                has:
+                                  kind: argument_list
+                                  has:
+                                    kind: keyword_argument
+                                    regex: ^validate_default\s*=\s*True$
+                              - kind: dictionary
+                                has:
+                                  kind: pair
+                                  regex: '^["'']validate_default["'']\s*:\s*True$'
+          - any:
+              - has:
+                  field: superclasses
+                  kind: argument_list
+                  has:
                     kind: keyword_argument
                     regex: ^revalidate_instances\s*=\s*["']always["']$
+              - has:
+                  field: body
+                  kind: block
+                  has:
+                    kind: expression_statement
+                    has:
+                      kind: assignment
+                      all:
+                        - has:
+                            field: left
+                            kind: identifier
+                            regex: ^model_config$
+                        - has:
+                            field: right
+                            any:
+                              - kind: call
+                                has:
+                                  kind: argument_list
+                                  has:
+                                    kind: keyword_argument
+                                    regex: ^revalidate_instances\s*=\s*["']always["']$
+                              - kind: dictionary
+                                has:
+                                  kind: pair
+                                  regex: '^["'']revalidate_instances["'']\s*:\s*["'']always["'']$'

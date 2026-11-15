@@ -185,6 +185,28 @@ valid:
 
     async def test_something() -> None:
         assert await work() == 1
+  - |
+    from pytest import mark as pytest_mark
+
+
+    @pytest_mark.anyio
+    async def test_something() -> None:
+        assert await work() == 1
+  - |
+    from pytest import mark as pytest_mark
+
+
+    @pytest_mark.usefixtures("anyio_backend")
+    async def test_something() -> None:
+        assert await work() == 1
+  - |
+    from pytest import mark as pytest_mark
+
+    pytestmark = pytest_mark.anyio
+
+
+    async def test_something() -> None:
+        assert await work() == 1
 invalid:
   - |
     @app.mark.usefixtures("anyio_backend")

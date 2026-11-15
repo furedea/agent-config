@@ -367,3 +367,21 @@ def test_a_pnpm_global_install_through_the_environment_is_denied(git_project: Pa
 def test_a_pnpm_global_install_through_project_settings_is_denied(git_project: Path, name: str) -> None:
     (git_project / name).write_text("global=true\n" if name == ".npmrc" else "global: true\n")
     assert judged(git_project, "pnpm add cowsay", "allowed") == "deny"
+
+
+@pytest.mark.parametrize(
+    "setting", ["global=false", "global-dir=/x", "global = false"], ids=["false", "directory", "spaced false"]
+)
+def test_a_pnpm_setting_that_does_not_turn_global_on_still_asks_normally(git_project: Path, setting: str) -> None:
+    (git_project / ".npmrc").write_text(setting + "\n")
+    assert judged(git_project, "pnpm add cowsay", "allowed") == "allow"
+
+
+def test_an_explicitly_false_variable_is_not_denied(git_project: Path) -> None:
+    assert judged(git_project, "npm_config_global=false pnpm add cowsay", "allowed") != "deny"
+
+
+@pytest.mark.parametrize("name", ["npm_config_global", "NPM_CONFIG_GLOBAL"])
+def test_an_inherited_global_variable_is_denied(git_project: Path, monkeypatch: pytest.MonkeyPatch, name: str) -> None:
+    monkeypatch.setenv(name, "true")
+    assert judged(git_project, "pnpm add cowsay", "allowed") == "deny"

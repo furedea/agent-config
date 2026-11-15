@@ -62,8 +62,10 @@ MINIMUM_AGE = timedelta(days=7)
 SPAN = re.compile(r"(?P<count>\d+)\s*(?P<unit>weeks?|days?)|p(?P<iso_count>\d+)(?P<iso_unit>[wd])")
 ENVIRONMENT_PREFIX = "UV_"
 # pnpm's global setting, from the environment or a settings file it reads.
-PNPM_GLOBAL_VARIABLE = re.compile(r"npm_config_global(_dir)?\s*=", re.IGNORECASE)
-PNPM_GLOBAL_SETTING = re.compile(r"^\s*global(-dir)?\s*[=:]", re.MULTILINE)
+TRUTHY = r"(true|1|yes|on)"
+PNPM_GLOBAL_VARIABLE = re.compile(rf"npm_config_global\s*=\s*[\"']?{TRUTHY}\b", re.IGNORECASE)
+PNPM_GLOBAL_SETTING = re.compile(rf"^\s*global\s*[=:]\s*[\"']?{TRUTHY}\b", re.MULTILINE | re.IGNORECASE)
+PNPM_GLOBAL_ENVIRONMENT = "npm_config_global"
 PNPM_SETTINGS = (".npmrc", "pnpm-workspace.yaml")
 DEFAULT_SYSTEM_CONFIG = "/etc/xdg"
 OVERRIDING_SETTINGS = frozenset(
@@ -305,7 +307,11 @@ def _is_pnpm_add(item: shell_syntax.Command) -> bool:
 
 def _pnpm_global_source(payload: dict, command: str) -> str:
     """What turns pnpm's global setting on: a variable in the command or a settings file pnpm reads."""
-    if PNPM_GLOBAL_VARIABLE.search(command):
+    inherited = any(
+        name.casefold() == PNPM_GLOBAL_ENVIRONMENT and re.fullmatch(TRUTHY, value.strip(), re.IGNORECASE)
+        for name, value in os.environ.items()
+    )
+    if inherited or PNPM_GLOBAL_VARIABLE.search(command):
         return "npm_config_global"
     cwd = payload.get("cwd")
     directory = Path(cwd).resolve() if isinstance(cwd, str) and Path(cwd).is_absolute() else Path.cwd()

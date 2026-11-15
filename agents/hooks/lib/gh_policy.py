@@ -25,6 +25,7 @@ from gh_command_line import (
     QUOTED_HEREDOC,
     CommandLine,
     has_inherited_function,
+    has_writable_path_entry_before,
     input_redirects,
     is_outside_agent_roots,
 )
@@ -88,7 +89,7 @@ def verdict(candidate: shell_syntax.Command, line: CommandLine, rules: GhRules) 
 
 def _judged_call(candidate: shell_syntax.Command, line: CommandLine, rules: GhRules) -> GhCall | str:
     """The classified call with its standard input resolved, or why the guard cannot judge it."""
-    if problem := _environment_problem():
+    if problem := _environment_problem(line):
         return problem
     if line.hides_code:
         return "zsh may evaluate a subscript or assignment on this line as code the guard cannot see"
@@ -103,8 +104,10 @@ def _judged_call(candidate: shell_syntax.Command, line: CommandLine, rules: GhRu
     return _with_expanded_paths(stdin) if line.single_call else stdin
 
 
-def _environment_problem() -> str:
-    """Why the hook's own environment may run something else than gh against github.com, or an empty string."""
+def _environment_problem(line: CommandLine) -> str:
+    """Why the environment may run something else than gh against github.com, or an empty string."""
+    if line.changes_directory and has_writable_path_entry_before(PROGRAM):
+        return "another command on the line could place a gh earlier on PATH"
     if has_inherited_function(PROGRAM):
         return "the environment carries a shell function that bash would run instead of gh"
     if not is_outside_agent_roots(PROGRAM):

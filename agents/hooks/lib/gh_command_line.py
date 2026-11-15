@@ -193,17 +193,33 @@ def has_inherited_function(name: str) -> bool:
 
 
 def is_outside_agent_roots(name: str) -> bool:
-    """Whether PATH finds the program, and what it links to, outside the working tree and temporary directories.
+    """Whether the program PATH finds, and what it links to, lies outside where a sandboxed agent can write.
 
-    Those are where a sandboxed agent can write, so a program found elsewhere is not one it planted. A program
-    PATH does not find cannot run at all, so it stands in for nothing.
+    A program PATH does not find cannot run at all, so it stands in for nothing.
     """
     found = shutil.which(name)
     if found is None:
         return True
-    if not Path(found).is_absolute():
-        return False
-    roots = [Path.cwd().resolve(), *(Path(os.environ[key]).resolve() for key in ("TMPDIR",) if os.environ.get(key))]
-    roots += [Path("/tmp").resolve(), Path("/private/tmp")]
-    paths = (Path(found).absolute(), Path(found).resolve())
-    return not any(path.is_relative_to(root) for path in paths for root in roots)
+    return not any(_in_agent_roots(path) for path in (Path(found).absolute(), Path(found).resolve()))
+
+
+def has_writable_path_entry_before(name: str) -> bool:
+    """Whether a PATH entry searched before the program is relative, empty, or where the agent can write.
+
+    Another command on the same line could place a stand-in there before the program runs.
+    """
+    found = shutil.which(name)
+    found_directory = Path(found).absolute().parent if found else None
+    for entry in os.environ.get("PATH", "").split(os.pathsep):
+        if not entry or not Path(entry).is_absolute() or _in_agent_roots(Path(entry).resolve()):
+            return True
+        if Path(entry).absolute() == found_directory:
+            return False
+    return False
+
+
+def _in_agent_roots(path: Path) -> bool:
+    """Whether a path lies in the working tree or a temporary directory, where a sandboxed agent writes."""
+    roots = [Path.cwd().resolve(), Path("/tmp").resolve(), Path("/private/tmp")]
+    roots += [Path(os.environ["TMPDIR"]).resolve()] if os.environ.get("TMPDIR") else []
+    return any(path.is_relative_to(root) for root in roots)

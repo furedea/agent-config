@@ -178,3 +178,14 @@ def test_a_gh_planted_on_path_makes_every_call_ask(tmp_path: Path, monkeypatch: 
     (planted / "gh").chmod(0o755)
     monkeypatch.setenv("PATH", f"{planted}:{os.environ['PATH']}")
     assert decide("gh pr list -R furedea/agent-config") == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_writable_path_entry_before_gh_asks_beside_a_command_that_may_write(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    empty = tmp_path / "later"
+    empty.mkdir()
+    monkeypatch.setenv("PATH", f"{empty}:{os.environ['PATH']}")
+    assert decide("cp x later/gh; gh pr list -R furedea/agent-config") == "ask"
+    assert decide("gh pr list -R furedea/agent-config") == "allow"

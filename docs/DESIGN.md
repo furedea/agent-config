@@ -216,8 +216,9 @@ Without the items, the hook reports `Model rules skipped` at every Stop and does
     undone (merge, release, stash drop, remote changes, signals, the Herdr server); an `ask` rule still
     prompts in Claude Code's auto mode. `uv add` and `uv lock --upgrade` run unprompted, because the
     user's uv configuration refuses versions younger than a week; they ask when an option, an
-    assignment, `env`, `export`, a sourced file, another program in the command, or the project's own
-    `exclude-newer` could lift that limit or point uv elsewhere. Dependency changes that no age limit
+    assignment, `env`, `export`, a sourced file, a file write or another program in the command, or the
+    project's own `exclude-newer`, index, or sources could lift that limit or point uv elsewhere, and
+    for a URL, git, path, or index source, which carries no upload time the limit could judge. Dependency changes that no age limit
     guards (`pnpm add`, `cargo add`, `cargo update`, `go get`, `go mod tidy`, `nix flake update`)
     ask. Global flags (`pnpm add -g` in any spelling, `uv add --dev`) are denied wherever they sit.
 - `rm` runs unprompted for files inside the worktree and the session's own temporary directories

@@ -87,10 +87,15 @@ HOOK_SKIPPING_OPTIONS = {
 HOOK_SKIPPING_VALUED = {
     "merge": frozenset("-m -F -s -X --message --file --strategy --strategy-option --into-name --cleanup".split()),
     "pull": frozenset("-s -X -o --strategy --strategy-option --depth --upload-pack --server-option".split()),
-    "am": frozenset("-p -C -S --directory --exclude --include --whitespace --patch-format --resolvemsg".split()),
+    "am": frozenset("-p -C --directory --exclude --include --whitespace --patch-format --resolvemsg".split()),
     "rebase": frozenset("-s -X -x -C --strategy --strategy-option --exec --onto --whitespace --empty".split()),
 }
 """The valued options of the hook-skipping verbs that VALUED_OPTIONS does not list."""
+HOOK_ENABLING_OPTIONS = frozenset({"--verify", "--post-rewrite"})
+"""The opposites of the skipping options: the last of an option and its opposite decides whether the hook runs."""
+ATTACHED_VALUE_FLAGS = {"commit": frozenset({"-u", "-S"}), "am": frozenset({"-S"})}
+"""The short flags whose optional value is only read when attached, so the rest of a cluster is that value."""
+HOOK_CONFIG_PREFIXES = ("alias.", "include.", "includeif.")
 MIN_ABBREVIATION = len("--no-v")
 HOOKS_PATH_KEY = "core.hookspath"
 HOOK_SKIP_SUFFIX = "skips repository hooks; let the hooks run"
@@ -207,49 +212,75 @@ def _git_reason(arguments: tuple[str, ...]) -> str:
 
 def hook_skip_reason(globals_: tuple[str, ...], verb: str, arguments: tuple[str, ...]) -> str:
     """Name the option or setting that makes Git skip repository hooks, or nothing when the hooks run."""
-    if overrides_hooks_path(globals_):
-        return f"overriding core.hooksPath {HOOK_SKIP_SUFFIX}"
+    if key := hook_config_key(globals_):
+        return f"-c {key} can hide an option that {HOOK_SKIP_SUFFIX}"
     if option := hook_skipping_option(verb, arguments):
         return f"git {verb} {option} {HOOK_SKIP_SUFFIX}"
     return ""
 
 
-def overrides_hooks_path(globals_: tuple[str, ...]) -> bool:
-    """Whether the global options set core.hooksPath for this one command, by -c or --config-env."""
+def hook_config_key(globals_: tuple[str, ...]) -> str:
+    """The first one-command setting that moves the hooks or can smuggle in a skipping option, by -c or --config-env.
+
+    core.hooksPath moves them; alias.* and include.* hide a skipping option behind a name or a file.
+    """
     settings = [value for option, value in pairwise(globals_) if option == "-c"]
     settings += [option.removeprefix("--config-env=") for option in globals_ if option.startswith("--config-env=")]
-    return any(setting.split("=", 1)[0].lower() == HOOKS_PATH_KEY for setting in settings)
+    keys = (setting.split("=", 1)[0] for setting in settings)
+    return next(
+        (key for key in keys if key.lower() == HOOKS_PATH_KEY or key.lower().startswith(HOOK_CONFIG_PREFIXES)), ""
+    )
 
 
 def hook_skipping_option(verb: str, arguments: tuple[str, ...]) -> str:
-    """The first option of the verb that skips hooks, reading option values as data; empty when there is none."""
+    """The skipping option of the verb that is still in effect at the end, reading option values as data.
+
+    A later --verify or --post-rewrite switches the hook back on, as Git reads it; empty when every hook runs.
+    """
     skipping = HOOK_SKIPPING_OPTIONS.get(verb, set())
     valued = VALUED_OPTIONS.get(verb, frozenset()) | HOOK_SKIPPING_VALUED.get(verb, frozenset())
-    end = arguments.index("--") if "--" in arguments else len(arguments)
+    attached = ATTACHED_VALUE_FLAGS.get(verb, frozenset())
+    in_effect: dict[str, str] = {}
     takes_value = False
-    for argument in arguments[:end]:
+    for argument in arguments:
         if takes_value:
             takes_value = False
-        elif option := skipped_in(argument, skipping, valued):
-            return option
+        elif argument == "--":
+            break
         else:
-            takes_value = reads_next_value(argument, argument, valued)
-    return ""
+            in_effect.update(toggles_in(argument, skipping, valued | attached))
+            takes_value = reads_next_value(argument, argument, valued) and not attached_value(argument, attached)
+    return next((option for option in in_effect.values() if option), "")
 
 
-def skipped_in(argument: str, skipping: set[str], valued: frozenset[str]) -> str:
-    """The hook-skipping option an argument spells: a long option or its abbreviation, or a short flag in a cluster."""
+def toggles_in(argument: str, skipping: set[str], reading_value: frozenset[str]) -> dict[str, str]:
+    """The hook switches an argument sets, keyed by hook: the skipping option spelled, or empty when enabled.
+
+    A flag in reading_value ends a short cluster, since the rest of it is that flag's value.
+    """
     if argument.startswith("--"):
         key = argument.split("=", 1)[0]
-        return next((name for name in sorted(skipping) if abbreviates(key, name)), "")
+        if key in HOOK_ENABLING_OPTIONS:
+            return {hook_of(key): ""}
+        return {hook_of(name): name for name in sorted(skipping) if abbreviates(key, name)}
     if not re.fullmatch(r"-[A-Za-z0-9]+", argument):
-        return ""
+        return {}
     for flag in argument[1:]:
-        if f"-{flag}" in valued:
-            return ""
+        if f"-{flag}" in reading_value:
+            return {}
         if f"-{flag}" in skipping:
-            return f"-{flag}"
-    return ""
+            return {hook_of(f"-{flag}"): f"-{flag}"}
+    return {}
+
+
+def attached_value(argument: str, attached: frozenset[str]) -> bool:
+    """Whether a short cluster ends in a flag that only reads an attached value, so it leaves the next word alone."""
+    return bool(re.fullmatch(r"-[A-Za-z0-9]+", argument)) and any(f"-{flag}" in attached for flag in argument[1:])
+
+
+def hook_of(option: str) -> str:
+    """Which hook an option switches: the post-rewrite hook, or else the verification hooks."""
+    return "post-rewrite" if "post-rewrite" in option else "verify"
 
 
 def abbreviates(key: str, name: str) -> bool:

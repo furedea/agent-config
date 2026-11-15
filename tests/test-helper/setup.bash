@@ -37,6 +37,7 @@ function create_bootstrap_server_fixtures() {
   create_tarball ruff.tar.gz ruff-x86_64-unknown-linux-musl ruff
   create_tarball shellcheck.tar.xz shellcheck-v0.11.0 shellcheck
   create_dprint_archive
+  create_ast_grep_archive
   create_bats_repository
   create_uv_archive
 }
@@ -54,6 +55,7 @@ function bootstrap_server() {
     JQ_URL="file://$RELEASES/jq" \
     RUFF_URL="file://$RELEASES/ruff.tar.gz" \
     DPRINT_URL="file://$RELEASES/dprint.zip" \
+    AST_GREP_URL="file://$RELEASES/ast-grep.zip" \
     SHELLCHECK_URL="file://$RELEASES/shellcheck.tar.xz" \
     BATS_REPO_URL="file://$RELEASES/bats-core.git" \
     BATS_COMMIT="$(git -C "$RELEASES/bats-core.git" rev-parse HEAD)" \
@@ -64,6 +66,7 @@ function bootstrap_server() {
     JQ_SHA256="$(fixture_sha256 jq)" \
     RUFF_SHA256="$(fixture_sha256 ruff.tar.gz)" \
     DPRINT_SHA256="$(fixture_sha256 dprint.zip)" \
+    AST_GREP_SHA256="$(fixture_sha256 ast-grep.zip)" \
     SHELLCHECK_SHA256="$(fixture_sha256 shellcheck.tar.xz)" \
     UV_SHA256="$(fixture_sha256 uv.tar.gz)" \
     FAKE_PYTHON="$FAKE_PYTHON" \
@@ -129,6 +132,14 @@ function create_dprint_archive() {
   mkdir -p "$BATS_TEST_TMPDIR/dprint-release"
   write_stub "$BATS_TEST_TMPDIR/dprint-release/dprint" '#!/bin/sh' 'exit 0'
   (cd "$BATS_TEST_TMPDIR/dprint-release" && python3 -m zipfile -c "$RELEASES/dprint.zip" dprint)
+}
+
+# ast-grep ships `ast-grep` and its `sg` alias at the root of a zip archive.
+function create_ast_grep_archive() {
+  mkdir -p "$BATS_TEST_TMPDIR/ast-grep-release"
+  write_stub "$BATS_TEST_TMPDIR/ast-grep-release/ast-grep" '#!/bin/sh' 'exit 0'
+  write_stub "$BATS_TEST_TMPDIR/ast-grep-release/sg" '#!/bin/sh' 'exit 0'
+  (cd "$BATS_TEST_TMPDIR/ast-grep-release" && python3 -m zipfile -c "$RELEASES/ast-grep.zip" ast-grep sg)
 }
 
 # Mimics the bats-core repository at its release tag: install.sh lays out bin/ and libexec/

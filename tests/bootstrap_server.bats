@@ -18,7 +18,7 @@ setup() {
 
   [ "$status" -eq 0 ]
   local _tool
-  for _tool in agent-harness shfmt rg jq ruff dprint shellcheck bats uv uvx; do
+  for _tool in agent-harness shfmt rg jq ruff dprint ast-grep shellcheck bats uv uvx; do
     [ -x "$BIN_DIR/$_tool" ] || {
       echo "missing tool: $_tool"
       return 1
@@ -37,6 +37,7 @@ setup() {
     JQ_URL="file://$RELEASES/missing" \
     RUFF_URL="file://$RELEASES/missing.tar.gz" \
     DPRINT_URL="file://$RELEASES/missing.zip" \
+    AST_GREP_URL="file://$RELEASES/missing.zip" \
     SHELLCHECK_URL="file://$RELEASES/missing.tar.xz" \
     BATS_REPO_URL="file://$RELEASES/missing.git" \
     UV_URL="file://$RELEASES/missing.tar.gz"
@@ -82,7 +83,7 @@ setup() {
 @test "refuses every download that does not match its pinned checksum and installs nothing" {
   local _entry _tool _variable
   for _entry in agent-harness:AGENT_HARNESS_SHA256 shfmt:SHFMT_SHA256 rg:RIPGREP_SHA256 jq:JQ_SHA256 \
-    ruff:RUFF_SHA256 shellcheck:SHELLCHECK_SHA256 dprint:DPRINT_SHA256 uv:UV_SHA256; do
+    ruff:RUFF_SHA256 shellcheck:SHELLCHECK_SHA256 dprint:DPRINT_SHA256 ast-grep:AST_GREP_SHA256 uv:UV_SHA256; do
     _tool="${_entry%%:*}"
     _variable="${_entry#*:}"
     rm -rf "$BIN_DIR"
@@ -171,7 +172,7 @@ found = [
 print(found)
 assert sorted(name for name, _, _ in found) == sorted([
     "furedea/agent-harness", "mvdan/sh", "BurntSushi/ripgrep", "jqlang/jq",
-    "astral-sh/ruff", "dprint/dprint", "koalaman/shellcheck", "astral-sh/uv",
+    "astral-sh/ruff", "dprint/dprint", "ast-grep/ast-grep", "koalaman/shellcheck", "astral-sh/uv",
 ]), "a release-asset tool is missing from the manager"
 assert all(length == 64 for _, _, length in found)
 assert {value for name, value, _ in found if name == "mvdan/sh"} == {"v3.13.1"}, "shfmt must be looked up by its full tag"
@@ -222,7 +223,7 @@ PY
 
 @test "pins a sha256 for every download in the script itself" {
   local _variable
-  for _variable in AGENT_HARNESS SHFMT RIPGREP JQ RUFF DPRINT SHELLCHECK UV; do
+  for _variable in AGENT_HARNESS SHFMT RIPGREP JQ RUFF DPRINT AST_GREP SHELLCHECK UV; do
     grep -Eq "^readonly ${_variable}_SHA256=\"\\$\\{${_variable}_SHA256:-[0-9a-f]{64}\\}\"\$" "$SCRIPT" || {
       echo "no pinned sha256 for $_variable"
       return 1

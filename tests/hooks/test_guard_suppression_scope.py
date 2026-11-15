@@ -425,3 +425,10 @@ def test_a_patch_that_reaches_one_file_twice_asks(tmp_path: Path, second: str) -
     first = f"*** Update File: {tmp_path}/app.py\n@@\n-x = 1\n+x = 2\n"
     patch = f"*** Begin Patch\n{first}{second.format(dir=tmp_path)}*** End Patch"
     assert decide("apply_patch", {"input": patch}) == "ask"
+
+
+def test_moving_a_multi_line_suppression_comment_into_code_asks(tmp_path: Path) -> None:
+    source = tmp_path / "notes.md"
+    source.write_text("/*\neslint-disable no-console\n*/\nconsole.log(1)\n")
+    patch = f"*** Begin Patch\n*** Update File: {source}\n*** Move to: {tmp_path / 'notes.js'}\n*** End Patch"
+    assert decide("apply_patch", {"input": patch}) == "ask"

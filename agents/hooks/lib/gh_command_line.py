@@ -113,7 +113,8 @@ def _changes_environment(command: shell_syntax.Command) -> bool:
     """Whether a command sets variables, or runs another through env with assignments or options."""
     name, *arguments = command.arguments
     name = Path(name).name
-    if name in ASSIGNING_PROGRAMS:
+    # An inherited function may assign anything, under any name.
+    if name in ASSIGNING_PROGRAMS or has_inherited_function(command.arguments[0]):
         return True
     if name in {"print", "printf"} and any(re.match(r"-[A-Za-z]*v", argument) for argument in arguments):
         return True

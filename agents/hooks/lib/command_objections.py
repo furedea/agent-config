@@ -178,16 +178,17 @@ def governed_objection(candidate: shell_syntax.Command, policy: Policy, preview:
 def gh_objection(command: str, commands: tuple[shell_syntax.Command, ...], policy: Policy) -> Verdict:
     """The first gh call the gh policy table does not allow, unless a trusted project's rule lists that form.
 
-    Only a call an allow prefix approves is judged: the provider asks or denies for every other one
-    itself, and a provider whose hooks cannot ask would turn the hook's prompt into a denial.
+    Only a call an allow prefix approves, or one behind a wrapper, is judged: the provider asks or
+    denies for every other one itself, and a provider whose hooks cannot ask would turn the hook's
+    prompt into a denial. A wrapper such as xargs hides the gh call from the provider's prefixes.
     """
     if policy.gh is None:
         return hook_decision.ALLOW
     candidates = [
         candidate
-        for candidate in (command_policy.canonical(item) for item in commands)
-        if gh_command_line.is_gh(candidate)
-        and command_policy.prefix_rule(candidate.arguments, policy.prefixes, "allow")
+        for item in commands
+        if gh_command_line.is_gh(candidate := command_policy.canonical(item))
+        and (item.wrapper_depth or command_policy.prefix_rule(candidate.arguments, policy.prefixes, "allow"))
     ]
     if not candidates:
         return hook_decision.ALLOW

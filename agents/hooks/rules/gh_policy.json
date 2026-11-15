@@ -217,10 +217,7 @@
       "repositories": [
         "--branch-repo"
       ],
-      "flags": [
-        "-c",
-        "--checkout"
-      ],
+      "flags": [],
       "read_flags": [
         "-l",
         "--list"

@@ -302,6 +302,11 @@ def test_reads_and_local_changes_are_allowed_in_any_form(command: str) -> None:
         pytest.param(
             "gh pr checkout 12", "operation table", id="a checkout, whose git hooks may come from the pull request"
         ),
+        pytest.param(
+            "gh issue develop 1 -R furedea/r --checkout", "operation table", id="a linked branch checked out"
+        ),
+        pytest.param("echo x | xargs gh gist create --public a", "environment", id="a gh call behind xargs"),
+        pytest.param("xargs gh cache delete --all", "environment", id="an unlisted gh call behind xargs"),
         pytest.param("GH_REPO=other/r gh issue comment 1 -b x", "environment", id="GH_REPO on the line"),
         pytest.param("env GH_REPO=other/r gh issue comment 1 -b x", "environment", id="GH_REPO through env"),
         pytest.param("timeout 9 gh issue comment 1 -b x", "environment", id="a wrapper hiding the environment"),

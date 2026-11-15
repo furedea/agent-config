@@ -118,12 +118,25 @@ def _environment_problem(line: CommandLine) -> str:
         return "the environment forces a terminal, so gh would start the pager program it names"
     if not is_outside_agent_roots("rg"):
         return "PATH finds an rg in a directory the agent can write, so the secret scan cannot be trusted"
-    if any(os.environ.get(name) for name in STARTUP_FILE_VARIABLES):
-        return "the environment names a startup file the shell sources first, which may redefine gh or git"
+    if problem := _override_problem():
+        return problem
     configured_repository = os.environ.get("GH_REPO")
     foreign_repository = configured_repository and gh_repository.repository(configured_repository) is None
     if os.environ.get("GH_HOST", GITHUB_HOST).lower() != GITHUB_HOST or foreign_repository:
         return "the environment sends gh to another host than github.com"
+    return ""
+
+
+def _override_problem() -> str:
+    """Why the environment may run code in place of the checked shell, git, or ssh, or an empty string.
+
+    The harness's own GIT_SSH_COMMAND starts with ssh, which PATH finds and the stand-in check covers.
+    """
+    if any(os.environ.get(name) for name in STARTUP_FILE_VARIABLES):
+        return "the environment names a startup file the shell sources first, which may redefine gh or git"
+    ssh_command = os.environ.get("GIT_SSH_COMMAND", "ssh").split(maxsplit=1)
+    if os.environ.get("GIT_SSH") or ssh_command[:1] != ["ssh"]:
+        return "the environment tells git to run another program than the checked ssh"
     return ""
 
 
@@ -206,6 +219,8 @@ def _ungranted(call: GhCall, line: CommandLine, rules: GhRules) -> str:
     target = _target(call, line, rules.trusted)
     if not all(rules.catalog.grant(target, operation, call.effect) for operation in call.operations):
         return IRREVERSIBLE_REASON if call.effect is Effect.IRREVERSIBLE else TARGET_REASONS[target]
+    if "repo.clone" in call.operations and _clone_may_run_hooks():
+        return "clones with a hook template or hooks path that may run code after the checkout"
     if problem := _file_problem(call, line):
         return problem
     if call.unscanned_files and (call.effect is Effect.READ or target is not TargetClass.TRUSTED):
@@ -357,6 +372,14 @@ def _file_head(path: Path) -> str:
             return stream.read(SENT_FILE_LIMIT_BYTES).decode(errors="replace")
     except OSError:
         return ""
+
+
+def _clone_may_run_hooks() -> bool:
+    """Whether a new clone may get hooks: from a template directory, or a configured hooks path."""
+    if os.environ.get("GIT_TEMPLATE_DIR"):
+        return True
+    output = _git_output("config", "--get-regexp", r"^(init\.templatedir|core\.hookspath)$")
+    return output is None or bool(output.strip())
 
 
 def _git_output(*arguments: str) -> str | None:

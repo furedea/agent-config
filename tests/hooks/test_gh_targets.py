@@ -300,3 +300,33 @@ def test_an_ssh_planted_where_the_agent_writes_makes_every_call_ask(monkeypatch:
     (planted / "ssh").chmod(0o755)
     monkeypatch.setenv("PATH", f"{planted.resolve()}:{os.environ['PATH']}")
     assert decide("gh repo clone furedea/agent-config") == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+@pytest.mark.parametrize(
+    ("name", "value"), [("GIT_SSH", "/tmp/evil"), ("GIT_SSH_COMMAND", "/tmp/evil"), ("GIT_SSH_COMMAND", "sh -c x")]
+)
+def test_an_ssh_override_in_the_hook_environment_makes_every_call_ask(
+    monkeypatch: pytest.MonkeyPatch, name: str, value: str
+) -> None:
+    monkeypatch.delenv("GIT_SSH_COMMAND", raising=False)
+    assert decide("gh repo clone furedea/agent-config") == "allow"
+    monkeypatch.setenv("GIT_SSH_COMMAND", "ssh -o ControlMaster=no")
+    assert decide("gh repo clone furedea/agent-config") == "allow"
+    monkeypatch.setenv(name, value)
+    assert decide("gh repo clone furedea/agent-config") == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_clone_with_a_hook_template_asks(monkeypatch: pytest.MonkeyPatch) -> None:
+    assert decide("gh repo clone furedea/agent-config") == "allow"
+    monkeypatch.setenv("GIT_TEMPLATE_DIR", "templates")
+    assert decide("gh repo clone furedea/agent-config") == "ask"
+    assert decide("gh pr view 1 -R furedea/agent-config") == "allow"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+@pytest.mark.parametrize("key", ["init.templateDir", "core.hooksPath"])
+def test_a_clone_under_a_configured_template_or_hooks_path_asks(key: str) -> None:
+    subprocess.run(["git", "config", key, "hooks"], check=True)
+    assert decide("gh repo clone furedea/agent-config") == "ask"

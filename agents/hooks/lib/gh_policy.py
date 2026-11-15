@@ -123,7 +123,7 @@ def command_line(source: str, commands: tuple[shell_syntax.Command, ...]) -> Com
         or any(item.wrapper_depth for item in commands)
     )
     others = [item for item in commands if not is_gh(command_policy.canonical(item))]
-    moves = not all(Path(item.arguments[0]).name in OUTPUT_FILTERS for item in others)
+    moves = not all(item.arguments[0] in OUTPUT_FILTERS and not item.writes for item in others)
     arguments = " ".join(argument for item in commands for argument in item.arguments)
     return CommandLine(source, _is_single_call(source, commands), hides_code, changes, moves, arguments)
 
@@ -261,6 +261,27 @@ def _expand_parameters(text: str) -> str:
     return PLAIN_PARAMETER.sub(lambda match: _shell_value(match[1] or match[2]), text)
 
 
+def _run_time_path_problem(sources: tuple[str, ...]) -> str:
+    """Why a sent path known only at run time cannot be left unscanned, or an empty string."""
+    if any(re.search(r"\$\(|`", source) for source in sources):
+        return "sends a file whose path a command computes"
+    if any(UNEXPANDABLE_PATH.search(source) for source in sources):
+        return "sends a file whose path the guard cannot expand as the shell does"
+    if any(_names_special_input(shell_expanded(source)) for source in sources):
+        return "sends standard input or a device through a path named at run time"
+    return ""
+
+
+def _names_special_input(path: str) -> bool:
+    """Whether an expanded path is gh's standard input marker or a device or process file."""
+    if not path:
+        return False
+    try:
+        return gh_invocation.sent_path(path) == "-"
+    except gh_options.UnclassifiableError:
+        return True
+
+
 def _shell_value(name: str) -> str:
     """What a plain parameter holds in a shell started in the hook's directory with the hook's environment."""
     return str(Path.cwd()) if name == "PWD" else os.environ.get(name, "")
@@ -288,10 +309,8 @@ def _file_problem(call: GhCall, line: CommandLine) -> str:
     """Why the files a call sends cannot be scanned as they will be sent, or an empty string."""
     if (call.files or call.unscanned_files) and not line.single_call:
         return "sends a file another command on the line may write after the guard reads it"
-    if any(re.search(r"\$\(|`", source) for source in call.unscanned_files):
-        return "sends a file whose path a command computes"
-    if any(UNEXPANDABLE_PATH.search(source) for source in call.unscanned_files):
-        return "sends a file whose path the guard cannot expand as the shell does"
+    if problem := _run_time_path_problem(call.unscanned_files):
+        return problem
     paths = [Path(name) for name in call.files]
     if any(_is_irregular(path) for path in paths):
         return "sends a FIFO, device, or other file that is not a regular file"

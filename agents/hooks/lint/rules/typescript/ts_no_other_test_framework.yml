@@ -11,7 +11,43 @@ rule:
             field: source
             kind: string
             regex: ^["'](jest|@jest/globals|mocha|node:test|bun:test|ava|tap|tape|jasmine|uvu|qunit)["']$
-    - pattern: jest.$METHOD($$$ARGS)
+    - all:
+        - pattern: jest.$METHOD($$$ARGS)
+        - not:
+            inside:
+              stopBy: end
+              all:
+                - any:
+                    - kind: function_declaration
+                    - kind: generator_function_declaration
+                    - kind: generator_function
+                    - kind: function_expression
+                    - kind: arrow_function
+                    - kind: method_definition
+                - any:
+                    - has:
+                        field: parameters
+                        has:
+                          stopBy: end
+                          kind: identifier
+                          regex: ^jest$
+                          inside:
+                            field: pattern
+                            any:
+                              - kind: required_parameter
+                              - kind: optional_parameter
+                    - has:
+                        field: parameter
+                        kind: identifier
+                        regex: ^jest$
+        - not:
+            inside:
+              stopBy: end
+              kind: program
+              has:
+                stopBy: end
+                kind: variable_declarator
+                has: { field: name, kind: identifier, regex: ^jest$ }
     - all:
         - kind: export_statement
         - has:

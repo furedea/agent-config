@@ -12,6 +12,23 @@ valid:
     const { it } = await import("vitest");
   - |
     const path = require("node:path");
+  - |
+    function render(jest: DomainFormatter) {
+      return jest.format();
+    }
+  - |
+    const render = (jest) => jest.format();
+  - |
+    class View {
+      render(jest: Formatter = defaultFormatter) {
+        return jest.format();
+      }
+    }
+  - |
+    function render() {
+      const jest = makeFormatter();
+      return jest.format();
+    }
 invalid:
   - |
     import { describe, it } from "node:test";

@@ -15,6 +15,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 ROOT_UID = 0
+NIX_STORE = Path("/nix/store")
 EXPORTED_FUNCTION_PREFIX = "BASH_FUNC_"
 STARTUP_FILE_VARIABLES = ("BASH_ENV", "ENV")
 WRITABLE_BY_OTHERS = stat.S_IWGRP | stat.S_IWOTH
@@ -47,8 +48,45 @@ def is_system_program(word: str) -> bool:
         real = Path(found).resolve(strict=True)
     except OSError, RuntimeError:
         return False
-    trusted = directory in TRUSTED_DIRECTORIES or _is_root_owned(directory, stat.S_ISDIR)
+    trusted = (
+        directory in TRUSTED_DIRECTORIES
+        or (Path(found).parent in nix_profiles() and real.is_relative_to(NIX_STORE))
+        or (_is_root_owned(directory, stat.S_ISDIR) and _has_fixed_ancestry(Path(found).parent))
+    )
     return trusted and _is_root_owned(real, stat.S_ISREG) and os.access(real, os.X_OK)
+
+
+def nix_profiles() -> frozenset[Path]:
+    """The Nix profile directories, which link into the read-only store and lie outside any session's writes."""
+    home, user = Path.home(), os.environ.get("USER", "")
+    return frozenset(
+        {
+            home / ".nix-profile" / "bin",
+            home / ".local" / "state" / "nix" / "profile" / "bin",
+            Path("/etc/profiles/per-user") / user / "bin",
+            Path("/run/current-system/sw/bin"),
+            Path("/nix/var/nix/profiles/default/bin"),
+        }
+    )
+
+
+def _has_fixed_ancestry(directory: Path) -> bool:
+    """Whether nobody but root can replace any step of the path, a link included, before the program runs.
+
+    The Nix store is writable only by the Nix daemon and its entries never change, so it ends the walk.
+    """
+    for step in (directory, *directory.parents):
+        if step == NIX_STORE:
+            return True
+        try:
+            metadata = step.lstat()
+        except OSError:
+            return False
+        if metadata.st_uid != ROOT_UID or (
+            not stat.S_ISLNK(metadata.st_mode) and metadata.st_mode & WRITABLE_BY_OTHERS
+        ):
+            return False
+    return True
 
 
 def _is_root_owned(path: Path, is_kind: Callable[[int], bool]) -> bool:

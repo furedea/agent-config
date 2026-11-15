@@ -181,6 +181,9 @@ def test_a_project_that_sets_its_own_age_limit_asks(git_project: Path, name: str
         "pnpm --global add cowsay",
         "uv add --dev pytest",
         "uv add pytest --dev",
+        "uv -q add --dev pytest",
+        "uv --offline add pytest --dev",
+        "uv --directory /x add --dev pytest",
     ],
 )
 def test_global_installs_and_the_legacy_dev_group_are_denied_wherever_the_flag_sits(
@@ -306,3 +309,16 @@ def test_a_prefix_lookalike_assignment_before_uv_asks(git_project: Path) -> None
 def test_an_inherited_shell_function_before_uv_asks(git_project: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("BASH_FUNC_uv%%", '() {  command uv --no-config "$@"; }')
     assert judged(git_project, "uv add httpx", "allowed") == "ask"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "uv --directory /elsewhere add httpx",
+        "uv --project ../other add httpx",
+        "uv -q add httpx",
+        "uv -v lock --upgrade",
+    ],
+)
+def test_an_option_before_the_uv_subcommand_asks(git_project: Path, command: str) -> None:
+    assert judged(git_project, command, "allowed") == "ask"

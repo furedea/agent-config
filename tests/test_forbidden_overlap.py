@@ -44,7 +44,7 @@ PNPM_GLOBAL_FLAG = "(-[A-Za-z]*g[A-Za-z]*(=[^ ]*)?|--(config\\.)?(g|gl|glo|glob[
 PNPM_OPTIONS = "^pnpm( -[^ ]+( [^ -][^ ]*)?)*"
 PNPM_GLOBAL = PNPM_OPTIONS + " add( .*)? " + PNPM_GLOBAL_FLAG + "( |$)"
 PNPM_GLOBAL_FIRST = PNPM_OPTIONS + " " + PNPM_GLOBAL_FLAG + "( [^ ]+)*? add( |$)"
-UV_DEV = "^uv add( .*)? --dev( |$)"
+UV_DEV = "^uv( -[^ ]+( [^ -][^ ]*)?)* add( .*)? --dev( |$)"
 VENV_PYTHON = r"(^|[[:space:]])([^[:space:]]*/)?\.venv/bin/python([0-9.]*)?([[:space:]]|$)"
 BROWSER_URL = "(^|[^a-z0-9+.-])(file|chrome):"
 DESKTOP_APP = (

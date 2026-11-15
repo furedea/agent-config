@@ -61,10 +61,11 @@ def objection(payload: dict, command: str, commands: tuple[shell_syntax.Command,
             f"\n\nCommand: {preview}",
             PROGRAM,
         )
-    if program := next((item.arguments[0] for item in commands if not _runs_a_system_program(item)), ""):
+    programs = [item.arguments[0] for item in commands if not _runs_a_system_program(item)]
+    if program := next(iter(programs), "") or ("" if system_programs.is_system_program("git") else "git"):
         return hook_decision.ask(
-            f"Needs review: '{program}' does not resolve to a root-owned system program, so it may not be the "
-            f"program the guard judged.\n\nCommand: {preview}",
+            f"Needs review: '{program}' does not resolve to a system program, so it may not be the program the "
+            f"guard judged, or git may report another worktree.\n\nCommand: {preview}",
             PROGRAM,
         )
     directory = automation_paths.working_directory(payload)

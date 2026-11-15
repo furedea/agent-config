@@ -78,6 +78,13 @@ ASSIGNMENT = re.compile(r"(^|[;&|(){}`\n])\s*[A-Za-z_][A-Za-z0-9_]*\+?=")
 
 def objection(payload: dict, command: str, commands: tuple[shell_syntax.Command, ...]) -> Verdict:
     """Ask when a uv dependency change names another place, lifts the age limit, or shares settings."""
+    if leading := next((item for item in commands if _has_option_before_subcommand(item)), None):
+        preview = shell_syntax.command_preview(leading.raw)
+        return hook_decision.ask(
+            f"Needs review: uv takes options before its subcommand, which may point it at another project or "
+            f"configuration.\n\nCommand: {preview}",
+            PROGRAM,
+        )
     calls = [item for item in commands if _is_dependency_call(item)]
     changes = [item for item in calls if _changes_dependencies(item)]
     reason = _argument_reason(calls)
@@ -185,7 +192,12 @@ def _environment_reason() -> str:
 
 
 def _program_reason(changes: list[shell_syntax.Command]) -> str:
-    """A uv found in a directory the session writes could drop the limit before it runs the real one."""
+    """A uv found in a directory the session writes could drop the limit before it runs the real one.
+
+    git finds the worktree the project checks rely on, so it must be a system program too.
+    """
+    if not system_programs.is_system_program("git"):
+        return "runs where git, which finds the worktree, does not resolve to a root-owned system program"
     program = next(
         (item.arguments[0] for item in changes if not system_programs.is_system_program(item.arguments[0])), ""
     )
@@ -240,6 +252,12 @@ def _dependency_entries(settings: dict) -> list[str]:
     lists += list(optional.values()) if isinstance(optional, dict) else []
     lists += list(groups.values()) if isinstance(groups, dict) else []
     return [entry for entries in lists if isinstance(entries, list) for entry in entries if isinstance(entry, str)]
+
+
+def _has_option_before_subcommand(item: shell_syntax.Command) -> bool:
+    """A uv call whose first word after the program is an option, such as `uv -q add` or `uv --directory x add`."""
+    arguments = command_policy.canonical(item).arguments
+    return arguments[0] == PROGRAM and len(arguments) > 1 and arguments[1].startswith("-")
 
 
 def _is_dependency_call(item: shell_syntax.Command) -> bool:

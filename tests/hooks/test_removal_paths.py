@@ -295,3 +295,18 @@ def test_a_root_session_trusts_no_program_by_its_owner(git_project: Path, monkey
 def test_an_inherited_shell_function_asks(git_project: Path, monkeypatch: pytest.MonkeyPatch, name: str) -> None:
     monkeypatch.setenv(name, "() {  /bin/rm -rf ~; }")
     assert judged(git_project, "echo hi && rm scratch.txt") == "ask"
+
+
+def test_a_git_found_in_a_directory_the_session_writes_asks(
+    git_project: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    use_own_program(git_project / ".venv" / "bin", monkeypatch, "git")
+    assert judged(git_project, "rm scratch.txt") == "ask"
+
+
+def test_a_path_directory_linked_to_a_system_directory_asks(
+    git_project: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (git_project / "bin").symlink_to(Path("/bin").resolve())
+    monkeypatch.setenv("PATH", f"{git_project / 'bin'}{os.pathsep}{os.environ['PATH']}")
+    assert judged(git_project, "rm scratch.txt") == "ask"

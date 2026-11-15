@@ -112,6 +112,14 @@ def test_dependency_changes_no_age_limit_guards_ask(prefix: tuple[str, ...]) -> 
         "uv add pkg@https://example.com/pkg.whl",
         "uv add owner/repo",
         "uv add 'C:\\pkg'",
+        "uv run python w.py && uv add httpx",
+        "uv sync && uv add httpx",
+        "printf -v HOME /tmp/empty && uv add httpx",
+        "uv add evil-1.0.tar.gz",
+        "uv add evil-1.0-py3-none-any.whl",
+        "uv add evil.zip",
+        "uv add evil-1.0.tar.bz2",
+        "uv add evil.egg",
     ],
 )
 def test_a_uv_change_that_could_escape_the_limit_or_the_project_asks(git_project: Path, command: str) -> None:
@@ -158,6 +166,12 @@ def test_global_installs_and_the_legacy_dev_group_are_denied_wherever_the_flag_s
         '[tool.uv]\n"index-url" = "https://evil.example/simple"\n',
         '[tool]\nuv = { sources = { pkg = { path = "/opt/pkg" } } }\n',
         "[tool.uv\nbroken",
+        '[tool.uv]\noverride-dependencies = ["pkg @ https://evil.example/pkg.whl"]\n',
+        '[tool.uv]\nconstraint-dependencies = ["pkg<2"]\n',
+        '[tool.uv]\ndev-dependencies = ["pkg"]\n',
+        '[project]\nname = "x"\ndependencies = ["pkg @ git+https://github.com/someone/pkg"]\n',
+        '[project.optional-dependencies]\nextra = ["pkg @ file:///opt/pkg"]\n',
+        '[dependency-groups]\ndev = ["./vendor/pkg"]\n',
     ],
 )
 def test_a_project_that_adds_its_own_package_sources_asks(git_project: Path, settings: str) -> None:

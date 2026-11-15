@@ -26,7 +26,7 @@ GIT_DIRECTORY = ".git"
 # files, so rm's operands still name what they named when the guard resolved them. A wrapper here
 # runs its rm, which the guard judges as its own call. Each counts only as a bare name without an
 # assignment before it, so neither a path nor PATH can swap in another program.
-COMPANIONS = frozenset({"echo", "printf", "true", "false", "test", "[", "ls", "cat", "pwd", "stat"})
+COMPANIONS = frozenset({"echo", "true", "false", "test", "[", "ls", "cat", "pwd", "stat"})
 WRAPPERS = frozenset({"command", "nohup", "nice", "time", "timeout", "stdbuf"})
 # System temporary roots other programs and users share; only a session's own directory below one counts.
 SHARED_TEMPORARY_ROOTS = frozenset(

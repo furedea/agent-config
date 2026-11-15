@@ -140,6 +140,7 @@ def test_removal_after_a_directory_change_the_guard_cannot_follow_asks(git_proje
         "PATH=. ls && rm scratch.txt",
         "env PATH=. ls && rm scratch.txt",
         "BASH_ENV=x true && rm scratch.txt",
+        "printf -v PATH evil && rm scratch.txt",
     ],
 )
 def test_removal_beside_a_program_not_listed_as_read_only_asks(git_project: Path, command: str) -> None:

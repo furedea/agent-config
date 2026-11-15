@@ -29,14 +29,20 @@ NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
 # A registry requirement: a name, optional extras, and version specifiers, with no marker, URL, or path.
 SPECIFIER = r"(===|==|!=|~=|>=|<=|>|<)[A-Za-z0-9.*+!_-]+"
 REQUIREMENT = re.compile(rf"{NAME.pattern}(\[[A-Za-z0-9._,-]+\])?({SPECIFIER}(,{SPECIFIER})*)?")
+# A bare archive name, which uv reads as a local file rather than a registry name.
+ARCHIVE = re.compile(r"\.(whl|zip|tar|tar\.gz|tgz|tar\.bz2|tbz2?|tar\.xz|txz|egg)$", re.IGNORECASE)
+# A dependency entry the age limit cannot judge: a direct reference, a URL, or a path.
+DIRECT_REFERENCE = re.compile(r"@|://|^\s*[./~]")
 # Project files and the uv settings in them that replace the user's limit or add a package source.
 PROJECT_SETTINGS = ("pyproject.toml", "uv.toml")
 OVERRIDING_SETTINGS = frozenset(
     {"exclude-newer", "exclude-newer-package", "index", "index-url", "extra-index-url", "find-links", "sources"}
     | {"no-index", "index-strategy", "no-build-isolation", "config-settings", "dependency-metadata"}
+    | {"override-dependencies", "constraint-dependencies", "build-constraint-dependencies", "dev-dependencies"}
 )
 # Programs that may share the command: none moves the directory, sets variables, or writes files.
-COMPANIONS = frozenset({PROGRAM, "echo", "printf", "true", "false", "test", "[", "ls", "cat", "pwd", "stat"})
+# uv itself counts only as a dependency change or after the last one, since `uv run` runs any program.
+COMPANIONS = frozenset({"echo", "true", "false", "test", "[", "ls", "cat", "pwd", "stat"})
 # Declarations the parser keeps out of its commands, which set variables for the rest of the command.
 DECLARATION = re.compile(r"(^|[\s;&|(){}`])(export|declare|typeset|readonly|local)(\s|$)")
 # An assignment where a command word can start, which `set -a` or a later export hands to uv.
@@ -76,8 +82,12 @@ def _is_known_word(word: str, dynamic: bool, rest: Iterator[tuple[str, bool]]) -
     option, attached, value = word.partition("=")
     if option in NAMED_OPTIONS:
         value, dynamic = (value, False) if attached else next(rest, ("", True))
-        return not dynamic and bool(REQUIREMENT.fullmatch(value))
-    return not word.startswith("-") and bool(REQUIREMENT.fullmatch(word))
+        return not dynamic and _is_registry_requirement(value)
+    return not word.startswith("-") and _is_registry_requirement(word)
+
+
+def _is_registry_requirement(word: str) -> bool:
+    return bool(REQUIREMENT.fullmatch(word)) and not ARCHIVE.search(word)
 
 
 def _neighbour_reason(
@@ -87,7 +97,11 @@ def _neighbour_reason(
     text = shell_inspection.text_outside_single_quotes(command)
     if DECLARATION.search(text) or ASSIGNMENT.search(text) or any(_has_assignment(item) for item in changes):
         return "runs beside environment settings the guard cannot read"
-    if any(item.wrapper_depth for item in changes) or not all(_is_companion(item) for item in commands):
+    last = max(index for index, item in enumerate(commands) if item in changes)
+    if any(item.wrapper_depth for item in changes) or not all(
+        item in changes or _is_companion(item) or (index > last and _is_uv(item))
+        for index, item in enumerate(commands)
+    ):
         return "shares the command with a program that may change its directory or settings"
     if any(item.writes or item.trailer for item in commands):
         return "shares the command with a write that may change the project's settings first"
@@ -125,12 +139,30 @@ def _sets_age_limit(path: Path) -> bool:
         return True
     tool = settings.get("tool")
     tables = (settings, tool.get("uv") if isinstance(tool, dict) else None)
-    return any(isinstance(table, dict) and not OVERRIDING_SETTINGS.isdisjoint(table) for table in tables)
+    if any(isinstance(table, dict) and not OVERRIDING_SETTINGS.isdisjoint(table) for table in tables):
+        return True
+    return any(DIRECT_REFERENCE.search(entry) for entry in _dependency_entries(settings))
+
+
+def _dependency_entries(settings: dict) -> list[str]:
+    """Every requirement string in the project's dependencies, optional dependencies, and groups."""
+    project = settings.get("project")
+    project = project if isinstance(project, dict) else {}
+    optional = project.get("optional-dependencies")
+    groups = settings.get("dependency-groups")
+    lists = [project.get("dependencies")]
+    lists += list(optional.values()) if isinstance(optional, dict) else []
+    lists += list(groups.values()) if isinstance(groups, dict) else []
+    return [entry for entries in lists if isinstance(entries, list) for entry in entries if isinstance(entry, str)]
 
 
 def _is_dependency_change(item: shell_syntax.Command) -> bool:
     arguments = command_policy.canonical(item).arguments
     return arguments[0] == PROGRAM and len(arguments) > 1 and arguments[1] in SUBCOMMANDS
+
+
+def _is_uv(item: shell_syntax.Command) -> bool:
+    return not item.program_is_dynamic and item.arguments[0] == PROGRAM
 
 
 def _is_companion(item: shell_syntax.Command) -> bool:

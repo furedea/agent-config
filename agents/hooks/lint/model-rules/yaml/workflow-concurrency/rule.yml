@@ -11,10 +11,16 @@ axis: file
 severity: warning
 # The workflow's `on:` key, which names the triggers whose stale runs are wasted work.
 rule:
-  all:
-    - kind: block_mapping_pair
-    - has: { field: key, regex: "^[\"']?on[\"']?$" }
-    - inside: { kind: block_mapping, stopBy: neighbor, inside: { kind: block_node, stopBy: neighbor, inside: { kind: document, stopBy: neighbor } } }
+  any:
+    - all:
+        - kind: block_mapping_pair
+        - has: { field: key, regex: "^[\"']?on[\"']?$" }
+        - inside: { kind: block_mapping, stopBy: neighbor, inside: { kind: block_node, stopBy: neighbor, inside: { kind: document, stopBy: neighbor } } }
+    # A workflow written as one flow mapping: `{on: push, jobs: {...}}`.
+    - all:
+        - kind: flow_pair
+        - has: { field: key, regex: "^[\"']?on[\"']?$" }
+        - inside: { kind: flow_mapping, stopBy: neighbor, inside: { kind: flow_node, stopBy: neighbor, inside: { kind: document, stopBy: neighbor } } }
 ask: >-
   This workflow runs on `push` or `pull_request` but declares no workflow-level `concurrency` with
   `cancel-in-progress`, so earlier runs of the same ref keep running after a newer commit.

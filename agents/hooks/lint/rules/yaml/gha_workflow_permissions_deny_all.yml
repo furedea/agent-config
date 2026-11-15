@@ -15,7 +15,7 @@ rule:
     kind: block_mapping_pair
     has:
       field: key
-      regex: ^jobs$
+      regex: ^["']?jobs["']?$
   not:
     has:
       kind: block_mapping_pair

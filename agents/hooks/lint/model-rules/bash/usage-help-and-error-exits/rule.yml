@@ -14,7 +14,7 @@ rule:
   any:
     - all:
         - kind: case_item
-        - regex: "(--help|(^|[\\s|(])-h([\\s|)]|$))"
+        - regex: "(--help|(^|[\\s|(\"'])-h([\\s|)\"']|$))"
     - all:
         - kind: case_item
         - has: { kind: command, regex: "^usage\\b", stopBy: end }

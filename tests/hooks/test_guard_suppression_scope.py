@@ -432,3 +432,30 @@ def test_moving_a_multi_line_suppression_comment_into_code_asks(tmp_path: Path) 
     source.write_text("/*\neslint-disable no-console\n*/\nconsole.log(1)\n")
     patch = f"*** Begin Patch\n*** Update File: {source}\n*** Move to: {tmp_path / 'notes.js'}\n*** End Patch"
     assert decide("apply_patch", {"input": patch}) == "ask"
+
+
+def test_turning_a_rust_attribute_inside_a_raw_string_into_code_asks(tmp_path: Path) -> None:
+    target = tmp_path / "lib.rs"
+    target.write_text('const S: &str = r#"\n#[allow(dead_code)]\n"#;\nfn f() {}\n')
+    edits = [
+        {"old_string": 'const S: &str = r#"\n', "new_string": ""},
+        {"old_string": '\n"#;\n', "new_string": "\n"},
+    ]
+    assert decide("MultiEdit", {"file_path": str(target), "edits": edits}) == "ask"
+
+
+def test_editing_code_beside_an_unchanged_rust_attribute_passes(tmp_path: Path) -> None:
+    target = tmp_path / "lib.rs"
+    target.write_text("#[allow(dead_code)]\nfn f() {}\n")
+    assert decide("Edit", {"file_path": str(target), "old_string": "fn f()", "new_string": "fn g()"}) == "allow"
+
+
+def test_without_the_scanner_removing_string_delimiters_around_a_marker_asks(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Without a parser the guard cannot see a multi-line string end, so changing a delimiter line near one asks."""
+    monkeypatch.setattr(guard.comment_nodes, "SCANNER", "ast-grep-missing-for-test")
+    target = tmp_path / "app.ts"
+    target.write_text("const text = `\n// @ts-ignore\n`;\nfoo(1);\n")
+    edits = [{"old_string": "const text = `\n", "new_string": ""}, {"old_string": "\n`;\n", "new_string": "\n"}]
+    assert decide("MultiEdit", {"file_path": str(target), "edits": edits}) == "ask"

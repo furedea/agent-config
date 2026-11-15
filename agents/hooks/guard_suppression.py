@@ -7,11 +7,13 @@ suppression markers to a code file than it removes asks; moving or deleting one 
 marker is compared by its text, so changing the rules it names asks too.
 """
 
+import difflib
 import json
 import os
 import re
 import sys
 from collections import Counter
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -50,8 +52,10 @@ MARKER_SUFFIXES = {"ast-grep-ignore": CODE_SUFFIXES | {".yml", ".yaml", ".nix"}}
 # compared by its comment's text: changing the named rules, or turning a string that holds the word into a comment,
 # asks.
 COMPARED_BY_TEXT = frozenset({"ast-grep-ignore"})
-# Every other marker is a comment directive, counted only inside a comment; a Rust attribute is code.
+# Every other marker is a comment directive, counted only inside a comment; a Rust attribute only as an attribute.
 CODE_MARKERS = frozenset({"allow or expect attribute"})
+# A line that may open or close a string or comment, which without a parser may change what a marker line is.
+DELIMITER = re.compile(r"[\"'`]|/\*|\*/|<!--|-->|\[\[|\]\]|<<|[|>][-+]?\s*$")
 # An ast-grep marker on the first line followed by a blank line suppresses its rules for the whole file.
 FILE_SCOPE = "ast-grep-ignore for the whole file"
 UNPLACED = "a suppression in a file the guard could not rebuild"
@@ -128,23 +132,43 @@ def _lines(text: str) -> list[str]:
 
 
 def _adds(name: str, pattern: re.Pattern[str], change: _Change) -> bool:
-    """Count markers in comments, or for markers compared by text, find a marker whose text is new.
+    """Count markers in comments (attributes for a Rust attribute), or for markers compared by text, find a new one.
 
-    Without the scanner, comments cannot be told from strings, so a marker line whose text is new asks.
+    Without the scanner, comments cannot be told from strings: a marker line whose text is new asks, and so does a
+    change to a line that may open or close a string or comment in text that holds a marker.
     """
-    if name in CODE_MARKERS:
-        return len(pattern.findall(change.added)) > len(pattern.findall(change.removed))
     suffix = Path(change.path).suffix
-    added, removed = (_marked_lines(pattern, text, suffix) for text in (change.added, change.removed))
+    added, removed = (
+        _marked_lines(pattern, text, _span_reader(name, suffix)) for text in (change.added, change.removed)
+    )
     if added is None or removed is None:
-        return bool(Counter(_marker_lines(pattern, change.added)) - Counter(_marker_lines(pattern, change.removed)))
+        return _may_add_unparsed(pattern, change)
     added_marks, removed_marks = ([mark for marks in found.values() for mark in marks] for found in (added, removed))
     if name in COMPARED_BY_TEXT:
         return bool(Counter(added_marks) - Counter(removed_marks))
     return sum(comment for comment, _ in added_marks) > sum(comment for comment, _ in removed_marks)
 
 
-def _marked_lines(pattern: re.Pattern[str], text: str, suffix: str) -> dict[int, tuple[tuple[bool, str], ...]] | None:
+def _span_reader(name: str, suffix: str) -> Callable[[str], list[tuple[int, int]] | None]:
+    """How to find the nodes a marker counts in: Rust attributes for the attribute marker, comments otherwise."""
+    find = comment_nodes.attribute_spans if name in CODE_MARKERS else comment_nodes.comment_spans
+    return lambda text: find(text, suffix)
+
+
+def _may_add_unparsed(pattern: re.Pattern[str], change: _Change) -> bool:
+    if Counter(_marker_lines(pattern, change.added)) - Counter(_marker_lines(pattern, change.removed)):
+        return True
+    if not pattern.search(change.added):
+        return False
+    before, after = _lines(change.removed), _lines(change.added)
+    opcodes = difflib.SequenceMatcher(a=before, b=after, autojunk=False).get_opcodes()
+    changed = [line for tag, i1, i2, j1, j2 in opcodes if tag != "equal" for line in (*before[i1:i2], *after[j1:j2])]
+    return any(DELIMITER.search(line) for line in changed)
+
+
+def _marked_lines(
+    pattern: re.Pattern[str], text: str, read_spans: Callable[[str], list[tuple[int, int]] | None]
+) -> dict[int, tuple[tuple[bool, str], ...]] | None:
     """By line number, each marker on the line as whether it is in a comment and its text.
 
     The text is the comment from its start on that line, or else the whole line. The language's parser finds the
@@ -153,7 +177,7 @@ def _marked_lines(pattern: re.Pattern[str], text: str, suffix: str) -> dict[int,
     """
     if not pattern.search(text):
         return {}
-    spans = comment_nodes.comment_spans(text, suffix)
+    spans = read_spans(text)
     if spans is None:
         return None
     marked = {}
@@ -341,9 +365,9 @@ def _becomes_comment(text: str, source: str, destination: str) -> set[int]:
         return set()
     lines: set[int] = set()
     for name, pattern in MARKERS.items():
-        if name in CODE_MARKERS or destination not in MARKER_SUFFIXES.get(name, CODE_SUFFIXES):
+        if destination not in MARKER_SUFFIXES.get(name, CODE_SUFFIXES):
             continue
-        before, after = (_marked_lines(pattern, text, suffix) for suffix in (source, destination))
+        before, after = (_marked_lines(pattern, text, _span_reader(name, suffix)) for suffix in (source, destination))
         if before is None or after is None:
             lines |= {number for number, line in enumerate(_lines(text)) if pattern.search(line)}
             continue

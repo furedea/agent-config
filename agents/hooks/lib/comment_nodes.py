@@ -1,4 +1,4 @@
-"""Find the comments in source text with ast-grep's tree-sitter grammars, which know every string form.
+"""Find comments and Rust attributes in source text with ast-grep's tree-sitter grammars, which know every string form.
 
 Hand-written lexers miss block scalars, raw strings and similar constructs, and ast-grep itself honors a
 suppression only in a comment node, so the same parser decides here.
@@ -32,6 +32,7 @@ COMMENT_KINDS = {
 SUPPRESSION = "ast-grep-ignore"
 # Same length as the suppression word, so every offset stays.
 STAND_IN = "ast-grep-ign0re"
+ATTRIBUTE_KINDS = ("attribute_item", "inner_attribute_item")
 
 
 def comment_spans(text: str, suffix: str) -> list[tuple[int, int]] | None:
@@ -42,12 +43,21 @@ def comment_spans(text: str, suffix: str) -> list[tuple[int, int]] | None:
     language = LANGUAGES.get(suffix)
     if language is None or shutil.which(SCANNER) is None:
         return None
-    return _scan(text, language, SCANNER)
+    return _scan(text, language, COMMENT_KINDS.get(language, ("comment",)))
+
+
+def attribute_spans(text: str, suffix: str) -> list[tuple[int, int]] | None:
+    """The offsets of each Rust attribute in `text`, none outside Rust, or None when they cannot be known."""
+    if LANGUAGES.get(suffix) != "rust":
+        return []
+    if shutil.which(SCANNER) is None:
+        return None
+    return _scan(text, "rust", ATTRIBUTE_KINDS)
 
 
 @functools.cache
-def _scan(text: str, language: str, scanner: str) -> list[tuple[int, int]] | None:
-    """Scan once per text, since every marker kind asks about the same text."""
+def _scan(text: str, language: str, kinds: tuple[str, ...]) -> list[tuple[int, int]] | None:
+    """Scan once per text and node kinds, since every marker kind asks about the same text."""
     try:
         encoded = text.encode()
         # An empty config of its own in a fresh private directory, so ast-grep looks for no sgconfig.yml.
@@ -56,13 +66,13 @@ def _scan(text: str, language: str, scanner: str) -> list[tuple[int, int]] | Non
             config.write_text("ruleDirs: []\n")
             result = subprocess.run(
                 (
-                    scanner,
+                    SCANNER,
                     "scan",
                     "--config",
                     str(config),
                     "--stdin",
                     "--inline-rules",
-                    _rule(language),
+                    _rule(language, kinds),
                     "--json=stream",
                 ),
                 # ast-grep would apply the suppressions in the text to this scan too and hide the comments below them.
@@ -80,9 +90,9 @@ def _scan(text: str, language: str, scanner: str) -> list[tuple[int, int]] | Non
     return spans if result.returncode == 0 else None
 
 
-def _rule(language: str) -> str:
-    kinds = "".join(f"\n    - kind: {kind}" for kind in COMMENT_KINDS.get(language, ("comment",)))
-    return f"id: comment\nlanguage: {language}\nrule:\n  any:{kinds}\n"
+def _rule(language: str, kinds: tuple[str, ...]) -> str:
+    matchers = "".join(f"\n    - kind: {kind}" for kind in kinds)
+    return f"id: node\nlanguage: {language}\nrule:\n  any:{matchers}\n"
 
 
 def _characters(encoded: bytes, offset: int) -> int:

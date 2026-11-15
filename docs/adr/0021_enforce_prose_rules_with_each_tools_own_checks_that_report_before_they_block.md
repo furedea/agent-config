@@ -143,11 +143,10 @@ tool can judge with the context it has stays as prose:
 
 The evidence is the review of PRs #192-#195. The rules below were removed or demoted to `jev-lint` after drawing 8 to 34
 review threads each without converging, and each needs one or more of the cases above. The rules that stayed as
-blocking ast-grep rules, which judge one local construct, drew 3 or fewer threads (3 to 7 for the Bash and GitHub
+blocking ast-grep rules, which judge one local construct, drew 7 or fewer threads (3 to 7 for the Bash and GitHub
 Actions rules of #194, whose misses were sent to #196 instead of being patched). The types are the numbers above.
-Thread counts are those in the "ast-grep から外した規則と理由" tables of the PR bodies of #192, #193, and #195 (merged)
-and #194. PR #194 was still open when this was written, so the three rows marked (#194) and their `jev-lint`
-destinations are not on `main` yet and stay provisional until it merges.
+Thread counts are those in the "ast-grep から外した規則と理由" tables of the merged PR bodies of #192, #193, #194,
+and #195.
 
 | Rule                                     | Threads | Type    | Destination                                             |
 | ---------------------------------------- | ------- | ------- | ------------------------------------------------------- |

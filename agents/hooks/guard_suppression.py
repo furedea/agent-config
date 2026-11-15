@@ -57,7 +57,7 @@ COMPARED_BY_TEXT = frozenset({"ast-grep-ignore"})
 # or comment.
 CODE_MARKERS = frozenset({"allow or expect attribute"})
 # A line that may open or close a string or comment, which without a parser may change what a marker line is.
-DELIMITER = re.compile(r"[\"'`]|/\*|\*/|<!--|-->|\[\[|\]\]|<<|[|>][-+]?\s*$")
+DELIMITER = re.compile(r"[\"'`]|/\*|\*/|<!--|--!?>|\[\[|\]\]|<<|[|>][-+]?\s*$")
 # An ast-grep marker on the first line followed by a blank line suppresses its rules for the whole file.
 FILE_SCOPE = "ast-grep-ignore for the whole file"
 UNPLACED = "a suppression in a file the guard could not rebuild"
@@ -116,14 +116,23 @@ def _new_markers(change: _Change) -> list[str]:
 
 def _widens_file_scope(change: _Change) -> bool:
     """Whether the edit may give a first-line ast-grep marker the whole file, or change the one that has it."""
-    after = _file_marker(change.added) if change.whole else None
-    return after is not None and after != _file_marker(change.removed)
+    suffix = Path(change.path).suffix.lower()
+    after = _file_marker(change.added, suffix) if change.whole else None
+    return after is not None and after != _file_marker(change.removed, suffix)
 
 
-def _file_marker(text: str) -> str | None:
+def _file_marker(text: str, suffix: str) -> str | None:
+    """The first line when it holds an ast-grep marker in a comment above a blank line.
+
+    This counts the marker as the line-level check does; without the scanner, any marker on that line counts.
+    """
     # A final newline ends the last line; it does not start an empty one.
     lines = _lines(text.removesuffix("\n"))
-    if len(lines) < 2 or lines[1].strip() or not MARKERS["ast-grep-ignore"].search(lines[0]):
+    pattern = MARKERS["ast-grep-ignore"]
+    if len(lines) < 2 or lines[1].strip() or not pattern.search(lines[0]):
+        return None
+    marks = _marked_lines(pattern, text, _span_reader("ast-grep-ignore", suffix))
+    if marks is not None and not any(in_comment for in_comment, _ in marks.get(0, ())):
         return None
     return lines[0].strip()
 
@@ -147,7 +156,10 @@ def _adds(name: str, pattern: re.Pattern[str], change: _Change) -> bool:
         return _may_add_unparsed(pattern, change)
     added_marks, removed_marks = ([mark for marks in found.values() for mark in marks] for found in (added, removed))
     if name in COMPARED_BY_TEXT:
-        return bool(Counter(added_marks) - Counter(removed_marks))
+        # A word outside a comment suppresses nothing; one that moves into a comment shows up as a new comment mark.
+        return bool(
+            Counter(mark for mark in added_marks if mark[0]) - Counter(mark for mark in removed_marks if mark[0])
+        )
     return sum(_counts(name, in_node) for in_node, _ in added_marks) > sum(
         _counts(name, in_node) for in_node, _ in removed_marks
     )
@@ -331,7 +343,9 @@ class _Hunks:
         if not self.destination:
             return [source]
         # A carried marker counts by itself; cut out of the file, its line could parse differently.
-        moved_in = bool(_newly_honored(existing, Path(path).suffix.lower(), Path(self.destination).suffix.lower()))
+        # Judge what arrives: the patched text when the guard could rebuild it, else the file as it stands.
+        moved = source.added if source.whole else existing
+        moved_in = bool(_newly_honored(moved, Path(path).suffix.lower(), Path(self.destination).suffix.lower()))
         destination = _Change(
             self.destination, source.added, source.removed, source.whole, source.unplaced, moved_in=moved_in
         )

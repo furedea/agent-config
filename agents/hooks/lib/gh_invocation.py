@@ -259,18 +259,21 @@ def _check_write_words(scan: OptionScan) -> None:
         raise UnclassifiableError("an option value may split into several words at run time")
 
 
-def _check_sent_values(words: tuple[Word, ...], single_call: bool) -> None:
+def _check_sent_values(words: tuple[Word, ...], single_call: bool, *, fields: bool = False) -> None:
     """Refuse a value sent to GitHub that the guard cannot read before it leaves.
 
     A parameter may hold any secret of the environment. A command substitution is visible text only
-    on a line whose other commands just print, such as a body through a quoted heredoc.
+    on a line whose other commands just print, such as a body through a quoted heredoc. For gh api
+    `fields`, a literal key= prefix is not part of the value.
     """
     for word in words:
         if word.dynamic and has_parameter(word.source):
             raise UnclassifiableError("a value sent to GitHub holds a parameter expansion")
         if word.dynamic and not single_call:
             raise UnclassifiableError("a value sent to GitHub is built by a command that does more than print")
-        if word.dynamic and not _is_one_substitution(word.value.partition("=")[2] or word.value):
+        key = FIELD_KEY.match(word.source) if fields else None
+        value = word.source[key.end() :] if key else word.source
+        if word.dynamic and not _is_one_substitution(value):
             raise UnclassifiableError("a value sent to GitHub joins a substitution's output to other text")
 
 
@@ -281,7 +284,11 @@ def _is_one_substitution(source: str) -> bool:
     parts = arguments[1].get("Parts", []) if len(arguments) == 2 else []
     if len(parts) == 1 and parts[0].get("Type") == "DblQuoted":
         parts = parts[0].get("Parts", [])
-    return len(parts) == 1 and parts[0].get("Type") == "CmdSubst"
+    if len(parts) != 1 or parts[0].get("Type") != "CmdSubst":
+        return False
+    # One plain call inside, so no second command, pipe, or list adds output after the first.
+    statements = parts[0].get("Stmts", [])
+    return len(statements) == 1 and (statements[0].get("Cmd") or {}).get("Type") == "CallExpr"
 
 
 def _classify_api(words: tuple[Word, ...], catalog: Catalog, single_call: bool) -> GhCall:
@@ -289,7 +296,7 @@ def _classify_api(words: tuple[Word, ...], catalog: Catalog, single_call: bool) 
     texts = tuple(
         word for option, word in request.fields if option not in TYPED_FIELD_OPTIONS or not _names_file(word)
     )
-    _check_sent_values(texts, single_call)
+    _check_sent_values(texts, single_call, fields=True)
     if not request.endpoint.dynamic and request.path in GRAPHQL_PATHS:
         return _classify_graphql(request, catalog)
     if request.method in READ_METHODS:

@@ -94,6 +94,12 @@ def decide(command: str) -> str:
             'gh issue comment 1 -R furedea/r -b "ghp_$(echo x)"', "joins", id="text joined to a substitution"
         ),
         pytest.param(
+            'gh issue comment 1 -R furedea/r -b "$(echo -n ghp_; echo x)"',
+            "joins",
+            id="two commands inside one substitution",
+        ),
+        pytest.param('gh issue comment 1 -R furedea/r -b "ghp_=$(echo x)"', "joins", id="a key-like prefix in a body"),
+        pytest.param(
             "gh pr edit 242 --body \"$(printf '%s' 'pass ${a[@]} through')\"",
             "does more than print",
             id="a body printf formats",

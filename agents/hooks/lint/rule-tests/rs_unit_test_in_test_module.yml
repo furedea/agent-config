@@ -31,6 +31,12 @@ valid:
   - |
     #[cfg_attr(any(feature = "x", test), allow(dead_code))]
     fn helper() {}
+  - |
+    #[rstest::fixture]
+    fn user() -> User { User::default() }
+  - |
+    #[fixture]
+    fn user() -> User { User::default() }
 invalid:
   - |
     #[test]
@@ -71,4 +77,10 @@ invalid:
     }
   - |
     #[cfg_attr(all(unix, test), test)]
+    fn it_works() {}
+  - |
+    #[tokio::test(flavor = "multi_thread")]
+    async fn it_works() {}
+  - |
+    #[rstest::rstest]
     fn it_works() {}

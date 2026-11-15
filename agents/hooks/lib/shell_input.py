@@ -211,7 +211,7 @@ def moves_directory(source: str, records: tuple[dict, ...]) -> bool:
         return True
     data = source.encode()
     calls = [node for node in records if node.get("Type") == "CallExpr" and node.get("Args")]
-    if any(word[:1] in {"-", "+"} and "j" in word for word in set_options(calls, data)):
+    if any(word[:1] in {"-", "+"} and "j" in word for word in options_given_to_set(calls, data)):
         return True
     return any(runs_unseen(call, data) for call in calls)
 
@@ -221,7 +221,7 @@ def normalized(text: str) -> str:
     return SPELLING.sub("", text).lower()
 
 
-def set_options(calls: list[dict], data: bytes) -> list[str]:
+def options_given_to_set(calls: list[dict], data: bytes) -> list[str]:
     """The option words, normalized, that each set call gives, past prefixes and wrappers, with the names -o takes."""
     options = []
     for call in calls:

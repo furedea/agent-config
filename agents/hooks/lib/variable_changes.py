@@ -59,7 +59,7 @@ def may_export(records: tuple[dict, ...], data: bytes) -> bool:
         return True
     return any(
         word[:1] in {"-", "+"} and "a" in word[1:] and word not in {"-o", "+o"}
-        for word in shell_input.set_options(calls, data)
+        for word in shell_input.options_given_to_set(calls, data)
     )
 
 

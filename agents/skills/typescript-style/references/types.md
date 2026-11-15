@@ -3,8 +3,8 @@
 ## Unions
 
 - Model states and kinds as discriminated unions with a tag field, not optional fields or flags.
-- Handle a union with an exhaustive `switch` whose `default` branch assigns the value with
-  `satisfies never`, so adding a variant fails compilation.
+- In the `default` branch of a `switch` over a union, assign the value with `satisfies never`, so
+  adding a variant fails compilation.
 
 ```ts
 type Payment =
@@ -46,6 +46,5 @@ export function parseEmail(value: string): Result<Email, "invalid_email"> {
 - Accept external input (JSON, environment, network, storage) as `unknown` and parse it once at
   the boundary into constrained types. Do not re-validate the same value downstream.
 - Do not use `as` casts except immediately after validation, as in the brand example above.
-- Do not use `any`; use `unknown` and narrow.
 - Group arguments into a type only when it names a real domain concept, never an anonymous object
   that mirrors one function's parameters.

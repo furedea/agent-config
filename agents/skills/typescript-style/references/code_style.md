@@ -2,17 +2,7 @@
 
 ## Naming
 
-- Use snake_case file names (enforced by ls-lint), for example `long_run.ts`.
 - Name files by the domain or action, not a role suffix: `format.ts`, not `formatter.ts`.
-
-## Imports
-
-- Use `import type` for type-only imports, as `verbatimModuleSyntax` requires.
-- Do not create import cycles; `import/no-cycle` enforces this.
-
-## Formatting
-
-- Let oxfmt define formatting. Do not hand-format around it.
 
 ## Separation of Concerns
 

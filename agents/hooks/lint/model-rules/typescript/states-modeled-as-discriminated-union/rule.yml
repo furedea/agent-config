@@ -1,0 +1,30 @@
+# States and kinds are discriminated unions with a tag field, not optional fields or flags
+# (agents/skills/typescript-style/references/types.md). Advisory and unfitted.
+id: states-modeled-as-discriminated-union
+languages: [ TypeScript, Tsx ]
+kind: noul
+subject: node
+state: local
+threshold: 0.5
+axis: file
+severity: warning
+rule:
+  all:
+    - any:
+        - kind: type_alias_declaration
+        - kind: interface_declaration
+    - has:
+        kind: property_signature
+        regex: '\?:|:\s*boolean\b'
+        stopBy: end
+ask: >-
+  This type describes several states or kinds of one thing with optional fields or boolean flags, where the fields that
+  exist depend on which state it is in.
+criteria:
+  "true": >-
+    Some fields are present only in some states (optional fields that go together, or a flag such as `isLoading` or
+    `hasError` that decides which other fields are meaningful), so an impossible combination can be written, and a
+    discriminated union with a tag field would rule it out.
+  "false": >-
+    The optional fields are independent options with sensible defaults, the booleans are independent facts, or the type
+    already is, or is a member of, a discriminated union with a tag field.

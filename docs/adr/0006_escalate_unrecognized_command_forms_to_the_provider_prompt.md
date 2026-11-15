@@ -1,8 +1,10 @@
-# ADR-0006: Escalate unrecognized command forms to the provider prompt
+---
+status: accepted
+date: 2026-10-15
+related: [dotfiles/ADR-0033]
+---
 
-- Status: Accepted
-- Date: 2026-10-15
-- Originally: furedea/dotfiles ADR-0033
+# ADR-0006: Escalate unrecognized command forms to the provider prompt
 
 In the context of the command and verification hooks from
 [ADR-0004](0004_permit_agent_commands_by_reversibility.md) and

@@ -1,7 +1,9 @@
-# ADR-0013: Let the host supply the agent GitHub token
+---
+status: accepted
+date: 2026-10-24
+---
 
-- Status: Accepted
-- Date: 2026-10-24
+# ADR-0013: Let the host supply the agent GitHub token
 
 In the context of agents that push and call `gh` inside the Claude Code sandbox with the agent
 GitHub App token ([ADR-0008](0008_run_agent_git_inside_the_sandbox_with_unsigned_commits.md),

@@ -1,8 +1,10 @@
-# ADR-0019: Resolve automation path arguments through symlinks
+---
+status: accepted
+date: 2026-11-03
+related: [ADR-0018]  # refines
+---
 
-- Status: Accepted
-- Date: 2026-11-03
-- Refines: ADR-0018
+# ADR-0019: Resolve automation path arguments through symlinks
 
 In the context of `agent-browser` and `agent-desktop` running outside the sandbox, where an argument
 such as an output path could reach a file outside the sandbox through a symlink the session made in

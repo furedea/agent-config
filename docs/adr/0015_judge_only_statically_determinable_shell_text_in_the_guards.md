@@ -1,7 +1,9 @@
-# ADR-0015: Judge only statically determinable shell text in the guards
+---
+status: accepted
+date: 2026-10-24
+---
 
-- Status: Accepted
-- Date: 2026-10-24
+# ADR-0015: Judge only statically determinable shell text in the guards
 
 In the context of the guard hooks (`guard_git`, `guard_command`, the secret path and secret commit
 checks) that inspect shell text before the OS sandbox from

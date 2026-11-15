@@ -1,7 +1,9 @@
-# ADR-0024: Merge the issue, Git, and setup workflows into one development-cycle skill
+---
+status: accepted
+date: 2026-11-15
+---
 
-- Status: Accepted
-- Date: 2026-11-15
+# ADR-0024: Merge the issue, Git, and setup workflows into one development-cycle skill
 
 In the context of #169 item D, where `issue-workflow`, `git-workflow`, and `project-setup` each described one stage of
 the same development cycle and handed off to each other by prose, facing a choice between keeping them separate,

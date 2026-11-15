@@ -1,10 +1,12 @@
-# ADR-0007: Ask only for effects that escape the sandbox
+---
+status: superseded
+date: 2026-10-15
+supersedes: [ADR-0004]
+superseded-by: [ADR-0009]
+related: [dotfiles/ADR-0034]
+---
 
-- Status: Superseded
-- Date: 2026-10-15
-- Originally: furedea/dotfiles ADR-0034
-- Supersedes: ADR-0004
-- Superseded by: ADR-0009
+# ADR-0007: Ask only for effects that escape the sandbox
 
 In the context of the three command tiers from
 [ADR-0004](0004_permit_agent_commands_by_reversibility.md), facing an OS sandbox that now confines

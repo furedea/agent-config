@@ -1,8 +1,11 @@
-# ADR-0021: Enforce prose rules with each tool's own checks that report before they block
+---
+status: proposed
+date: 2026-11-10
+amended:
+  - "2026-11-11: the hook behaviour, the two reviews, the Keychain"
+---
 
-- Status: Proposed
-- Date: 2026-11-10
-- Amended: 2026-11-11 (the hook behaviour, the two reviews, the Keychain)
+# ADR-0021: Enforce prose rules with each tool's own checks that report before they block
 
 In the context of turning the prose rules of `AGENTS.md` and the style skills into machine checks (#74), facing rules
 that differ in how they can be judged (existing linter, ast-grep, model, prose only) and a model judge whose cutoffs

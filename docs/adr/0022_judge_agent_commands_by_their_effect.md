@@ -1,9 +1,10 @@
-# ADR-0022: Judge agent commands by their effect
+---
+status: accepted
+date: 2026-11-14
+related: [ADR-0009, ADR-0006, ADR-0015, ADR-0021]  # refines ADR-0009, ADR-0006, ADR-0015; amends ADR-0021 (static ast-grep rules block; amendment in a separate change)
+---
 
-- Status: Accepted
-- Date: 2026-11-14
-- Refines: ADR-0009, ADR-0006, ADR-0015
-- Amended with: ADR-0021 (static ast-grep rules block; amendment in a separate change)
+# ADR-0022: Judge agent commands by their effect
 
 In the context of the command guards that decide allow, ask, or deny for agent shell commands,
 facing a day (2026-11-14) with 101 prompts, most of them for effects that stay inside the

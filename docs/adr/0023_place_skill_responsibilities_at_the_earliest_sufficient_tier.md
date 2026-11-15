@@ -1,7 +1,9 @@
-# ADR-0023: Place skill responsibilities at the earliest sufficient tier
+---
+status: proposed
+date: 2026-11-15
+---
 
-- Status: Proposed
-- Date: 2026-11-15
+# ADR-0023: Place skill responsibilities at the earliest sufficient tier
 
 In the context of workflow skills (`git-workflow`, `herdr-delegation`, `issue-workflow`, `adr`, `project-setup`,
 `tsdd`, `measurement-evidence`, `source-of-truth`) that carry fixed command sequences, format rules, and state handling as

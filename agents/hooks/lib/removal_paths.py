@@ -15,6 +15,7 @@ import command_policy
 import hook_decision
 import session_snapshot
 import shell_syntax
+import system_programs
 from hook_decision import Verdict
 
 PROGRAM = "rm"
@@ -27,6 +28,8 @@ GIT_DIRECTORY = ".git"
 # assignment before it, so neither a path nor an inherited PATH can swap in another program.
 COMPANIONS = frozenset({"echo", "true", "false", "test", "[", "pwd"})
 WRAPPERS = frozenset({"command", "nohup", "nice", "time", "timeout", "stdbuf"})
+# Companions the shell runs itself; every other program, rm included, is found through PATH.
+BUILTINS = COMPANIONS | {"command", "time"}
 # System temporary roots other programs and users share; only a session's own directory below one counts.
 SHARED_TEMPORARY_ROOTS = frozenset(
     Path(path).resolve() for path in ("/tmp", "/private/tmp", "/var/tmp", "/private/var/tmp", "/dev/shm")
@@ -49,6 +52,12 @@ def objection(payload: dict, commands: tuple[shell_syntax.Command, ...]) -> Verd
         return hook_decision.ask(
             f"Needs review: rm shares the command with '{other}', which may change the working directory or the "
             f"file a path names, so its operands cannot be resolved beforehand.\n\nCommand: {preview}",
+            PROGRAM,
+        )
+    if program := next((item.arguments[0] for item in commands if not _runs_a_system_program(item)), ""):
+        return hook_decision.ask(
+            f"Needs review: '{program}' does not resolve to a root-owned system program, so it may not be the "
+            f"program the guard judged.\n\nCommand: {preview}",
             PROGRAM,
         )
     directory = automation_paths.working_directory(payload)
@@ -89,6 +98,11 @@ def _is_safe_companion(item: shell_syntax.Command) -> bool:
         return True
     bare = not item.program_is_dynamic and item.arguments[0] == name and item.raw.lstrip().startswith(name)
     return bare and name in COMPANIONS | WRAPPERS
+
+
+def _runs_a_system_program(item: shell_syntax.Command) -> bool:
+    """A builtin runs inside the shell; anything else must resolve to a root-owned system program."""
+    return Path(item.arguments[0]).name in BUILTINS or system_programs.is_system_program(item.arguments[0])
 
 
 def _call_reason(call: shell_syntax.Command, directory: Path | None, roots: tuple[Path, ...]) -> str:

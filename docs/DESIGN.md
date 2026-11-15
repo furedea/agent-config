@@ -227,7 +227,8 @@ Without the items, the hook reports `Model rules skipped` at every Stop and does
     any other path (resolved through links in its parent directories), a path known only at run time, xargs
     operands, recursive forms the deny prefixes do not list, and rm beside any program other than a
     listed shell builtin (`echo`, `test`, `pwd`, ...), since it may change the working directory or
-    create a link first.
+    create a link first. So does an `rm`, wrapper, or `uv` that PATH resolves to anything but a
+    root-owned system program, and a user uv limit shorter than a week.
 - Typing into a Herdr pane (`pane send-text`, `pane send-keys`, `pane run`, `agent send-keys`)
     always asks, even for an agent this session started: keys or text can answer that agent's
     approval prompt or end it and reach the shell beneath it. Hand work over with `agent prompt`.

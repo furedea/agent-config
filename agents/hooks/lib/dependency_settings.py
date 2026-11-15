@@ -11,6 +11,7 @@ import os
 import re
 import tomllib
 from collections.abc import Iterator
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import command_policy
@@ -18,6 +19,7 @@ import hook_decision
 import session_snapshot
 import shell_inspection
 import shell_syntax
+import system_programs
 from hook_decision import Verdict
 
 PROGRAM = "uv"
@@ -56,6 +58,8 @@ DIRECT_REFERENCE = re.compile(r"@|://|^\s*[./~]")
 PROJECT_SETTINGS = ("pyproject.toml", "uv.toml")
 # The user's limit, and the variables that override any configuration file.
 AGE_LIMIT = "exclude-newer"
+MINIMUM_AGE = timedelta(days=7)
+SPAN = re.compile(r"(?P<count>\d+)\s*(?P<unit>weeks?|days?)|p(?P<iso_count>\d+)(?P<iso_unit>[wd])")
 ENVIRONMENT_PREFIX = "UV_"
 OVERRIDING_SETTINGS = frozenset(
     {"exclude-newer", "exclude-newer-package", "index", "index-url", "extra-index-url", "find-links", "sources"}
@@ -78,7 +82,12 @@ def objection(payload: dict, command: str, commands: tuple[shell_syntax.Command,
     changes = [item for item in calls if _changes_dependencies(item)]
     reason = _argument_reason(calls)
     if changes and not reason:
-        reason = _neighbour_reason(command, commands, changes) or _environment_reason() or _project_reason(payload)
+        reason = (
+            _neighbour_reason(command, commands, changes)
+            or _program_reason(changes)
+            or _environment_reason()
+            or _project_reason(payload)
+        )
     if not reason:
         return hook_decision.ALLOW
     preview = shell_syntax.command_preview(calls[0].raw)
@@ -165,9 +174,37 @@ def _environment_reason() -> str:
         settings = tomllib.loads((Path(base) / "uv" / "uv.toml").read_text())
     except OSError, UnicodeDecodeError, tomllib.TOMLDecodeError:
         return "runs without a readable user uv configuration that sets the package-age limit"
-    if AGE_LIMIT not in settings:
-        return "runs without a package-age limit in the user's uv configuration"
+    if not _is_at_least_a_week(settings.get(AGE_LIMIT)):
+        return "runs without a package-age limit of at least a week in the user's uv configuration"
     return ""
+
+
+def _program_reason(changes: list[shell_syntax.Command]) -> str:
+    """A uv found in a directory the session writes could drop the limit before it runs the real one."""
+    program = next(
+        (item.arguments[0] for item in changes if not system_programs.is_system_program(item.arguments[0])), ""
+    )
+    return f"runs '{program}', which does not resolve to a root-owned system program" if program else ""
+
+
+def _is_at_least_a_week(value: object) -> bool:
+    """Whether an exclude-newer value refuses everything published in the last seven days.
+
+    A span such as `1 week`, `7 days`, or `P7D` must be a week or longer; a date or timestamp must lie at
+    least a week in the past. Any other value, or none, is not trusted.
+    """
+    if not isinstance(value, str):
+        return False
+    text = value.strip()
+    if span := SPAN.fullmatch(text.casefold()):
+        count, unit = int(span["count"] or span["iso_count"]), span["unit"] or span["iso_unit"]
+        return count * (7 if unit.startswith("w") else 1) >= MINIMUM_AGE.days
+    try:
+        moment = datetime.fromisoformat(text)
+    except ValueError:
+        return False
+    moment = moment if moment.tzinfo else moment.replace(tzinfo=UTC)
+    return moment <= datetime.now(UTC) - MINIMUM_AGE
 
 
 def _sets_age_limit(path: Path) -> bool:

@@ -70,6 +70,7 @@ known_first_party = [
   "session_store",
   "source_listing",
   "static_rule_scan",
+  "system_programs",
   "trusted_owners",
   "verification_session",
 ]

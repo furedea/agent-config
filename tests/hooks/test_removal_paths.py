@@ -4,9 +4,17 @@ import tempfile
 from pathlib import Path
 
 import pytest
+from tests.hooks.system_programs import use_own_program, use_system_programs
 from tests.runtime import load_script_module
 
 guard = load_script_module("agents/hooks/guard_command.py", "guard_command")
+
+
+@pytest.fixture(autouse=True)
+def system_rm(tmp_path_factory: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch) -> None:
+    """rm and the external wrappers resolve to root-owned system programs, as on a deployed machine."""
+    directory = tmp_path_factory.mktemp("system") / "bin"
+    use_system_programs(directory, monkeypatch, "rm", "nohup", "nice", "timeout", "stdbuf")
 
 
 def judged(project: Path | None, command: str, kind: str = "allowed") -> str:
@@ -225,3 +233,12 @@ def test_the_claude_session_tmpdir_is_a_session_root(git_project: Path, monkeypa
         monkeypatch.delenv(name, raising=False)
     monkeypatch.setenv("TMPDIR", "/tmp/claude-501")
     assert judged(git_project, f"rm {Path('/tmp/claude-501').resolve()}/scratch.txt") == "allow"
+
+
+@pytest.mark.parametrize("name", ["rm", "nohup"])
+def test_a_program_found_in_a_directory_the_session_writes_asks(
+    git_project: Path, monkeypatch: pytest.MonkeyPatch, name: str
+) -> None:
+    use_own_program(git_project / ".venv" / "bin", monkeypatch, name)
+    command = "rm scratch.txt" if name == "rm" else "nohup rm scratch.txt"
+    assert judged(git_project, command) == "ask"

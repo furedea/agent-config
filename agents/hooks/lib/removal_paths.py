@@ -118,7 +118,7 @@ def _runs_a_system_program(item: shell_syntax.Command) -> bool:
     PATH or LD_PRELOAD before a call can change which program runs.
     """
     if item.arguments[0] in BUILTINS and not item.wrapper_depth:
-        return True
+        return not system_programs.inherits_shell_functions()
     return not shell_inspection.has_prefix_assignment(item.raw, item.words[0]) and system_programs.is_system_program(
         item.arguments[0]
     )

@@ -15,14 +15,20 @@ from collections.abc import Callable
 from pathlib import Path
 
 ROOT_UID = 0
+EXPORTED_FUNCTION_PREFIX = "BASH_FUNC_"
 WRITABLE_BY_OTHERS = stat.S_IWGRP | stat.S_IWOTH
 # Directories trusted besides root-owned ones; tests stand one in for a system directory.
 TRUSTED_DIRECTORIES: frozenset[Path] = frozenset()
 
 
+def inherits_shell_functions() -> bool:
+    """Whether bash inherits exported functions, which run before builtins and PATH lookups of the same name."""
+    return any(name.startswith(EXPORTED_FUNCTION_PREFIX) for name in os.environ)
+
+
 def is_system_program(word: str) -> bool:
     """Whether `word`, an absolute path or a name looked up on PATH, runs a root-owned system file."""
-    if os.geteuid() == ROOT_UID or ("/" in word and not word.startswith("/")):
+    if os.geteuid() == ROOT_UID or inherits_shell_functions() or ("/" in word and not word.startswith("/")):
         return False
     entries = os.environ.get("PATH", "").split(os.pathsep)
     if "/" not in word and not all(Path(entry).is_absolute() for entry in entries):

@@ -301,3 +301,8 @@ def test_a_project_file_linked_outside_the_worktree_asks(
 
 def test_a_prefix_lookalike_assignment_before_uv_asks(git_project: Path) -> None:
     assert judged(git_project, "uvx=1 uv add httpx", "allowed") == "ask"
+
+
+def test_an_inherited_shell_function_before_uv_asks(git_project: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("BASH_FUNC_uv%%", '() {  command uv --no-config "$@"; }')
+    assert judged(git_project, "uv add httpx", "allowed") == "ask"

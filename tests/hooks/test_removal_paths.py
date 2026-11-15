@@ -289,3 +289,9 @@ def test_a_builtin_name_behind_an_external_wrapper_is_looked_up_on_path(
 def test_a_root_session_trusts_no_program_by_its_owner(git_project: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(system_programs.os, "geteuid", lambda: 0)
     assert judged(git_project, "rm scratch.txt") == "ask"
+
+
+@pytest.mark.parametrize("name", ["BASH_FUNC_rm%%", "BASH_FUNC_echo%%", "BASH_FUNC_rm()"])
+def test_an_inherited_shell_function_asks(git_project: Path, monkeypatch: pytest.MonkeyPatch, name: str) -> None:
+    monkeypatch.setenv(name, "() {  /bin/rm -rf ~; }")
+    assert judged(git_project, "echo hi && rm scratch.txt") == "ask"

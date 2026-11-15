@@ -73,7 +73,7 @@ Rules:
 
 Default to `Accepted` when the decision is implemented in the same change. Use `Proposed` only when the user asked for a proposal or no implementation change is being made.
 
-Past ADRs are immutable except for metadata. Do not rewrite the body of an accepted ADR to make it match a new decision.
+Past ADRs are immutable except for metadata and recorded `Amended` corrections. Do not rewrite the body of an accepted ADR to make it match a new decision.
 
 When reversing a decision, create a new ADR with the next ID and `- Supersedes: ADR-NNNN`, and change the old ADR's status to `Superseded` in the same change set.
 

@@ -45,7 +45,7 @@ def test_file_name_must_start_with_a_four_digit_id(adr_directory: Path, name: st
     assert "File name must start with a four-digit ID" in messages(adr_directory)
 
 
-@pytest.mark.parametrize("name", ["0003-dashes.md", "0003_Upper.md", "0003.md"])
+@pytest.mark.parametrize("name", ["0003-dashes.md", "0003_Upper.md", "0003.md", "0003 spaced name.md"])
 def test_any_naming_style_after_the_id_is_accepted(adr_directory: Path, name: str) -> None:
     write_adr(adr_directory, name, identifier="0003")
     assert messages(adr_directory) == ""

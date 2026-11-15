@@ -50,6 +50,8 @@ UNEXPANDABLE_PATH = re.compile(r"[`*?\[~\\]|\$\(|\$\{[^}]*[^A-Za-z0-9_}]|\$\{?[A
 SHELL_PART = re.compile(r"""'[^']*'|"[^"]*"|[^'"]+""")
 # A plain parameter in a run-time path; one the environment lacks expands to nothing, as in the shell.
 PLAIN_PARAMETER = re.compile(r"\$(?:([A-Za-z_][A-Za-z0-9_]*)|\{([A-Za-z_][A-Za-z0-9_]*)\})")
+# Variables naming a file or directory a non-interactive shell sources before the command runs.
+STARTUP_FILE_VARIABLES = ("BASH_ENV", "ENV", "ZDOTDIR")
 IRREVERSIBLE_REASON = "cannot be taken back or promotes work (class D)"
 TARGET_REASONS = {
     TargetClass.UNTRUSTED: "writes to a repository whose owner is not in trusted_owners.json (class C)",
@@ -113,6 +115,8 @@ def _environment_problem(line: CommandLine) -> str:
             return problem
     if os.environ.get("GH_FORCE_TTY"):
         return "the environment forces a terminal, so gh would start the pager program it names"
+    if any(os.environ.get(name) for name in STARTUP_FILE_VARIABLES):
+        return "the environment names a startup file the shell sources first, which may redefine gh or git"
     configured_repository = os.environ.get("GH_REPO")
     foreign_repository = configured_repository and gh_repository.repository(configured_repository) is None
     if os.environ.get("GH_HOST", GITHUB_HOST).lower() != GITHUB_HOST or foreign_repository:

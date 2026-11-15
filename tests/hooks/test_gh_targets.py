@@ -268,3 +268,13 @@ def test_a_writable_path_entry_before_git_asks_beside_a_command_that_may_write(
     monkeypatch.setenv("PATH", f"{Path(gh).parent}:{empty}:{os.environ['PATH']}")
     assert decide("cp x later/git; gh pr list -R furedea/agent-config") == "ask"
     assert decide("gh pr list -R furedea/agent-config") == "allow"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+@pytest.mark.parametrize("name", ["BASH_ENV", "ENV", "ZDOTDIR"])
+def test_a_startup_file_in_the_hook_environment_makes_every_call_ask(
+    monkeypatch: pytest.MonkeyPatch, name: str
+) -> None:
+    assert decide("gh pr view 1 -R furedea/agent-config") == "allow"
+    monkeypatch.setenv(name, "notes.sh")
+    assert decide("gh pr view 1 -R furedea/agent-config") == "ask"

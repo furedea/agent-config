@@ -266,22 +266,6 @@
       "operation": "pr.checks",
       "effect": "read"
     },
-    "pr checkout": {
-      "operation": "pr.checkout",
-      "effect": "local",
-      "values": [
-        "-b",
-        "--branch",
-        "--worktree",
-        "-R",
-        "--repo"
-      ],
-      "flags": [
-        "--detach",
-        "-f",
-        "--force"
-      ]
-    },
     "pr create": {
       "operation": "pr.create",
       "effect": "reversible",

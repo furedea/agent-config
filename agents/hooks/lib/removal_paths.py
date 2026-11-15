@@ -35,8 +35,8 @@ BUILTINS = COMPANIONS | {"command"}
 SHARED_TEMPORARY_ROOTS = frozenset(
     Path(path).resolve() for path in ("/tmp", "/private/tmp", "/var/tmp", "/private/var/tmp", "/dev/shm")
 )
-# Variables a provider sets to its own session's directory; a general TMPDIR counts only as a
-# provider directory directly below a shared root, such as Claude's /tmp/claude-<uid>.
+# Variables naming the parent a provider creates its session directories in; only its claude-* children
+# count, and a general TMPDIR counts only as such a directory directly below a shared root.
 PROVIDER_TEMPORARY_VARIABLES = ("CLAUDE_TMPDIR", "CLAUDE_CODE_TMPDIR")
 PROVIDER_TEMPORARY_PREFIX = "claude-"
 # macOS's per-user temporary directory, which every program the user runs shares.
@@ -114,9 +114,11 @@ def _is_git_entry(path: Path) -> bool:
 
 def _session_temporary_roots() -> tuple[Path, ...]:
     """Temporary directories the provider issued for this session; a general TMPDIR may be any shared tree."""
-    issued = [os.environ.get(name) for name in PROVIDER_TEMPORARY_VARIABLES]
+    parents = [
+        Path(value).expanduser().resolve() for name in PROVIDER_TEMPORARY_VARIABLES if (value := os.environ.get(name))
+    ]
+    roots = [child for parent in parents for child in parent.glob(f"{PROVIDER_TEMPORARY_PREFIX}*") if child.is_dir()]
     general = os.environ.get("TMPDIR")
-    roots = [Path(value).expanduser().resolve() for value in issued if value]
     if general and (root := Path(general).expanduser().resolve()).parent in SHARED_TEMPORARY_ROOTS:
         roots += [root] if root.name.startswith(PROVIDER_TEMPORARY_PREFIX) else []
     return tuple(
@@ -146,7 +148,7 @@ def _runs_a_system_program(item: shell_syntax.Command) -> bool:
     PATH or LD_PRELOAD before a call can change which program runs.
     """
     if item.arguments[0] in BUILTINS and not item.wrapper_depth:
-        return not system_programs.inherits_shell_functions()
+        return not system_programs.inherits_execution_overrides()
     return not shell_inspection.has_prefix_assignment(item.raw, item.words[0]) and system_programs.is_system_program(
         item.arguments[0]
     )

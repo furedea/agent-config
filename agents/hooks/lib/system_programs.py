@@ -19,24 +19,28 @@ ROOT_UID = 0
 NIX_STORE = Path("/nix/store")
 EXPORTED_FUNCTION_PREFIX = "BASH_FUNC_"
 STARTUP_FILE_VARIABLES = ("BASH_ENV", "ENV")
+LOADER_PREFIXES = ("LD_PRELOAD", "LD_LIBRARY_PATH", "LD_AUDIT", "DYLD_")
 WRITABLE_BY_OTHERS = stat.S_IWGRP | stat.S_IWOTH
 # Directories trusted besides root-owned ones; tests stand one in for a system directory.
 TRUSTED_DIRECTORIES: frozenset[Path] = frozenset()
 
 
-def inherits_shell_functions() -> bool:
-    """Whether bash may define functions before the command runs, which shadow builtins and PATH lookups.
+def inherits_execution_overrides() -> bool:
+    """Whether the shell or the loader may run other code than the program a command names.
 
-    Exported functions arrive as BASH_FUNC_ variables, and BASH_ENV or ENV names a file the shell
-    sources first, where any function or alias can be defined.
+    Exported functions arrive as BASH_FUNC_ variables, BASH_ENV or ENV names a file the shell sources
+    first, and loader variables such as LD_PRELOAD or DYLD_INSERT_LIBRARIES inject code into every
+    dynamically linked program, the shell and the system rm included.
     """
-    exported = any(name.startswith(EXPORTED_FUNCTION_PREFIX) for name in os.environ)
-    return exported or any(os.environ.get(name) for name in STARTUP_FILE_VARIABLES)
+    names = list(os.environ)
+    exported = any(name.startswith(EXPORTED_FUNCTION_PREFIX) for name in names)
+    loader = any(name.startswith(LOADER_PREFIXES) for name in names)
+    return exported or loader or any(os.environ.get(name) for name in STARTUP_FILE_VARIABLES)
 
 
 def is_system_program(word: str) -> bool:
     """Whether `word`, an absolute path or a name looked up on PATH, runs a root-owned system file."""
-    if os.geteuid() == ROOT_UID or inherits_shell_functions() or ("/" in word and not word.startswith("/")):
+    if os.geteuid() == ROOT_UID or inherits_execution_overrides() or ("/" in word and not word.startswith("/")):
         return False
     entries = os.environ.get("PATH", "").split(os.pathsep)
     if "/" not in word and not all(Path(entry).is_absolute() for entry in entries):

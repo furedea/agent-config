@@ -50,8 +50,9 @@ def test_removing_files_inside_the_worktree_runs_unprompted(git_project: Path, c
 def test_removing_a_file_in_the_session_temporary_directory_runs_unprompted(
     git_project: Path, tmp_path_factory: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    session = tmp_path_factory.mktemp("session-tmp")
-    monkeypatch.setenv("CLAUDE_CODE_TMPDIR", str(session))
+    session = tmp_path_factory.mktemp("session-tmp") / "claude-501"
+    session.mkdir()
+    monkeypatch.setenv("CLAUDE_CODE_TMPDIR", str(session.parent))
     assert judged(git_project, f"rm -f {session.resolve()}/scratch.txt") == "allow"
 
 
@@ -344,3 +345,28 @@ def without_session_temporary_roots(monkeypatch: pytest.MonkeyPatch) -> None:
     for name in ("CLAUDE_TMPDIR", "CLAUDE_CODE_TMPDIR"):
         monkeypatch.delenv(name, raising=False)
     monkeypatch.setenv("TMPDIR", "/nonexistent-session-tmp")
+
+
+def test_a_broad_claude_code_tmpdir_is_not_a_session_root(
+    git_project: Path, monkeypatch: pytest.MonkeyPatch, tmp_path_factory: pytest.TempPathFactory
+) -> None:
+    without_session_temporary_roots(monkeypatch)
+    broad = tmp_path_factory.mktemp("user-tmp")
+    (broad / "claude-501").mkdir()
+    monkeypatch.setenv("CLAUDE_CODE_TMPDIR", str(broad))
+    assert judged(git_project, f"rm {broad.resolve()}/unrelated.txt") == "ask"
+    assert judged(git_project, f"rm {broad.resolve()}/claude-501/scratch.txt") == "allow"
+
+
+@pytest.mark.parametrize("name", ["LD_PRELOAD", "LD_LIBRARY_PATH", "DYLD_INSERT_LIBRARIES", "DYLD_LIBRARY_PATH"])
+def test_an_inherited_loader_setting_asks(git_project: Path, monkeypatch: pytest.MonkeyPatch, name: str) -> None:
+    monkeypatch.setenv(name, "/tmp/evil.so")
+    assert judged(git_project, "rm scratch.txt") == "ask"
+
+
+@pytest.mark.parametrize(
+    "command",
+    ["echo $((PATH=0)) && rm scratch.txt", "((PATH=0)); rm scratch.txt", "let PATH=0; rm scratch.txt"],
+)
+def test_an_arithmetic_assignment_beside_rm_asks(git_project: Path, command: str) -> None:
+    assert judged(git_project, command) == "ask"

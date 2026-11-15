@@ -132,7 +132,11 @@ tool can judge with the context it has stays as prose:
 
 1. Information outside the file: configuration, `conftest.py`, other modules.
 2. Data flow or execution order: values passed through assignments, scopes, or a class hierarchy.
-3. Parsing a grammar or expression with a regular expression: `cfg(...)` predicates, string contents.
+3. Parsing a nested grammar or expression with a regular expression: boolean `cfg(...)` predicates, escape sequences,
+    quoting. Matching a fixed name, or a literal prefix of one string or attribute path, is a local check and may
+    block: `go_error_no_failed_to_prefix` (the literal prefix of one error string) stays. The `cfg_attr` branch of
+    `rs_no_mocking_library` parses a nested attribute with a regular expression, so it falls under this type and is a
+    candidate to narrow or move (#196).
 4. Many equivalent spellings that a rule cannot list completely: YAML quoting, flow and block forms, import aliases
     combined with other cases. A rule that only detects a short, closed list of spellings of one name, such as the
     aliases of one import, may still block.

@@ -6,6 +6,12 @@ valid:
     fn f(name: &str) -> PathBuf { PathBuf::from(name) }
   - |
     fn f(name: &str) -> String { format!("{name}.txt") }
+  - |
+    fn f(stem: &str) -> PathBuf { PathBuf::from(format!("{stem}.rs")) }
+  - |
+    fn f(stem: String) -> PathBuf { PathBuf::from(stem + ".rs") }
+  - |
+    fn f(name: &str) { let p = Path::new(&format!("{name}.json")); }
 invalid:
   - |
     fn f(dir: &str) -> PathBuf { PathBuf::from(format!("{dir}/a")) }
@@ -17,3 +23,5 @@ invalid:
     fn f(root: &str) -> PathBuf { std::path::PathBuf::from(format!("{root}/child")) }
   - |
     fn f(root: String) -> PathBuf { PathBuf::from(root + "/child") }
+  - |
+    fn f(dir: &str, name: &str) -> PathBuf { PathBuf::from(format!("{dir}/{name}.rs")) }

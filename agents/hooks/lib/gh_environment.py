@@ -98,6 +98,8 @@ def _gh_config_problem() -> str:
     if in_agent_roots(directory) or in_agent_roots(directory.resolve()):
         return "gh reads its configuration from a directory the agent can write"
     for name in ("config.yml", "hosts.yml"):
+        if in_agent_roots((directory / name).resolve()):
+            return f"gh's {name} links into a directory the agent can write"
         try:
             lines = (directory / name).read_text().splitlines()
         except FileNotFoundError:

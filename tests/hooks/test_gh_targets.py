@@ -467,3 +467,28 @@ def test_a_unix_socket_in_the_gh_hosts_file_makes_every_call_ask(
     monkeypatch.setattr(gh_environment, "in_agent_roots", lambda _path: False)
     monkeypatch.setenv("GH_CONFIG_DIR", str(directory))
     assert decide("gh pr list -R furedea/agent-config") == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_gh_config_file_linked_into_the_agent_roots_makes_every_call_ask(
+    tmp_path_factory: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    directory = tmp_path_factory.mktemp("gh")
+    (Path.cwd() / "planted.yml").write_text("git_protocol: https\n")
+    (directory / "config.yml").symlink_to(Path.cwd() / "planted.yml")
+    monkeypatch.setattr(gh_environment, "in_agent_roots", lambda path: Path(path).is_relative_to(Path.cwd()))
+    monkeypatch.setenv("GH_CONFIG_DIR", str(directory))
+    assert decide("gh pr list -R furedea/agent-config") == "ask"
+    (directory / "config.yml").unlink()
+    (directory / "config.yml").write_text("git_protocol: https\n")
+    assert decide("gh pr list -R furedea/agent-config") == "allow"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_an_rg_config_cannot_hide_a_secret(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, secret_samples: dict[str, str]
+) -> None:
+    config = tmp_path / "rgrc"
+    config.write_text("--fixed-strings\n")
+    monkeypatch.setenv("RIPGREP_CONFIG_PATH", str(config))
+    assert decide(f"gh issue comment 1 -R furedea/agent-config -b {secret_samples['github_token']}") == "ask"

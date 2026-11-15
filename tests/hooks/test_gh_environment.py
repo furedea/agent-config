@@ -76,6 +76,14 @@ def test_a_variable_set_on_the_line_makes_every_gh_call_ask(name: str, form: str
         pytest.param("flock /tmp/l -c 'GH_HOST=evil.example gh pr view 1'", id="a script run by flock"),
         pytest.param("printf -v1 GH_REPO; gh pr view 1", id="printf with an attached -v value"),
         pytest.param("GH_FORCE_TTY=1 gh pr view 1", id="a forced terminal on the line"),
+        pytest.param(
+            "builtin export GH_HOST=evil.example; gh issue comment 1 -R furedea/agent-config -b ok",
+            id="an export run through builtin",
+        ),
+        pytest.param(
+            "command export GH_HOST=evil.example; gh issue comment 1 -R furedea/agent-config -b ok",
+            id="an export run through command",
+        ),
     ],
 )
 def test_other_ways_to_change_the_environment_ask(command: str) -> None:

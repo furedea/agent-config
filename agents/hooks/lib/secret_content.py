@@ -24,7 +24,8 @@ def first_match(text: str, path: Path) -> SecretMatch | None:
         if not rule.get("pattern"):
             continue
         result = subprocess.run(
-            ["rg", "--pcre2", "-q", "-e", rule["pattern"], "-"],
+            # --no-config ignores RIPGREP_CONFIG_PATH, whose options such as --invert-match would hide a match.
+            ["rg", "--no-config", "--pcre2", "-q", "-e", rule["pattern"], "-"],
             input=text + "\n",
             text=True,
             capture_output=True,

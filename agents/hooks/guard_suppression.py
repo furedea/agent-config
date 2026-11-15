@@ -156,10 +156,12 @@ def _adds(name: str, pattern: re.Pattern[str], change: _Change) -> bool:
         return _may_add_unparsed(pattern, change)
     added_marks, removed_marks = ([mark for marks in found.values() for mark in marks] for found in (added, removed))
     if name in COMPARED_BY_TEXT:
-        # A word outside a comment suppresses nothing; one that moves into a comment shows up as a new comment mark.
-        return bool(
-            Counter(mark for mark in added_marks if mark[0]) - Counter(mark for mark in removed_marks if mark[0])
+        # In a whole file, a word outside a comment suppresses nothing, and one that moves into a comment shows up as a
+        # new comment mark. A fragment lacks the context that decides this, so every mark of it counts.
+        added_marks, removed_marks = (
+            [mark for mark in marks if mark[0] or not change.whole] for marks in (added_marks, removed_marks)
         )
+        return bool(Counter(added_marks) - Counter(removed_marks))
     return sum(_counts(name, in_node) for in_node, _ in added_marks) > sum(
         _counts(name, in_node) for in_node, _ in removed_marks
     )

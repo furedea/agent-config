@@ -233,3 +233,11 @@ def test_a_move_that_drops_a_markers_line_on_the_way_passes(tmp_path: Path) -> N
         "@@\n-x = 1  # noqa\n+x = 1\n*** End Patch"
     )
     assert decide("apply_patch", {"input": patch}) == "allow"
+
+
+def test_an_inexact_hunk_that_adds_the_word_inside_a_quote_asks(tmp_path: Path) -> None:
+    """Out of context the line reads as a string, but a loosely matched hunk may land inside a block comment."""
+    target = tmp_path / "app.ts"
+    target.write_text("/*\nnote\n*/\nfoo()\n")
+    patch = f'*** Begin Patch\n*** Update File: {target}\n@@\n-note  \n+"ast-grep-ignore: rule"\n*** End Patch'
+    assert decide("apply_patch", {"input": patch}) == "ask"

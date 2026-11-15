@@ -173,6 +173,8 @@ def entry_problem(key: str, value: str) -> str:
         return f"Unknown metadata key `{key}`; allowed: {', '.join(sorted(KEYS))}."
     if key == "Status" and value not in STATUSES:
         return f"Status must be one of {', '.join(STATUSES)}; found `{value}`."
+    if key in RELATION_KEYS and not REFERENCE.search(value):
+        return f"{key} must name at least one `ADR-NNNN`."
     if key == "Amended" and not AMENDED.fullmatch(value):
         return "Amended must be `<YYYY-MM-DD> (<what>)`."
     return ""

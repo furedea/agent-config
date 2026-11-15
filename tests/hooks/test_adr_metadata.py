@@ -199,6 +199,12 @@ def test_deleting_the_readme_is_not_an_adr_deletion(adr_directory: Path) -> None
     assert adr_metadata.diagnostics([adr_directory / "README.md"]) == ()
 
 
+@pytest.mark.parametrize("value", ["", "later decision", "ADR-42"])
+def test_relation_entry_must_name_an_adr(adr_directory: Path, value: str) -> None:
+    write_adr(adr_directory, "0001_first_decision.md", extra=f"- Superseded by: {value}\n")
+    assert "Superseded by must name at least one `ADR-NNNN`" in messages(adr_directory)
+
+
 def test_this_repositorys_adr_history_conforms() -> None:
     directory = REPO_ROOT / "docs" / "adr"
     assert adr_metadata.diagnostics(sorted(directory.glob("*.md"))) == ()

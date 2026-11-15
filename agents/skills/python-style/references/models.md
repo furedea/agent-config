@@ -2,7 +2,6 @@
 
 ## Classes
 
-- In Python modules, prefer `Enum -> model/class -> function` ordering when those concepts coexist
 - Use `__slots__` to restrict variables when not using `dataclasses` or `pydantic`
 
 ```python
@@ -15,11 +14,11 @@ class Foo:
 ```
 
 - Value Objects:
-    - **When `pydantic` is a project dependency**: use `pydantic.BaseModel` (see [Pydantic](#pydantic) section)
-    - **When `pydantic` is not a dependency**: use `dataclasses.dataclass(frozen=True, slots=True)` — `slots=True` (3.10+) auto-generates `__slots__`, no need to write it manually
+    - Use `@dataclass(frozen=True, slots=True)` for internal value objects; `slots=True` generates `__slots__`, so do not write it by hand
+    - Use pydantic only at boundaries that parse untrusted input (API, JSON, config files), and do not pass boundary models into the domain (see [Pydantic](#pydantic))
     - Resolve routine representation choices from existing dependencies and nearby code. Ask only
       when a material dependency or compatibility decision is not covered by the user's request.
-    - Use `__post_init__` to enforce invariants:
+    - Check domain invariants in `__post_init__`, not types:
 
 ```python
 @dataclass(frozen=True, slots=True)
@@ -58,16 +57,20 @@ def swe_instance_from_dict(data: dict) -> SWEInstance: ...  # move inside as cla
 
 ## Pydantic
 
-Frozen model config: `pydantic.ConfigDict(extra="forbid", frozen=True, strict=True, validate_default=True)`
-
-When multiple frozen models exist, extract a shared base class to `base.py`:
+Boundary schemas inherit one shared base class; only the class named `FrozenBaseModel` may inherit `pydantic.BaseModel` directly. Place it next to the boundary models (for example `schemas/base.py`; the location is not fixed). Parse JSON with `Model.model_validate_json(...)`.
 
 ```python
+"""Base model for schemas that parse untrusted input at a boundary."""
+
 import pydantic
 
 
-class FrozenModel(pydantic.BaseModel):
-    model_config = pydantic.ConfigDict(extra="forbid", frozen=True, strict=True, validate_default=True)
+class FrozenBaseModel(pydantic.BaseModel):
+    """Freeze a parsed schema and validate it strictly."""
+
+    model_config = pydantic.ConfigDict(
+        frozen=True, extra="forbid", strict=True, validate_default=True, revalidate_instances="always"
+    )
 ```
 
 ## Enums

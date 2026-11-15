@@ -1,0 +1,28 @@
+# agents/skills/python-style/references/models.md: pure construction is a classmethod alternative constructor;
+# construction that does I/O is a module-level function. Advisory and unfitted (ADR-0021).
+id: construction-placement-by-purity
+language: Python
+kind: noul
+subject: node
+state: located
+threshold: 0.5
+axis: file
+severity: warning
+rule:
+  all:
+    - kind: function_definition
+    - has:
+        field: name
+        regex: ^((from|parse|create|make)_|[a-z0-9_]+_(from|parse)_)[a-z0-9_]+$
+ask: >-
+  This constructor-named function sits in the wrong place for what it does: pure construction belongs in a classmethod
+  of the value, and construction that does I/O belongs in a module-level function.
+criteria:
+  "true": >-
+    The function builds a value object from in-memory data without any I/O and is a module-level function (or a
+    staticmethod) instead of a classmethod of that class; or it is a classmethod that reads files, the network, the
+    environment or a database to build the value.
+  "false": >-
+    A pure construction is already a classmethod of the class it builds, or construction that performs I/O is a
+    module-level function, or the function does not build a value object (a factory for a resource, a service, or a
+    side effect).

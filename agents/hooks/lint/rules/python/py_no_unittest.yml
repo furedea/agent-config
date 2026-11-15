@@ -1,8 +1,8 @@
 id: py_no_unittest
 language: python
-severity: warning
-message: "Write the test as a pytest function instead of using `unittest`."
-note: "`unittest.mock` is judged by py_no_unittest_mock, so `from unittest import mock` is skipped here."
+severity: error
+message: "`unittest` test classes do not use pytest fixtures and parametrization."
+note: "Write the test as a plain pytest function: `def test_x(): assert actual == expected`."
 rule:
   any:
     - pattern: import unittest

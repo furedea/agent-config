@@ -1,0 +1,17 @@
+id: py_no_structlog_loguru
+language: python
+severity: error
+message: "structlog and loguru add a second logging stack next to the standard `logging` module."
+note: "Use `logger = logging.getLogger(__name__)` and pass context with `extra={...}`."
+rule:
+  any:
+    - pattern: import structlog
+    - pattern: import structlog as $ALIAS
+    - pattern: import loguru
+    - pattern: import loguru as $ALIAS
+    - pattern: from structlog import $$$NAMES
+    - pattern: from loguru import $$$NAMES
+    - kind: import_from_statement
+      regex: (?s)^from\s+(structlog|loguru)(\.[A-Za-z_.]+)?\s+import\b
+    - kind: import_statement
+      regex: ^import\s+([A-Za-z_.]+\s*,\s*)*(structlog|loguru)\b

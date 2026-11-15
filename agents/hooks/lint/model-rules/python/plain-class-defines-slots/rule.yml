@@ -1,0 +1,29 @@
+# agents/skills/python-style/references/models.md: use `__slots__` to restrict attributes when not using `dataclasses` or
+# `pydantic`. Every class that sets attributes in `__init__` is sent. Advisory and unfitted (ADR-0021).
+id: plain-class-defines-slots
+language: Python
+kind: noul
+subject: node
+state: located
+threshold: 0.5
+axis: file
+severity: warning
+rule:
+  kind: class_definition
+  has:
+    field: body
+    kind: block
+    has:
+      kind: function_definition
+      has:
+        field: name
+        regex: ^__init__$
+ask: >-
+  This plain class sets instance attributes in `__init__` but defines no `__slots__`.
+criteria:
+  "true": >-
+    The class is an ordinary class (not a dataclass, attrs class, pydantic model, enum, exception or protocol) with no
+    `__slots__`, and none of its attributes needs `__dict__` (for example `cached_property`).
+  "false": >-
+    The class defines `__slots__`, is a dataclass or attrs class, inherits from a framework base that manages
+    attributes, or uses `cached_property` or another feature that needs `__dict__`.

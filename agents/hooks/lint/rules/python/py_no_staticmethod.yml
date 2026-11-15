@@ -1,7 +1,8 @@
 id: py_no_staticmethod
 language: python
-severity: warning
-message: "Avoid `@staticmethod`; move the function to module level or make it a method that uses the instance."
+severity: error
+message: "A `@staticmethod` is a plain function hidden inside a class namespace."
+note: "Move the function to module level, or make it a regular method that uses `self`."
 rule:
   kind: decorator
   pattern: "@staticmethod"

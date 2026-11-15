@@ -1,0 +1,85 @@
+id: py_pydantic_base_model_only_in_frozen_base
+valid:
+  - |
+    import pydantic
+
+
+    class FrozenBaseModel(pydantic.BaseModel):
+        pass
+  - |
+    import pydantic
+
+
+    class Money(FrozenBaseModel):
+        amount: int
+  - |
+    from sqlmodel import BaseModel
+
+
+    class Row(BaseModel):
+        id: int
+  - |
+    import pydantic_settings
+
+
+    class Settings(pydantic_settings.BaseSettings):
+        name: str
+  - |
+    import pydantic as pd
+
+
+    class FrozenBaseModel(pd.BaseModel):
+        pass
+invalid:
+  - |
+    from pydantic import BaseModel, Field
+
+
+    class Money(BaseModel):
+        amount: int = Field(0)
+  - |
+    from pydantic import (
+        ConfigDict,
+        BaseModel,
+    )
+
+
+    class Money(BaseModel):
+        amount: int
+  - |
+    from pydantic import Field, BaseModel as PydanticModel
+
+
+    class Money(PydanticModel):
+        amount: int
+  - |
+    import pydantic
+
+
+    @final
+    class Money(pydantic.BaseModel):
+        amount: int
+  - |
+    import pydantic
+
+
+    class Money(pydantic.BaseModel):
+        amount: int
+  - |
+    import pydantic as pd
+
+
+    class Money(pd.BaseModel):
+        amount: int
+  - |
+    from pydantic import BaseModel
+
+
+    class Money(BaseModel):
+        amount: int
+  - |
+    from pydantic import BaseModel as PydanticModel
+
+
+    class Money(PydanticModel):
+        amount: int

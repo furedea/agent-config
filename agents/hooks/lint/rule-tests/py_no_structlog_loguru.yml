@@ -1,0 +1,21 @@
+id: py_no_structlog_loguru
+valid:
+  - |
+    import logging
+
+    logger = logging.getLogger(__name__)
+  - |
+    from logging import getLogger
+  - |
+    import structlog_helpers
+invalid:
+  - |
+    import structlog
+  - |
+    import structlog as sl
+  - |
+    from loguru import logger
+  - |
+    from structlog.stdlib import get_logger
+  - |
+    import os, loguru

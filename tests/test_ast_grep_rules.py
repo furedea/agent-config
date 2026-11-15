@@ -73,6 +73,7 @@ CLEAN_PATHS = {
         "internal/package/user.go",
     ],
 }
+SOURCE_BY_SUFFIX = {".go": "package a\n"}
 
 
 def require_ast_grep() -> str:
@@ -95,7 +96,7 @@ def test_file_scoped_rules_flag_exactly_the_vaguely_named_paths(tmp_path: Path) 
     for rule_id in FILE_SCOPED_RULE_IDS:
         for relative in FLAGGED_PATHS[rule_id] + CLEAN_PATHS[rule_id]:
             (tmp_path / relative).parent.mkdir(parents=True, exist_ok=True)
-            (tmp_path / relative).write_text("package a\n")
+            (tmp_path / relative).write_text(SOURCE_BY_SUFFIX[Path(relative).suffix])
 
     result = subprocess.run(
         [executable, "scan", "--config", str(SG_CONFIG), "--json=compact", "."],

@@ -1,7 +1,8 @@
 id: py_no_unittest_mock
 language: python
-severity: warning
-message: "Use the `mocker` fixture from pytest-mock instead of importing `unittest.mock`."
+severity: error
+message: "`unittest.mock` patches are not undone by pytest fixtures and bypass pytest-mock's cleanup."
+note: "Use the `mocker` fixture: replace `from unittest.mock import patch` with `mocker.patch(..., autospec=True)`."
 rule:
   any:
     - pattern: from unittest.mock import $$$NAMES

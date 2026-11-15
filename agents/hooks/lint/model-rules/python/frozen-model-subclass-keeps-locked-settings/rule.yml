@@ -1,0 +1,36 @@
+# agents/skills/python-style/references/models.md: boundary schemas inherit one shared `FrozenBaseModel`, whose five
+# settings (`frozen`, `extra`, `strict`, `validate_default`, `revalidate_instances`) a subclass must not change. A class
+# that passes class keywords or sets `model_config` is sent, so the model can follow the hierarchy across classes and
+# files. Advisory and unfitted (ADR-0021).
+id: frozen-model-subclass-keeps-locked-settings
+language: Python
+kind: noul
+subject: node
+state: located
+threshold: 0.5
+axis: file
+severity: warning
+rule:
+  kind: class_definition
+  any:
+    - has:
+        field: superclasses
+        kind: argument_list
+        has:
+          kind: keyword_argument
+    - has:
+        field: body
+        kind: block
+        has:
+          kind: expression_statement
+          regex: ^model_config\s*[:=]
+ask: >-
+  This class inherits (directly or through other classes) from `FrozenBaseModel` and sets a locked setting to a
+  different value.
+criteria:
+  "true": >-
+    The class descends from `FrozenBaseModel` and sets `frozen`, `extra`, `strict`, `validate_default` or
+    `revalidate_instances` to anything other than the base value, in class keywords or in `model_config`.
+  "false": >-
+    The class does not descend from `FrozenBaseModel`, sets only other keys (such as `alias_generator`), or is
+    `FrozenBaseModel` itself.

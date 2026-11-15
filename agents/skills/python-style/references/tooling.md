@@ -21,8 +21,6 @@
 
 ## File Standards
 
-- Keep code within 119 characters per line (URLs may exceed this limit)
-- Always include type hints
 - Use ty for static type checking
 
 ## Static Type Checking

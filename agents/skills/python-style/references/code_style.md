@@ -4,8 +4,6 @@
 
 - Keep functions focused and small
 - Use Pythonic syntax (comprehensions, `with` statements, etc.)
-- Don't use `global`, `nonlocal` (not explicit enough)
-- Use built-in generics (e.g., `tuple`, `list`, `dict`) instead of `typing.Tuple`, `typing.List`, `typing.Dict`
 
 ## Formatting
 
@@ -13,21 +11,14 @@ Let `ruff format` decide quotes and operator spacing; do not hand-format against
 
 ## Logging
 
-Write in dictionary format. Add extensive logging at critical system points where failures would be hard to diagnose (CSV file references, before/after raise statements, etc.).
-
-```python
-logger.info({"action": "save", "csv_file": self.csv_file, "status": "run"})
-```
+- Log extensively at points where failures would be hard to diagnose (file references, before and after `raise`)
+- Configure handlers and formatters only at the entry point; library code only calls `logging.getLogger(__name__)`
+- The default formatter does not print `extra` values: configure a formatter at the entry point that includes them (`python-json-logger` for machine-read logs, a key=value formatter for human-read logs)
 
 ## Naming Conventions
 
 - Constants: `SCREAMING_SNAKE_CASE` — define semantically meaningful string literals as module-level constants (two blank lines after imports) rather than embedding them inline
-- Variables / functions / files: `snake_case`
-    - Getters: name of the output variable
-- Classes: `UpperCamelCase`
-- Iterator arguments:
-    - Loop body ≤ 2 lines: single character (`x`, `i`)
-    - Loop body ≥ 3 lines: descriptive name
+- Getters: name of the output variable
 
 ### File Naming
 
@@ -39,20 +30,14 @@ logger.info({"action": "save", "csv_file": self.csv_file, "status": "run"})
 
 ### Two blank lines before/after
 
-- Import statements
 - Global variable definitions
-- Object (class/function) definitions
 
 ### One blank line between
 
 - Function/method docstring sections: summary `"""`, detail, `Args`, `Returns/Yields`, `Raises`
-- Import groups (standard / third-party / local / personal)
-- Instance methods
 
 ### Imports
 
-- Order import groups as: standard library → third-party → local
-- Use exactly one blank line between these groups
 - Avoid `from ... import ...` unless the imported name is self-explanatory (e.g., `Enum`, `Path`), or the module path is so long that `module.name` at call sites becomes unwieldy (e.g., `from swebench.inference.make_datasets.utils import extract_diff`)
 - Avoid `as` aliases unless required for clarity
 
@@ -80,7 +65,6 @@ sections = [problem_statement, *_file_sections(files), "Please output a unified 
 ## Comments & Docstrings
 
 - Write comments on their own line above the relevant code
-- Always add docstrings to public APIs
 - Comment non-obvious choices (algorithm params, fallback behavior, encoding handling)
 
 ```python

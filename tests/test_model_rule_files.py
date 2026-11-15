@@ -109,6 +109,12 @@ register("/item", () => {
   throw new Error("missing");
 });
 
+function makeHandler(): () => void {
+  return () => {
+    throw new Error("missing");
+  };
+}
+
 const loadLater = function (path: string): string {
   if (!path) {
     throw new Error("missing");
@@ -388,19 +394,21 @@ def test_typescript_rules_select_the_functions_they_ask_about(repository: Path) 
 
     counts = subjects_by_rule(plan(repository))
 
-    # `stamp` is a fourth function and the only one that holds a comment, and the comment above `test.fails` stands
-    # outside any function; `stamp` and the arrow function `expiresAt` read the clock; `as const` is not an
-    # assertion to judge, and the angle-bracket form `<Request>` has its own rule; `load`, the field arrow
-    # function `Loader.load`, the callback passed to `register` and the function expression `loadLater` throw; the
-    # `describe`, `describe.each(..)(..)` and `describe.concurrent` blocks (not the bare table call inside
-    # `describe.each`) and the top level of the file, which holds two `it.concurrent`
-    # calls, are the groups of tests; `vi.mock` and `vi.doMock` are both mocks.
+    # `stamp` is a fourth function and `makeHandler` a fifth; `stamp` is the only one that holds a comment, and
+    # the comment above `test.fails` stands outside any function; `stamp` and the arrow function `expiresAt`
+    # read the clock; `as const` is not an assertion to judge, and the angle-bracket form `<Request>` has its own
+    # rule; `load`, the field arrow function `Loader.load`, the callback passed to `register`, the function
+    # expression `loadLater` and the arrow function returned by `makeHandler` (not `makeHandler` itself) throw,
+    # while `error-message-names-operation` still counts `makeHandler` because it looks at every nested `throw`;
+    # the `describe`, `describe.each(..)(..)` and `describe.concurrent` blocks (not the bare table call inside
+    # `describe.each`) and the top level of the file, which holds two `it.concurrent` calls, are the groups of
+    # tests; `vi.mock` and `vi.doMock` are both mocks.
     assert counts == {
         "angle-bracket-assertion-follows-validation": 1,
-        "command-query-naming": 4,
+        "command-query-naming": 5,
         "comment-explains-why": 2,
-        "error-message-names-operation": 1,
-        "expected-failure-returned-as-value": 4,
+        "error-message-names-operation": 2,
+        "expected-failure-returned-as-value": 5,
         "inject-time-and-randomness": 2,
         "known-defect-marker-names-removal": 1,
         "mock-only-external-boundaries": 2,

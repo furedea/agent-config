@@ -7,6 +7,8 @@ valid:
   - |
     vi.fn();
   - |
+    export { it } from "vitest";
+  - |
     const { it } = await import("vitest");
   - |
     const path = require("node:path");
@@ -17,6 +19,10 @@ invalid:
     import { jest } from "@jest/globals";
   - |
     const spy = jest.fn();
+  - |
+    export { test } from "node:test";
+  - |
+    export * from "mocha";
   - |
     const { test } = await import("node:test");
   - |

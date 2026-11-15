@@ -22,8 +22,10 @@ rule:
                   - kind: variable_declarator
                   - kind: public_field_definition
                   - kind: arguments
+                  - kind: pair
+                  - kind: return_statement
     - has:
-        stopBy: end
+        stopBy: { any: [ { kind: function_declaration }, { kind: function_expression }, { kind: arrow_function }, { kind: method_definition } ] }
         any:
           - pattern: Date.now()
           - pattern: new Date()

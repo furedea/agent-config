@@ -42,6 +42,9 @@ invalid:
   - |
     const body = await response.json() as Body;
   - |
+    const r: Response = await fetch(url);
+    const data = await r.json() as Body;
+  - |
     const config = JSON.parse(text) satisfies Config;
   - |
     const config = JSON.parse(text)! as Config;

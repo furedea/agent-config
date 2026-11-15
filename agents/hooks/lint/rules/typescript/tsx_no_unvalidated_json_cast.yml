@@ -6,17 +6,17 @@ note: "The `.tsx` counterpart of ts_no_unvalidated_json_cast; ast-grep parses `.
 rule:
   any:
     - pattern: JSON.parse($$$ARGS) as $TYPE
-    - pattern: (await $RESPONSE.json()) as $TYPE
+    - pattern: (await $RECEIVER.json()) as $TYPE
     - pattern: JSON.parse($$$ARGS) as unknown as $TYPE
     - pattern: JSON.parse($$$ARGS)! as $TYPE
     - pattern: (await $RESPONSE.json())! as $TYPE
     - pattern: JSON.parse($$$ARGS) satisfies $TYPE
-    - pattern: (await $RESPONSE.json()) satisfies $TYPE
-    - pattern: await $RESPONSE.json() satisfies $TYPE
-    - pattern: await $RESPONSE.json() as $TYPE
-    - pattern: await $RESPONSE.json() as unknown as $TYPE
-    - pattern: (await $RESPONSE.json()) as unknown as $TYPE
-    - pattern: $RESPONSE.json() as $TYPE
+    - pattern: (await $RECEIVER.json()) satisfies $TYPE
+    - pattern: await $RECEIVER.json() satisfies $TYPE
+    - pattern: await $RECEIVER.json() as $TYPE
+    - pattern: await $RECEIVER.json() as unknown as $TYPE
+    - pattern: (await $RECEIVER.json()) as unknown as $TYPE
+    - pattern: $RECEIVER.json() as $TYPE
     - all:
         - any:
             - kind: variable_declarator

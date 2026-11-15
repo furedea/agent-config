@@ -11,10 +11,10 @@ rule:
   any:
     - all:
         - kind: function_declaration
-        - has: { kind: comment, stopBy: end }
+        - has: { kind: comment, stopBy: { any: [ { kind: function_declaration }, { kind: function_expression }, { kind: arrow_function }, { kind: method_definition } ] } }
     - all:
         - kind: method_definition
-        - has: { kind: comment, stopBy: end }
+        - has: { kind: comment, stopBy: { any: [ { kind: function_declaration }, { kind: function_expression }, { kind: arrow_function }, { kind: method_definition } ] } }
     - all:
         - any:
             - kind: arrow_function
@@ -24,7 +24,9 @@ rule:
               - kind: variable_declarator
               - kind: public_field_definition
               - kind: arguments
-        - has: { kind: comment, stopBy: end }
+              - kind: pair
+              - kind: return_statement
+        - has: { kind: comment, stopBy: { any: [ { kind: function_declaration }, { kind: function_expression }, { kind: arrow_function }, { kind: method_definition } ] } }
     - all:
         - kind: comment
         - not: { regex: '^(/\*\*|//\s*(TODO|FIXME))' }

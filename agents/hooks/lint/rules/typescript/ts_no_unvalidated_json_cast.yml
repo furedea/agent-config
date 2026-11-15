@@ -6,19 +6,19 @@ note: "`JSON.parse` and `Response.json()` return `any`; asserting or annotating 
 rule:
   any:
     - pattern: JSON.parse($$$ARGS) as $TYPE
-    - pattern: (await $RESPONSE.json()) as $TYPE
+    - pattern: (await $RECEIVER.json()) as $TYPE
     - pattern: JSON.parse($$$ARGS) as unknown as $TYPE
     - pattern: JSON.parse($$$ARGS)! as $TYPE
     - pattern: (await $RESPONSE.json())! as $TYPE
     - pattern: JSON.parse($$$ARGS) satisfies $TYPE
-    - pattern: (await $RESPONSE.json()) satisfies $TYPE
-    - pattern: await $RESPONSE.json() satisfies $TYPE
-    - pattern: await $RESPONSE.json() as $TYPE
-    - pattern: await $RESPONSE.json() as unknown as $TYPE
-    - pattern: (await $RESPONSE.json()) as unknown as $TYPE
+    - pattern: (await $RECEIVER.json()) satisfies $TYPE
+    - pattern: await $RECEIVER.json() satisfies $TYPE
+    - pattern: await $RECEIVER.json() as $TYPE
+    - pattern: await $RECEIVER.json() as unknown as $TYPE
+    - pattern: (await $RECEIVER.json()) as unknown as $TYPE
     - pattern: <$TYPE>JSON.parse($$$ARGS)
-    - pattern: <$TYPE>(await $RESPONSE.json())
-    - pattern: $RESPONSE.json() as $TYPE
+    - pattern: <$TYPE>(await $RECEIVER.json())
+    - pattern: $RECEIVER.json() as $TYPE
     - all:
         - any:
             - kind: variable_declarator

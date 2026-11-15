@@ -195,12 +195,8 @@ configuration changes. Distinguish passed, failed, not run, not applicable, and 
 Zero tests or all-skipped tests do not satisfy requested verification. Local success never
 bypasses mandatory CI, pre-commit, or review.
 
-For final verification, use the shared entry point specified by the delivery procedure, rather
-than rebuilding the same checks as a separate command sequence. Use its status query only when
-result freshness is unclear; do not require it after every operation or immediately before verify.
-Direct execution of narrow tests for intermediate decisions is allowed. Report evidence sources
-and known coverage limits. Concrete CLI syntax and delivery ordering belong to
-[Git Delivery](../development-cycle/references/delivery.md#local-verification-before-delivery).
+Direct execution of narrow tests for intermediate decisions is allowed. Report evidence sources and known coverage
+limits.
 
 ## Enforcement Mechanisms
 

@@ -28,8 +28,8 @@ OUTPUT_FILTERS = frozenset(
 ASSIGNING_PROGRAMS = frozenset(
     {"declare", "eval", "export", "getopts", "let", "local", "mapfile", "read", "readarray", "readonly"}
     | {"alias", "hash", "set", "source", ".", "trap", "typeset", "unalias", "unset", "vared", "zparseopts"}
-    # builtin runs any of these by name, so the line's syntax no longer shows which one.
-    | {"builtin"}
+    # builtin, and zsh's precommand modifiers, run any of these by name, so the syntax no longer shows which.
+    | {"builtin", "noglob", "nocorrect", "-"}
 )
 # Syntax that assigns: a declaration, a loop variable, arithmetic, a ${name:=value} default, or a function,
 # which can stand in for a command of the same name.

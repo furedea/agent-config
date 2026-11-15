@@ -9,8 +9,10 @@ description: >
 
 # Architecture Decision Records
 
-Record a broad decision in `docs/adr/` in the same task that makes it. ADRs follow [MADR](https://github.com/adr/madr)
-(ADR-0025); `tsdd` owns the tests, this skill owns the rationale.
+Record a broad decision in `docs/adr/` in the same task that makes it; create the directory if it does not exist.
+`tsdd` owns the tests, this skill owns the rationale. New ADRs use [MADR](https://github.com/adr/madr), unless the
+repository already has ADRs in another format: then follow that repository's format, file naming, and status values,
+and adopt MADR only when asked.
 
 ## Decision Test
 
@@ -28,8 +30,8 @@ justify one for a local, easily reversible choice; use code, tests, or a comment
 ## Write
 
 1. Copy [references/template.md](references/template.md) to `docs/adr/NNNN_words.md`: NNNN is the highest existing ID
-   plus one (never reuse an ID), and the words are underscore-separated, as in the existing files. The ID comes from
-   the file name.
+   plus one (`0001` in an empty directory; never reuse an ID), and the words are underscore-separated unless the
+   existing files differ. The ID comes from the file name.
 2. Fill the front matter. Use `accepted` when the decision is implemented in the same change, `proposed` when it is
    not. The title line is `# <short title>` without an ID.
 3. Fill the template. Add MADR's full-variant sections only when the minimal ones are too compressed.

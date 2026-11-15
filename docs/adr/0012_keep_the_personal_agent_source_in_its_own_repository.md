@@ -1,7 +1,7 @@
 ---
 status: accepted
 date: 2026-10-24
-related: [dotfiles/ADR-0016, dotfiles/ADR-0030]  # both superseded by this ADR (other repository)
+related: [dotfiles/ADR-0016, dotfiles/ADR-0030]  # both superseded by this ADR (other repository): https://github.com/furedea/dotfiles/blob/main/docs/adr/0016_own_personal_agent_source.md, https://github.com/furedea/dotfiles/blob/main/docs/adr/0030_bootstrap_the_agent_harness_on_servers_without_nix.md
 ---
 
 # ADR-0012: Keep the personal agent source in its own repository

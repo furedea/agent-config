@@ -10,7 +10,7 @@ date: YYYY-MM-DD            # ISO date of the decision
 # decision-makers, consulted, informed: optional MADR keys
 ---
 
-<!-- Source: the minimal template of MADR (https://github.com/adr/madr, template/adr-template-minimal.md, develop branch), MIT / CC0; the front matter above is this repository's. -->
+<!-- Source: the minimal template of MADR (https://github.com/adr/madr, template/adr-template-minimal.md, develop branch), MIT / CC0; the front matter above is this user's, and Consequences is required here, so its "optional" comment is removed. -->
 
 # {short title, representative of solved problem and found solution}
 
@@ -29,7 +29,6 @@ date: YYYY-MM-DD            # ISO date of the decision
 
 Chosen option: "{title of option 1}", because {justification. e.g., only option, which meets k.o. criterion decision driver | which resolves force {force} | … | comes out best (see below)}.
 
-<!-- This is an optional element. Feel free to remove. -->
 ### Consequences
 
 * Good, because {positive consequence, e.g., improvement of one or more desired qualities, …}

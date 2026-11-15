@@ -213,6 +213,7 @@ def _followed(body: dict, records: tuple[dict, ...], data: bytes) -> dict:
         )
         or any(part.get("Param", {}).get("Value") in ARGUMENT_ARRAYS for part in nodes(body))
         or any(_reads(part, copies) for context in _arithmetic(body, data) for part in nodes(context))
+        or any(_reads(part, copies) for node in nodes(body) if node.get("Type") == "CmdSubst" for part in nodes(node))
         or any(
             "Type" not in node and isinstance(node.get("Name"), dict) and node["Name"].get("Value") in ARGUMENT_ARRAYS
             for node in nodes(body)

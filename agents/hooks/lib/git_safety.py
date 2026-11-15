@@ -237,19 +237,32 @@ def hook_skipping_option(verb: str, arguments: tuple[str, ...]) -> str:
     word as its value, so a skip is never taken back.
     """
     skipping = HOOK_SKIPPING_OPTIONS.get(verb, set())
+    reading_value = VALUED_OPTIONS.get(verb, frozenset()) | HOOK_SKIPPING_VALUED.get(verb, frozenset())
+    reading_value |= ATTACHED_VALUE_FLAGS.get(verb, frozenset())
+    skipped = (skipped_in(arguments[index], skipping, reading_value) for index in option_positions(verb, arguments))
+    return next(filter(None, skipped), "")
+
+
+def hides_hook_skip(verb: str, arguments: tuple[str, ...], dynamic: tuple[bool, ...]) -> bool:
+    """Whether a run-time word sits where an option could be, so it might spell a skipping option."""
+    return verb in HOOK_SKIPPING_OPTIONS and any(dynamic[index] for index in option_positions(verb, arguments))
+
+
+def option_positions(verb: str, arguments: tuple[str, ...]) -> list[int]:
+    """The indexes of the arguments that Git reads as options: not a value, and none after a bare `--`."""
     valued = VALUED_OPTIONS.get(verb, frozenset()) | HOOK_SKIPPING_VALUED.get(verb, frozenset())
     attached = ATTACHED_VALUE_FLAGS.get(verb, frozenset())
+    positions: list[int] = []
     takes_value = False
-    for argument in arguments:
+    for index, argument in enumerate(arguments):
         if takes_value:
             takes_value = False
         elif argument == "--":
             break
-        elif option := skipped_in(argument, skipping, valued | attached):
-            return option
         else:
+            positions.append(index)
             takes_value = reads_next_value(argument, argument, valued) and not attached_value(argument, attached)
-    return ""
+    return positions
 
 
 def skipped_in(argument: str, skipping: set[str], reading_value: frozenset[str]) -> str:

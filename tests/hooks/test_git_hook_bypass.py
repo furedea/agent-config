@@ -3,6 +3,7 @@
 import pytest
 from tests.runtime import load_script_module
 
+guard = load_script_module("agents/hooks/guard_git.py", "guard_git")
 git = load_script_module("agents/hooks/lib/git_safety.py", "git_safety")
 
 REASON = "skips repository hooks; let the hooks run"
@@ -82,3 +83,36 @@ def test_options_that_skip_hooks_are_denied(arguments: tuple[str, ...]) -> None:
 )
 def test_values_and_unrelated_forms_that_only_spell_the_option_are_allowed(arguments: tuple[str, ...]) -> None:
     assert git.reason(arguments) == ""
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "git commit $FLAGS",
+        'git commit "$FLAG" -m x',
+        "git rebase $F main",
+        "git merge $BRANCH",
+        "git push origin topic $F",
+        "git -c $C commit -m x",
+        'git -c "$C" push origin topic',
+    ],
+)
+@pytest.mark.usefixtures("isolated_project")
+def test_run_time_words_where_a_hook_skipping_option_could_be_are_left_to_the_user(command: str) -> None:
+    assert guard.decide({"tool_input": {"command": command}}).decision == "ask"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        'git commit -m "$MESSAGE"',
+        'git commit -m "$(cat msg.txt)" --allow-empty',
+        'git commit -F "$FILE"',
+        'git commit -m x -- "$FILE"',
+        'git rebase -x "$CMD" main',
+        "git -C $W commit -m x",
+    ],
+)
+@pytest.mark.usefixtures("isolated_project")
+def test_run_time_option_values_and_paths_do_not_need_review(command: str) -> None:
+    assert guard.decide({"tool_input": {"command": command}}).decision == "allow"

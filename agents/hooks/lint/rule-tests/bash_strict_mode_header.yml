@@ -40,6 +40,16 @@ valid:
 invalid:
   - |
     #!/usr/bin/env bash
+    set -eu
+    set +o pipefail
+    echo hi
+  - |
+    #!/usr/bin/env bash
+    set -eu
+    set -- pipefail
+    echo hi
+  - |
+    #!/usr/bin/env bash
     echo hi
   - |
     #!/usr/bin/env bash

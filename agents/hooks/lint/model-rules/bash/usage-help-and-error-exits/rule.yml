@@ -35,8 +35,9 @@ ask: >-
   with exit status 0 or on standard output.
 criteria:
   "true": >-
-    A `--help`/`-h` request calls `usage` and then exits with a non-zero status or does not exit, or a missing or
-    invalid argument calls `usage` without redirecting it to standard error (`usage >&2`) or exits with status 0.
+    A `--help`/`-h` request does not call `usage`, or calls it and then exits with a non-zero status or does not exit,
+    or a missing or invalid argument does not call `usage`, calls it without redirecting it to standard error
+    (`usage >&2`), or exits with status 0.
   "false": >-
     A requested help calls `usage` and exits 0, and a missing or invalid argument calls `usage >&2` and exits 1, or the
     branch handles neither case.

@@ -44,7 +44,7 @@ rule:
           kind: command
           all:
             - regex: ^set\s
-            - regex: pipefail
+            - regex: -[A-Za-z]*o\s+pipefail
             - not:
                 follows:
                   stopBy: end

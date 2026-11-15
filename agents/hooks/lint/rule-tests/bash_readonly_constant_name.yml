@@ -13,6 +13,20 @@ valid:
     }
   - |
     build() {
+      readonly local_value=1
+    }
+  - |
+    build() {
+      local result
+      result=$(date)
+      readonly result
+    }
+  - |
+    build() {
+      declare -gr GLOBAL_VALUE=1
+    }
+  - |
+    build() {
       declare -r local_value=1
     }
   - |
@@ -31,7 +45,7 @@ valid:
 invalid:
   - |
     build() {
-      readonly local_value=1
+      declare -gr bad_name=1
     }
   - |
     declare -r max_retry=3

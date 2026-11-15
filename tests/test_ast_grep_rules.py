@@ -61,10 +61,31 @@ def test_ast_grep_accepts_every_valid_case_and_reports_every_invalid_case() -> N
 
 
 # Snippet tests carry no path, so a rule scoped by `files:` is exercised by scanning named files.
+WORKFLOW_PATH = ".github/workflows/ci.yml"
+# A workflow that breaks every workflow rule; the same text outside `.github/workflows` must stay clean.
+UNSAFE_WORKFLOW = """\
+on:
+  pull_request:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - run: echo hi
+"""
+WORKFLOW_RULE_IDS = (
+    "gha_job_timeout_minutes",
+    "gha_workflow_concurrency",
+    "gha_workflow_default_shell",
+    "gha_workflow_permissions_deny_all",
+)
 FLAGGED_PATHS = {
     "go_no_vague_directory_name": ["util/user.go", "internal/util/user.go", "common/user.go"],
+    **{rule_id: [WORKFLOW_PATH] for rule_id in WORKFLOW_RULE_IDS},
+    "gha_pinned_uses_version_comment": [WORKFLOW_PATH, "actions/setup/action.yml"],
 }
 CLEAN_PATHS = {
+    **{rule_id: ["config/ci.yml"] for rule_id in (*WORKFLOW_RULE_IDS, "gha_pinned_uses_version_comment")},
     "go_no_vague_directory_name": [
         "user_store.go",
         "util.go",
@@ -73,7 +94,7 @@ CLEAN_PATHS = {
         "internal/package/user.go",
     ],
 }
-SOURCE_BY_SUFFIX = {".go": "package a\n"}
+SOURCE_BY_SUFFIX = {".go": "package a\n", ".yml": UNSAFE_WORKFLOW}
 
 
 def require_ast_grep() -> str:
@@ -99,7 +120,7 @@ def test_file_scoped_rules_flag_exactly_the_vaguely_named_paths(tmp_path: Path) 
             (tmp_path / relative).write_text(SOURCE_BY_SUFFIX[Path(relative).suffix])
 
     result = subprocess.run(
-        [executable, "scan", "--config", str(SG_CONFIG), "--json=compact", "."],
+        [executable, "scan", "--config", str(SG_CONFIG), "--no-ignore", "hidden", "--json=compact", "."],
         capture_output=True,
         text=True,
         check=False,

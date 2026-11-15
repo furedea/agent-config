@@ -27,3 +27,12 @@ def test_a_project_config_in_the_working_directory_is_not_read(
 def test_every_comment_is_found_once_and_strings_are_not_comments() -> None:
     text = 'x = "# not a comment"  # first\n# second\n'
     assert comment_nodes.comment_spans(text, ".py") == [(23, 30), (31, 39)]
+
+
+def test_text_that_cannot_be_encoded_is_unknown() -> None:
+    assert comment_nodes.comment_spans("x = 1  # \ud800\n", ".py") is None
+
+
+@pytest.mark.parametrize("suffix", [".js", ".ts", ".tsx"])
+def test_an_html_like_comment_in_javascript_is_a_comment(suffix: str) -> None:
+    assert comment_nodes.comment_spans("<!-- note\nfoo()\n", suffix) == [(0, 9)]

@@ -22,6 +22,7 @@ import audit_log
 import comment_nodes
 import hook_decision
 import hook_input
+import patch_input
 from hook_decision import Verdict
 
 RULE = "guard_suppression.sh"
@@ -52,6 +53,7 @@ COMPARED_BY_TEXT = frozenset({"ast-grep-ignore"})
 CODE_MARKERS = frozenset({"allow or expect attribute"})
 # An ast-grep marker on the first line followed by a blank line suppresses its rules for the whole file.
 FILE_SCOPE = "ast-grep-ignore for the whole file"
+UNPLACED = "a suppression in a file the guard could not rebuild"
 PATCH_FILE = re.compile(r"^\*\*\* (?:Add|Update) File: (.+)$")
 PATCH_MOVE = re.compile(r"^\*\*\* Move to: (.+)$")
 
@@ -60,16 +62,15 @@ PATCH_MOVE = re.compile(r"^\*\*\* Move to: (.+)$")
 class _Change:
     """Text an edit adds to and removes from one file.
 
-    `whole` means the two texts are the whole file after and before the edit. `rescopes` means the edit changes a
-    file that holds an ast-grep marker without the guard seeing the whole result, so the marker may come to cover
-    the whole file.
+    `whole` means the two texts are the whole file after and before the edit. `unplaced` means the edit changes a
+    file that holds a marker without the guard seeing the whole result, so the marker may come to count anywhere.
     """
 
     path: str
     added: str
     removed: str
     whole: bool = False
-    rescopes: bool = False
+    unplaced: bool = False
 
 
 def decide(payload: dict) -> Verdict:
@@ -97,13 +98,13 @@ def _new_markers(change: _Change) -> list[str]:
     ]
     if suffix in MARKER_SUFFIXES["ast-grep-ignore"] and _widens_file_scope(change):
         found.append(FILE_SCOPE)
+    if change.unplaced:
+        found.append(UNPLACED)
     return found
 
 
 def _widens_file_scope(change: _Change) -> bool:
     """Whether the edit may give a first-line ast-grep marker the whole file, or change the one that has it."""
-    if change.rescopes:
-        return True
     after = _file_marker(change.added) if change.whole else None
     return after is not None and after != _file_marker(change.removed)
 
@@ -135,16 +136,18 @@ def _adds(name: str, pattern: re.Pattern[str], change: _Change) -> bool:
         if name in COMPARED_BY_TEXT:
             return pattern.search(change.added) is not None and change.added != change.removed
         return len(pattern.findall(change.added)) > len(pattern.findall(change.removed))
+    added_marks, removed_marks = ([mark for marks in found.values() for mark in marks] for found in (added, removed))
     if name in COMPARED_BY_TEXT:
-        return bool(Counter(added.values()) - Counter(removed.values()))
-    return sum(comment for comment, _ in added.values()) > sum(comment for comment, _ in removed.values())
+        return bool(Counter(added_marks) - Counter(removed_marks))
+    return sum(comment for comment, _ in added_marks) > sum(comment for comment, _ in removed_marks)
 
 
-def _marked_lines(pattern: re.Pattern[str], text: str, suffix: str) -> dict[int, tuple[bool, str]] | None:
-    """By line number, whether each marker is in a comment, with the comment from its start on that line or the line.
+def _marked_lines(pattern: re.Pattern[str], text: str, suffix: str) -> dict[int, tuple[tuple[bool, str], ...]] | None:
+    """By line number, each marker on the line as whether it is in a comment and its text.
 
-    The language's parser finds the comments, so a block comment, raw string or block scalar around the line counts.
-    None means the comments cannot be known.
+    The text is the comment from its start on that line, or else the whole line. The language's parser finds the
+    comments, so a block comment, raw string or block scalar around the line counts. None means the comments cannot
+    be known.
     """
     if not pattern.search(text):
         return {}
@@ -154,13 +157,18 @@ def _marked_lines(pattern: re.Pattern[str], text: str, suffix: str) -> dict[int,
     marked = {}
     offset = 0
     for number, line in enumerate(text.split("\n")):
-        if match := pattern.search(line):
-            position = offset + match.start()
-            start = next((first for first, end in spans if first <= position < end), None)
-            comment = start is not None
-            marked[number] = (comment, line[max(start - offset, 0) :].strip() if comment else line.strip())
+        starts = [_comment_start(spans, offset + match.start()) for match in pattern.finditer(line)]
+        if starts:
+            marked[number] = tuple(
+                (True, line[max(start - offset, 0) :].strip()) if start is not None else (False, line.strip())
+                for start in starts
+            )
         offset += len(line) + 1
     return marked
+
+
+def _comment_start(spans: list[tuple[int, int]], position: int) -> int | None:
+    return next((start for start, end in spans if start <= position < end), None)
 
 
 def _changes(payload: dict) -> list[_Change]:
@@ -193,8 +201,8 @@ def _insert_change(path: str, values: dict) -> _Change:
 def _edit_change(path: str, edits: list[dict]) -> _Change:
     """Apply the replacements to the file in order and compare the whole text, so no partial edit is missed.
 
-    When a replacement does not apply to the file, the bare fragments are compared instead, and an ast-grep marker
-    in the file may come to cover all of it.
+    When a replacement does not apply to the file, the bare fragments are compared instead, and a marker in the file
+    may come to count anywhere.
     """
     before = _existing_text(path)
     after = before
@@ -202,7 +210,7 @@ def _edit_change(path: str, edits: list[dict]) -> _Change:
     for edit, (old, new) in zip(edits, pairs, strict=True):
         if not old or old not in after:
             added, removed = "\n".join(new for _, new in pairs), "\n".join(old for old, _ in pairs)
-            return _Change(path, added, removed, rescopes=_holds_ast_grep_marker(before))
+            return _Change(path, added, removed, unplaced=_holds_marker(before, Path(path).suffix))
         after = after.replace(old, new) if edit.get("replace_all") else after.replace(old, new, 1)
     return _Change(path, after, before, whole=True)
 
@@ -213,7 +221,7 @@ def _field(values: dict, *names: str) -> str:
 
 
 def _patch_changes(patch: str) -> list[_Change]:
-    """Split an apply_patch body into per-file added and removed text.
+    """Judge each file of an apply_patch body whole after its hunks, or by its added and removed lines.
 
     A moved file is judged at its destination too, where markers the source's file type did not honor take effect.
     """
@@ -224,7 +232,7 @@ def _patch_changes(patch: str) -> list[_Change]:
             current = hunks.setdefault(match.group(1).strip(), _Hunks())
         elif current is not None and (move := PATCH_MOVE.match(line)):
             current.destination = move.group(1).strip()
-        elif current is not None and line[:1] in {"+", "-", " "}:
+        elif current is not None and (line[:1] in {"+", "-", " "} or line.startswith("@@")):
             current.lines.append(line)
     return [change for path, file_hunks in hunks.items() for change in file_hunks.changes(path)]
 
@@ -237,15 +245,26 @@ class _Hunks:
     destination: str = ""
 
     def changes(self, path: str) -> list[_Change]:
-        added = "\n".join(line[1:] for line in self.lines if line.startswith("+"))
-        removed = "\n".join(line[1:] for line in self.lines if line.startswith("-"))
         existing = _existing_text(path)
-        # The applier matches context loosely (whitespace, Unicode punctuation), so where a hunk lands is unknown.
-        source = _Change(path, added, removed, rescopes=bool(self.lines) and _holds_ast_grep_marker(existing))
+        source = self._source(path, existing)
         if not self.destination:
             return [source]
         carried = _newly_honored(existing, Path(path).suffix, Path(self.destination).suffix)
-        return [source, _Change(self.destination, f"{carried}\n{added}", removed, rescopes=source.rescopes)]
+        destination = _Change(self.destination, f"{carried}\n{source.added}", source.removed, unplaced=source.unplaced)
+        return [source, destination]
+
+    def _source(self, path: str, existing: str) -> _Change:
+        """The whole file before and after when every hunk matches it exactly, else the changed lines.
+
+        The applier also matches context loosely (whitespace, Unicode punctuation), so where an inexact hunk lands is
+        unknown; in a file that holds a marker, that fails closed.
+        """
+        after = patch_input.patched_text(existing, self.lines)
+        if after is not None:
+            return _Change(path, after, existing, whole=True)
+        added = "\n".join(line[1:] for line in self.lines if line.startswith("+"))
+        removed = "\n".join(line[1:] for line in self.lines if line.startswith("-"))
+        return _Change(path, added, removed, unplaced=_holds_marker(existing, Path(path).suffix))
 
 
 def _newly_honored(text: str, source: str, destination: str) -> str:
@@ -272,12 +291,18 @@ def _becomes_comment(text: str, source: str, destination: str) -> set[int]:
     before, after = (_marked_lines(pattern, text, suffix) for suffix in (source, destination))
     if before is None or after is None:
         return {number for number, line in enumerate(_lines(text)) if pattern.search(line)}
-    return {number for number, marked in after.items() if marked[0] and marked != before.get(number)}
+    return {
+        number
+        for number, marks in after.items()
+        if any(comment for comment, _ in marks) and marks != before.get(number)
+    }
 
 
-def _holds_ast_grep_marker(text: str) -> bool:
-    """Whether a marker that an edit could move to the top, above a blank line, is in the file."""
-    return MARKERS["ast-grep-ignore"].search(text) is not None
+def _holds_marker(text: str, suffix: str) -> bool:
+    """Whether the file holds any marker its suffix honors."""
+    return any(
+        pattern.search(text) for name, pattern in MARKERS.items() if suffix in MARKER_SUFFIXES.get(name, CODE_SUFFIXES)
+    )
 
 
 def _existing_text(path: str) -> str:

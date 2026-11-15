@@ -73,14 +73,6 @@ def test_a_patch_hunk_beside_a_top_marker_asks(tmp_path: Path) -> None:
     assert decide("apply_patch", {"input": patch}) == "ask"
 
 
-def test_any_patch_to_a_file_with_a_top_marker_asks(tmp_path: Path) -> None:
-    """The patch applier matches context loosely, so the guard cannot tell where a hunk lands; it fails closed."""
-    target = tmp_path / "app.py"
-    target.write_text("# ast-grep-ignore: rule_a\nbad()\n\n\n\n\nx = 1\n")
-    patch = f"*** Begin Patch\n*** Update File: {target}\n@@\n-x = 1\n+x = 2\n*** End Patch"
-    assert decide("apply_patch", {"input": patch}) == "ask"
-
-
 def test_a_patch_to_a_file_without_an_ast_grep_marker_passes(tmp_path: Path) -> None:
     target = tmp_path / "app.py"
     target.write_text("x = 1\nbad()  # noqa: E501\n")
@@ -299,3 +291,46 @@ def test_editing_code_beside_an_unchanged_nolint_comment_passes(tmp_path: Path) 
     target = tmp_path / "user.go"
     target.write_text("package a\n\nfunc f() {\n\tg() //nolint:errcheck // closing a read-only file\n}\n")
     assert decide("Edit", {"file_path": str(target), "old_string": "\tg()", "new_string": "\th()"}) == "allow"
+
+
+@pytest.mark.parametrize(
+    "name,before,after",
+    [
+        ("app.py", 'value: int = "# type: ignore"\n', 'value: int = "# type: ignore"  # type: ignore\n'),
+        ("app.py", 'print("# noqa")\n', 'print("# noqa")  # noqa\n'),
+        (
+            "app.ts",
+            "foo(); // eslint-disable-line no-console\n",
+            "/* eslint-disable */ foo(); // eslint-disable-line no-console\n",
+        ),
+    ],
+    ids=["type ignore after a string", "noqa after a string", "second directive on the line"],
+)
+def test_a_second_suppression_on_the_same_line_asks(tmp_path: Path, name: str, before: str, after: str) -> None:
+    target = tmp_path / name
+    target.write_text(before)
+    values = {"file_path": str(target), "old_string": before.rstrip("\n"), "new_string": after.rstrip("\n")}
+    assert decide("Edit", values) == "ask"
+
+
+def test_a_patch_that_turns_a_context_line_into_a_comment_asks(tmp_path: Path) -> None:
+    target = tmp_path / "app.ts"
+    target.write_text("const text = `\n// @ts-ignore\n`;\nfoo(1);\n")
+    hunk = "@@\n-const text = `\n // @ts-ignore\n-`;\n foo(1)"
+    patch = f"*** Begin Patch\n*** Update File: {target}\n{hunk};\n*** End Patch"
+    assert decide("apply_patch", {"input": patch}) == "ask"
+
+
+def test_a_patch_far_from_the_markers_of_a_file_passes(tmp_path: Path) -> None:
+    target = tmp_path / "app.py"
+    target.write_text("# ast-grep-ignore: rule_a\nbad()\n\n\nx = 1  # noqa: E501\ny = 1\n")
+    patch = f"*** Begin Patch\n*** Update File: {target}\n@@\n-y = 1\n+y = 2\n*** End Patch"
+    assert decide("apply_patch", {"input": patch}) == "allow"
+
+
+def test_a_patch_that_does_not_match_a_file_with_a_suppression_exactly_asks(tmp_path: Path) -> None:
+    """The applier also matches context loosely, so where such a hunk lands is unknown and the guard fails closed."""
+    target = tmp_path / "app.py"
+    target.write_text("x = 1  # noqa: E501\ny = 1\n")
+    patch = f"*** Begin Patch\n*** Update File: {target}\n@@\n-y  =  1\n+y = 2\n*** End Patch"
+    assert decide("apply_patch", {"input": patch}) == "ask"

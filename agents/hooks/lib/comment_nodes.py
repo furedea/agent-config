@@ -25,7 +25,10 @@ LANGUAGES = {
     ".nix": "nix",
     **dict.fromkeys((".yml", ".yaml"), "yaml"),
 }
-COMMENT_KINDS = {"rust": ("line_comment", "block_comment")}
+COMMENT_KINDS = {
+    "rust": ("line_comment", "block_comment"),
+    **dict.fromkeys(("javascript", "typescript", "tsx"), ("comment", "html_comment")),
+}
 SUPPRESSION = "ast-grep-ignore"
 # Same length as the suppression word, so every offset stays.
 STAND_IN = "ast-grep-ign0re"
@@ -45,8 +48,8 @@ def comment_spans(text: str, suffix: str) -> list[tuple[int, int]] | None:
 @functools.cache
 def _scan(text: str, language: str, scanner: str) -> list[tuple[int, int]] | None:
     """Scan once per text, since every marker kind asks about the same text."""
-    encoded = text.encode()
     try:
+        encoded = text.encode()
         # An empty config of its own in a fresh private directory, so ast-grep looks for no sgconfig.yml.
         with tempfile.TemporaryDirectory() as directory:
             config = Path(directory) / "sgconfig.yml"

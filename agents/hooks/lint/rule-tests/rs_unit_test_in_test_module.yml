@@ -47,6 +47,13 @@ valid:
     #![cfg(any(test, feature = "test-utils"))]
     #[test]
     fn works() {}
+  - |
+    #[cfg(test)]
+    /* unit tests */
+    mod tests {
+        #[test]
+        fn works() {}
+    }
 invalid:
   - |
     #[test]
@@ -106,3 +113,7 @@ invalid:
         #[test]
         fn works() {}
     }
+  - |
+    #[test]
+    /* regression */
+    fn works() {}

@@ -18,6 +18,7 @@ rule:
             any:
               - kind: attribute_item
               - kind: line_comment
+              - kind: block_comment
     # A file that is itself compiled only for tests (`#![cfg(test)]`).
     - not:
         inside:
@@ -39,3 +40,4 @@ rule:
                 any:
                   - kind: attribute_item
                   - kind: line_comment
+                  - kind: block_comment

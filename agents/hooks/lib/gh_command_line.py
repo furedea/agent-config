@@ -190,3 +190,20 @@ def input_redirects(command: shell_syntax.Command) -> list[str]:
 def has_inherited_function(name: str) -> bool:
     """Whether the environment exports a bash function of this name, which bash runs before a builtin or program."""
     return any(key.startswith(f"BASH_FUNC_{name}%%") or key == f"BASH_FUNC_{name}()" for key in os.environ)
+
+
+def is_outside_agent_roots(name: str) -> bool:
+    """Whether PATH finds the program, and what it links to, outside the working tree and temporary directories.
+
+    Those are where a sandboxed agent can write, so a program found elsewhere is not one it planted. A program
+    PATH does not find cannot run at all, so it stands in for nothing.
+    """
+    found = shutil.which(name)
+    if found is None:
+        return True
+    if not Path(found).is_absolute():
+        return False
+    roots = [Path.cwd().resolve(), *(Path(os.environ[key]).resolve() for key in ("TMPDIR",) if os.environ.get(key))]
+    roots += [Path("/tmp").resolve(), Path("/private/tmp")]
+    paths = (Path(found).absolute(), Path(found).resolve())
+    return not any(path.is_relative_to(root) for path in paths for root in roots)

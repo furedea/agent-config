@@ -47,7 +47,7 @@ METHOD_OVERRIDE = re.compile(r"\s*x-(?:http-)?method(?:-override)?\s*:", re.IGNO
 FIELD_KEY = re.compile(r"[A-Za-z_][A-Za-z0-9_]*=")
 DOT_SEGMENT = re.compile(r"(?:^|/)(?:\.|%2e){1,2}(?:/|$)", re.IGNORECASE)
 # --web, or a short option bundle holding -w, which opens the browser gh is configured with.
-WEB_OPTION = re.compile(r"--web(?:=.*)?|-[A-Za-z]*w[A-Za-z]*")
+WEB_OPTION = re.compile(r"--web(?:=.*)?|-(?!-)[A-Za-z]*w.*")
 ISSUE_NUMBER = re.compile(r"#?[0-9]+")
 STDIN_PATHS = re.compile(r"/dev/stdin|/dev/fd/0|/proc/self/fd/0")
 # A run-time endpoint that starts with a literal path segment and slash, which no expansion can turn into a URL.

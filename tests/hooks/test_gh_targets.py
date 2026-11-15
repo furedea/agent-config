@@ -164,7 +164,17 @@ def test_a_url_that_names_a_label_does_not_stand_in_for_the_working_repository()
 
 @pytest.mark.usefixtures("furedea_checkout")
 @pytest.mark.parametrize("name", ["GH_BROWSER", "BROWSER"])
-def test_an_inherited_browser_program_makes_every_call_ask(monkeypatch: pytest.MonkeyPatch, name: str) -> None:
+def test_a_browser_variable_asks_only_where_gh_would_open_it(monkeypatch: pytest.MonkeyPatch, name: str) -> None:
     monkeypatch.setenv(name, "/tmp/evil")
     assert decide("gh pr view 1 --web") == "ask"
-    assert decide("gh issue create -R furedea/agent-config -t safe -b safe") == "ask"
+    assert decide("gh pr view 1") == "allow"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_gh_planted_on_path_makes_every_call_ask(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    planted = tmp_path / "bin"
+    planted.mkdir()
+    (planted / "gh").write_text("#!/bin/sh\n")
+    (planted / "gh").chmod(0o755)
+    monkeypatch.setenv("PATH", f"{planted}:{os.environ['PATH']}")
+    assert decide("gh pr list -R furedea/agent-config") == "ask"

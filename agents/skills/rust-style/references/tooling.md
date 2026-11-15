@@ -58,4 +58,5 @@ cargo clippy --all-targets -- -D warnings
 cargo test
 ```
 
+- In code, `clippy::allow_attributes_without_reason` requires a `reason` on every `#[allow]` and `#[expect]`, and `clippy::allow_attributes` prefers `#[expect]`.
 - Allow a lint in `Cargo.toml` only with a comment that gives the reason. A crate-wide `Cargo.toml` allow needs the user's approval, the same as a per-site suppression.

@@ -1,3 +1,5 @@
+# Before adding a blocking rule, read "Which rules ast-grep may block" in
+# docs/adr/0021_enforce_prose_rules_with_each_tools_own_checks_that_report_before_they_block.md.
 ruleDirs:
   - rules
 testConfigs:

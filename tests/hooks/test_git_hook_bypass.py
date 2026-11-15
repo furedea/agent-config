@@ -95,6 +95,10 @@ def test_values_and_unrelated_forms_that_only_spell_the_option_are_allowed(argum
         "git push origin topic $F",
         "git -c $C commit -m x",
         'git -c "$C" push origin topic',
+        'git -c "$C" status',
+        "git --config-env=$C commit -m x",
+        "git commit -m $MESSAGE",
+        "git merge -m $A $B",
     ],
 )
 @pytest.mark.usefixtures("isolated_project")

@@ -14,13 +14,13 @@ the request, evaluates the returned work, and reports the outcome to the user.
 ## Scope and Dependencies
 
 - Apply this workflow to requested cross-session work and to the lanes of an approved plan,
-  which `git-workflow` hands to task worktree sessions. Do not infer permission to delegate
+  which `development-cycle` hands to task worktree sessions. Do not infer permission to delegate
   from an ordinary coding request, a local review, or an opportunity to work in parallel.
 - Read the `herdr` skill before operating another session. It owns prerequisites, CLI discovery,
   agent identity, layout, prompting, waiting, approvals, and recovering complete output. Follow
   its environment check; if Herdr is unavailable, report the limitation without silently
   switching to another transport.
-- Use `git-workflow` for branch and worktree choices and authorized Git delivery. Delegation
+- Use `development-cycle` for branch and worktree choices and authorized Git delivery. Delegation
   alone does not require a new worktree or authorize commits, pushes, or pull requests; an
   approved plan authorizes them for its lanes, never merging.
 - Use `tsdd` and the target repository's applicable conventions for implementation and
@@ -42,7 +42,7 @@ nix builds), commits, pushes, and opens the PR. The lane itself fixes review fin
 Codex implemented; Codex is used only for the initial implementation.
 
 Code review is not done locally: every PR is reviewed on GitHub, and the lane follows
-[Review on GitHub](../git-workflow/references/delivery.md#review-on-github) in `git-workflow` for
+[Review on GitHub](../development-cycle/references/delivery.md#review-on-github) in `development-cycle` for
 waiting, reading findings, fixing, and the re-review limit. In addition, in a repository that has
 those reviews, as furedea/agent-config does, the `furedea-agent` App cannot push `.github/workflows/`
 changes, so the lane commits them, stops with `LANE-BLOCKED` naming the commit, and the user
@@ -135,7 +135,7 @@ Right after prompting, wait in the background for the recipient to finish: first
 `herdr` call. Waiting only for done can return at once while the agent still shows done from an
 earlier turn. Treat `done` as the end of the recipient's turn, that is, its final report; the
 recipient therefore waits for CI in the foreground and does not end its turn before CI finishes
-([Wait for CI](../git-workflow/references/delivery.md#wait-for-ci)). Do not wait for `blocked`
+([Wait for CI](../development-cycle/references/delivery.md#wait-for-ci)). Do not wait for `blocked`
 and do not relay approval prompts: the user notices them through Herdr's sound, toast, and
 sidebar status (or the provider's notification hook) and approves in the recipient's own pane,
 while the parent keeps waiting.
@@ -171,7 +171,7 @@ process.
 
 For implementation, inspect the actual diff and verification evidence in the assigned repository
 before reporting success. When requested completion includes integrating another worktree's
-changes, follow `git-workflow` for authorized integration and report anything still pending.
+changes, follow `development-cycle` for authorized integration and report anything still pending.
 Do not infer that changes reached the intended branch merely because the worker finished.
 
 ## Finish and Clean Up
@@ -188,7 +188,7 @@ Once the result is fully captured and no follow-up remains for that worker:
 - Leave reused sessions and pre-existing panes, tabs, and workspaces open. Honor a request to
   retain a newly created worker for continued work.
 - Keep branches and worktrees while their changes await integration or merge. Follow
-  `git-workflow` for their eventual removal; closing a worker must not discard pending changes.
+  `development-cycle` for their eventual removal; closing a worker must not discard pending changes.
   After the user merges, the parent runs `cleanup_worktrees.py` by its absolute path with the home
   directory expanded, as shown in the rendered `excludedCommands` entry.
   It also closes an agent-created primary workspace once no linked worktrees or agents remain;

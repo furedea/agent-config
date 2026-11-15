@@ -2,7 +2,7 @@
 name: go-style
 description: >
     User-specific conventions for designing, writing, testing, and reviewing code in existing
-    Go projects. Initial project scaffolding belongs to project-setup.
+    Go projects. Initial project scaffolding belongs to development-cycle.
 ---
 
 # Go Coding Style Guidelines
@@ -11,7 +11,7 @@ description: >
 
 This skill governs **code written inside an already-bootstrapped Go project** — package layout, types, error handling, concurrency, test authoring, refactoring, code review, and naming.
 
-Requested project initialization or Nix environment setup belongs to `project-setup`. Apply these
+Requested project initialization or Nix environment setup belongs to `development-cycle`. Apply these
 development conventions once the project's selected Go toolchain and required dependencies are
 usable. Routine Go edits do not authorize introducing Nix or changing GitHub settings; preserve
 the existing environment workflow.

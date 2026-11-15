@@ -6,7 +6,7 @@ For implementation tasks:
 2. Select the checkout and branch using [Branches and worktrees](branches.md).
 3. Follow `tsdd` for development and verification, including path selection and assessing whether refactoring is warranted.
 4. Complete the requested change and [Local Verification Before Delivery](#local-verification-before-delivery), fixing problems caused by the change. Report unrelated failures or unavailable verification without claiming success.
-5. If delivery is authorized under [Operating Rules](../SKILL.md#operating-rules), commit by intent and perform the requested publication steps:
+5. If delivery is authorized under [Authorization](../SKILL.md#authorization), commit by intent and perform the requested publication steps:
     - `git fetch origin`
     - optionally `git rebase origin/<base>` before the first push when the feature branch should be refreshed onto the latest base
     - `git push origin <branch>`
@@ -19,7 +19,7 @@ For explicit PR requests:
 2. Confirm the target base branch if it is not obvious from the repo default.
 3. Follow [Local Verification Before Delivery](#local-verification-before-delivery), then push the feature branch with `git push origin <branch>`.
 4. Create a normal PR with `gh pr create --base <base> --head <branch> --title "<title>"` and a
-   [pull request body](#pull-request-body) passed inline through a quoted heredoc:
+    [pull request body](#pull-request-body) passed inline through a quoted heredoc:
 
     ```bash
     gh pr create --base main --head <branch> --title "<title>" --body "$(cat <<'EOF'
@@ -45,7 +45,7 @@ For rebase and force-push:
 ## Pull Request Body
 
 Write the title in English as a Conventional Commits subject stating the primary intent, and the
-body in the [Issue, Plan, and PR Format](../../issue-workflow/SKILL.md#issue-plan-and-pr-format).
+body in the [Issue, Plan, and PR Format](issue_plan.md#issue-plan-and-pr-format).
 Do not use `-f`/`--fill`; commit messages do not carry this content. The body must include:
 
 - A summary of what actually changed.
@@ -68,28 +68,28 @@ A repository with no PR CI workflow or no required checks has nothing to wait fo
 run or an empty `--required` result in such a repository is not a failure.
 
 1. Find the CI run for the pushed commit (`git rev-parse HEAD`) with `gh run list --commit <sha>`;
-   the run exists from push time, possibly `queued`. If none is listed, wait briefly and look again, up to a fixed
-   bound (for example 2 minutes). If none appears within it, the workflow did not trigger: stop and
-   report instead of waiting forever.
+    the run exists from push time, possibly `queued`. If none is listed, wait briefly and look again, up to a fixed
+    bound (for example 2 minutes). If none appears within it, the workflow did not trigger: stop and
+    report instead of waiting forever.
 2. Wait for each relevant run with `gh run watch <run-id> --exit-status`. An interactive session
-   runs it as one blocking background command and takes its completion notification. A delegated
-   lane runs it in the foreground (Bash timeout at its maximum, 600000 ms) and re-runs the same
-   command until the run finishes: ending the turn while CI runs makes the lane look `done` to its
-   parent. Do not poll: one blocking command, or one bounded wait for the run to appear, is fine;
-   repeated manual checks across turns are not.
+    runs it as one blocking background command and takes its completion notification. A delegated
+    lane runs it in the foreground (Bash timeout at its maximum, 600000 ms) and re-runs the same
+    command until the run finishes: ending the turn while CI runs makes the lane look `done` to its
+    parent. Do not poll: one blocking command, or one bounded wait for the run to appear, is fine;
+    repeated manual checks across turns are not.
 3. When the runs have finished, confirm the repository's required check (`all-green` where it
-   exists) with `gh pr checks <n> --required`.
+    exists) with `gh pr checks <n> --required`.
 4. On failure, identify the failing check with `gh pr checks <n>` and read its log with
-   `gh run view <run-id> --log-failed`.
+    `gh run view <run-id> --log-failed`.
 5. Classify the cause:
     - Review check (`claude-review`, `codex-review`) that failed because it raised findings: handle
-      it under [Review on GitHub](#review-on-github), not here.
+        it under [Review on GitHub](#review-on-github), not here.
     - `all-green`: an aggregate of the other checks; classify its failure by the underlying checks.
     - Code-caused (test, lint, format, type check, Nix build or check): fix it, run the same check
-      locally, push, and return to step 1.
+        locally, push, and return to step 1.
     - External (AI review usage limit, GitHub or runner outage, network): do not change the work.
-      If a retry can help, run `gh run rerun <run-id> --failed` once and return to step 1; if the
-      check fails again or a retry cannot help, stop and report the check name and reason.
+        If a retry can help, run `gh run rerun <run-id> --failed` once and return to step 1; if the
+        check fails again or a retry cannot help, stop and report the check name and reason.
     - Undetermined: do not guess a fix; stop and report the check name and reason.
 6. Stop and report when the same check still fails after three fix attempts.
 
@@ -104,17 +104,17 @@ mechanism is in the
 [reusable-workflows README](https://github.com/furedea/reusable-workflows#readme).
 
 1. After pushing, [wait for CI](#wait-for-ci) until every check has finished; failures that are review findings are
-   handled by the following steps.
+    handled by the following steps.
 2. Read the findings: Claude's inline comments and summary comment, and Codex's inline comments and
-   Codex Review Summary (`codex-review-state`), with
-   `gh api repos/<owner>/<repo>/pulls/<n>/comments --paginate` (the path comes right after
-   `gh api`, or the command asks for confirmation) and `gh pr view <n> --comments`.
+    Codex Review Summary (`codex-review-state`), with
+    `gh api repos/<owner>/<repo>/pulls/<n>/comments --paginate` (the path comes right after
+    `gh api`, or the command asks for confirmation) and `gh pr view <n> --comments`.
 3. Fix every finding of any severity, then push; the push re-runs both reviews. Do not defer a
-   finding to the user.
+    finding to the user.
 4. Do not change the work for a finding that repeats on the same grounds, is a matter of taste, or
-   is refuted with evidence. Answer it in its thread and record it in the PR body with the reason.
+    is refuted with evidence. Answer it in its thread and record it in the PR body with the reason.
 5. Stop and report the open findings instead of looping when a P0 or P1 finding repeats, when an
-   area keeps failing, or after the third re-review that still raises new findings.
+    area keeps failing, or after the third re-review that still raises new findings.
 
 ## Local Verification Before Delivery
 
@@ -123,7 +123,7 @@ mechanism is in the
 3. Let shared verify reuse valid results when available.
 4. Let the existing pre-commit hooks run normally at commit time.
 5. Refresh necessary evidence if formatting, fixes, rebase, or other changes alter inputs after
-   verification.
+    verification.
 6. After PR creation, check CI and [review on GitHub](#review-on-github) and proceed only to the authorized stage.
 
 Stop does not necessarily run before commit, push, or merge, so it cannot be the only delivery

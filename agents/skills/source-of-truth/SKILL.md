@@ -13,9 +13,9 @@ This skill governs the information architecture of repository work:
 
 - Selecting one authoritative source for each fact.
 - Placing requirements, executable evidence, constraints, implementation, rationale, guidance,
-  policy, and navigation in the artifact suited to their purpose.
+    policy, and navigation in the artifact suited to their purpose.
 - Distinguishing useful links, verification, execution, and generated views from manually
-  maintained duplication.
+    maintained duplication.
 - Preserving vocabulary and requirement traceability across artifacts.
 - Managing temporary implementation briefs without turning them into a second specification.
 - Keeping agent entry maps concise and navigational.
@@ -23,13 +23,13 @@ This skill governs the information architecture of repository work:
 Out of scope and delegated elsewhere:
 
 - Turning an accepted observable contract into executable evidence and applying Red, Green, and
-  Refactor → the `tsdd` skill.
+    Refactor → the `tsdd` skill.
 - Creating, reviewing, superseding, or deprecating architecture decision records → the `adr`
-  skill.
+    skill.
 - Language-specific documentation and code conventions → the relevant `*-style` skill and project
-  rules.
-- Issue publication and comment management → [issue-workflow](../issue-workflow/SKILL.md).
-- Git delivery → [git-workflow](../git-workflow/SKILL.md).
+    rules.
+- Issue publication and comment management → [development-cycle](../development-cycle/references/issue_plan.md).
+- Git delivery → [development-cycle](../development-cycle/SKILL.md).
 
 Choosing an authoritative location does not by itself authorize creating or editing that artifact.
 Follow the user's request and repository-specific rules before making a change.
@@ -49,36 +49,36 @@ rationale, API reference, user guidance, migration guidance, or an operational r
 ## Information Placement
 
 - **Issue body** → this task's requirements; its contents follow
-  [Issue Resolution](../issue-workflow/SKILL.md#issue-resolution).
+    [Issue Resolution](../development-cycle/references/issue_plan.md#issue-resolution).
 - **Plan comment** → this task's implementation approach; its contents follow
-  [Plan Comments](../issue-workflow/SKILL.md#plan-comments). A plan is not the authority for
-  requirements; existing formal specifications and user requirements retain their authority under
-  this skill's conflict policy.
+    [Plan Comments](../development-cycle/references/issue_plan.md#plan-comments). A plan is not the authority for
+    requirements; existing formal specifications and user requirements retain their authority under
+    this skill's conflict policy.
 - **PR body** → actual changes, verification results, and material departures from the plan;
-  its format follows [Pull Request Body](../git-workflow/references/delivery.md#pull-request-body).
-  Link these artifacts to each other instead of manually maintaining the same details in all three.
+    its format follows [Pull Request Body](../development-cycle/references/delivery.md#pull-request-body).
+    Link these artifacts to each other instead of manually maintaining the same details in all three.
 - **Requirement purpose, source, scope, or accepted risk** → user request, issue or reproduced
-  defect, public interface, external standard, product record, or behavior intentionally preserved
-  for compatibility. Preserve a link or identifier when durable traceability matters.
+    defect, public interface, external standard, product record, or behavior intentionally preserved
+    for compatibility. Preserve a link or identifier when durable traceability matters.
 - **Executable evidence of observable behavior** → automated acceptance, integration, or unit test.
-  Derive it from an independent requirement source. The source remains authoritative for intent;
-  a passing check does not override it. Choose the cheapest level that proves the behavior without
-  coupling to implementation details.
+    Derive it from an independent requirement source. The source remains authoritative for intent;
+    a passing check does not override it. Choose the cheapest level that proves the behavior without
+    coupling to implementation details.
 - **Quality target or accepted threshold** → measurable acceptance criterion, SLO, product record,
-  or security policy. Treat reliability, performance, and security as requirements when they
-  constrain the product, not merely when a test command exists.
+    or security policy. Treat reliability, performance, and security as requirements when they
+    constrain the product, not merely when a test command exists.
 - **Executable quality evidence** → performance, reliability, or security checks and other
-  evaluations. Link each one to the target or threshold it evaluates.
+    evaluations. Link each one to the target or threshold it evaluates.
 - **Domain invariant or enforceable constraint** → type, Value Object, schema, parser, boundary
-  validation, static rule, or configuration. Test runtime behavior that the enforcing mechanism
-  does not itself guarantee.
+    validation, static rule, or configuration. Test runtime behavior that the enforcing mechanism
+    does not itself guarantee.
 - **Implementation** → code and types whose names and structure express the current design.
 - **Broad decision rationale** → ADR. Record alternatives and trade-offs; use an inline comment
-  for narrowly local rationale.
+    for narrowly local rationale.
 - **User or operator guidance** → README, API reference, how-to guide, migration guide, or runbook.
-  These serve readers and tasks that tests do not. Generate reference material when practical.
+    These serve readers and tasks that tests do not. Generate reference material when practical.
 - **Development and verification policy** → skills, hooks, and CI configuration. Keep commands and
-  tool-specific mechanics in their owning layer.
+    tool-specific mechanics in their owning layer.
 - **Agent navigation** → the repository-defined entry map described under Agent Entry Maps.
 
 Domain vocabulary is cross-cutting rather than a separate document by default. Within a bounded
@@ -104,12 +104,12 @@ When artifacts disagree about the same fact:
 
 1. Identify the exact fact, each conflicting representation, and any claimed authority.
 2. Determine authority using Information Placement, repository policy, requirement provenance, and
-   controlling contractual or legal obligations. Do not infer authority from recency or executable
-   form alone.
+    controlling contractual or legal obligations. Do not infer authority from recency or executable
+    form alone.
 3. If authority remains ambiguous or controlling sources conflict, preserve the current state,
-   report the conflict, and request human judgment instead of silently rewriting either source.
+    report the conflict, and request human judgment instead of silently rewriting either source.
 4. After resolution, update the authoritative source if needed, then link, update, or regenerate
-   dependent views. Preserve durable traceability when it matters.
+    dependent views. Preserve durable traceability when it matters.
 
 ## Temporary Implementation Briefs
 
@@ -135,15 +135,13 @@ automatic deletion targets.
 Do not require one commit to save a plan and another to delete it. Completed plan comments remain
 history, not current instructions for the next task. Do not let a brief become a second
 specification. Posting and updating Issue comments belongs to
-[issue-workflow](../issue-workflow/SKILL.md#plan-comments).
+[development-cycle](../development-cycle/references/issue_plan.md#plan-comments).
 
 ## Agent Entry Maps
 
 Keep a repository's agent instructions in `AGENTS.md` as its single entry file, and use it as a map
-rather than a textbook. Do not add a repository `CLAUDE.md`: Claude Code reads `AGENTS.md` when no
-`CLAUDE.md` exists, and reads only `CLAUDE.md` by default when both do. `@` imports in `AGENTS.md`
-are honored. The user-level `~/.claude/CLAUDE.md` stays, since a user-level `AGENTS.md` is not read.
-When an existing repository has a `CLAUDE.md`, move its content into `AGENTS.md` and remove it.
+rather than a textbook. `@` imports in `AGENTS.md` are honored. The user-level
+`~/.claude/CLAUDE.md` stays, since a user-level `AGENTS.md` is not read.
 
 An entry map may contain:
 

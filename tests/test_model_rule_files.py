@@ -91,6 +91,7 @@ it.concurrent("first case", () => {});
 it.concurrent("second case", () => {});
 
 const expiresAt = () => Date.now() + 1000;
+const nonce = () => randomBytes(8);
 
 class Loader {
   load = (path: string): string => {
@@ -408,7 +409,7 @@ def test_typescript_rules_select_the_functions_they_ask_about(repository: Path) 
         "comment-explains-why": 2,
         "error-message-names-operation": 3,
         "expected-failure-returned-as-value": 6,
-        "inject-time-and-randomness": 2,
+        "inject-time-and-randomness": 3,
         "known-defect-marker-names-removal": 1,
         "mock-only-external-boundaries": 2,
         "repeated-cases-use-it-each": 4,

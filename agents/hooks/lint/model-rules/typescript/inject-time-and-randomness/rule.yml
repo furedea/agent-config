@@ -32,12 +32,22 @@ rule:
           - pattern: Date.now()
           - pattern: new Date()
           - pattern: Math.random()
-          - pattern: crypto.randomUUID()
+          - pattern: $OBJ.randomUUID()
+          - pattern: randomUUID()
+          - pattern: $OBJ.randomInt($$$ARGS)
+          - pattern: randomInt($$$ARGS)
+          - pattern: $OBJ.randomBytes($$$ARGS)
+          - pattern: randomBytes($$$ARGS)
+          - pattern: $OBJ.randomFillSync($$$ARGS)
+          - pattern: randomFillSync($$$ARGS)
+          - pattern: $OBJ.getRandomValues($$$ARGS)
+          - pattern: getRandomValues($$$ARGS)
 ask: >-
   This function reads the current time or a random value itself, so its result cannot be fixed in a test.
 criteria:
   "true": >-
-    Logic that computes a result calls `Date.now()`, `new Date()`, `Math.random()` or `crypto.randomUUID()` directly instead
+    Logic that computes a result calls `Date.now()`, `new Date()`, `Math.random()` or a Node/Web crypto random API (`randomUUID`, `randomInt`,
+    `randomBytes`, `getRandomValues`) directly instead
     of receiving the time or a random function (for example an `Rng`) as an argument or a dependency.
   "false": >-
     The function is a thin entry point or composition root that supplies the clock or random source to the logic, or it only

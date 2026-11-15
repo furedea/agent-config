@@ -21,6 +21,12 @@ NAME_OPERAND_BUILTINS = frozenset({"read", "vared", "mapfile", "readarray", "get
 NAME_OPTION = re.compile(r"-[A-Za-z]*[vAa]")
 # The options trap takes; any other word before the signals is the action, as zsh reads it.
 TRAP_OPTIONS = frozenset({"-l", "-p", "-P"})
+# A trap action reading or replacing the positional parameters, which are a running function's under set -E or -T.
+TRAP_ARGUMENT_TEXT = re.compile(
+    r"\$(?:[0-9@*_]|argv\b|BASH_ARG[VC])|(?<![\w-])(?:shift|getopts)(?![\w-])|(?<![\w-])set\s+(?:--|[^-+\s])"
+)
+# Quotes, escapes, and braces, which spell a word without writing it plainly.
+SPELLING = re.compile(r"[\\'\"{},]")
 # A function the text of eval or trap is judged inside, as it inherits input and arguments the hook does not see.
 # Its name carries a nonce, so a command cannot define a function the hook would mistake for it.
 CODE_BODY = f"__guard_code_text_{secrets.token_hex(8)}"
@@ -96,6 +102,8 @@ def _trap_scripts(arguments: tuple[str, ...], dynamic: tuple[bool, ...]) -> list
         return []
     if dynamic[index]:
         raise UnsupportedSyntaxError("a trap action computed at run time requires explicit review", "wrapper")
+    if TRAP_ARGUMENT_TEXT.search(SPELLING.sub("", arguments[index])):
+        raise UnsupportedSyntaxError("a trap action reading the arguments requires explicit review", "wrapper")
     return [arguments[index]]
 
 

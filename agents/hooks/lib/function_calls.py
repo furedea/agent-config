@@ -28,8 +28,8 @@ SHELL_HOOKS = re.compile(
 # Parameters holding a function's arguments: zsh's argv, bash's BASH_ARGV and BASH_ARGC under extdebug, and $_,
 # the last word of the call.
 ARGUMENT_ARRAYS = frozenset({"argv", "BASH_ARGV", "BASH_ARGC", "_"})
-# Words before a builtin that still run it, as in builtin shift or command -p shift.
-BUILTIN_PREFIXES = frozenset({"builtin", "command"})
+# Words before a builtin that still run it, as in builtin shift, command -p shift, or zsh's noglob shift.
+BUILTIN_PREFIXES = frozenset({"builtin", "command", "noglob", "nocorrect", "-"})
 # Text eval or trap runs that may read or replace a function's arguments, at any depth of eval, once unquoted.
 ARGUMENT_TEXT = re.compile(r"[$`]|(?<![\w-])(?:shift|set|getopts|read|mapfile|readarray|vared|source|\.)(?![\w-])")
 # Quotes, escapes, braces, and glob characters, which spell a name without writing it plainly.
@@ -37,7 +37,15 @@ SPELLING = re.compile(r"[\\'\"{},?*\[\]]")
 # Builtins that may assign a variable named only at run time, or run code that does.
 UNSEEN_ASSIGNERS = frozenset({"read", "mapfile", "readarray", "vared", "getopts", "source", ".", "eval", "trap"})
 # Programs a caller's word may name that change the arguments or run code, when a body runs that word.
-ARGUMENT_CHANGERS = RELIED_NAMES | KEYWORD_NAMES | UNSEEN_ASSIGNERS | {"unset"}
+ARGUMENT_CHANGERS = (
+    RELIED_NAMES
+    | KEYWORD_NAMES
+    | UNSEEN_ASSIGNERS
+    | frozenset(
+        "unset noglob nocorrect - zparseopts fc enable disable emulate setopt unsetopt shopt autoload functions "
+        "zmodload".split()
+    )
+)
 ARITHMETIC = frozenset({"ArithmCmd", "ArithmExp", "LetClause"})
 ARITHMETIC_TEST = re.compile(r"\s-(?:eq|ne|lt|le|gt|ge)\s")
 GLOB_CHARACTERS = re.compile(r"[*?\[]")
@@ -67,6 +75,9 @@ def respelled_calls(records: tuple[dict, ...], data: bytes) -> list[str]:
     code_bodies = [
         node["Body"] for node in records if node.get("Type") == "FuncDecl" and node["Name"]["Value"] == CODE_BODY
     ]
+    wrapped = [node for node in records if node.get("Type") == "FuncDecl" and node["Name"]["Value"] == CODE_BODY]
+    if any(node["End"]["Offset"] != len(data) for node in wrapped):
+        raise UnsupportedSyntaxError("closing the eval or trap text early requires explicit review", "expansion")
     if any(node.get("Type") == "FuncDecl" for body in code_bodies for node in nodes(body)):
         raise UnsupportedSyntaxError("defining a function in eval or trap text requires explicit review", "expansion")
     bodies: dict[str, list[dict]] = {}

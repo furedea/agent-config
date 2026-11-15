@@ -6,7 +6,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
-from tests.hooks.system_programs import use_own_program, use_system_programs
+from tests.hooks.system_programs import trust_directory, use_own_program, use_system_programs
 from tests.runtime import REPO_ROOT, load_script_module
 
 guard = load_script_module("agents/hooks/guard_command.py", "guard_command")
@@ -23,6 +23,7 @@ def user_age_limit(tmp_path_factory: pytest.TempPathFactory, monkeypatch: pytest
     for name in [name for name in os.environ if name.startswith("UV_")]:
         monkeypatch.delenv(name)
     use_system_programs(config / "bin", monkeypatch, "uv")
+    trust_directory(config / "bin", monkeypatch)
 
 
 def judged(project: Path, command: str, kind: str) -> str:
@@ -269,3 +270,17 @@ def test_a_user_limit_of_at_least_a_week_runs(git_project: Path, value: str) -> 
     config = Path(os.environ["XDG_CONFIG_HOME"]) / "uv" / "uv.toml"
     config.write_text(f'exclude-newer = "{value}"\n')
     assert judged(git_project, "uv add httpx", "allowed") == "allow"
+
+
+@pytest.mark.parametrize(
+    "setting",
+    [
+        'find-links = ["/tmp/links"]',
+        'index-url = "https://evil.example/simple"',
+        'exclude-newer-package = { pkg = "2099-01-01" }',
+    ],
+)
+def test_a_user_configuration_that_adds_a_source_asks(git_project: Path, setting: str) -> None:
+    config = Path(os.environ["XDG_CONFIG_HOME"]) / "uv" / "uv.toml"
+    config.write_text(f'exclude-newer = "1 week"\n{setting}\n')
+    assert judged(git_project, "uv add httpx", "allowed") == "ask"

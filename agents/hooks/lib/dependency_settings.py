@@ -176,6 +176,8 @@ def _environment_reason() -> str:
         return "runs without a readable user uv configuration that sets the package-age limit"
     if not _is_at_least_a_week(settings.get(AGE_LIMIT)):
         return "runs without a package-age limit of at least a week in the user's uv configuration"
+    if overrides := sorted((OVERRIDING_SETTINGS - {AGE_LIMIT}) & set(settings)):
+        return f"runs with the user's uv setting {overrides[0]}, which adds a source the age limit does not cover"
     return ""
 
 

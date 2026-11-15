@@ -29,7 +29,7 @@ GIT_DIRECTORY = ".git"
 COMPANIONS = frozenset({"echo", "true", "false", "test", "[", "pwd"})
 WRAPPERS = frozenset({"command", "nohup", "nice", "time", "timeout", "stdbuf"})
 # Companions the shell runs itself; every other program, rm included, is found through PATH.
-BUILTINS = COMPANIONS | {"command", "time"}
+BUILTINS = COMPANIONS | {"command"}
 # System temporary roots other programs and users share; only a session's own directory below one counts.
 SHARED_TEMPORARY_ROOTS = frozenset(
     Path(path).resolve() for path in ("/tmp", "/private/tmp", "/var/tmp", "/private/var/tmp", "/dev/shm")
@@ -101,8 +101,14 @@ def _is_safe_companion(item: shell_syntax.Command) -> bool:
 
 
 def _runs_a_system_program(item: shell_syntax.Command) -> bool:
-    """A builtin runs inside the shell; anything else must resolve to a root-owned system program."""
-    return Path(item.arguments[0]).name in BUILTINS or system_programs.is_system_program(item.arguments[0])
+    """A builtin the shell runs itself, or a root-owned system program run with no assignment before it.
+
+    Behind an external wrapper even a builtin's name is looked up on PATH, and an assignment such as
+    PATH or LD_PRELOAD before a call can change which program runs.
+    """
+    if item.arguments[0] in BUILTINS and not item.wrapper_depth:
+        return True
+    return item.raw.lstrip().startswith(item.words[0]) and system_programs.is_system_program(item.arguments[0])
 
 
 def _call_reason(call: shell_syntax.Command, directory: Path | None, roots: tuple[Path, ...]) -> str:

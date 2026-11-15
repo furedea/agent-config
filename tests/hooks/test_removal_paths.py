@@ -1,10 +1,11 @@
 """rm runs unprompted inside the worktree and the session's temporary directories; elsewhere it asks."""
 
+import os
 import tempfile
 from pathlib import Path
 
 import pytest
-from tests.hooks.system_programs import use_own_program, use_system_programs
+from tests.hooks.system_programs import trust_directory, use_own_program, use_system_programs
 from tests.runtime import load_script_module
 
 guard = load_script_module("agents/hooks/guard_command.py", "guard_command")
@@ -15,6 +16,7 @@ def system_rm(tmp_path_factory: pytest.TempPathFactory, monkeypatch: pytest.Monk
     """rm and the external wrappers resolve to root-owned system programs, as on a deployed machine."""
     directory = tmp_path_factory.mktemp("system") / "bin"
     use_system_programs(directory, monkeypatch, "rm", "nohup", "nice", "timeout", "stdbuf")
+    trust_directory(directory, monkeypatch)
 
 
 def judged(project: Path | None, command: str, kind: str = "allowed") -> str:
@@ -242,3 +244,36 @@ def test_a_program_found_in_a_directory_the_session_writes_asks(
     use_own_program(git_project / ".venv" / "bin", monkeypatch, name)
     command = "rm scratch.txt" if name == "rm" else "nohup rm scratch.txt"
     assert judged(git_project, command) == "ask"
+
+
+@pytest.mark.parametrize(
+    "command",
+    ["PATH=.venv/bin rm scratch.txt", "LD_PRELOAD=./x.so rm scratch.txt"],
+)
+def test_an_rm_whose_program_the_command_can_change_asks(git_project: Path, command: str) -> None:
+    assert judged(git_project, command) == "ask"
+
+
+def test_a_link_to_a_system_program_in_a_directory_the_session_writes_asks(
+    git_project: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    use_system_programs(git_project / ".venv" / "bin", monkeypatch, "rm")
+    assert judged(git_project, "rm scratch.txt") == "ask"
+
+
+@pytest.mark.parametrize("command", ["./bin/rm scratch.txt", "bin/rm scratch.txt"])
+def test_an_rm_named_by_a_relative_path_asks(git_project: Path, command: str) -> None:
+    assert judged(git_project, command) == "ask"
+
+
+def test_a_relative_path_entry_makes_rm_ask(git_project: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("PATH", f"bin{os.pathsep}{os.environ['PATH']}")
+    assert judged(git_project, "rm scratch.txt") == "ask"
+
+
+def test_a_builtin_name_behind_an_external_wrapper_is_looked_up_on_path(
+    git_project: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    use_own_program(git_project / ".venv" / "bin", monkeypatch, "echo")
+    assert judged(git_project, "echo hi && rm scratch.txt") == "allow"
+    assert judged(git_project, "nohup echo hi && rm scratch.txt") == "ask"

@@ -10,17 +10,17 @@ rule:
         - has:
             field: source
             kind: string
-            regex: ^["'](jest|@jest/globals|mocha|node:test)["']$
+            regex: ^["'](jest|@jest/globals|mocha|node:test|bun:test|ava|tap|tape|jasmine|uvu|qunit)["']$
     - pattern: jest.$METHOD($$$ARGS)
     - all:
         - kind: export_statement
         - has:
             field: source
             kind: string
-            regex: ^["'](jest|@jest/globals|mocha|node:test)["']$
+            regex: ^["'](jest|@jest/globals|mocha|node:test|bun:test|ava|tap|tape|jasmine|uvu|qunit)["']$
     - all:
         - kind: call_expression
         - has: { field: function, regex: ^(import|require)$ }
         - has:
             field: arguments
-            regex: ^\(["'](jest|@jest/globals|mocha|node:test)["']\)$
+            regex: ^\(["'](jest|@jest/globals|mocha|node:test|bun:test|ava|tap|tape|jasmine|uvu|qunit)["']\)$

@@ -10,15 +10,16 @@ severity: warning
 rule:
   any:
     - all:
-        - kind: function_declaration
-        - has: { kind: comment, stopBy: { any: [ { kind: function_declaration }, { kind: function_expression }, { kind: arrow_function }, { kind: method_definition } ] } }
+        - any: [ { kind: function_declaration }, { kind: generator_function_declaration } ]
+        - has: { kind: comment, stopBy: { any: [ { kind: generator_function_declaration }, { kind: generator_function }, { kind: function_declaration }, { kind: function_expression }, { kind: arrow_function }, { kind: method_definition } ] } }
     - all:
         - kind: method_definition
-        - has: { kind: comment, stopBy: { any: [ { kind: function_declaration }, { kind: function_expression }, { kind: arrow_function }, { kind: method_definition } ] } }
+        - has: { kind: comment, stopBy: { any: [ { kind: generator_function_declaration }, { kind: generator_function }, { kind: function_declaration }, { kind: function_expression }, { kind: arrow_function }, { kind: method_definition } ] } }
     - all:
         - any:
             - kind: arrow_function
             - kind: function_expression
+            - kind: generator_function
         - inside:
             any:
               - kind: variable_declarator
@@ -26,7 +27,7 @@ rule:
               - kind: arguments
               - kind: pair
               - kind: return_statement
-        - has: { kind: comment, stopBy: { any: [ { kind: function_declaration }, { kind: function_expression }, { kind: arrow_function }, { kind: method_definition } ] } }
+        - has: { kind: comment, stopBy: { any: [ { kind: generator_function_declaration }, { kind: generator_function }, { kind: function_declaration }, { kind: function_expression }, { kind: arrow_function }, { kind: method_definition } ] } }
     - all:
         - kind: comment
         - not: { regex: '^(/\*\*|//\s*(TODO|FIXME))' }
@@ -34,9 +35,11 @@ rule:
             inside:
               any:
                 - kind: function_declaration
+                - kind: generator_function_declaration
                 - kind: method_definition
                 - kind: arrow_function
                 - kind: function_expression
+                - kind: generator_function
               stopBy: end
 ask: >-
   A comment (in this function, or outside any function) restates what the next lines do, where a clearer name, type or

@@ -11,15 +11,16 @@ severity: warning
 rule:
   any:
     - all:
-        - kind: function_declaration
-        - has: { kind: throw_statement, stopBy: { any: [ { kind: function_declaration }, { kind: function_expression }, { kind: arrow_function }, { kind: method_definition } ] } }
+        - any: [ { kind: function_declaration }, { kind: generator_function_declaration } ]
+        - has: { kind: throw_statement, stopBy: { any: [ { kind: generator_function_declaration }, { kind: generator_function }, { kind: function_declaration }, { kind: function_expression }, { kind: arrow_function }, { kind: method_definition } ] } }
     - all:
         - kind: method_definition
-        - has: { kind: throw_statement, stopBy: { any: [ { kind: function_declaration }, { kind: function_expression }, { kind: arrow_function }, { kind: method_definition } ] } }
+        - has: { kind: throw_statement, stopBy: { any: [ { kind: generator_function_declaration }, { kind: generator_function }, { kind: function_declaration }, { kind: function_expression }, { kind: arrow_function }, { kind: method_definition } ] } }
     - all:
         - any:
             - kind: arrow_function
             - kind: function_expression
+            - kind: generator_function
         - inside:
             any:
               - kind: variable_declarator
@@ -27,7 +28,7 @@ rule:
               - kind: arguments
               - kind: pair
               - kind: return_statement
-        - has: { kind: throw_statement, stopBy: { any: [ { kind: function_declaration }, { kind: function_expression }, { kind: arrow_function }, { kind: method_definition } ] } }
+        - has: { kind: throw_statement, stopBy: { any: [ { kind: generator_function_declaration }, { kind: generator_function }, { kind: function_declaration }, { kind: function_expression }, { kind: arrow_function }, { kind: method_definition } ] } }
 ask: >-
   This function throws for a failure that its caller can legitimately expect, such as invalid input, a missing item, or a
   failed lookup, instead of returning the failure as a value.

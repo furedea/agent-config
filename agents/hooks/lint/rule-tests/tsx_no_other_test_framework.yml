@@ -20,6 +20,10 @@ invalid:
   - |
     const spy = jest.fn();
   - |
+    import { test } from "bun:test";
+  - |
+    import test from "ava";
+  - |
     export { test } from "node:test";
   - |
     export * from "mocha";

@@ -17,6 +17,10 @@ valid:
       throw new Error("request failed", { cause: error });
     });
   - |
+    request().catch(() => {
+      throw new Error("request failed");
+    });
+  - |
     request().then((value) => {
       throw new Error("bad value");
     });

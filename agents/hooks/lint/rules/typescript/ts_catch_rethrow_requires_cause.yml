@@ -18,6 +18,9 @@ rule:
                 - any:
                     - kind: arrow_function
                     - kind: function_expression
+                - any:
+                    - has: { field: parameter, regex: '.' }
+                    - has: { field: parameters, regex: '^\(\s*[^\s)]' }
                 - inside:
                     kind: arguments
                     inside:

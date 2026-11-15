@@ -75,8 +75,6 @@ jobs:
 """
 WORKFLOW_RULE_IDS = (
     "gha_job_timeout_minutes",
-    "gha_workflow_concurrency",
-    "gha_workflow_default_shell",
     "gha_workflow_permissions_deny_all",
 )
 FLAGGED_PATHS = {

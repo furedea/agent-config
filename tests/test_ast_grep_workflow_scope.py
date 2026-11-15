@@ -23,8 +23,6 @@ jobs:
 """
 WORKFLOW_RULES = {
     "gha_workflow_permissions_deny_all",
-    "gha_workflow_default_shell",
-    "gha_workflow_concurrency",
     "gha_job_timeout_minutes",
     "gha_pinned_uses_version_comment",
 }

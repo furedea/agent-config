@@ -8,8 +8,19 @@ description: >
 
 ## Working Directory and Tracing
 
-- Start every executable script with a shebang; the static rules for the shebang and `set -euo pipefail` check only
-  files that already have one, so a missing shebang is not reported.
+- Start every executable script with `#!/usr/bin/env bash`, followed by the strict-mode header:
+
+```sh
+#!/usr/bin/env bash
+set -euo pipefail
+```
+
+    - `-e`: exit on error
+    - `-u`: exit on undefined variable reference
+    - `-o pipefail`: fail if any command in a pipe chain fails
+
+  The static shebang rule checks only files that already have one, so a missing shebang is not reported. Enable all
+  three options before the first command that does work; if a section must turn one off, turn it back on afterwards.
 - Choose the working directory by responsibility. Hooks that operate on a project must use the
   target project's working directory. Resolve bundled resources relative to the script's location.
   Use `cd "$(dirname "$0")"` only when all relative operations should use that location.

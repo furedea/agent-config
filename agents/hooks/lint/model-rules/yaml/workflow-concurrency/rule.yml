@@ -1,0 +1,28 @@
+# github-actions-style: cancel stale runs of the same ref with `concurrency`. Advisory; it was a blocking ast-grep rule
+# (gha_workflow_concurrency) until review showed the trigger spellings under `on:` are too many to match by syntax.
+# zizmor's `concurrency-limits` audit covers a similar check only under its pedantic persona (ADR-0021).
+id: workflow-concurrency
+language: Yaml
+kind: noul
+subject: node
+state: located
+threshold: 0.5
+axis: file
+severity: warning
+# The workflow's `on:` key, which names the triggers whose stale runs are wasted work.
+rule:
+  all:
+    - kind: block_mapping_pair
+    - has: { field: key, regex: "^[\"']?on[\"']?$" }
+    - inside: { kind: block_mapping, stopBy: neighbor, inside: { kind: block_node, stopBy: neighbor, inside: { kind: document, stopBy: neighbor } } }
+ask: >-
+  This workflow runs on `push` or `pull_request` but declares no workflow-level `concurrency` with
+  `cancel-in-progress`, so earlier runs of the same ref keep running after a newer commit.
+criteria:
+  "true": >-
+    The triggers include `push` or `pull_request` (written as a scalar, a list, a block sequence or a mapping), and the
+    workflow has no top-level `concurrency` mapping with a `group` and `cancel-in-progress`.
+  "false": >-
+    The workflow declares a top-level `concurrency` with a group and `cancel-in-progress`, or it triggers only on events
+    where stale runs are not wasted work (for example `workflow_dispatch` or `schedule`), or it is a deploy workflow that
+    must run in order.

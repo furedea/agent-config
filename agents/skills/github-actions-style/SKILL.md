@@ -37,6 +37,14 @@ jobs:
 
 ## 3. Shell Settings
 
+Explicitly specifying `shell: bash` makes GitHub Actions run steps with `bash --noprofile --norc -eo pipefail`, which enables `pipefail`; without it, a failed command in a pipe chain (e.g. `cmd | grep`) can silently succeed. Set it at the `defaults.run` level to apply to all steps in the workflow or job:
+
+```yaml
+defaults:
+    run:
+        shell: bash
+```
+
 For debugging, add `set -x` at the top of a `run:` block to print each command and its output to stderr before execution:
 
 ```yaml
@@ -47,7 +55,13 @@ For debugging, add `set -x` at the top of a `run:` block to print each command a
 
 ## 4. Concurrency
 
-Use `cancel-in-progress: false` for deploy workflows that must run in order; cancel stale runs everywhere else.
+When the same workflow can be triggered repeatedly for the same ref (e.g. rapid commits to a PR branch), earlier runs are wasted work. Declare `concurrency` at the workflow level so stale runs are cancelled; use `cancel-in-progress: false` for deploy workflows that must run in order.
+
+```yaml
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+```
 
 ## 5. Cache Design
 

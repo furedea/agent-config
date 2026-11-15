@@ -338,7 +338,17 @@ def test_a_clone_with_a_hook_template_asks(monkeypatch: pytest.MonkeyPatch) -> N
 
 
 @pytest.mark.usefixtures("furedea_checkout")
-@pytest.mark.parametrize("key", ["init.templateDir", "core.hooksPath", "filter.pwn.smudge", "filter.pwn.process"])
+@pytest.mark.parametrize(
+    "key",
+    [
+        "init.templateDir",
+        "core.hooksPath",
+        "filter.pwn.smudge",
+        "filter.pwn.process",
+        "core.fsmonitor",
+        "core.alternateRefsCommand",
+    ],
+)
 def test_a_clone_under_a_configured_template_or_hooks_path_asks(key: str) -> None:
     subprocess.run(["git", "config", key, "hooks"], check=True)
     assert decide("gh repo clone furedea/agent-config") == "ask"
@@ -373,3 +383,19 @@ def test_a_protocol_version_setting_keeps_calls_allowed() -> None:
     subprocess.run(["git", "config", "protocol.version", "2"], check=True)
     assert decide("gh pr view 1 -R furedea/agent-config") == "allow"
     assert decide("gh repo clone furedea/agent-config") == "allow"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+@pytest.mark.parametrize("value", ["true", "false"])
+def test_a_boolean_fsmonitor_keeps_a_clone_allowed(value: str) -> None:
+    subprocess.run(["git", "config", "core.fsmonitor", value], check=True)
+    assert decide("gh repo clone furedea/agent-config") == "allow"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+@pytest.mark.parametrize(
+    ("program", "expected"), [("cat --x %f", "allow"), ("/tmp/evil %f", "ask"), ("nope-x", "ask")]
+)
+def test_a_filter_program_installed_outside_the_agent_roots_keeps_a_clone_allowed(program: str, expected: str) -> None:
+    subprocess.run(["git", "config", "filter.lfs.smudge", program], check=True)
+    assert decide("gh repo clone furedea/agent-config") == expected

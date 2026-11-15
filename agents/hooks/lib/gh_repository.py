@@ -1,5 +1,6 @@
 """Read the repository a gh word names: OWNER/REPO, HOST/OWNER/REPO, a URL, or a -R option value."""
 
+import os
 import re
 from dataclasses import dataclass
 from urllib.parse import urlsplit
@@ -7,6 +8,7 @@ from urllib.parse import urlsplit
 from gh_options import Word
 
 GITHUB_HOST = "github.com"
+PLAIN_PARAMETER = re.compile(r"\$(?:([A-Za-z_][A-Za-z0-9_]*)|\{([A-Za-z_][A-Za-z0-9_]*)\})")
 SAFE_SCHEMES = frozenset({"https", "ssh"})
 REPOSITORY_OPTIONS = frozenset({"-R", "--repo"})
 REPOSITORY_SPEC = re.compile(
@@ -61,3 +63,11 @@ def is_url(value: str) -> bool:
     """Whether gh reads the word as a URL: a scheme, a github.com path, or an ssh form."""
     lowered = value.lower()
     return "://" in value or lowered.startswith((GITHUB_HOST + "/", "git@", "ssh:"))
+
+
+def is_unsafe_once_expanded(word: Word) -> bool:
+    """Whether a plain-parameter word, expanded from the hook environment, is an option or names another host."""
+    expand = lambda part: PLAIN_PARAMETER.sub(lambda m: os.environ.get(m[1] or m[2], ""), part.strip('"'))  # noqa: E731
+    parts = re.findall(r"""'[^']*'|"[^"]*"|[^'"]+""", word.source)
+    value = "".join(part[1:-1] if part.startswith("'") else expand(part) for part in parts)
+    return value.startswith("-") or ((is_url(value) or value.count("/") >= 2) and repository(value) is None)

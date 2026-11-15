@@ -28,6 +28,7 @@ from gh_repository import (
     GITHUB_HOST,
     REPOSITORY_OPTIONS,
     Repository,
+    is_unsafe_once_expanded,
     is_url,
     repository,
     repository_words,
@@ -51,8 +52,8 @@ FIELD_KEY = re.compile(r"[A-Za-z_][A-Za-z0-9_]*=")
 DOT_SEGMENT = re.compile(r"(?:^|/)(?:\.|%2e){1,2}(?:/|$)", re.IGNORECASE)
 # --web, or a short option bundle holding -w, which opens the browser gh is configured with.
 WEB_OPTION = re.compile(r"--web(?:=.*)?|-(?!-)[A-Za-z]*w.*")
-PLAIN_PARAMETER = re.compile(r"\$(?:([A-Za-z_][A-Za-z0-9_]*)|\{([A-Za-z_][A-Za-z0-9_]*)\})")
 ISSUE_NUMBER = re.compile(r"#?[0-9]+")
+ATTACH_OPTIONS = frozenset({"--attach"})
 STDIN_PATHS = re.compile(r"/dev/stdin|/dev/fd/0|/proc/self/fd/0")
 # A run-time endpoint that starts with a literal path segment and slash, which no expansion can turn into a URL.
 LITERAL_PATH_START = re.compile(r"[\"']?/?[A-Za-z0-9_.-]+/")
@@ -179,7 +180,7 @@ def _check_read_repositories(words: tuple[Word, ...]) -> None:
             raise UnclassifiableError("a read takes an option value, URL, or computed word known only at run time")
         if word.dynamic and "/" in word.source and not OWNER_PREFIX.match(word.source):
             raise UnclassifiableError("a read takes a path whose host part is known only at run time")
-    if any(_is_unsafe_once_expanded(word) for word in words if word.dynamic):
+    if any(is_unsafe_once_expanded(word) for word in words if word.dynamic):
         raise UnclassifiableError("a read becomes an option or names another host once its parameters expand")
     for word in repository_words(words):
         if word.dynamic and not OWNER_PREFIX.match(word.source):
@@ -242,6 +243,8 @@ def _classify_write(words: tuple[Word, ...], spec: CommandSpec, single_call: boo
         return GhCall((spec.operation,), Effect.READ, reads_working_repository=True)
     effect = Effect.IRREVERSIBLE if scan.flags & spec.irreversible_flags else spec.effect
     files = scan.values_of(spec.files)
+    if any("#" in word.value for word in scan.values_of(ATTACH_OPTIONS)):
+        raise UnclassifiableError("an attachment names alt text after #, so gh sends another file than the word")
     paths = [sent_path(word.value) for word in files if not word.dynamic]
     return GhCall(
         (spec.operation,),
@@ -403,14 +406,6 @@ def _sent_files(scan: OptionScan) -> tuple[str, ...]:
 def _names_file(word: Word) -> bool:
     """Whether a -F field value reads a file, as key=@path."""
     return word.value.partition("=")[2].startswith("@")
-
-
-def _is_unsafe_once_expanded(word: Word) -> bool:
-    """Whether a plain-parameter word, expanded from the hook environment, is an option or names another host."""
-    expand = lambda part: PLAIN_PARAMETER.sub(lambda m: os.environ.get(m[1] or m[2], ""), part.strip('"'))  # noqa: E731
-    parts = re.findall(r"""'[^']*'|"[^"]*"|[^'"]+""", word.source)
-    value = "".join(part[1:-1] if part.startswith("'") else expand(part) for part in parts)
-    return value.startswith("-") or ((is_url(value) or value.count("/") >= 2) and repository(value) is None)
 
 
 def _plain_parameters(word: Word) -> bool:

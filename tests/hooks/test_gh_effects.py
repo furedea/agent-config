@@ -306,6 +306,11 @@ def test_reads_and_local_changes_are_allowed_in_any_form(command: str) -> None:
             "gh issue develop 1 -R furedea/r --checkout", "operation table", id="a linked branch checked out"
         ),
         pytest.param("echo x | xargs gh gist create --public a", "environment", id="a gh call behind xargs"),
+        pytest.param(
+            "gh issue comment 1 -R furedea/r -b ok --attach 'notes.txt#safe'",
+            "alt text",
+            id="an attachment's alt text",
+        ),
         pytest.param("xargs gh cache delete --all", "environment", id="an unlisted gh call behind xargs"),
         pytest.param("GH_REPO=other/r gh issue comment 1 -b x", "environment", id="GH_REPO on the line"),
         pytest.param("env GH_REPO=other/r gh issue comment 1 -b x", "environment", id="GH_REPO through env"),
@@ -480,3 +485,7 @@ def test_writes_that_widen_authority_promote_or_hide_their_target_ask(command: s
 
 def test_a_rest_issue_without_a_linking_field_stays_allowed() -> None:
     assert decide("gh api repos/furedea/r/issues -f title=x -f body=y") == "allow"
+
+
+def test_an_attachment_without_alt_text_stays_allowed() -> None:
+    assert decide("gh issue comment 1 -R furedea/r -b ok --attach notes.txt") == "allow"

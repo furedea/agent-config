@@ -55,7 +55,12 @@ STARTUP_FILE_VARIABLES = ("BASH_ENV", "ENV", "ZDOTDIR")
 # git settings that run a program for a transport, rewrite a URL to another transport, or enable one.
 TRANSPORT_SETTINGS = r"^(core\.(sshcommand|gitproxy)|url\..*\.(insteadof|pushinsteadof)|protocol\.(.*\.)?allow)$"
 # git settings that give a new clone hooks, or a filter program its checkout runs.
-CHECKOUT_SETTINGS = r"^(init\.templatedir|core\.hookspath|filter\..*\.(smudge|process))$"
+CHECKOUT_SETTINGS = (
+    r"^(init\.templatedir|core\.(hookspath|fsmonitor|alternaterefscommand)|filter\..*\.(smudge|process))$"
+)
+# core.fsmonitor as a boolean selects git's built-in daemon; any other value is a program git runs.
+FILTER_KEY = re.compile(r"filter\..*\.(smudge|process)", re.IGNORECASE)
+BOOLEAN_FSMONITOR = re.compile(r"core\.fsmonitor (?:true|false|yes|no|on|off|1|0)?", re.IGNORECASE)
 # The GIT_SSH_COMMAND the sandbox runtime sets: ssh through the proxy command the runtime itself provides.
 SANDBOX_SSH_COMMAND = (
     "ssh -o ControlMaster=no -o ControlPath=none -o ProxyCommand=\"/bin/sh -c 'eval "
@@ -398,7 +403,20 @@ def _clone_may_run_hooks() -> bool:
     if os.environ.get("GIT_TEMPLATE_DIR"):
         return True
     output = _git_output("config", "--get-regexp", CHECKOUT_SETTINGS)
-    return output is None or bool(output.strip())
+    if output is None:
+        return True
+    return any(not _is_installed_checkout_program(line.strip()) for line in output.splitlines() if line.strip())
+
+
+def _is_installed_checkout_program(setting: str) -> bool:
+    """Whether a checkout setting runs nothing, or a filter installed outside the agent roots, such as git-lfs."""
+    key, _, value = setting.partition(" ")
+    if BOOLEAN_FSMONITOR.fullmatch(setting):
+        return True
+    if not FILTER_KEY.fullmatch(key) or not value.split():
+        return False
+    program = value.split()[0]
+    return "/" not in program and shutil.which(program) is not None and is_outside_agent_roots(program)
 
 
 def _git_output(*arguments: str) -> str | None:

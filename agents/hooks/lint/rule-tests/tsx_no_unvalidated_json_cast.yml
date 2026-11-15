@@ -32,6 +32,16 @@ valid:
     }
   - |
     const load = (text: string): unknown => JSON.parse(text);
+  - |
+    function load(text: string): Config {
+      function* inner() {
+        return JSON.parse(text);
+      }
+      const gen = function* () {
+        return JSON.parse(text);
+      };
+      return parseConfig(text);
+    }
 invalid:
   - |
     const config = JSON.parse(text) as Config;

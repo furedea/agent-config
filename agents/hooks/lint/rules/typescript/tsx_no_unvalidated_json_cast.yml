@@ -63,6 +63,8 @@ rule:
               not: { regex: '\bunknown\b' }
             stopBy:
               any:
+                - kind: generator_function_declaration
+                - kind: generator_function
                 - kind: function_declaration
                 - kind: function_expression
                 - kind: arrow_function

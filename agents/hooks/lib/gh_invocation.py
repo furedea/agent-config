@@ -339,6 +339,8 @@ def _api_request(words: tuple[Word, ...]) -> ApiRequest:
     endpoint = scan.positionals[0]
     if endpoint.dynamic and not LITERAL_PATH_START.match(endpoint.source):
         raise UnclassifiableError("a gh api endpoint known at run time must start with a literal path segment")
+    if endpoint.dynamic and not _plain_parameters(endpoint):
+        raise UnclassifiableError("a gh api endpoint holds a substitution or parameter operator")
     if endpoint.dynamic and re.search(r"\$[A-Za-z_{(]|`", endpoint.source.partition("?")[2]):
         raise UnclassifiableError("a gh api query string holds a parameter expansion")
     if any(word.dynamic for word in scan.values_of(METHOD_OPTIONS | HEADER_OPTIONS | {"--hostname"})):

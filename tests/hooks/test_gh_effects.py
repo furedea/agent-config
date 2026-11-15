@@ -405,6 +405,7 @@ def test_reads_and_local_changes_are_allowed_in_any_form(command: str) -> None:
         ),
         pytest.param("gh api http://api.github.com/user", "another host", id="a plain HTTP endpoint"),
         pytest.param('gh api "search/issues?q=$AWS_ACCESS_KEY_ID"', "query string", id="a parameter in a query"),
+        pytest.param('gh api "repos/furedea/r/issues/$(cat .env)"', "substitution", id="a substitution in a path"),
         pytest.param(
             "gh run list --commit $(git rev-parse HEAD) --json databaseId,name,status",
             "computed word",

@@ -14,10 +14,6 @@ LOGS = '"repos/o/r/actions/jobs/$J/logs"'
     "command",
     [
         pytest.param(
-            'gh api --allow-escape-sequences "repos/o/r/actions/jobs/${J%% *}/logs"',
-            id="a job log read through a quoted variable",
-        ),
-        pytest.param(
             "gh api --allow-escape-sequences repos/o/r/actions/jobs/1/logs",
             id="a job log read that allows escape sequences",
         ),
@@ -54,6 +50,10 @@ def test_read_only_gh_api_forms_pass(command: str) -> None:
             id="an unquoted variable holding a method option in a log read",
         ),
         pytest.param(f"f=x; gh api repos/o/r/contents/$f {RAW}", id="an unquoted variable assigned on the line"),
+        pytest.param(
+            'gh api --allow-escape-sequences "repos/o/r/actions/jobs/${J%% *}/logs"',
+            id="a parameter operator in a quoted endpoint",
+        ),
         pytest.param(f"gh api repos/o/r/contents/$f {RAW} | head", id="an unquoted variable in a pipeline"),
         pytest.param("gh api repos/o/r/git/trees/HEAD?recursive=1", id="an unquoted glob in the endpoint"),
         pytest.param(f"gh api --allow-escape-sequences {LOGS} -X DELETE", id="a method option after a log read"),

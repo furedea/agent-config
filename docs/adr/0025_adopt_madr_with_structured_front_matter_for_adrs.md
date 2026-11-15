@@ -34,8 +34,8 @@ for rationale depth, which matters more here than writing cost because agents wr
 * New ADRs start from the vendored minimal template in `agents/skills/adr/references/template.md` and use the title
   line `# <short title>` without an ID. The full-variant sections are added only when needed.
 * Existing ADRs keep their bodies byte for byte; only their metadata moved into front matter. Lines that fit no key
-  became `related` entries, with a YAML comment where they carried prose: an ADR of `furedea/dotfiles` is written
-  `dotfiles/ADR-NNNN`.
+  became `related` entries, with a YAML comment where they carried prose. An ADR of another repository is written
+  `dotfiles/ADR-NNNN` in any key, so a check resolves only the IDs without a prefix.
 * Verification is added by later changes, each placed at the earliest tier that can judge it (ADR-0023): markdownlint
   MD043 scoped to `docs/adr/` for the section structure, `lychee --offline` for links between ADRs, a small front-matter
   check for ID uniqueness and supersession consistency, a CI check that the bodies of accepted ADRs do not change, and

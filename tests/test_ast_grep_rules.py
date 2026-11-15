@@ -154,3 +154,16 @@ def test_a_file_name_that_looks_like_an_option_is_scanned_as_a_path(tmp_path: Pa
 
     assert static_rule_scan.diagnostics([option_like]) == ()
     assert option_like.read_text() == "package a\n"
+
+
+NOTE_PATTERN = re.compile(r"^note:\s*\S", re.MULTILINE)
+ERROR_PATTERN = re.compile(r"^severity:\s*error\s*$", re.MULTILINE)
+
+
+@pytest.mark.parametrize(
+    "rule_file",
+    [path for path in RULE_FILES if ERROR_PATTERN.search(path.read_text())],
+    ids=lambda path: path.stem,
+)
+def test_blocking_rule_states_its_fix_in_a_note(rule_file: Path) -> None:
+    assert NOTE_PATTERN.search(rule_file.read_text())

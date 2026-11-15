@@ -1,7 +1,8 @@
 id: go_no_vague_directory_name
 language: go
 severity: error
-message: "Do not put packages under util or common. Name each package directory by its domain."
+message: "A package directory named util or common says nothing about what the package does, so callers cannot tell what it offers."
+note: "Move the package to a directory named after its domain, for example internal/util/strings -> internal/slug, and update the import paths."
 rule:
   kind: source_file
 files:

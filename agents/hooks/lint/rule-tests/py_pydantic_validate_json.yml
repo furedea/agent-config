@@ -1,6 +1,11 @@
 id: py_pydantic_validate_json
 valid:
   - |
+    def read(raw):
+        data = json.loads(raw)
+        data = load_from_database()
+        return Order.model_validate(data)
+  - |
     order = Order.model_validate_json(payload)
   - |
     order = Order.model_validate(data)

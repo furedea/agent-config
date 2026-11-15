@@ -40,7 +40,7 @@ rule:
             has:
               kind: import_from_statement
               regex: (?s)^from\s+json\s+import\b.*\bloads\b
-    # passed through a variable assigned from the loader in the same function
+    # passed through a variable assigned from the loader in the same function, and not reassigned
     - all:
         - any:
             - pattern: $MODEL.model_validate($DATA)
@@ -48,12 +48,21 @@ rule:
         - inside:
             kind: function_definition
             stopBy: end
-            has:
-              stopBy: end
-              any:
-                - pattern: $DATA = json.loads($$$ARGS)
-                - pattern: $DATA = orjson.loads($$$ARGS)
-                - pattern: $DATA = ujson.loads($$$ARGS)
+            all:
+              - has:
+                  stopBy: end
+                  any:
+                    - pattern: $DATA = json.loads($$$ARGS)
+                    - pattern: $DATA = orjson.loads($$$ARGS)
+                    - pattern: $DATA = ujson.loads($$$ARGS)
+              - not:
+                  has:
+                    stopBy: end
+                    kind: assignment
+                    all:
+                      - pattern: $DATA = $OTHER
+                      - not:
+                          regex: loads\(
     - all:
         - any:
             - pattern: $MODEL.model_validate($DATA)
@@ -61,9 +70,19 @@ rule:
         - inside:
             kind: function_definition
             stopBy: end
-            has:
-              stopBy: end
-              pattern: $DATA = $ALIAS.loads($$$ARGS)
+            all:
+              - has:
+                  stopBy: end
+                  any:
+                    - pattern: $DATA = $ALIAS.loads($$$ARGS)
+              - not:
+                  has:
+                    stopBy: end
+                    kind: assignment
+                    all:
+                      - pattern: $DATA = $OTHER
+                      - not:
+                          regex: loads\(
         - inside:
             kind: module
             stopBy: end
@@ -76,9 +95,19 @@ rule:
         - inside:
             kind: function_definition
             stopBy: end
-            has:
-              stopBy: end
-              pattern: $DATA = $LOADER($$$ARGS)
+            all:
+              - has:
+                  stopBy: end
+                  any:
+                    - pattern: $DATA = $LOADER($$$ARGS)
+              - not:
+                  has:
+                    stopBy: end
+                    kind: assignment
+                    all:
+                      - pattern: $DATA = $OTHER
+                      - not:
+                          regex: loads\(
         - inside:
             kind: module
             stopBy: end
@@ -91,9 +120,19 @@ rule:
         - inside:
             kind: function_definition
             stopBy: end
-            has:
-              stopBy: end
-              pattern: $DATA = loads($$$ARGS)
+            all:
+              - has:
+                  stopBy: end
+                  any:
+                    - pattern: $DATA = loads($$$ARGS)
+              - not:
+                  has:
+                    stopBy: end
+                    kind: assignment
+                    all:
+                      - pattern: $DATA = $OTHER
+                      - not:
+                          regex: loads\(
         - inside:
             kind: module
             stopBy: end

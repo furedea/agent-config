@@ -36,8 +36,12 @@ rule:
                     any:
                       - kind: attribute
                         regex: ^self\.
-                      - has:
-                          stopBy: end
+                      - kind: pattern_list
+                        has:
+                          kind: attribute
+                          regex: ^self\.
+                      - kind: tuple_pattern
+                        has:
                           kind: attribute
                           regex: ^self\.
     - not:

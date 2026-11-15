@@ -1,6 +1,10 @@
 id: py_plain_class_slots
 valid:
   - |
+    class Registry:
+        def __init__(self) -> None:
+            self.cache["key"] = 1
+  - |
     from functools import cached_property as cached
 
 

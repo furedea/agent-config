@@ -98,6 +98,19 @@ rule:
               has:
                 pattern: import pytest as $ALIAS
           - inside:
+              kind: decorated_definition
+              stopBy: end
+              has:
+                kind: decorator
+                has:
+                  pattern: $ALIAS.mark.usefixtures("anyio_backend")
+      - all:
+          - inside:
+              kind: module
+              stopBy: end
+              has:
+                pattern: import pytest as $ALIAS
+          - inside:
               kind: module
               stopBy: end
               has:

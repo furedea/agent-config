@@ -1,6 +1,7 @@
 """Find the text a builtin turns into code, and any change to what a command name runs."""
 
 import re
+import secrets
 from collections.abc import Callable
 
 from shell_words import UnsupportedSyntaxError, nodes
@@ -21,7 +22,8 @@ NAME_OPTION = re.compile(r"-[A-Za-z]*[vAa]")
 # The options trap takes; any other word before the signals is the action, as zsh reads it.
 TRAP_OPTIONS = frozenset({"-l", "-p", "-P"})
 # A function the text of eval or trap is judged inside, as it inherits input and arguments the hook does not see.
-CODE_BODY = "__guard_code_text"
+# Its name carries a nonce, so a command cannot define a function the hook would mistake for it.
+CODE_BODY = f"__guard_code_text_{secrets.token_hex(8)}"
 # The prefix of an environment variable bash imports as a function.
 IMPORTED_FUNCTION = "BASH_FUNC_"
 

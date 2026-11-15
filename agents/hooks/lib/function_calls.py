@@ -99,8 +99,10 @@ def _defined_name(definition: dict) -> str:
 
 
 def _may_change_ifs(records: tuple[dict, ...], data: bytes) -> bool:
-    """Whether IFS is named however quoted or spelled, or a declaration's name or nameref is known only at run time."""
+    """Whether IFS may be named: however quoted, escaped, or spelled, or by a name known only at run time."""
     if "IFS" in SPELLING.sub("", data.decode()):
+        return True
+    if any(record.get("Type") in {"SglQuoted", "DblQuoted"} and record.get("Dollar") for record in records):
         return True
     names = (record.get("Name") or record.get("Param") for record in records)
     if any(isinstance(name, dict) and name.get("Value") == "IFS" for name in names):

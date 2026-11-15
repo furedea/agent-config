@@ -417,6 +417,7 @@ def test_any_spelling_that_names_ifs_beside_a_function_asks(kind: str, command: 
         'f(){ command shift; find . "$1"; }; f x -delete',
         "eval -- 'git commit --no-verify -m x'",
         'f(){ find . "$1"; }; f -delete',
+        '__guard_code_text(){ find . "$1"; }; __guard_code_text -delete',
     ],
 )
 def test_denials_see_through_builtin_prefixes_and_eval_option_ends(command: str) -> None:
@@ -449,6 +450,8 @@ def test_denials_see_through_builtin_prefixes_and_eval_option_ends(command: str)
         "printf -v {I,}FS x; f(){ find . $1; }; f 'ax-delete'",
         "(( IFS = 1 )); f(){ find . $1; }; f 'a1-delete'",
         ". ./env.sh; f(){ find . $1; }; f 'ax-delete'",
+        "printf -v $'I\\x46S' x; f(){ find . $1; }; f 'ax-delete'",
+        "declare $'I\\x46S=x'; f(){ find . $1; }; f 'ax-delete'",
     ],
 )
 def test_forms_where_arguments_input_or_builtins_cannot_be_followed_ask(

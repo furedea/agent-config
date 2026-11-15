@@ -61,6 +61,11 @@ rule:
         all:
           - regex: ^set\s
           - regex: (^|\s)\+[A-Za-z]*[eu]|\+o\s+(errexit|nounset|pipefail)
+          # Only a disabling `set` that comes after another `set`: one that comes first is followed by the enabling one.
+          - follows:
+              stopBy: end
+              kind: command
+              regex: ^set\s
           - not:
               follows:
                 stopBy: end

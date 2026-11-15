@@ -2,6 +2,11 @@ id: bash_strict_mode_header
 valid:
   - |
     #!/usr/bin/env bash
+    set +e
+    set -euo pipefail
+    echo hi
+  - |
+    #!/usr/bin/env bash
     set -euo pipefail
     echo hi
   - |

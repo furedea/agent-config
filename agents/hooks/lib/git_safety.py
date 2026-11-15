@@ -239,7 +239,7 @@ def environment_reason(arguments: tuple[str, ...], assignments: tuple[str, ...])
     settings and is refused, GIT_CONFIG_KEY_<n> only when it names a key that hook_config_key refuses.
     """
     program = Path(arguments[0]).name if arguments else ""
-    words = tuple(argument for argument in arguments[1:] if program == "env")
+    words = env_assignments(arguments[1:]) if program == "env" else ()
     for word in (*assignments, *words):
         name, separator, value = word.partition("=")
         key = value.strip("'\"")
@@ -248,6 +248,22 @@ def environment_reason(arguments: tuple[str, ...], assignments: tuple[str, ...])
         ):
             return f"{name} {HOOK_SKIP_SUFFIX}"
     return ""
+
+
+def env_assignments(arguments: tuple[str, ...]) -> tuple[str, ...]:
+    """The NAME=value words env sets before the command it runs, skipping its options; the command's words are not."""
+    assignments: list[str] = []
+    index = 0
+    while index < len(arguments):
+        argument = arguments[index]
+        if argument in {"-u", "-C", "-S"}:
+            index += 1
+        elif re.match(r"[A-Za-z_][A-Za-z0-9_]*=", argument):
+            assignments.append(argument)
+        elif not argument.startswith("-"):
+            break
+        index += 1
+    return tuple(assignments)
 
 
 def hides_hooks(key: str) -> bool:
@@ -280,6 +296,15 @@ def hook_skipping_option(verb: str, arguments: tuple[str, ...]) -> str:
     reading_value |= ATTACHED_VALUE_FLAGS.get(verb, frozenset())
     skipped = (skipped_in(arguments[index], skipping, reading_value) for index in option_positions(verb, arguments))
     return next(filter(None, skipped), "")
+
+
+def appends_to_hook_verb(arguments: tuple[str, ...]) -> bool:
+    """Whether the command is a Git verb with hook-skipping options, run by xargs, which appends words from input."""
+    try:
+        _, command = git_arguments(arguments)
+    except ValueError:
+        return False
+    return bool(command) and Path(arguments[0]).name == "git" and command[0] in HOOK_SKIPPING_OPTIONS
 
 
 def hides_hook_skip(verb: str, arguments: tuple[str, ...], dynamic: tuple[bool, ...]) -> bool:

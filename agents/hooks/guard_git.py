@@ -62,6 +62,11 @@ def inspect(command: str) -> Verdict:
             )
         if reason := _segment_reason(item):
             raise ValueError(reason)
+        if item.appends_input and git_safety.appends_to_hook_verb(item.arguments):
+            preview = shell_syntax.command_preview(item.raw)
+            return hook_decision.ask(
+                f"Needs review: xargs may add a hook-skipping option.\n\nSegment: {preview}", "syntax"
+            )
     return hook_decision.ALLOW
 
 

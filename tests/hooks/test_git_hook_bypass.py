@@ -184,3 +184,37 @@ def test_a_run_time_operand_without_a_forbidden_option_is_still_reviewed() -> No
 @pytest.mark.usefixtures("isolated_project")
 def test_a_hook_skip_in_a_later_segment_is_denied_before_an_earlier_review(command: str) -> None:
     assert guard.decide({"tool_input": {"command": command}}).decision == "deny"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "env git commit -m GIT_CONFIG_PARAMETERS=x",
+        "env python tool.py GIT_CONFIG_KEY_0=core.hooksPath",
+        "env -u HOME git commit -m GIT_CONFIG_KEY_0=core.hooksPath",
+    ],
+)
+@pytest.mark.usefixtures("isolated_project")
+def test_env_words_after_the_wrapped_command_are_its_arguments_not_settings(command: str) -> None:
+    assert guard.decide({"tool_input": {"command": command}}).decision == "allow"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "env -u HOME GIT_CONFIG_PARAMETERS=x git commit -m y",
+        "env -i GIT_CONFIG_KEY_0=core.hooksPath git push origin b",
+    ],
+)
+@pytest.mark.usefixtures("isolated_project")
+def test_env_settings_after_env_options_are_still_read(command: str) -> None:
+    assert guard.decide({"tool_input": {"command": command}}).decision == "deny"
+
+
+@pytest.mark.parametrize(
+    "command",
+    ["printf '%s\\n' --no-verify | xargs git commit -m x", "echo b | xargs git merge topic"],
+)
+@pytest.mark.usefixtures("isolated_project")
+def test_xargs_input_that_could_add_a_skipping_option_is_reviewed(command: str) -> None:
+    assert guard.decide({"tool_input": {"command": command}}).decision == "ask"

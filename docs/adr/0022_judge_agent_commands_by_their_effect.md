@@ -76,7 +76,17 @@ Settings changes are the owner's decision, so this ADR only recommends them:
     and any `develop` or `release/*` branch), not on `main` alone. This, or the future Gateway, is
     the enforcement point that stops `gh pr merge` without the owner even if a prompt is bypassed.
 
-Merges into a branch the ruleset does not cover stay guarded only by the class D prompt.
+The ruleset stops the agent's merge only under two conditions, both settings the owner decides:
+
+- A required approval is not an owner approval by itself, because any writer can approve unless
+    the rule restricts who counts. The ruleset must require code-owner review with a `CODEOWNERS`
+    entry for the owner (this repository has none yet), or otherwise restrict approvals to the
+    owner.
+- The agent's GitHub App must not be a bypass actor of the ruleset, since a bypass actor merges
+    without the rules applying.
+
+Merges into a branch the ruleset does not cover, or while either condition fails, stay guarded
+only by the class D prompt.
 
 ## Measurement target
 

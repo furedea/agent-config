@@ -81,6 +81,24 @@ def decide(command: str) -> str:
             id="a body decoded by printf escapes",
         ),
         pytest.param(
+            'gh issue comment 1 -R furedea/r -b "$(printf %s gh p_x)"',
+            "does more than print",
+            id="a body joined by printf repeating its format",
+        ),
+        pytest.param(
+            'gh issue comment 1 -R furedea/r -b "$(echo ghp_)$(echo x)"',
+            "joins",
+            id="adjacent substitutions",
+        ),
+        pytest.param(
+            'gh issue comment 1 -R furedea/r -b "ghp_$(echo x)"', "joins", id="text joined to a substitution"
+        ),
+        pytest.param(
+            "gh pr edit 242 --body \"$(printf '%s' 'pass ${a[@]} through')\"",
+            "does more than print",
+            id="a body printf formats",
+        ),
+        pytest.param(
             'gh issue comment 1 -R furedea/r -b "$(echo -e x)"', "does more than print", id="a body from echo -e"
         ),
         pytest.param(

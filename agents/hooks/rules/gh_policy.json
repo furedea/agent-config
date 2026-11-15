@@ -475,11 +475,21 @@
     },
     "run download": {
       "operation": "run.download",
-      "effect": "read"
+      "effect": "local",
+      "values": [
+        "-D",
+        "--dir",
+        "-n",
+        "--name",
+        "-p",
+        "--pattern",
+        "-R",
+        "--repo"
+      ]
     },
     "run rerun": {
       "operation": "run.rerun",
-      "effect": "reversible",
+      "effect": "irreversible",
       "values": [
         "-j",
         "--job"
@@ -630,13 +640,13 @@
       "method": "POST",
       "path": "repos/{owner}/{repo}/actions/runs/{number}/rerun",
       "operation": "run.rerun",
-      "effect": "reversible"
+      "effect": "irreversible"
     },
     {
       "method": "POST",
       "path": "repos/{owner}/{repo}/actions/runs/{number}/rerun-failed-jobs",
       "operation": "run.rerun",
-      "effect": "reversible"
+      "effect": "irreversible"
     },
     {
       "method": "POST",

@@ -270,6 +270,18 @@ def _check_sent_values(words: tuple[Word, ...], single_call: bool) -> None:
             raise UnclassifiableError("a value sent to GitHub holds a parameter expansion")
         if word.dynamic and not single_call:
             raise UnclassifiableError("a value sent to GitHub is built by a command that does more than print")
+        if word.dynamic and not _is_one_substitution(word.value.partition("=")[2] or word.value):
+            raise UnclassifiableError("a value sent to GitHub joins a substitution's output to other text")
+
+
+def _is_one_substitution(source: str) -> bool:
+    """Whether a word is exactly one command substitution, so no output joins other text the scan saw apart."""
+    tree = shell_syntax.syntax_tree(": " + source)
+    arguments = tree.get("Stmts", [{}])[0].get("Cmd", {}).get("Args", [])
+    parts = arguments[1].get("Parts", []) if len(arguments) == 2 else []
+    if len(parts) == 1 and parts[0].get("Type") == "DblQuoted":
+        parts = parts[0].get("Parts", [])
+    return len(parts) == 1 and parts[0].get("Type") == "CmdSubst"
 
 
 def _classify_api(words: tuple[Word, ...], catalog: Catalog, single_call: bool) -> GhCall:

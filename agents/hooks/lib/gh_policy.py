@@ -173,8 +173,11 @@ def _only_prints(command: shell_syntax.Command) -> bool:
     if any(not QUOTED_HEREDOC.match(redirect) for redirect in input_redirects(command)):
         return False
     if name != "cat":
-        # printf and echo -e turn escapes such as \147 into text the scan of the source never sees.
-        return not any("\\" in argument or "%b" in argument or argument == "-e" for argument in command.arguments)
+        # printf repeats and joins its format, and printf and echo -e turn escapes such as \147 into text
+        # the scan of the source never sees; only a lone literal format or escape-free echo prints as written.
+        if any("\\" in argument or argument == "-e" for argument in command.arguments):
+            return False
+        return name != "printf" or (len(command.arguments) == 2 and "%" not in command.arguments[1])
     redirects = input_redirects(command)
     return len(command.arguments) == 1 and len(redirects) == 1 and bool(QUOTED_HEREDOC.match(redirects[0]))
 

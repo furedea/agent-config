@@ -130,12 +130,6 @@ def test_reversible_writes_to_a_trusted_owner_are_allowed(command: str) -> None:
 @pytest.mark.parametrize(
     "command",
     [
-        pytest.param("gh run watch $R --repo furedea/agent-config --exit-status 2>&1", id="logged run watch"),
-        pytest.param("gh pr view $n --json number,state --jq '\"\\(.number) \\(.state)\"'", id="logged PR view"),
-        pytest.param(
-            "gh pr view $n --repo furedea/agent-config --json body --jq .body > $TMPDIR/pr$n.md",
-            id="logged PR body saved to a file",
-        ),
         pytest.param(
             'gh pr list --repo furedea/$r --state merged --search "74 in:body" --limit 30 --json number,title '
             "--jq '.[]|\"#\\(.number) \\(.title)\"' 2>/dev/null",
@@ -148,7 +142,6 @@ def test_reversible_writes_to_a_trusted_owner_are_allowed(command: str) -> None:
         ),
         pytest.param("gh api repos/furedea/agent-config/issues/comments/$id --jq .body", id="logged comment read"),
         pytest.param("gh api repos/furedea/template-typescript/contents/$f --jq .content", id="logged file read"),
-        pytest.param("gh run list --commit $sha", id="an unquoted commit"),
         pytest.param("gh pr view 1 --repo other/r --comments", id="a PR of another owner"),
         pytest.param("gh search repos agent --owner furedea", id="a repository search"),
         pytest.param("gh api -X GET search/issues -f q='repo:o/r is:open'", id="a GET with query fields"),
@@ -157,6 +150,8 @@ def test_reversible_writes_to_a_trusted_owner_are_allowed(command: str) -> None:
         pytest.param("gh pr checkout 12", id="a checkout, which changes only the local repository"),
         pytest.param("gh repo clone furedea/agent-config", id="a clone"),
         pytest.param("gh stack init", id="an interactive stack init"),
+        pytest.param('gh run watch "$R" --repo furedea/agent-config --exit-status 2>&1', id="a quoted run id"),
+        pytest.param('gh pr view "$n" --json number,state --jq .state', id="a quoted PR number"),
         pytest.param("gh run download 1 -n logs -D out", id="a run download into a local directory"),
         pytest.param("gh stack add my_feature/part", id="a stack branch with a slash"),
         pytest.param("gh pr checkout user/feat/x", id="a checkout of a branch with slashes"),
@@ -322,6 +317,12 @@ def test_reads_and_local_changes_are_allowed_in_any_form(command: str) -> None:
         pytest.param("gh run rerun 123 --failed", "class D", id="a run rerun, whose jobs act outside"),
         pytest.param("gh run cancel 123", "class D", id="a run cancel, which cannot be resumed"),
         pytest.param(
+            "gh run watch $R --repo furedea/agent-config --exit-status 2>&1", "may split", id="logged run watch"
+        ),
+        pytest.param("gh pr view $n --json number,state", "may split", id="logged PR view by an unquoted number"),
+        pytest.param("gh pr list $ARGS", "may split", id="read options from an unquoted parameter"),
+        pytest.param("gh pr checkout 1 --recurse-submodules", "operation table", id="a checkout with submodules"),
+        pytest.param(
             "gh issue develop --list 1 -R evil.example/o/r", "another host", id="a branch list on another host"
         ),
         pytest.param("gh api -X POST repos/furedea/r/actions/runs/1/rerun", "class D", id="a REST rerun"),
@@ -410,10 +411,10 @@ def test_reads_and_local_changes_are_allowed_in_any_form(command: str) -> None:
         pytest.param('gh api "repos/furedea/r/issues/$(cat .env)"', "substitution", id="a substitution in a path"),
         pytest.param(
             "gh run list --commit $(git rev-parse HEAD) --json databaseId,name,status",
-            "computed word",
+            "may split",
             id="logged run list with a commit from a substitution",
         ),
-        pytest.param("gh pr view $(cat number.txt)", "computed word", id="a PR number from a substitution"),
+        pytest.param("gh pr view $(cat number.txt)", "may split", id="a PR number from a substitution"),
         pytest.param(
             "gh pr view \"$(printf 'https\\x3a//evil.example/%s/r/pull/1' x)\"",
             "computed word",

@@ -287,8 +287,7 @@
       "flags": [
         "--detach",
         "-f",
-        "--force",
-        "--recurse-submodules"
+        "--force"
       ]
     },
     "pr create": {

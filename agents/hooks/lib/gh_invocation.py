@@ -165,6 +165,8 @@ def _check_read_repositories(words: tuple[Word, ...]) -> None:
     owner, a name without a dot, as a host.
     """
     for word in words:
+        if word.spreading:
+            raise UnclassifiableError("a read takes a word that may split into options at run time")
         if word.dynamic and (word.source.startswith("-") or _may_name_url(word) or not _plain_parameters(word)):
             raise UnclassifiableError("a read takes an option value, URL, or computed word known only at run time")
         if word.dynamic and "/" in word.source and not OWNER_PREFIX.match(word.source):

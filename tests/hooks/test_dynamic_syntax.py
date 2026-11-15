@@ -408,3 +408,18 @@ def test_an_unquoted_argument_whose_globbing_or_splitting_the_respelling_cannot_
 )
 def test_any_spelling_that_names_ifs_beside_a_function_asks(kind: str, command: str) -> None:
     assert decide(kind, command).decision == "ask"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "for d in a b; do sh < script.sh; done",
+        "while read -r l; do bash < script.sh; done < list",
+        "trap 'sh < script.sh' EXIT",
+        "f(){ sh < script.sh; }; f",
+    ],
+)
+def test_a_body_reads_a_relative_script_where_nothing_changes_directory(command: str, isolated_project: Path) -> None:
+    (isolated_project / "script.sh").write_text("echo safe\n")
+    (isolated_project / "list").write_text("x\n")
+    assert decide("allowed", command).decision == "allow"

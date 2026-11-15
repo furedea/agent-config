@@ -17,7 +17,8 @@ EXPANSIONS = frozenset({"ParamExp", "CmdSubst", "ProcSubst", "ArithmExp"})
 PLAIN_FIELDS = re.compile(r"[A-Za-z0-9_./:=@%+,\s-]*")
 # Builtins and wrappers whose meaning the hook relies on; a function of that name would change it.
 RELIED_NAMES = frozenset(
-    "echo printf print cd pushd popd shift set getopts builtin command eval trap alias hash source . exec".split()
+    "echo printf print cd pushd popd shift set getopts builtin command eval trap alias hash source . exec noglob "
+    "nocorrect -".split()
 ) | frozenset(WRAPPERS)
 # Names the parser reads as declarations, arithmetic, or keywords rather than calls, so their calls go unseen.
 KEYWORD_NAMES = frozenset("declare local export typeset readonly nameref integer float let time coproc".split())
@@ -31,7 +32,7 @@ ARGUMENT_ARRAYS = frozenset({"argv", "BASH_ARGV", "BASH_ARGC", "_"})
 # zsh precommand modifiers, which run the function named after them; builtin and command skip functions.
 FUNCTION_MODIFIERS = frozenset({"noglob", "nocorrect", "-"})
 # Builtins that assign a parameter named by an operand or an option, which may hold or replace the arguments.
-NAME_ASSIGNERS = ASSIGNING_BUILTINS | frozenset({"zformat", "zstyle", "zregexparse", "zparseopts"})
+NAME_ASSIGNERS = ASSIGNING_BUILTINS | frozenset({"zformat", "zstyle", "zregexparse", "zparseopts", "getln", "popln"})
 # Words before a builtin that still run it, as in builtin shift, command -p shift, or zsh's noglob shift.
 BUILTIN_PREFIXES = frozenset({"builtin", "command", "noglob", "nocorrect", "-"})
 # Text eval or trap runs that may read or replace a function's arguments, at any depth of eval, once unquoted.
@@ -231,7 +232,10 @@ def _followed(body: dict, records: tuple[dict, ...], data: bytes) -> dict:
             "Type" not in node and isinstance(node.get("Name"), dict) and node["Name"].get("Value") in ARGUMENT_ARRAYS
             for node in nodes(body)
         )
-        or any(_assigns_arguments(statement, copies, data) for statement in _statements(body))
+        or (
+            any(_reads(part, copies) for part in nodes(body))
+            and any(_assigns_parameter(statement, data) for statement in _statements(body))
+        )
         or any(part.get("Type") == "ParamExp" and part.get("Excl") for part in nodes(body))
         or any(_runs_unseen(call, copies, data) for call in _calls(body, data))
         or any(_iterates_arguments(node, copies) for node in nodes(body) if node.get("Type") == "WordIter")
@@ -239,21 +243,28 @@ def _followed(body: dict, records: tuple[dict, ...], data: bytes) -> dict:
         or any(_copied(node) is None for node in reading)
         or _reassigned(copies, records, data)
         or not _attributed(body, data).isdisjoint(copies)
+        or _leaks(copies, body, data)
     )
     if unfollowed:
         raise UnsupportedSyntaxError("a function reading its arguments this way requires explicit review", "expansion")
     return body
 
 
-def _assigns_arguments(statement: dict, copies: dict[str, str], data: bytes) -> bool:
-    """Whether a builtin such as printf -v or read copies the arguments where the respelling cannot follow."""
+def _assigns_parameter(statement: dict, data: bytes) -> bool:
+    """Whether a builtin such as printf -v or read assigns a parameter, which may take the arguments by any path."""
     if not statement["Cmd"].get("Args"):
         return False
     words = _program(statement["Cmd"], data)
     assigning = words[0] in NAME_ASSIGNERS - {"print", "printf"} or (
         words[0] in {"print", "printf"} and any(map(NAME_OPTION.fullmatch, words))
     )
-    return assigning and any(_reads(part, copies) for part in nodes(_respelled_nodes(statement)))
+    return assigning
+
+
+def _leaks(copies: dict[str, str], body: dict, data: bytes) -> bool:
+    """Whether text outside the body expands a copy, which keeps the argument once the function returns."""
+    outside = (data[: body["Pos"]["Offset"]] + b" " + data[body["End"]["Offset"] :]).decode()
+    return any(re.search(rf"\$\{{?!?{re.escape(name)}(?!\w)", outside) for name in copies)
 
 
 def _attributed(body: dict, data: bytes) -> set[str]:

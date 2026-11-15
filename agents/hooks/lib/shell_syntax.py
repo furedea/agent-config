@@ -33,7 +33,7 @@ ALLOWED_NODES = frozenset(
     }
 )
 DEFERRING_NODES = frozenset({"FuncDecl", "ForClause", "WhileClause"})
-DIRECTORY_CHANGES = frozenset({"cd", "pushd", "popd"})
+DIRECTORY_CHANGES = frozenset({"cd", "pushd", "popd", "chdir"})
 SHELLS = frozenset("ash bash dash hush ksh mksh oksh pdksh posh rbash sh yash zsh".split())
 # Shells whose syntax is not bash's. However one is invoked, the call asks: the inspection cannot tell
 # what such a shell would run, and each option or syntax it adds is another way to hand it a script.
@@ -205,7 +205,7 @@ def parse(source: str, depth: int = 0, directories: tuple[Path | None, ...] = ()
         for layer in layers:
             directories = reached_directories(directories, layer)
         deferred = id(node) in later_calls or any(Path(layer.arguments[0]).name == "trap" for layer in layers)
-        reachable = (*directories, None) if deferred else directories
+        reachable = (*directories, None) if deferred and shell_input.moves_directory(source) else directories
         innermost = layers[-1]
         name = shell_name(Path(innermost.arguments[0]).name)
         scripts = [(script, layer.wrapper_depth + 1) for layer in layers for script in shell_scripts(layer)]

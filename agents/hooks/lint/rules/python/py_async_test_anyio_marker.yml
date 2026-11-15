@@ -164,3 +164,17 @@ rule:
               kind: expression_statement
               has:
                 matches: anyio_pytestmark
+      - all:
+          - inside:
+              kind: module
+              stopBy: end
+              has:
+                pattern: import pytest as $ALIAS
+          - inside:
+              kind: class_definition
+              stopBy: end
+              has:
+                kind: block
+                has:
+                  kind: expression_statement
+                  regex: ^pytestmark\s*=.*\w+\.mark\.anyio\b

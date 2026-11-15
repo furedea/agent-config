@@ -1,6 +1,11 @@
 id: py_pydantic_validate_json
 valid:
   - |
+    def read(raw_json, raw_toml):
+        data = json.loads(raw_json)
+        data = tomllib.loads(raw_toml)
+        return Order.model_validate(data)
+  - |
     def read(raw):
         data = json.loads(raw)
         data = load_from_database()

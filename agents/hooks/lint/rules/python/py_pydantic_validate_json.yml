@@ -62,7 +62,11 @@ rule:
                     all:
                       - pattern: $DATA = $OTHER
                       - not:
-                          regex: loads\(
+                          any:
+                            - pattern: $DATA = json.loads($$$LA)
+                            - pattern: $DATA = orjson.loads($$$LA)
+                            - pattern: $DATA = ujson.loads($$$LA)
+                            - pattern: $DATA = loads($$$LA)
     - all:
         - any:
             - pattern: $MODEL.model_validate($DATA)
@@ -82,7 +86,12 @@ rule:
                     all:
                       - pattern: $DATA = $OTHER
                       - not:
-                          regex: loads\(
+                          any:
+                            - pattern: $DATA = json.loads($$$LA)
+                            - pattern: $DATA = orjson.loads($$$LA)
+                            - pattern: $DATA = ujson.loads($$$LA)
+                            - pattern: $DATA = loads($$$LA)
+                            - pattern: $DATA = $ALIAS.loads($$$LA)
         - inside:
             kind: module
             stopBy: end
@@ -107,7 +116,12 @@ rule:
                     all:
                       - pattern: $DATA = $OTHER
                       - not:
-                          regex: loads\(
+                          any:
+                            - pattern: $DATA = json.loads($$$LA)
+                            - pattern: $DATA = orjson.loads($$$LA)
+                            - pattern: $DATA = ujson.loads($$$LA)
+                            - pattern: $DATA = loads($$$LA)
+                            - pattern: $DATA = $LOADER($$$LA)
         - inside:
             kind: module
             stopBy: end
@@ -132,7 +146,11 @@ rule:
                     all:
                       - pattern: $DATA = $OTHER
                       - not:
-                          regex: loads\(
+                          any:
+                            - pattern: $DATA = json.loads($$$LA)
+                            - pattern: $DATA = orjson.loads($$$LA)
+                            - pattern: $DATA = ujson.loads($$$LA)
+                            - pattern: $DATA = loads($$$LA)
         - inside:
             kind: module
             stopBy: end

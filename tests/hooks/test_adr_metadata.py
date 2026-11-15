@@ -190,6 +190,25 @@ def test_deleting_an_adr_reports_references_that_now_dangle(adr_directory: Path)
     assert "Related names ADR-0003" in "\n".join(adr_metadata.diagnostics([deleted]))
 
 
+def test_superseded_by_requires_superseded_status(adr_directory: Path) -> None:
+    write_adr(adr_directory, "0001_first_decision.md", extra="- Superseded by: ADR-0002\n")
+    assert "Superseded by ADR-0002 requires `- Status: Superseded`" in messages(adr_directory)
+
+
+def test_directory_with_another_naming_scheme_is_left_alone(tmp_path: Path) -> None:
+    directory = tmp_path / "docs" / "adr"
+    directory.mkdir(parents=True)
+    (directory / "0001-record-architecture-decisions.md").write_text("# 1. Record architecture decisions\n")
+    edited = directory / "0002-use-postgres.md"
+    edited.write_text("# 2. Use Postgres\n")
+    assert adr_metadata.diagnostics([edited]) == ()
+
+
+def test_deleting_the_readme_is_not_an_adr_deletion(adr_directory: Path) -> None:
+    write_adr(adr_directory, "0001_first_decision.md", status="Draft")
+    assert adr_metadata.diagnostics([adr_directory / "README.md"]) == ()
+
+
 def test_this_repositorys_adr_history_conforms() -> None:
     directory = REPO_ROOT / "docs" / "adr"
     assert adr_metadata.diagnostics(sorted(directory.glob("*.md"))) == ()

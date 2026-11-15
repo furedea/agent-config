@@ -78,6 +78,7 @@ def diagnostics(paths: Iterable[Path]) -> tuple[str, ...]:
     findings = (
         finding
         for directory in directories
+        if follows_convention(directory, edited)
         for finding in check_directory(directory)
         if directory in deleted or edited & {finding.path.resolve(), *(p.resolve() for p in finding.also_involves)}
     )
@@ -86,17 +87,41 @@ def diagnostics(paths: Iterable[Path]) -> tuple[str, ...]:
 
 def is_adr_file(path: Path) -> bool:
     """Tell whether a path is a Markdown file directly under a `docs/adr/` directory."""
-    return path.suffix.lower() in MARKDOWN_SUFFIXES and path.parent.name == "adr" and path.parent.parent.name == "docs"
+    return (
+        path.name not in EXEMPT_NAMES
+        and path.suffix.lower() in MARKDOWN_SUFFIXES
+        and path.parent.name == "adr"
+        and path.parent.parent.name == "docs"
+    )
+
+
+def follows_convention(directory: Path, edited: set[Path]) -> bool:
+    """Tell whether the ADRs beside the edited ones are named like this check expects.
+
+    A directory whose other ADRs all use another scheme, such as adr-tools' `0001-title.md`, keeps its own
+    convention, so none of its ADRs is reported.
+    """
+    others = [path for path in markdown_files(directory) if path.resolve() not in edited]
+    return not others or any(FILE_NAME.fullmatch(path.name) for path in others)
+
+
+def markdown_files(directory: Path) -> list[Path]:
+    """List the Markdown files of an ADR directory except the exempt ones."""
+    return sorted(
+        path
+        for path in directory.iterdir()
+        if path.suffix.lower() in MARKDOWN_SUFFIXES and path.is_file() and path.name not in EXEMPT_NAMES
+    )
 
 
 def check_directory(directory: Path) -> list[Finding]:
     """Check each ADR of a directory, then the rules that span ADRs."""
-    names = sorted(p for p in directory.iterdir() if p.suffix.lower() in MARKDOWN_SUFFIXES and p.is_file())
-    adrs = [read_adr(path) for path in names if path.name not in EXEMPT_NAMES]
+    adrs = [read_adr(path) for path in markdown_files(directory)]
     findings = [problem for adr in adrs for problem in adr.problems]
     findings += duplicate_identifiers(adrs)
     findings += unknown_references(adrs)
     findings += unsuperseded_targets(adrs)
+    findings += unsuperseded_adrs(adrs)
     return findings
 
 
@@ -192,6 +217,16 @@ def unknown_references(adrs: list[Adr]) -> list[Finding]:
         for key in RELATION_KEYS
         for line, identifier in adr.references(key)
         if identifier not in known
+    ]
+
+
+def unsuperseded_adrs(adrs: list[Adr]) -> list[Finding]:
+    """Report an ADR that names its replacement in `Superseded by` but whose own Status is not `Superseded`."""
+    return [
+        Finding(adr.path, line, f"Superseded by ADR-{identifier} requires `- Status: Superseded`.")
+        for adr in adrs
+        for line, identifier in adr.references("Superseded by")
+        if "Superseded" not in adr.values("Status")
     ]
 
 

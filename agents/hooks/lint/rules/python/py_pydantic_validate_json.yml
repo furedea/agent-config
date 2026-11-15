@@ -59,6 +59,13 @@ rule:
               - not:
                   has:
                     stopBy: end
+                    any:
+                      - pattern: $DATA[$$$KEY] = $$$VALUE
+                      - pattern: del $DATA[$$$KEY]
+                      - pattern: $DATA.$METHOD($$$MARGS)
+              - not:
+                  has:
+                    stopBy: end
                     kind: assignment
                     all:
                       - pattern: $DATA = $OTHER
@@ -97,6 +104,13 @@ rule:
                   stopBy: end
                   any:
                       - pattern: $DATA = $ALIAS.loads($$$ARGS)
+              - not:
+                  has:
+                    stopBy: end
+                    any:
+                      - pattern: $DATA[$$$KEY] = $$$VALUE
+                      - pattern: del $DATA[$$$KEY]
+                      - pattern: $DATA.$METHOD($$$MARGS)
               - not:
                   has:
                     stopBy: end
@@ -145,6 +159,13 @@ rule:
               - not:
                   has:
                     stopBy: end
+                    any:
+                      - pattern: $DATA[$$$KEY] = $$$VALUE
+                      - pattern: del $DATA[$$$KEY]
+                      - pattern: $DATA.$METHOD($$$MARGS)
+              - not:
+                  has:
+                    stopBy: end
                     kind: assignment
                     all:
                       - pattern: $DATA = $OTHER
@@ -187,6 +208,13 @@ rule:
                   stopBy: end
                   any:
                       - pattern: $DATA = loads($$$ARGS)
+              - not:
+                  has:
+                    stopBy: end
+                    any:
+                      - pattern: $DATA[$$$KEY] = $$$VALUE
+                      - pattern: del $DATA[$$$KEY]
+                      - pattern: $DATA.$METHOD($$$MARGS)
               - not:
                   has:
                     stopBy: end

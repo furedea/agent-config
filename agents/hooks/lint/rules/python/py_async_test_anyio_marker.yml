@@ -33,6 +33,14 @@ rule:
   regex: ^async\s+def\s+test_
   not:
     any:
+      - inside:
+          kind: class_definition
+          stopBy:
+            kind: class_definition
+          not:
+            has:
+              field: name
+              regex: ^Test
       - has:
           field: parameters
           kind: parameters

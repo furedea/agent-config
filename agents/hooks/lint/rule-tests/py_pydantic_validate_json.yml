@@ -75,6 +75,21 @@ valid:
     def read(text):
         data = loads(text)
         return Config.model_validate(data)
+  - |
+    def read(raw, request_id):
+        data = json.loads(raw)
+        data["id"] = request_id
+        return Order.model_validate(data)
+  - |
+    def read(raw):
+        data = json.loads(raw)
+        data.pop("debug")
+        return Order.model_validate(data)
+  - |
+    def read(raw):
+        data = json.loads(raw)
+        del data["debug"]
+        return Order.model_validate(data)
 invalid:
   - |
     order = Order.model_validate(json.loads(payload))

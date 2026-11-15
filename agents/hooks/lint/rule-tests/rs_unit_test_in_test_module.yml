@@ -19,6 +19,12 @@ valid:
     #![cfg(test)]
     #[test]
     fn works() {}
+  - |
+    #[cfg(all(unix, test))]
+    mod tests {
+        #[test]
+        fn works() {}
+    }
 invalid:
   - |
     #[test]
@@ -45,3 +51,15 @@ invalid:
   - |
     #[cfg_attr(feature = "tokio", tokio::test)]
     async fn works() {}
+  - |
+    #[cfg(not(test))]
+    mod internal {
+        #[test]
+        fn works() {}
+    }
+  - |
+    #[cfg(feature = "test")]
+    mod internal {
+        #[test]
+        fn works() {}
+    }

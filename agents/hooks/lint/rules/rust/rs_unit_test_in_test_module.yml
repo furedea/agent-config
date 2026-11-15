@@ -1,7 +1,7 @@
 id: rs_unit_test_in_test_module
 language: rust
 severity: error
-message: "Put a unit test in `#[cfg(test)] mod tests`, or move it to `tests/` when it exercises the public API."
+message: "Put a unit test in `#[cfg(test)] mod tests`, or move it to `tests/` when it exercises the public API. A file that a `#[cfg(test)] mod` includes should start with `#![cfg(test)]`."
 files:
   - "**/src/**/*.rs"
 ignores:
@@ -26,7 +26,7 @@ rule:
           stopBy: end
           has:
             kind: inner_attribute_item
-            regex: ^#!\[cfg\(.*\btest\b
+            regex: ^#!\[cfg\((test|all\((.*,\s*)?test\s*[,)])
     # Inside a module that is compiled only for tests.
     - not:
         inside:
@@ -34,7 +34,7 @@ rule:
           stopBy: end
           follows:
             kind: attribute_item
-            regex: ^#\[cfg\(.*\btest\b
+            regex: ^#\[cfg\((test|all\((.*,\s*)?test\s*[,)])
             stopBy:
               not:
                 any:

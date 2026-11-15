@@ -1,13 +1,12 @@
 """The python-style model rules select the subjects they ask about; the model itself is not asked."""
 
-import shutil
 from pathlib import Path
 
 import pytest
 
 from tests.test_model_rule_files import RULE_IDS, plan, repository, subjects_by_rule  # noqa: F401 (fixture)
 
-pytestmark = pytest.mark.skipif(shutil.which("jev-lint") is None, reason="jev-lint is not on PATH")
+pytestmark = pytest.mark.needs_jev_lint
 
 PYTHON_STYLE_SOURCE = """\
 import pydantic

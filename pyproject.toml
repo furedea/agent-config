@@ -9,7 +9,10 @@ dependencies = []
 pythonpath = ["."]
 testpaths = ["tests"]
 addopts = ["-n", "auto"]
-markers = ["integration: requires installed toolchains, provider CLIs, or the managed macOS profile"]
+markers = [
+  "integration: requires installed toolchains, provider CLIs, or the managed macOS profile",
+  "needs_jev_lint: runs jev-lint; skipped without it, a failure when REQUIRE_JEV_LINT=1",
+]
 
 [tool.deptry]
 ignore_notebooks = true

@@ -5,7 +5,6 @@ judgement is advisory (ADR-0021) and is not tested here.
 """
 
 import json
-import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -26,7 +25,7 @@ RULE_IDS = (
     "no-exposed-mutable-collection",
 )
 
-pytestmark = pytest.mark.skipif(shutil.which("jev-lint") is None, reason="jev-lint is not on PATH")
+pytestmark = pytest.mark.needs_jev_lint
 
 SAMPLES = {
     "python": (

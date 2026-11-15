@@ -1,7 +1,8 @@
 id: rs_no_path_from_format
 language: rust
 severity: error
-message: "Build a path with `Path::join` / `PathBuf::push`, not by formatting a string."
+message: "Building a path from a formatted string hard-codes the separator and breaks on other platforms."
+note: "Use `Path::new(dir).join(name)` instead of `PathBuf::from(format!(\"{dir}/{name}\"))`."
 rule:
   any:
     - pattern: PathBuf::from(format!($$$ARGS))

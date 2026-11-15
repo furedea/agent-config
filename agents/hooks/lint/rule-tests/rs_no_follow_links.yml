@@ -4,8 +4,18 @@ valid:
     fn walk() { WalkDir::new(".").follow_links(false); }
   - |
     fn walk() { WalkDir::new("."); }
+  - |
+    fn crawl(c: Crawler) { c.follow_links(true); }
+  - |
+    fn crawl() { HttpCrawler::new(url).follow_links(true); }
 invalid:
   - |
     fn walk() { WalkDir::new(".").follow_links(true); }
   - |
-    fn walk(w: WalkDir) { w.min_depth(1).follow_links(true); }
+    fn walk() { WalkDir::new(".").min_depth(1).follow_links(true); }
+  - |
+    fn walk() { walkdir::WalkDir::new(".").follow_links(true); }
+  - |
+    fn walk() { WalkBuilder::new(".").hidden(false).follow_links(true); }
+  - |
+    fn walk() { ignore::WalkBuilder::new(".").follow_links(true); }

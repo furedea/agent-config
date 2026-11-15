@@ -1,7 +1,8 @@
 id: rs_no_mocking_library
 language: rust
 severity: error
-message: "Prefer an explicit fake type behind a trait over a mocking library."
+message: "A generated mock couples tests to call sequences instead of behavior."
+note: "Write a small fake struct that implements the trait, and pass it in instead of `#[automock]`."
 rule:
   any:
     - kind: use_declaration

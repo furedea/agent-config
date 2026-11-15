@@ -131,7 +131,9 @@ the language's own linter, compiler, or test runner when one can judge it, and o
 1. Information outside the file: configuration, `conftest.py`, other modules.
 2. Data flow or execution order: values passed through assignments, scopes, or a class hierarchy.
 3. Parsing a grammar or expression with a regular expression: `cfg(...)` predicates, string contents.
-4. Many equivalent spellings: YAML quoting, flow and block forms, import aliases.
+4. Many equivalent spellings that a rule cannot list completely: YAML quoting, flow and block forms, import aliases
+    combined with other cases. A rule that only detects a short, closed list of spellings of one name, such as the
+    aliases of one import, may still block.
 
 The evidence is the review of PRs #192-#195. The rules below were removed or demoted to `jev-lint` after drawing 8 to 34
 review threads each without converging, and each needs one or more of the cases above. The rules that stayed as

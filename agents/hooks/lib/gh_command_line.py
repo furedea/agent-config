@@ -37,6 +37,8 @@ QUOTED_HEREDOC = re.compile(r"""^<<-?\s*(?:'[^']+'|"[^"]+"|\\\w+)$""")
 QUOTED_TEXT = re.compile(r"'[^']*'|\"(?:[^\"\\]|\\.)*\"")
 INPUT_OPERATOR = re.compile(r"[0-9]*<(?:<<|<-?|>|&)?(?!\()")
 INPUT_REDIRECT = re.compile(r"""(?:^|\s)(0?<(?:<<|<-?|>|&)?\s*(?:'[^']*'|"[^"]*"|\S+))""")
+# A backslash and newline, which bash removes so the heredoc's command line goes on past it.
+LINE_CONTINUATION = re.compile(r"\\\n")
 # A substitution holding only an input redirection, such as `$(< .env)`, reads that file in bash.
 REDIRECT_SUBSTITUTION = re.compile(r"\$\(\s*<|`\s*<")
 # Programs a body substitution may run without changing anything gh reads: the directory, remotes, or files.
@@ -178,10 +180,10 @@ def is_gh(command: shell_syntax.Command) -> bool:
 def input_redirects(command: shell_syntax.Command) -> list[str]:
     """Each input redirection in a call's trailer, as written.
 
-    Any extra operator counts, even one joined to a quoted heredoc delimiter, so a later redirection
-    cannot hide behind the first.
+    Any extra operator counts, even one joined to a quoted heredoc delimiter or continued onto the
+    next line after it, so a later redirection cannot hide behind the first.
     """
-    first_line = command.trailer.split("\n", 1)[0]
+    first_line = LINE_CONTINUATION.sub("", command.trailer).split("\n", 1)[0]
     found = [match[1] for match in INPUT_REDIRECT.finditer(first_line)]
     operators = INPUT_OPERATOR.findall(QUOTED_TEXT.sub("Q", first_line))
     return found if len(operators) == len(found) else [*found, *operators[len(found) :]]

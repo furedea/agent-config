@@ -66,7 +66,6 @@ rule:
                             - pattern: $DATA = json.loads($$$LA)
                             - pattern: $DATA = orjson.loads($$$LA)
                             - pattern: $DATA = ujson.loads($$$LA)
-                            - pattern: $DATA = loads($$$LA)
     - all:
         - any:
             - pattern: $MODEL.model_validate($DATA)
@@ -90,7 +89,6 @@ rule:
                             - pattern: $DATA = json.loads($$$LA)
                             - pattern: $DATA = orjson.loads($$$LA)
                             - pattern: $DATA = ujson.loads($$$LA)
-                            - pattern: $DATA = loads($$$LA)
                             - pattern: $DATA = $ALIAS.loads($$$LA)
         - inside:
             kind: module
@@ -120,7 +118,6 @@ rule:
                             - pattern: $DATA = json.loads($$$LA)
                             - pattern: $DATA = orjson.loads($$$LA)
                             - pattern: $DATA = ujson.loads($$$LA)
-                            - pattern: $DATA = loads($$$LA)
                             - pattern: $DATA = $LOADER($$$LA)
         - inside:
             kind: module

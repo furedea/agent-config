@@ -412,8 +412,12 @@ def test_a_marker_that_is_a_comment_only_in_the_middle_of_the_moved_file_asks(tm
 
 @pytest.mark.parametrize(
     "second",
-    ["*** Add File: {dir}/./app.py\n+x = 2\n", "*** Update File: {dir}/other.py\n*** Move to: {dir}/app.py\n"],
-    ids=["same file through another spelling", "another file moved onto it"],
+    [
+        "*** Add File: {dir}/./app.py\n+x = 2\n",
+        "*** Add File: {dir}/APP.py\n+x = 2\n",
+        "*** Update File: {dir}/other.py\n*** Move to: {dir}/app.py\n",
+    ],
+    ids=["same file through another spelling", "same file in another case", "another file moved onto it"],
 )
 def test_a_patch_that_reaches_one_file_twice_asks(tmp_path: Path, second: str) -> None:
     (tmp_path / "app.py").write_text("x = 1\n")

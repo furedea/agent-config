@@ -258,19 +258,24 @@ class _PatchFiles:
 
     def start(self, path: str, *, added: bool) -> _Hunks:
         """Begin the section of a file, or mark the section that already reaches it as repeated."""
-        owner = self.owners.get(os.path.realpath(path))
+        owner = self.owners.get(_identity(path))
         if owner is not None:
             owner.repeated = True
             return owner
-        self.sections[path] = self.owners[os.path.realpath(path)] = _Hunks(added=added)
+        self.sections[path] = self.owners[_identity(path)] = _Hunks(added=added)
         return self.sections[path]
 
     def move(self, hunks: _Hunks, destination: str) -> None:
         """Record where a section's file moves, marking both sections when another already reaches it."""
         hunks.destination = destination
-        owner = self.owners.setdefault(os.path.realpath(destination), hunks)
+        owner = self.owners.setdefault(_identity(destination), hunks)
         if owner is not hunks:
             owner.repeated = hunks.repeated = True
+
+
+def _identity(path: str) -> str:
+    """The real path, case-folded, since a file system may ignore case; a false match only fails closed."""
+    return os.path.realpath(path).casefold()
 
 
 @dataclass(slots=True)

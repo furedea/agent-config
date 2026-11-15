@@ -11,6 +11,7 @@ from tests.runtime import StubWriter, load_script_module
 
 lint_format = load_script_module("agents/hooks/lint_format.py", "lint_format_for_static_rules")
 hook_adapter = load_script_module("agents/codex/hooks/hook_adapter.py", "codex_hook_adapter_for_static_rules")
+dsh_adapter = load_script_module("agents/dsh/hooks/hook_adapter.py", "dsh_hook_adapter_for_static_rules")
 FINDING = {
     "ruleId": "no-print",
     "severity": "warning",
@@ -386,6 +387,24 @@ def test_provider_adapters_block_on_an_error_finding(
     monkeypatch.setattr(hook_adapter.provider_adapter.lint_format, "check_file", lambda *_: ())
     assert hook_adapter.ADAPTER.lint({"tool_name": "Write", "tool_input": {"file_path": str(source)}}) == 0
     assert json.loads(capsys.readouterr().out)["decision"] == "block"
+
+
+@pytest.mark.usefixtures("hook", "lint_directory")
+def test_a_provider_that_reads_a_system_message_still_sees_a_blocking_finding(
+    executable: StubWriter,
+    source: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """dsh reads a top-level systemMessage after an edit, so a block carries the reason there too."""
+    install_scanner(executable, [ERROR_FINDING])
+    monkeypatch.chdir(source.parent)
+    monkeypatch.setattr(dsh_adapter.provider_adapter.lint_format, "check_file", lambda *_: ())
+    assert dsh_adapter.ADAPTER.lint({"tool_name": "write", "tool_input": {"file_path": str(source)}}) == 0
+    output = json.loads(capsys.readouterr().out)
+    assert output["decision"] == "block"
+    assert output["systemMessage"] == output["reason"]
+    assert output["reason"].endswith(FIX_INSTRUCTION)
 
 
 @pytest.mark.integration

@@ -66,7 +66,11 @@ def diagnostics(payload: dict, kind: str | None = None) -> Report:
     return lint + static_rule_scan.diagnostics(target.path for target in targets)
 
 
-def emit(report: Report, encode: Callable[[str], dict[str, object]] = context) -> None:
+def emit(
+    report: Report,
+    encode: Callable[[str], dict[str, object]] = context,
+    encode_block: Callable[[str], dict[str, object]] = block,
+) -> None:
     """Write one structured notification for all diagnostics, a block when any is an error, or remain silent.
 
     A block lists the errors, then the fix instruction once, then any advice, so truncation never drops an error
@@ -75,7 +79,7 @@ def emit(report: Report, encode: Callable[[str], dict[str, object]] = context) -
     if report.errors:
         reason = f"{bounded(report.errors)}\n\n{FIX_INSTRUCTION}"
         reason += f"\n\n{bounded(report.advice)}" if report.advice else ""
-        print(json.dumps(block(reason), ensure_ascii=False))
+        print(json.dumps(encode_block(reason), ensure_ascii=False))
     elif report.advice:
         print(json.dumps(encode(bounded(report.advice)), ensure_ascii=False))
 

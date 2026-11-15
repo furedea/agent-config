@@ -209,7 +209,7 @@ def moves_directory(source: str, records: tuple[dict, ...]) -> bool:
     calls = [node for node in records if node.get("Type") == "CallExpr" and node.get("Args")]
     if any(word[:1] in {"-", "+"} and "j" in word for word in set_options(calls, data)):
         return True
-    return any(_runs_unseen(call, data) for call in calls)
+    return any(runs_unseen(call, data) for call in calls)
 
 
 def normalized(text: str) -> str:
@@ -222,13 +222,13 @@ def set_options(calls: list[dict], data: bytes) -> list[str]:
     options = []
     for call in calls:
         words = [normalized(literal_word(word, data)[0]) for word in call["Args"]]
-        words = words[_program_index(words) :]
+        words = words[program_index(words) :]
         if words and words[0] == "set":
             options += [word for word in words[1:] if word[:1] in {"-", "+"} or word.isalpha()]
     return options
 
 
-def _program_index(words: list[str]) -> int:
+def program_index(words: list[str]) -> int:
     """Where the program sits, past prefixes, wrappers, options, and assignments."""
     for index, value in enumerate(words):
         if not _passes_over(value):
@@ -245,7 +245,7 @@ def _passes_over(value: str) -> bool:
     )
 
 
-def _runs_unseen(call: dict, data: bytes) -> bool:
+def runs_unseen(call: dict, data: bytes) -> bool:
     """Whether the program, past prefixes, wrappers, options, and assignments, is named only at run time."""
     for value, dynamic in (literal_word(word, data) for word in call["Args"]):
         if dynamic:

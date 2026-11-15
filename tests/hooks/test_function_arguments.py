@@ -20,6 +20,9 @@ def decide(kind: str, command: str) -> Verdict:
         'f(){ builtin shift; find . "$1"; }; f x -delete',
         'f(){ noglob shift; find . "$1"; }; f x -delete',
         'f(){ find . "$1"; }; noglob f -delete',
+        "f(){ X=$1 sh -c 'find . \"$X\"'; }; f -delete",
+        "true(){ find . \"$1\"; }; eval 't\\rue -delete'",
+        'g(){ find . "$1"; }; eval \'"g" -delete\'',
         'f(){ find . "$1"; }; nocorrect f -delete',
         'f(){ find . "$1"; }; - f -delete',
         'f(){ s\\hift; find . "$1"; }; f x -delete',
@@ -115,6 +118,15 @@ def test_denials_see_through_builtin_prefixes_and_eval_option_ends(command: str)
         "nocorrect set -a; f(){ x=$1; sh -c 'find . \"$x\"'; }; f -delete",
         'f(){ find . "$2"; }; c=$(printf f); mapfile -t -C "$c" -c 1 <<< -delete',
         'f(){ find . "$1"; }; precmd_functions+=("$(printf f)")',
+        'f(){ find . "$1"; }; c=$(printf mapfile); $c -C "$(printf f)" -c 1 <<< -delete',
+        'f(){ find . "$1"; }; set -A precmd_functions "$(printf f)"',
+        'f(){ find . "$2"; }; zargs -- "$(printf x)" -- f',
+        "c=$(printf set); $c -a; f(){ x=$1; sh -c 'find . \"$x\"'; }; f -delete",
+        'f(){ find . "${x:-$1}"; }; f -delete',
+        'f(){ find . "${x/y/$1}"; }; f -delete',
+        'f(){ x=-delete1; find . "${x%$#}"; }; f a',
+        'f(){ find . "$2"; }; mapfile -t -Cf -c1 <<< -delete',
+        'f(){ find . "$1"; }; c=$(printf f); "$c" -delete',
         "c=cd; for d in a b; do builtin $c nested; sh < script.sh; done",
         "c=cd; for d in a b; do command -p $c nested; sh < script.sh; done",
         'f(){ printf %s "$1" | { read -r id; find . "$id"; }; }; f -delete',
@@ -158,3 +170,19 @@ def test_a_function_reading_its_argument_through_a_redirection_is_judged_with_th
 )
 def test_plain_functions_traps_and_evals_still_run_unprompted(kind: str, command: str) -> None:
     assert decide(kind, command).decision == "allow"
+
+
+@pytest.mark.parametrize("kind", ["allowed", "forbidden"])
+@pytest.mark.parametrize(
+    "command",
+    [
+        'git commit --allow-empty -m "close the aliases[...] hole"',
+        "jq '.commands[0]' package.json",
+        "grep -rn BASH_FUNC_ .",
+    ],
+)
+def test_text_that_only_mentions_code_parameters_runs_unprompted(
+    kind: str, command: str, isolated_project: Path
+) -> None:
+    (isolated_project / "package.json").write_text("{}\n")
+    assert decide(kind, command).decision != "ask"

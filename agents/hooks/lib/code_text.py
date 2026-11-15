@@ -34,7 +34,9 @@ SPELLING = re.compile(r"[\\'\"{},]")
 # Its name carries a nonce, so a command cannot define a function the hook would mistake for it.
 CODE_BODY = f"__guard_code_text_{secrets.token_hex(8)}"
 # The prefix of an environment variable bash imports as a function.
-IMPORTED_FUNCTION = "BASH_FUNC_"
+IMPORTED_FUNCTION = re.compile(r"BASH_FUNC_\S*(?:%%|\(\))")
+# Programs that can assign a parameter from an argument, or hand a child an environment variable.
+PARAMETER_SETTERS = frozenset({"env", "sudo", "let", "zparseopts", "zformat", "zstyle", "getln", "popln"})
 
 
 def scripts(arguments: tuple[str, ...], dynamic: tuple[bool, ...]) -> list[str] | None:
@@ -43,7 +45,7 @@ def scripts(arguments: tuple[str, ...], dynamic: tuple[bool, ...]) -> list[str] 
     Raises:
         UnsupportedSyntaxError: The text is computed at run time, so no rule can judge it.
     """
-    if names_code_parameter(arguments, dynamic) or any(IMPORTED_FUNCTION in argument for argument in arguments):
+    if names_code_parameter(arguments, dynamic) or any(map(IMPORTED_FUNCTION.search, arguments)):
         raise UnsupportedSyntaxError(
             "defining an alias, a function, or a command path in the command requires explicit review", "wrapper"
         )
@@ -60,7 +62,7 @@ def defines_code(record: dict) -> bool:
     """
     name = record.get("Name") or record.get("Param")
     value = "".join(part.get("Value", "") for part in nodes(record.get("Value")))
-    if IMPORTED_FUNCTION in value:
+    if IMPORTED_FUNCTION.search(value):
         return True
     if not isinstance(name, dict):
         return False
@@ -72,10 +74,10 @@ def names_code_parameter(arguments: tuple[str, ...], dynamic: tuple[bool, ...]) 
 
     A name computed at run time may be any of them.
     """
+    if arguments[0] not in ASSIGNING_BUILTINS | PARAMETER_SETTERS:
+        return False
     if any(CODE_ELEMENT.search(argument) for argument in arguments[1:]):
         return True
-    if arguments[0] not in ASSIGNING_BUILTINS:
-        return False
     computed = any(dynamic[index] and _names_by(arguments, index) for index in range(1, len(arguments)))
     return computed or any(argument in CODE_PARAMETERS for argument in arguments[1:])
 

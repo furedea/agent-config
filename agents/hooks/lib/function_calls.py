@@ -5,10 +5,12 @@ import shlex
 from collections import Counter
 from dataclasses import dataclass
 
+import shell_input
 import variable_changes
 from code_text import ASSIGNING_BUILTINS, CODE_BODY, NAME_OPTION
 from shell_words import PARAMETER_MODIFIERS, UnsupportedSyntaxError, literal_word, nodes, source_text
 from shell_wrappers import WRAPPERS
+from variable_changes import ARITHMETIC, UNSEEN_ASSIGNERS
 
 # $1, ${12}, $@, and $*, which take the words a function is called with.
 POSITIONAL = re.compile(r"[1-9][0-9]*|[@*]")
@@ -34,7 +36,7 @@ FUNCTION_MODIFIERS = frozenset({"noglob", "nocorrect", "-"})
 NAME_ASSIGNERS = ASSIGNING_BUILTINS | frozenset({"zformat", "zstyle", "zregexparse", "zparseopts", "getln", "popln"})
 # Builtins that call a function they are given by name, with arguments the call never shows.
 CALLBACK_TAKERS = frozenset(
-    "mapfile readarray complete compgen compdef zle add-zsh-hook bind sched zstyle trap".split()
+    "mapfile readarray complete compgen compdef zle add-zsh-hook bind sched zstyle trap zargs zmv".split()
 )
 # Variables naming functions the shell calls on its own.
 HOOK_VARIABLES = re.compile(r"PROMPT_COMMAND|(?:precmd|preexec|chpwd|periodic|zshexit|zshaddhistory)_functions")
@@ -45,7 +47,6 @@ ARGUMENT_TEXT = re.compile(r"[$`]|(?<![\w-])(?:shift|set|getopts|read|mapfile|re
 # Quotes, escapes, braces, and glob characters, which spell a name without writing it plainly.
 SPELLING = re.compile(r"[\\'\"{},?*\[\]]")
 # Builtins that may assign a variable named only at run time, or run code that does.
-UNSEEN_ASSIGNERS = frozenset({"read", "mapfile", "readarray", "vared", "getopts", "source", ".", "eval", "trap"})
 # Programs a caller's word may name that change the arguments or run code, when a body runs that word.
 ARGUMENT_CHANGERS = (
     RELIED_NAMES
@@ -56,18 +57,17 @@ ARGUMENT_CHANGERS = (
         "zmodload".split()
     )
 )
-ARITHMETIC = frozenset({"ArithmCmd", "ArithmExp", "LetClause"})
-ARITHMETIC_TEST = re.compile(r"\s-(?:eq|ne|lt|le|gt|ge)\s")
 
 
 def with_definitions(records: tuple[dict, ...], data: bytes, script: str) -> str:
-    """The script behind the definition of each function it names, so an eval or trap script can call one."""
+    """The script behind the definition of each function it names however quoted or escaped, so it can call one."""
+    plain = re.sub(r"\\\n|[\\'\"]", "", script)
     named = (
         source_text(node, data) + "\n"
         for node in records
         if node.get("Type") == "FuncDecl"
         and node["Name"]["Value"] != CODE_BODY
-        and re.search(rf"(?<![\w-]){re.escape(node['Name']['Value'])}(?![\w-])", script)
+        and re.search(rf"(?<![\w-]){re.escape(node['Name']['Value'])}(?![\w-])", plain)
     )
     return "".join(named) + script
 
@@ -99,7 +99,7 @@ def respelled_calls(records: tuple[dict, ...], data: bytes) -> list[str]:
     if bodies and variable_changes.may_change_ifs(records, data):
         raise UnsupportedSyntaxError("calling a function after changing IFS requires explicit review", "expansion")
     splitting = any(_reads_unquoted(body) for definitions in bodies.values() for body in definitions)
-    if splitting and _may_assign_unseen(records, data):
+    if splitting and variable_changes.may_assign_unseen(records, data):
         raise UnsupportedSyntaxError("calling a function after changing IFS requires explicit review", "expansion")
     respelled = []
     for call in (node for node in records if node.get("Type") == "CallExpr" and node.get("Args")):
@@ -174,7 +174,8 @@ def _reads_any(body: dict) -> bool:
 def _named_as_word(name: str, records: tuple[dict, ...], data: bytes) -> bool:
     """Whether a word other than a command name, or an assigned value, names the function: a callback may call it.
 
-    A callback builtin or hook variable given a word known only at run time may name it too.
+    Fails closed beside a hook variable, a callback builtin given a word known only at run time, or a program
+    named only at run time, which may be such a builtin.
     """
     token = re.compile(rf"(?<![\w-]){re.escape(name)}(?![\w-])")
     calls = [node for node in records if node.get("Type") == "CallExpr" and node.get("Args")]
@@ -182,17 +183,18 @@ def _named_as_word(name: str, records: tuple[dict, ...], data: bytes) -> bool:
     judged = (call for call in calls if _program(call, data)[0] not in {"eval", "trap"})
     words = [word for call in judged for word in call["Args"][_modifier_count(call, data) + 1 :]]
     values = [record for record in records if "Type" not in record and isinstance(record.get("Value"), dict)]
-    if any(token.search(literal_word(word, data)[0]) for word in words + [value["Value"] for value in values]):
+    texts = [literal_word(word, data)[0] for word in words + [value["Value"] for value in values]]
+    # An option may carry the name attached, as mapfile -Cf does.
+    if any(token.search(re.sub(r"^-[A-Za-z]*?(?=" + re.escape(name) + ")", "", text)) for text in texts):
+        return True
+    if HOOK_VARIABLES.search(SPELLING.sub("", data.decode())):
         return True
     callbacks = (call for call in calls if _program(call, data)[0] in CALLBACK_TAKERS)
     if any(literal_word(word, data)[1] for call in callbacks for word in call["Args"]):
         return True
-    hooks = (value for value in values if HOOK_VARIABLES.fullmatch(value.get("Name", {}).get("Value", "")))
-    return any(literal_word(value["Value"], data)[1] for value in hooks) or any(
-        isinstance(record.get("Name"), dict)
-        and HOOK_VARIABLES.fullmatch(record["Name"].get("Value", ""))
-        and any(part.get("Type") in {"ParamExp", "CmdSubst", "ProcSubst"} for part in nodes(record.get("Array")))
-        for record in records
+    return any(
+        shell_input.runs_unseen(call, data) and not _names_by_arguments(call, _program_words(call, data), {})
+        for call in calls
     )
 
 
@@ -209,32 +211,17 @@ def _defined_name(definition: dict) -> str:
     return name
 
 
-def _may_assign_unseen(records: tuple[dict, ...], data: bytes) -> bool:
-    """Whether any variable, IFS among them, may take a value the source does not spell out.
-
-    Arithmetic evaluates the text of the variables it names, and these builtins assign or run text
-    known only at run time.
-    """
-    if any(record.get("Type") in ARITHMETIC for record in records):
-        return True
-    if any(record.get("Type") == "ParamExp" and (record.get("Index") or record.get("Slice")) for record in records):
-        return True
-    tests = (record for record in records if record.get("Type") == "TestClause")
-    if any(ARITHMETIC_TEST.search(source_text(test, data)) for test in tests):
-        return True
-    calls = (_program(call, data) for call in records if call.get("Type") == "CallExpr" and call.get("Args"))
-    return any(
-        words[0] in UNSEEN_ASSIGNERS or (words[0] in {"print", "printf"} and any(map(NAME_OPTION.fullmatch, words)))
-        for words in calls
-    )
-
-
 def _followed(body: dict, records: tuple[dict, ...], data: bytes) -> dict:
     """The body, once it is known to read its arguments only plainly, directly or through a plain copy."""
     copies = _copies(body)
     reading = [node for node in _assignments(body) if any(_reads(part, copies) for part in nodes(node["Value"]))]
     unfollowed = (
-        any(_reads(part, copies) and any(map(part.get, PARAMETER_MODIFIERS)) for part in nodes(body))
+        any(
+            part.get("Type") == "ParamExp"
+            and any(map(part.get, PARAMETER_MODIFIERS))
+            and any(_reads(inner, copies) or _counts_arguments(inner) for inner in nodes(part))
+            for part in nodes(body)
+        )
         or any(part.get("Param", {}).get("Value") in ARGUMENT_ARRAYS for part in nodes(body))
         or any(
             "Type" not in node and isinstance(node.get("Name"), dict) and node["Name"].get("Value") in ARGUMENT_ARRAYS
@@ -414,12 +401,20 @@ def _statements(body: dict) -> list[dict]:
 
 
 def _respelled_nodes(statement: dict) -> list[dict]:
-    """The call's words and the targets of its redirections other than heredocs."""
-    return [*statement["Cmd"].get("Args", []), *(redirect["Word"] for redirect in _redirections(statement))]
+    """The call's assignments, words, and the targets of its redirections other than heredocs."""
+    return [
+        *statement["Cmd"].get("Assigns", []),
+        *statement["Cmd"].get("Args", []),
+        *(redirect["Word"] for redirect in _redirections(statement)),
+    ]
 
 
 def _redirections(statement: dict) -> list[dict]:
     return [redirect for redirect in statement.get("Redirs", []) if redirect.get("Word") and "Hdoc" not in redirect]
+
+
+def _counts_arguments(part: dict) -> bool:
+    return part.get("Type") == "ParamExp" and part.get("Param", {}).get("Value") == "#"
 
 
 def _reads(part: dict, copies: dict[str, str]) -> bool:
@@ -443,14 +438,23 @@ class _Respelling:
     copies: dict[str, str]
 
     def statement(self, statement: dict) -> str:
-        """The statement's call and redirections, each word respelled."""
-        words = [self.word(word) for word in statement["Cmd"].get("Args", [])]
+        """The statement's assignments, call, and redirections, each word respelled."""
+        assigns = [self._assignment(assign) for assign in statement["Cmd"].get("Assigns", [])]
+        words = assigns + [self.word(word) for word in statement["Cmd"].get("Args", [])]
         redirects = [
             self.data[redirect["Pos"]["Offset"] : redirect["Word"]["Pos"]["Offset"]].decode()
             + self.word(redirect["Word"])
             for redirect in _redirections(statement)
         ]
         return " ".join(words + redirects)
+
+    def _assignment(self, assign: dict) -> str:
+        """A prefix assignment such as X=$1, which a child sees, respelled; any other form as written."""
+        if not isinstance(assign.get("Value"), dict) or assign.get("Array") or assign.get("Index"):
+            return source_text(assign, self.data)
+        return self.data[assign["Pos"]["Offset"] : assign["Value"]["Pos"]["Offset"]].decode() + self.word(
+            assign["Value"]
+        )
 
     def word(self, word: dict) -> str:
         return "".join(self._part(part, quoted=False) for part in word.get("Parts", []))

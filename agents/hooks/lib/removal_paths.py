@@ -13,6 +13,7 @@ from pathlib import Path
 import automation_paths
 import command_policy
 import hook_decision
+import literal_words
 import session_snapshot
 import shell_inspection
 import shell_syntax
@@ -55,7 +56,7 @@ def objection(payload: dict, command: str, commands: tuple[shell_syntax.Command,
             f"file a path names, so its operands cannot be resolved beforehand.\n\nCommand: {preview}",
             PROGRAM,
         )
-    if shell_inspection.changes_variables(command) or any(any(item.dynamic) for item in commands):
+    if shell_inspection.changes_variables(command) or not literal_words.has_literal_words(command):
         return hook_decision.ask(
             f"Needs review: rm runs beside a variable change or an expansion, which can change PATH and so the "
             f"program it runs."

@@ -376,6 +376,9 @@ def test_an_inherited_loader_setting_asks(git_project: Path, monkeypatch: pytest
         "let PATH=0; rm scratch.txt",
         "echo ${x[PATH=1]} && rm scratch.txt",
         "echo ${PATH:=evil} && rm scratch.txt",
+        "rm scratch.txt 2>${PATH:=evil}",
+        "rm scratch.txt <<< ${PATH:=evil}",
+        "echo hi > $((PATH=1)) && rm scratch.txt",
     ],
 )
 def test_an_arithmetic_assignment_beside_rm_asks(git_project: Path, command: str) -> None:

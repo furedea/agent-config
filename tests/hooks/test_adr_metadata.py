@@ -64,7 +64,7 @@ def test_title_id_must_match_file_name(adr_directory: Path) -> None:
 
 def test_status_is_required(adr_directory: Path) -> None:
     (adr_directory / "0003_third_decision.md").write_text("# ADR-0003: Third\n\n- Date: 2026-01-01\n")
-    assert "Metadata `- Status:` is missing" in messages(adr_directory)
+    assert "Exactly one `- Status:` is required; found 0" in messages(adr_directory)
 
 
 @pytest.mark.parametrize("status", ["Draft", "accepted", "Superseded by ADR-0001", ""])
@@ -167,6 +167,27 @@ def test_supersession_is_reported_when_either_side_is_edited(adr_directory: Path
 def test_duplicate_id_is_reported_when_either_file_is_edited(adr_directory: Path) -> None:
     other = write_adr(adr_directory, "0002_other_decision.md")
     assert adr_metadata.diagnostics([other]) != ()
+
+
+def test_metadata_key_with_a_hyphen_is_checked(adr_directory: Path) -> None:
+    write_adr(adr_directory, "0001_first_decision.md", extra="- Owner-ID: team\n")
+    assert "Unknown metadata key `Owner-ID`" in messages(adr_directory)
+
+
+def test_exactly_one_status_is_required(adr_directory: Path) -> None:
+    write_adr(adr_directory, "0001_first_decision.md", extra="- Status: Superseded\n")
+    assert "Exactly one `- Status:` is required; found 2" in messages(adr_directory)
+
+
+def test_wrong_markdown_extension_is_a_file_name_violation(adr_directory: Path) -> None:
+    path = write_adr(adr_directory, "0003_third_decision.MD", identifier="0003")
+    assert "File name must be `NNNN_<words>.md`" in "\n".join(adr_metadata.diagnostics([path]))
+
+
+def test_deleting_an_adr_reports_references_that_now_dangle(adr_directory: Path) -> None:
+    write_adr(adr_directory, "0001_first_decision.md", extra="- Related: ADR-0003\n")
+    deleted = adr_directory / "0003_third_decision.md"
+    assert "Related names ADR-0003" in "\n".join(adr_metadata.diagnostics([deleted]))
 
 
 def test_this_repositorys_adr_history_conforms() -> None:

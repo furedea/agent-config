@@ -13,12 +13,13 @@ PLAIN_KEYS = ("Status", "Date", "Amended", "Originally", "Historical sources")
 KEYS = frozenset(RELATION_KEYS + PLAIN_KEYS)
 FILE_NAME = re.compile(r"(\d{4})_[a-z0-9]+(?:_[a-z0-9]+)*\.md")
 TITLE = re.compile(r"# ADR-(\d{4}): \S.*")
-METADATA = re.compile(r"- ([A-Za-z][A-Za-z ]*): ?(.*)")
+METADATA = re.compile(r"- ([A-Za-z][\w -]*): ?(.*)")
 AMENDED = re.compile(r"\d{4}-\d{2}-\d{2} \(.+\)")
 # A reference qualified by a repository word, such as `dotfiles ADR-0016`, names another repository's ADR.
 REFERENCE = re.compile(r"(?:\[?([A-Za-z][\w/.-]*) )?ADR-(\d{4})(?!\d)")
 JOINERS = frozenset({"and", "or", "to", "by", "with", "of", "in", "from", "see"})
 EXEMPT_NAMES = frozenset({"README.md"})
+MARKDOWN_SUFFIXES = frozenset({".md", ".markdown"})
 
 
 @dataclass(frozen=True, slots=True)
@@ -68,27 +69,30 @@ def diagnostics(paths: Iterable[Path]) -> tuple[str, ...]:
     """Describe the violations that involve an edited ADR; stay silent for other files and for clean ADRs.
 
     The whole directory is read, because uniqueness, references and supersession span files, but a violation in an
-    ADR the edit did not touch is not reported, so a repository with another ADR convention is not flooded.
+    ADR the edit did not touch is not reported, so a repository with another ADR convention is not flooded. A
+    deleted ADR leaves no file to match, so a deletion reports every violation of its directory.
     """
     edited = {path.resolve() for path in paths if is_adr_file(path)}
     directories = dict.fromkeys(path.parent for path in edited)
+    deleted = {path.parent for path in edited if not path.exists()}
     findings = (
         finding
         for directory in directories
         for finding in check_directory(directory)
-        if edited & {finding.path.resolve(), *(p.resolve() for p in finding.also_involves)}
+        if directory in deleted or edited & {finding.path.resolve(), *(p.resolve() for p in finding.also_involves)}
     )
     return tuple(finding.describe() for finding in sorted(findings, key=lambda f: (f.path, f.line, f.message)))
 
 
 def is_adr_file(path: Path) -> bool:
     """Tell whether a path is a Markdown file directly under a `docs/adr/` directory."""
-    return path.suffix == ".md" and path.parent.name == "adr" and path.parent.parent.name == "docs"
+    return path.suffix.lower() in MARKDOWN_SUFFIXES and path.parent.name == "adr" and path.parent.parent.name == "docs"
 
 
 def check_directory(directory: Path) -> list[Finding]:
     """Check each ADR of a directory, then the rules that span ADRs."""
-    adrs = [read_adr(path) for path in sorted(directory.glob("*.md")) if path.name not in EXEMPT_NAMES]
+    names = sorted(p for p in directory.iterdir() if p.suffix.lower() in MARKDOWN_SUFFIXES and p.is_file())
+    adrs = [read_adr(path) for path in names if path.name not in EXEMPT_NAMES]
     findings = [problem for adr in adrs for problem in adr.problems]
     findings += duplicate_identifiers(adrs)
     findings += unknown_references(adrs)
@@ -144,8 +148,9 @@ def check_metadata(adr: Adr) -> None:
         problem = entry_problem(key, value.strip())
         if problem:
             adr.report(number, problem)
-    if not adr.values("Status"):
-        adr.report(adr.title_line, "Metadata `- Status:` is missing.")
+    count = len(adr.values("Status"))
+    if count != 1:
+        adr.report(adr.title_line, f"Exactly one `- Status:` is required; found {count}.")
 
 
 def entry_problem(key: str, value: str) -> str:

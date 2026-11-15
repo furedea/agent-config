@@ -55,7 +55,7 @@ def diagnostics(payload: dict, kind: str | None = None) -> tuple[str, ...]:
     return (
         lint_engine.diagnostics(targets, check_file)
         + static_rule_scan.diagnostics(paths)
-        + adr_metadata.diagnostics(paths)
+        + adr_metadata.diagnostics(target_paths(payload) if kind in (None, "md") else ())
     )
 
 

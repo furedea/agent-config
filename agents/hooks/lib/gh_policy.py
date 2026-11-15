@@ -190,14 +190,16 @@ def _only_prints(command: shell_syntax.Command) -> bool:
 
 
 def _is_system_program(name: str) -> bool:
-    """Whether PATH finds the program outside the working tree, so no file the agent wrote stands in for it.
+    """Whether PATH finds the program outside the working tree in a place the user cannot write.
 
     echo and printf are shell builtins and never looked up; cat is, so a planted ./cat on PATH must not pass.
     """
     found = shutil.which(name)
     if found is None or not Path(found).is_absolute():
         return False
-    return not Path(found).resolve().is_relative_to(Path.cwd().resolve())
+    resolved = Path(found).resolve()
+    writable = os.access(resolved, os.W_OK) or os.access(resolved.parent, os.W_OK)
+    return not writable and not resolved.is_relative_to(Path.cwd().resolve())
 
 
 def load(path: Path, trusted: Path, secret_patterns: Path) -> GhRules:

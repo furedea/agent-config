@@ -125,14 +125,14 @@ def _lines(text: str) -> list[str]:
 def _adds(name: str, pattern: re.Pattern[str], change: _Change) -> bool:
     """Count markers in comments, or for markers compared by text, find a marker whose text is new.
 
-    Without the scanner, comments cannot be told from strings, so any change to text that holds a marker asks.
+    Without the scanner, comments cannot be told from strings, so a marker line whose text is new asks.
     """
     if name in CODE_MARKERS:
         return len(pattern.findall(change.added)) > len(pattern.findall(change.removed))
     suffix = Path(change.path).suffix
     added, removed = (_marked_lines(pattern, text, suffix) for text in (change.added, change.removed))
     if added is None or removed is None:
-        return pattern.search(change.added) is not None and change.added != change.removed
+        return bool(Counter(_marker_lines(pattern, change.added)) - Counter(_marker_lines(pattern, change.removed)))
     added_marks, removed_marks = ([mark for marks in found.values() for mark in marks] for found in (added, removed))
     if name in COMPARED_BY_TEXT:
         return bool(Counter(added_marks) - Counter(removed_marks))
@@ -162,6 +162,10 @@ def _marked_lines(pattern: re.Pattern[str], text: str, suffix: str) -> dict[int,
             )
         offset += len(line) + 1
     return marked
+
+
+def _marker_lines(pattern: re.Pattern[str], text: str) -> list[str]:
+    return [line.strip() for line in _lines(text) if pattern.search(line)]
 
 
 def _comment_start(spans: list[tuple[int, int]], position: int) -> int | None:
@@ -226,7 +230,11 @@ def _patch_changes(patch: str) -> list[_Change]:
     current: _Hunks | None = None
     for line in _lines(patch):
         if match := PATCH_FILE.match(line):
-            current = hunks.setdefault(match.group(2).strip(), _Hunks(added=match.group(1) == "Add"))
+            path = str(Path(match.group(2).strip()))
+            # A file named twice is applied in an order this does not model, so it fails closed.
+            repeated = path in hunks
+            current = hunks.setdefault(path, _Hunks(added=match.group(1) == "Add"))
+            current.repeated = current.repeated or repeated
         elif current is not None and (move := PATCH_MOVE.match(line)):
             current.destination = move.group(1).strip()
         elif line.startswith("*** ") and line != patch_input.END_OF_FILE:
@@ -243,6 +251,7 @@ class _Hunks:
     added: bool = False
     lines: list[str] = field(default_factory=list)
     destination: str = ""
+    repeated: bool = False
 
     def changes(self, path: str) -> list[_Change]:
         existing = _existing_text(path)
@@ -259,6 +268,8 @@ class _Hunks:
         The applier also matches context loosely (whitespace, Unicode punctuation), so where an inexact hunk lands is
         unknown; in a file that holds a marker, that fails closed.
         """
+        if self.repeated:
+            return _Change(path, "", "", unplaced=True)
         if self.added:
             return _Change(
                 path, "".join(f"{line[1:]}\n" for line in self.lines if line.startswith("+")), existing, True
@@ -288,18 +299,23 @@ def _newly_honored(text: str, source: str, destination: str) -> str:
 
 
 def _becomes_comment(text: str, source: str, destination: str) -> set[int]:
-    """Lines whose ast-grep marker is in a comment at the destination that the source did not read so."""
-    if source == destination or destination not in MARKER_SUFFIXES["ast-grep-ignore"]:
+    """Lines with a comment marker that is in a comment at the destination which the source did not read so."""
+    if source == destination:
         return set()
-    pattern = MARKERS["ast-grep-ignore"]
-    before, after = (_marked_lines(pattern, text, suffix) for suffix in (source, destination))
-    if before is None or after is None:
-        return {number for number, line in enumerate(_lines(text)) if pattern.search(line)}
-    return {
-        number
-        for number, marks in after.items()
-        if any(comment for comment, _ in marks) and marks != before.get(number)
-    }
+    lines: set[int] = set()
+    for name, pattern in MARKERS.items():
+        if name in CODE_MARKERS or destination not in MARKER_SUFFIXES.get(name, CODE_SUFFIXES):
+            continue
+        before, after = (_marked_lines(pattern, text, suffix) for suffix in (source, destination))
+        if before is None or after is None:
+            lines |= {number for number, line in enumerate(_lines(text)) if pattern.search(line)}
+            continue
+        lines |= {
+            number
+            for number, marks in after.items()
+            if any(comment for comment, _ in marks) and marks != before.get(number)
+        }
+    return lines
 
 
 def _holds_marker(text: str, suffix: str) -> bool:

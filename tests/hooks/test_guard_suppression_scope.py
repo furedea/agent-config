@@ -374,3 +374,29 @@ def test_an_empty_line_in_a_hunk_is_an_empty_context_line(tmp_path: Path) -> Non
     target.write_text("z = 1  # noqa: E501\n\ny = 1\n")
     patch = f"*** Begin Patch\n*** Update File: {target}\n@@\n z = 1  # noqa: E501\n\n-y = 1\n+y = 2\n*** End Patch"
     assert decide("apply_patch", {"input": patch}) == "allow"
+
+
+def test_without_the_scanner_an_edit_away_from_an_unchanged_suppression_passes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(guard.comment_nodes, "SCANNER", "ast-grep-missing-for-test")
+    target = tmp_path / "a.py"
+    target.write_text("import os  # noqa: F401\nx = 1\n")
+    assert decide("Edit", {"file_path": str(target), "old_string": "x = 1", "new_string": "x = 2"}) == "allow"
+
+
+def test_moving_a_file_where_a_nolint_becomes_a_comment_asks(tmp_path: Path) -> None:
+    source = tmp_path / "tool.py"
+    source.write_text("f() // nolint\n")
+    patch = f"*** Begin Patch\n*** Update File: {source}\n*** Move to: {tmp_path / 'tool.go'}\n*** End Patch"
+    assert decide("apply_patch", {"input": patch}) == "ask"
+
+
+def test_a_patch_that_names_one_file_twice_asks(tmp_path: Path) -> None:
+    target = tmp_path / "app.py"
+    target.write_text("x = 1\n")
+    patch = (
+        f"*** Begin Patch\n*** Update File: {target}\n@@\n-x = 1\n+x = 2\n"
+        f"*** Add File: {target}\n+x = 2\n*** End Patch"
+    )
+    assert decide("apply_patch", {"input": patch}) == "ask"

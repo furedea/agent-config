@@ -1,0 +1,32 @@
+# Go layout (agents/skills/go-style/references/tooling.md: "Keep `main` thin: parse flags, wire dependencies, and call
+# library code"). Advisory (ADR-0021). The cutoff is the 0.5 starting value, not fitted.
+id: main-is-thin
+language: Go
+kind: noul
+subject: node
+state: local
+threshold: 0.5
+axis: file
+severity: warning
+rule:
+  all:
+    - kind: function_declaration
+    - has:
+        field: name
+        regex: ^main$
+    # Only the entry point: `func main` in any other package is an ordinary function.
+    - inside:
+        kind: source_file
+        has:
+          kind: package_clause
+          regex: ^package main$
+        stopBy: end
+ask: >-
+  This `main` function holds program logic beyond parsing flags, wiring dependencies and calling library code.
+criteria:
+  "true": >-
+    `main` itself contains business logic, data transformation, loops over domain data or error-handling policy that
+    belongs in a package a test can call without starting the program.
+  "false": >-
+    `main` only parses flags or the environment, constructs and wires dependencies, calls one entry point, and turns
+    its result into an exit code.

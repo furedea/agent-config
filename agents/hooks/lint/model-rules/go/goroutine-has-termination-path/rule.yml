@@ -1,0 +1,25 @@
+# Go concurrency (agents/skills/go-style/references/concurrency.md: "Give every goroutine a defined owner and a
+# termination path"). Advisory (ADR-0021). The cutoff is the 0.5 starting value, not fitted; no fixtures or baseline yet.
+id: goroutine-has-termination-path
+language: Go
+kind: noul
+subject: node
+# The file is sent whole: the owner (a WaitGroup, an errgroup, a done channel) is often a
+# field or a type declared outside the function.
+state: located
+threshold: 0.5
+axis: file
+severity: warning
+rule:
+  kind: go_statement
+ask: >-
+  This goroutine is started with nobody waiting for its end, or with no way to make it stop.
+criteria:
+  "true": >-
+    The goroutine lacks an owner or lacks a termination path: no WaitGroup, errgroup or received result or done channel
+    lets the caller wait for it, or it can run forever because it neither does finite work nor stops on context
+    cancellation or a closed channel. Either gap can let it outlive its caller or leak.
+  "false": >-
+    The goroutine has both an owner that waits for it (errgroup, WaitGroup, a result or done channel that is received)
+    and a termination path (finite work, or an exit that context cancellation or a closed channel triggers), or it is
+    bound to the program's lifetime on purpose and says so.

@@ -1,0 +1,23 @@
+# Go errors (agents/skills/go-style/references/errors.md: "Use `panic` only for programmer errors and initialization
+# failures, never for expected failures"). Advisory (ADR-0021). The cutoff is the 0.5 starting value, not fitted.
+id: panic-only-for-programmer-errors
+language: Go
+kind: noul
+subject: node
+state: local
+threshold: 0.5
+axis: file
+severity: warning
+rule:
+  kind: call_expression
+  regex: ^panic\(
+ask: >-
+  This panic reports a failure that can happen in a correct program, such as bad input, a missing file or a failed
+  request.
+criteria:
+  "true": >-
+    The condition that triggers the panic can be caused by input, the environment or another system while the code is
+    correct, and a caller could reasonably recover from it by handling an error instead.
+  "false": >-
+    The panic reports a bug in the program (an impossible state, a violated precondition, an unhandled case) or a
+    failure to initialize at startup (package-level `Must...` helpers, `init`, regular expression compilation).

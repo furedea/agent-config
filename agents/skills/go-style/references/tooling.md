@@ -30,6 +30,4 @@ go test -race ./...
 govulncheck ./...
 ```
 
-- gofumpt and goimports run as golangci-lint formatters.
 - Do not loosen linter configuration to make code pass; fix the code.
-- Every `//nolint` names the linter and carries a reason: `//nolint:gosec // path is validated by Parse`.

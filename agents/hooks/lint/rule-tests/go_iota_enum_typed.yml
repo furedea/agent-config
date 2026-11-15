@@ -1,0 +1,59 @@
+id: go_iota_enum_typed
+valid:
+  - |
+    const (
+        StatePending State = iota
+        StateDone
+    )
+  - |
+    const (
+        Read Perm = 1 << iota
+        Write
+    )
+  - |
+    const (
+        _           = iota // ignore first value by assigning to blank identifier
+        KB ByteSize = 1 << (10 * iota)
+    )
+  - |
+    const (
+        _  = iota
+        KB = 1 << (10 * iota)
+        MB
+    )
+  - |
+    const (
+        _ = iota
+        StateReady = State(iota)
+        StateDone
+    )
+  - |
+    const StateReady = State(max(iota, 1))
+  - |
+    const StateReady = State[int](iota)
+  - |
+    const First, Second = State(iota), State(iota)
+  - |
+    const Step State = 1
+    const StateReady = iota + Step
+  - |
+    const (
+        StateReady = iota + 1
+        StateDone
+    )
+invalid:
+  - |
+    const (
+        StatePending = iota
+        StateDone
+    )
+  - |
+    const (
+        Zero = iota
+    )
+  - |
+    const (
+        _ = iota
+        StateReady
+        StateDone
+    )

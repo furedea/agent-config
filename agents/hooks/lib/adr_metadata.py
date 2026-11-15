@@ -109,6 +109,7 @@ def check_directory(directory: Path) -> list[Finding]:
     findings = [problem for adr in adrs for problem in adr.problems]
     findings += duplicate_identifiers(adrs)
     findings += unknown_references(adrs)
+    findings += self_references(adrs)
     findings += unsuperseded_targets(adrs)
     findings += unsuperseded_adrs(adrs)
     return findings
@@ -196,6 +197,17 @@ def duplicate_identifiers(adrs: list[Adr]) -> list[Finding]:
         for identifier, same in by_identifier.items()
         if len(same) > 1
         for adr in same
+    ]
+
+
+def self_references(adrs: list[Adr]) -> list[Finding]:
+    """Report a relation entry that names the ADR it is written in."""
+    return [
+        Finding(adr.path, line, f"{key} names ADR-{identifier}, the ADR itself.")
+        for adr in adrs
+        for key in RELATION_KEYS
+        for line, identifier in adr.references(key)
+        if identifier == adr.identifier
     ]
 
 

@@ -22,7 +22,7 @@ justify one for a local, easily reversible choice; use code, tests, or a comment
 
 ## Inspect First
 
-1. Read the titles and front matter of the existing ADRs, then search them for the topic, the chosen option, and the
+1. Read the titles and metadata (front matter or whatever form the repository uses) of the existing ADRs, then search them for the topic, the chosen option, and the
    rejected alternatives.
 2. If an ADR already covers the decision, make the code follow it instead of writing a duplicate.
 3. If the decision reverses or materially changes an accepted ADR, write a new one that supersedes it.

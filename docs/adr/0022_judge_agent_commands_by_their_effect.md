@@ -35,8 +35,8 @@ earlier one by prompting more:
 | Class | Effect                                 | Examples                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Decision |
 | ----- | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
 | A     | Stays inside the environment           | edit, build, test, `rm` of a generated, ignored, or clean tracked file inside writable roots, shell functions, loops                                                                                                                                                                                                                                                                                                                                                                            | allow    |
-| B     | External, inside the grant, reversible | PR / issue create, edit, comment, review reply, `resolveReviewThread` on a trusted owner's repository; read-only `gh` that reveals no secret; Herdr panes the agent created; dependency adds that run no package code at add time (`cargo add`, `GOTOOLCHAIN=local go get`, `uv add --no-build`, `npm install --ignore-scripts`)                                                                                                                                                                | allow    |
-| C     | Widens authority                       | writes to repositories of owners not in `trusted_owners.json`; non-allowlisted hosts; secrets, including token-revealing reads (`gh auth token`, `gh auth status --show-token`); sandbox escape; fetched-package execution (`npx`, `uvx`, `bunx`, `pnpm dlx`, `nix run`, `nix shell`, `uv run --with`, `npm install` without `--ignore-scripts`, `go get` that may switch toolchains, and any `uv add` without `--no-build`, because resolving or syncing can run an sdist build backend)       | ask      |
+| B     | External, inside the grant, reversible | PR / issue create, edit, comment, review reply, `resolveReviewThread` on a trusted owner's repository; read-only `gh`; `git fetch` and a push of the agent's own topic branch to a trusted owner's remote (the forms the current policy allows); Herdr panes the agent created; dependency adds that run no package code at add time (`cargo add`, `GOTOOLCHAIN=local go get`, `uv add --no-build`, `npm install --ignore-scripts`)                                                             | allow    |
+| C     | Widens authority                       | writes to repositories of owners not in `trusted_owners.json`; non-allowlisted hosts; secrets not already denied (every `gh auth` form stays a hard denial); sandbox escape; fetched-package execution (`npx`, `uvx`, `bunx`, `pnpm dlx`, `nix run`, `nix shell`, `uv run --with`, `npm install` without `--ignore-scripts`, `go get` that may switch toolchains, and any `uv add` without `--no-build`, because resolving or syncing can run an sdist build backend)                           | ask      |
 | D     | Promotes or cannot be undone           | `gh pr merge`, `gh release create` / `edit` / `upload` / `delete` / `delete-asset`, `gh api` with a write method other than a listed class B call (including `-X DELETE`, which asks today even for a repository), `rm` of an untracked file or a file with uncommitted edits, `git stash drop` / `clear`, `git remote add` / `set-url`, `kill` / `pkill` that send a signal (not `kill -l` / `-L`), `herdr server` forms that start, stop, reload, or update (not read-only `agent-manifests`) | ask      |
 
 The deny list in `agents/command_permissions.json` is unchanged and is not restated here. What
@@ -79,7 +79,7 @@ Settings changes are the owner's decision, so this ADR only recommends them:
     and any `develop` or `release/*` branch), not on `main` alone. This, or the future Gateway, is
     the enforcement point that stops `gh pr merge` without the owner even if a prompt is bypassed.
 
-The ruleset stops the agent's merge only under two conditions, both settings the owner decides:
+The ruleset stops the agent's merge only when all three conditions hold, each a setting the owner decides:
 
 - A required approval is not an owner approval by itself, because any writer can approve unless
     the rule restricts who counts. The ruleset must require code-owner review with a `CODEOWNERS`
@@ -92,7 +92,7 @@ The ruleset stops the agent's merge only under two conditions, both settings the
 - The agent's GitHub App must not be a bypass actor of the ruleset, since a bypass actor merges
     without the rules applying.
 
-Merges into a branch the ruleset does not cover, or while either condition fails, stay guarded
+Merges into a branch the ruleset does not cover, or while any condition fails, stay guarded
 only by the class D prompt.
 
 ## Measurement target

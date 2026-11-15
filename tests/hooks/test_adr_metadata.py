@@ -215,6 +215,11 @@ def test_reference_must_end_at_a_token_boundary(adr_directory: Path) -> None:
     assert "Related must name at least one `ADR-NNNN`" in messages(adr_directory)
 
 
+def test_reference_must_start_at_a_token_boundary(adr_directory: Path) -> None:
+    write_adr(adr_directory, "0002_second_decision.md", extra="- Related: xADR-0001\n")
+    assert "Related must name at least one `ADR-NNNN`" in messages(adr_directory)
+
+
 def test_id_digits_must_be_ascii(adr_directory: Path) -> None:
     wide = "\uff11\uff12\uff13\uff14"
     (adr_directory / f"{wide}_wide.md").write_text(f"# ADR-{wide}: Wide\n\n- Status: Accepted\n")

@@ -7,6 +7,7 @@ call the guard cannot classify. What a granted call sends to GitHub is scanned f
 
 import os
 import re
+import shutil
 import subprocess
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -299,30 +300,16 @@ def _remotes_on_github() -> bool:
 
 def _remote_urls() -> set[str] | None:
     """Each remote URL as git resolves it, insteadOf rewrites applied; None when git cannot be asked."""
-    try:
-        output = subprocess.run(
-            ["git", "remote", "-v"],
-            capture_output=True,
-            text=True,
-            timeout=REMOTE_LOOKUP_TIMEOUT_SECONDS,
-            check=False,
-        ).stdout
-    except OSError, subprocess.SubprocessError:
+    output = _git_output("remote", "-v")
+    if output is None:
         return None
     return {line.split()[1] for line in output.splitlines() if len(line.split()) >= 2}
 
 
 def _resolved_defaults() -> list[str]:
     """Each repository a remote's gh-resolved setting names; `base` points at that remote itself."""
-    try:
-        output = subprocess.run(
-            ["git", "config", "--get-regexp", r"^remote\..*\.gh-resolved$"],
-            capture_output=True,
-            text=True,
-            timeout=REMOTE_LOOKUP_TIMEOUT_SECONDS,
-            check=False,
-        ).stdout
-    except OSError, subprocess.SubprocessError:
+    output = _git_output("config", "--get-regexp", r"^remote\..*\.gh-resolved$")
+    if output is None:
         return ["unreadable"]
     values = [line.split(" ", 1)[-1].strip() for line in output.splitlines()]
     # `base` marks the remote it is set on, whose URL is already among the remotes.
@@ -354,3 +341,23 @@ def _file_head(path: Path) -> str:
             return stream.read(SENT_FILE_LIMIT_BYTES).decode(errors="replace")
     except OSError:
         return ""
+
+
+def _git_output(*arguments: str) -> str | None:
+    """What git prints for the arguments, or None when git cannot be asked or PATH finds one the agent can write.
+
+    A planted git could tell the guard one remote and gh another, and would run inside the hook itself.
+    """
+    found = shutil.which("git")
+    if found is None or not is_outside_agent_roots("git"):
+        return None
+    try:
+        return subprocess.run(
+            [found, *arguments],
+            capture_output=True,
+            text=True,
+            timeout=REMOTE_LOOKUP_TIMEOUT_SECONDS,
+            check=False,
+        ).stdout
+    except OSError, subprocess.SubprocessError:
+        return None

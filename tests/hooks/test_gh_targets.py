@@ -213,3 +213,18 @@ def test_a_quoted_parameter_holding_a_foreign_url_asks(monkeypatch: pytest.Monke
     assert decide('gh pr view "$TARGET"') == "ask"
     monkeypatch.setenv("TARGET", "https://github.com/furedea/agent-config/pull/1")
     assert decide('gh pr view "$TARGET"') == "allow"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_git_planted_where_the_agent_writes_keeps_the_working_repository_unresolved(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    assert decide("gh issue comment 1 -b ok") == "allow"
+    assert decide("gh pr list") == "allow"
+    planted = Path("bin")
+    planted.mkdir()
+    (planted / "git").write_text("#!/bin/sh\necho 'origin https://github.com/furedea/agent-config (fetch)'\n")
+    (planted / "git").chmod(0o755)
+    monkeypatch.setenv("PATH", f"{planted.resolve()}:{os.environ['PATH']}")
+    assert decide("gh issue comment 1 -b ok") == "ask"
+    assert decide("gh pr list") == "ask"

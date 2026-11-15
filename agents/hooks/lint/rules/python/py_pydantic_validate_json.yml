@@ -80,7 +80,6 @@ rule:
               - follows:
                   stopBy: end
                   has:
-                    stopBy: end
                     any:
                       - pattern: $DATA = json.loads($$$ARGS)
                       - pattern: $DATA = orjson.loads($$$ARGS)
@@ -123,7 +122,6 @@ rule:
               - follows:
                   stopBy: end
                   has:
-                    stopBy: end
                     any:
                       - pattern: $DATA = $ALIAS.loads($$$ARGS)
         - inside:
@@ -169,7 +167,6 @@ rule:
               - follows:
                   stopBy: end
                   has:
-                    stopBy: end
                     any:
                       - pattern: $DATA = $LOADER($$$ARGS)
         - inside:
@@ -215,7 +212,6 @@ rule:
               - follows:
                   stopBy: end
                   has:
-                    stopBy: end
                     any:
                       - pattern: $DATA = loads($$$ARGS)
         - inside:

@@ -55,6 +55,11 @@ valid:
         order = Order.model_validate(data)
         data = json.loads(raw)
         return order, data
+  - |
+    def load(data, raw, use_json):
+        if use_json:
+            data = json.loads(raw)
+        return Order.model_validate(data)
 invalid:
   - |
     order = Order.model_validate(json.loads(payload))

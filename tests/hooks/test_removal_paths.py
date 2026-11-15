@@ -54,7 +54,7 @@ def test_removing_files_inside_the_worktree_runs_unprompted(git_project: Path, c
 def test_removing_a_file_in_the_session_temporary_directory_runs_unprompted(
     git_project: Path, tmp_path_factory: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    session = tmp_path_factory.mktemp("session-tmp") / "claude-501"
+    session = tmp_path_factory.mktemp("session-tmp") / f"claude-{os.getuid()}"
     session.mkdir()
     monkeypatch.setenv("CLAUDE_CODE_TMPDIR", str(session.parent))
     assert judged(git_project, f"rm -f {session.resolve()}/scratch.txt") == "allow"
@@ -207,7 +207,7 @@ def test_a_shared_system_temporary_directory_is_not_a_session_root(
 def test_a_session_temporary_directory_below_a_shared_root_stays_writable(
     git_project: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    session = Path("/tmp/claude-test-session").resolve()
+    session = Path(f"/tmp/claude-{os.getuid()}").resolve()
     monkeypatch.setenv("TMPDIR", str(session))
     monkeypatch.setattr(tempfile, "tempdir", str(session))
     assert judged(git_project, f"rm {session}/scratch.txt") == "allow"
@@ -239,8 +239,8 @@ def test_a_general_tmpdir_is_not_a_session_root(
 def test_the_claude_session_tmpdir_is_a_session_root(git_project: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     for name in ("CLAUDE_TMPDIR", "CLAUDE_CODE_TMPDIR"):
         monkeypatch.delenv(name, raising=False)
-    monkeypatch.setenv("TMPDIR", "/tmp/claude-501")
-    assert judged(git_project, f"rm {Path('/tmp/claude-501').resolve()}/scratch.txt") == "allow"
+    monkeypatch.setenv("TMPDIR", f"/tmp/claude-{os.getuid()}")
+    assert judged(git_project, f"rm {Path(f'/tmp/claude-{os.getuid()}').resolve()}/scratch.txt") == "allow"
 
 
 @pytest.mark.parametrize("name", ["rm", "nohup"])
@@ -285,9 +285,10 @@ def test_a_relative_path_entry_makes_rm_ask(git_project: Path, monkeypatch: pyte
 
 
 def test_a_builtin_name_behind_an_external_wrapper_is_looked_up_on_path(
-    git_project: Path, monkeypatch: pytest.MonkeyPatch
+    git_project: Path, monkeypatch: pytest.MonkeyPatch, tmp_path_factory: pytest.TempPathFactory
 ) -> None:
-    use_own_program(git_project / ".venv" / "bin", monkeypatch, "echo")
+    without_session_temporary_roots(monkeypatch)
+    use_own_program(tmp_path_factory.mktemp("user-bin"), monkeypatch, "echo")
     assert judged(git_project, "echo hi && rm scratch.txt") == "allow"
     assert judged(git_project, "nohup echo hi && rm scratch.txt") == "ask"
 
@@ -356,10 +357,10 @@ def test_a_broad_claude_code_tmpdir_is_not_a_session_root(
 ) -> None:
     without_session_temporary_roots(monkeypatch)
     broad = tmp_path_factory.mktemp("user-tmp")
-    (broad / "claude-501").mkdir()
+    (broad / f"claude-{os.getuid()}").mkdir()
     monkeypatch.setenv("CLAUDE_CODE_TMPDIR", str(broad))
     assert judged(git_project, f"rm {broad.resolve()}/unrelated.txt") == "ask"
-    assert judged(git_project, f"rm {broad.resolve()}/claude-501/scratch.txt") == "allow"
+    assert judged(git_project, f"rm {broad.resolve()}/claude-{os.getuid()}/scratch.txt") == "allow"
 
 
 @pytest.mark.parametrize("name", ["LD_PRELOAD", "LD_LIBRARY_PATH", "DYLD_INSERT_LIBRARIES", "DYLD_LIBRARY_PATH"])
@@ -383,3 +384,26 @@ def test_an_inherited_loader_setting_asks(git_project: Path, monkeypatch: pytest
 )
 def test_an_arithmetic_assignment_beside_rm_asks(git_project: Path, command: str) -> None:
     assert judged(git_project, command) == "ask"
+
+
+@pytest.mark.parametrize("command", ["'' ; cd ~ ; rm .bashrc", '"" ; cd ~ ; rm .bashrc'])
+def test_an_empty_program_name_does_not_hide_later_segments(git_project: Path, command: str) -> None:
+    assert judged(git_project, command) == "ask"
+
+
+def test_another_sessions_claude_directory_is_not_a_root(
+    git_project: Path, monkeypatch: pytest.MonkeyPatch, tmp_path_factory: pytest.TempPathFactory
+) -> None:
+    without_session_temporary_roots(monkeypatch)
+    parent = tmp_path_factory.mktemp("shared-parent")
+    (parent / f"claude-{os.getuid()}").mkdir()
+    (parent / "claude-other").mkdir()
+    monkeypatch.setenv("CLAUDE_CODE_TMPDIR", str(parent))
+    assert judged(git_project, f"rm {parent.resolve()}/claude-other/file") == "ask"
+
+
+def test_a_writable_path_entry_before_the_system_rm_asks(git_project: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    early = git_project / ".venv" / "bin"
+    early.mkdir(parents=True)
+    monkeypatch.setenv("PATH", f"{early}{os.pathsep}{os.environ['PATH']}")
+    assert judged(git_project, "rm scratch.txt") == "ask"

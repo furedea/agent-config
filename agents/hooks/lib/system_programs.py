@@ -38,6 +38,16 @@ def inherits_execution_overrides() -> bool:
     return exported or loader or any(os.environ.get(name) for name in STARTUP_FILE_VARIABLES)
 
 
+def search_path_before(word: str) -> list[Path]:
+    """The PATH entries a shell looks in before the one that holds `word`, or all of them if none does."""
+    found = shutil.which(word)
+    entries = [Path(entry) for entry in os.environ.get("PATH", "").split(os.pathsep) if entry]
+    if found is None:
+        return entries
+    parent = Path(found).parent
+    return entries[: entries.index(parent)] if parent in entries else entries
+
+
 def is_system_program(word: str) -> bool:
     """Whether `word`, an absolute path or a name looked up on PATH, runs a root-owned system file."""
     if os.geteuid() == ROOT_UID or inherits_execution_overrides() or ("/" in word and not word.startswith("/")):

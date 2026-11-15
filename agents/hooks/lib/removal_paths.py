@@ -50,7 +50,8 @@ def objection(payload: dict, command: str, commands: tuple[shell_syntax.Command,
     if not calls:
         return hook_decision.ALLOW
     preview = shell_syntax.command_preview(calls[0].raw)
-    if other := next((item.arguments[0] for item in commands if not _is_safe_companion(item)), ""):
+    if (unsafe := next((item for item in commands if not _is_safe_companion(item)), None)) is not None:
+        other = unsafe.arguments[0] or "''"
         return hook_decision.ask(
             f"Needs review: rm shares the command with '{other}', which may change the working directory or the "
             f"file a path names, so its operands cannot be resolved beforehand.\n\nCommand: {preview}",
@@ -63,15 +64,15 @@ def objection(payload: dict, command: str, commands: tuple[shell_syntax.Command,
             f"\n\nCommand: {preview}",
             PROGRAM,
         )
-    programs = [item.arguments[0] for item in commands if not _runs_a_system_program(item)]
+    directory = automation_paths.working_directory(payload)
+    roots = _writable_roots(directory) if directory is not None else ()
+    programs = [item.arguments[0] or "''" for item in commands if not _runs_a_system_program(item, roots)]
     if program := next(iter(programs), ""):
         return hook_decision.ask(
             f"Needs review: '{program}' does not resolve to a system program, so it may not be the program the "
             f"guard judged.\n\nCommand: {preview}",
             PROGRAM,
         )
-    directory = automation_paths.working_directory(payload)
-    roots = _writable_roots(directory) if directory is not None else ()
     reason = next((reason for call in calls if (reason := _call_reason(call, directory, roots))), "")
     if not reason:
         return hook_decision.ALLOW
@@ -119,10 +120,11 @@ def _session_temporary_roots() -> tuple[Path, ...]:
     parents = [
         Path(value).expanduser().resolve() for name in PROVIDER_TEMPORARY_VARIABLES if (value := os.environ.get(name))
     ]
-    roots = [child for parent in parents for child in parent.glob(f"{PROVIDER_TEMPORARY_PREFIX}*") if child.is_dir()]
+    own = f"{PROVIDER_TEMPORARY_PREFIX}{os.getuid()}"
+    roots = [parent / own for parent in parents if (parent / own).is_dir()]
     general = os.environ.get("TMPDIR")
     if general and (root := Path(general).expanduser().resolve()).parent in SHARED_TEMPORARY_ROOTS:
-        roots += [root] if root.name.startswith(PROVIDER_TEMPORARY_PREFIX) else []
+        roots += [root] if root.name == own else []
     return tuple(
         root
         for root in roots
@@ -143,16 +145,21 @@ def _is_safe_companion(item: shell_syntax.Command) -> bool:
     return bare and name in COMPANIONS | WRAPPERS
 
 
-def _runs_a_system_program(item: shell_syntax.Command) -> bool:
+def _runs_a_system_program(item: shell_syntax.Command, roots: tuple[Path, ...]) -> bool:
     """A builtin the shell runs itself, or a root-owned system program run with no assignment before it.
 
-    Behind an external wrapper even a builtin's name is looked up on PATH, and an assignment such as
-    PATH or LD_PRELOAD before a call can change which program runs.
+    Behind an external wrapper even a builtin's name is looked up on PATH, an assignment such as PATH or
+    LD_PRELOAD before a call can change which program runs, and a PATH entry before the program that the
+    session can write could gain a program of the same name before the command runs.
     """
     if item.arguments[0] in BUILTINS and not item.wrapper_depth:
         return not system_programs.inherits_execution_overrides()
-    return not shell_inspection.has_prefix_assignment(item.raw, item.words[0]) and system_programs.is_system_program(
-        item.arguments[0]
+    earlier = [] if "/" in item.arguments[0] else system_programs.search_path_before(item.arguments[0])
+    writable = any(entry.resolve().is_relative_to(root) for entry in earlier for root in roots)
+    return (
+        not writable
+        and not shell_inspection.has_prefix_assignment(item.raw, item.words[0])
+        and system_programs.is_system_program(item.arguments[0])
     )
 
 

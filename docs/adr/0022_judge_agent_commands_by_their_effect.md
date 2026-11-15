@@ -1,9 +1,7 @@
 ---
 status: accepted
 date: 2026-11-14
-amended:
-  - "2026-11-14: ADR-0021 (static ast-grep rules block; amendment in a separate change)"
-related: [ADR-0009, ADR-0006, ADR-0015, ADR-0021]  # refines ADR-0009, ADR-0006, ADR-0015; ADR-0021 amends
+related: [ADR-0009, ADR-0006, ADR-0015, ADR-0021]  # refines ADR-0009, ADR-0006, ADR-0015; amends ADR-0021 (static ast-grep rules block; amendment in a separate change)
 ---
 
 # ADR-0022: Judge agent commands by their effect

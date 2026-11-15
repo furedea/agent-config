@@ -23,6 +23,7 @@ import automation_paths
 import command_objections
 import command_policy
 import foreign_shell_policy
+import gh_command_line
 import gh_policy
 import hook_decision
 import hook_input
@@ -84,7 +85,7 @@ def policies(kind: str, directory: Path) -> Policy:
         raise ValueError(f"invalid project {kind} command rules: {project}") from error
     if kind == "allowed" and (ignored := ignored_project_rules(root, directory)):
         return Policy(prefixes, rules, ignored=ignored, gh=gh)
-    governed = command_policy.governed_programs(rules) | {gh_policy.PROGRAM}
+    governed = command_policy.governed_programs(rules) | {gh_command_line.PROGRAM}
     taken = governed & set(command_policy.pinned_programs(project_rules))
     if taken:
         raise ValueError(f"project rule pins a program the global rules govern: {', '.join(sorted(taken))}: {project}")

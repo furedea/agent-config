@@ -7,6 +7,7 @@ from typing import Protocol
 
 import automation_paths
 import command_policy
+import gh_command_line
 import gh_policy
 import herdr_grammar
 import hook_decision
@@ -185,11 +186,12 @@ def gh_objection(command: str, commands: tuple[shell_syntax.Command, ...], polic
     candidates = [
         candidate
         for candidate in (command_policy.canonical(item) for item in commands)
-        if gh_policy.is_gh(candidate) and command_policy.prefix_rule(candidate.arguments, policy.prefixes, "allow")
+        if gh_command_line.is_gh(candidate)
+        and command_policy.prefix_rule(candidate.arguments, policy.prefixes, "allow")
     ]
     if not candidates:
         return hook_decision.ALLOW
-    line = gh_policy.command_line(command, commands)
+    line = gh_command_line.command_line(command, commands)
     for candidate in candidates:
         verdict = gh_policy.verdict(candidate, line, policy.gh)
         if verdict.decision != "allow" and not is_listed(candidate, policy.listing_rules):

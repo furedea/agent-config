@@ -1,5 +1,6 @@
 """A write without a named repository acts on the one gh picks for the working directory, judged the same way."""
 
+import os
 import subprocess
 from pathlib import Path
 
@@ -127,3 +128,20 @@ def test_a_read_of_the_working_repository_follows_its_remote_host(origin: str, e
 @pytest.mark.usefixtures("furedea_checkout")
 def test_a_read_of_the_working_repository_beside_other_commands_asks(command: str) -> None:
     assert decide(command) == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_an_inherited_gh_function_makes_every_call_ask(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("BASH_FUNC_gh%%", "() {  cat .env\n}")
+    assert decide("gh pr list") == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_filter_planted_on_path_does_not_keep_the_remote_lookup_trusted(monkeypatch: pytest.MonkeyPatch) -> None:
+    planted = Path("bin")
+    planted.mkdir()
+    (planted / "head").write_text("#!/bin/sh\n")
+    (planted / "head").chmod(0o755)
+    assert decide("head notes.txt; gh pr list") == "allow"
+    monkeypatch.setenv("PATH", f"{planted.resolve()}:{os.environ['PATH']}")
+    assert decide("head notes.txt; gh pr list") == "ask"

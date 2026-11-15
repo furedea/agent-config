@@ -7,6 +7,7 @@ call the guard cannot classify. What a granted call sends to GitHub is scanned f
 
 import os
 import re
+import shutil
 import subprocess
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -184,7 +185,19 @@ def _only_prints(command: shell_syntax.Command) -> bool:
             return False
         return name != "printf" or (len(command.arguments) == 2 and "%" not in command.arguments[1])
     redirects = input_redirects(command)
-    return len(command.arguments) == 1 and len(redirects) == 1 and bool(QUOTED_HEREDOC.match(redirects[0]))
+    heredoc_only = len(command.arguments) == 1 and len(redirects) == 1 and bool(QUOTED_HEREDOC.match(redirects[0]))
+    return heredoc_only and _is_system_program(name)
+
+
+def _is_system_program(name: str) -> bool:
+    """Whether PATH finds the program outside the working tree, so no file the agent wrote stands in for it.
+
+    echo and printf are shell builtins and never looked up; cat is, so a planted ./cat on PATH must not pass.
+    """
+    found = shutil.which(name)
+    if found is None or not Path(found).is_absolute():
+        return False
+    return not Path(found).resolve().is_relative_to(Path.cwd().resolve())
 
 
 def load(path: Path, trusted: Path, secret_patterns: Path) -> GhRules:

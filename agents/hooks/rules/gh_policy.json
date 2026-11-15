@@ -128,6 +128,34 @@
         "--remove-blocked-by",
         "--remove-blocking",
         "--remove-sub-issue"
+      ],
+      "required_any": [
+        "--add-assignee",
+        "--add-blocked-by",
+        "--add-blocking",
+        "--add-label",
+        "--add-project",
+        "--add-sub-issue",
+        "--attach",
+        "--body",
+        "--body-file",
+        "--milestone",
+        "--parent",
+        "--remove-assignee",
+        "--remove-blocked-by",
+        "--remove-blocking",
+        "--remove-label",
+        "--remove-milestone",
+        "--remove-parent",
+        "--remove-project",
+        "--remove-sub-issue",
+        "--remove-type",
+        "--title",
+        "--type",
+        "-F",
+        "-b",
+        "-m",
+        "-t"
       ]
     },
     "issue comment": {
@@ -350,6 +378,28 @@
       ],
       "flags": [
         "--remove-milestone"
+      ],
+      "required_any": [
+        "--add-assignee",
+        "--add-label",
+        "--add-project",
+        "--add-reviewer",
+        "--attach",
+        "--base",
+        "--body",
+        "--body-file",
+        "--milestone",
+        "--remove-assignee",
+        "--remove-label",
+        "--remove-milestone",
+        "--remove-project",
+        "--remove-reviewer",
+        "--title",
+        "-B",
+        "-F",
+        "-b",
+        "-m",
+        "-t"
       ]
     },
     "pr comment": {

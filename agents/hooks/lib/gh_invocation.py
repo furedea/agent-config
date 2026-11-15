@@ -214,13 +214,15 @@ def _classify_write(words: tuple[Word, ...], spec: CommandSpec, single_call: boo
     data_options = spec.texts | spec.files
     for group in spec.required:
         # A body may be computed text or a run-time file the scan judges; any other required value must be literal.
-        # pflag keeps the last value an option is given, so only the last one counts.
+        # A group names one flag by its aliases, and pflag keeps the last value given, so only that one counts.
         given = [(option, word) for option, word in scan.options if option in group][-1:]
         literal = any(
             word.value.strip("\"'") and (option in data_options or not word.dynamic) for option, word in given
         )
         if not literal and not scan.flags & group & (spec.flags | spec.irreversible_flags):
             raise UnclassifiableError(f"'{spec.operation}' needs one of {', '.join(sorted(group))}")
+    if spec.required_any and not scan.flags & spec.required_any:
+        raise UnclassifiableError(f"'{spec.operation}' needs at least one option saying what to change")
     if scan.flags & spec.read_flags:
         _check_read_repositories(words)
         return GhCall((spec.operation,), Effect.READ, reads_working_repository=True)

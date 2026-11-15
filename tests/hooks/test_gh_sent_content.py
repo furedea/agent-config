@@ -310,3 +310,14 @@ def test_a_secret_split_by_quotes_inside_a_substitution_is_scanned(secret_sample
 def test_a_run_time_path_expanding_to_standard_input_asks(monkeypatch: pytest.MonkeyPatch, value: str) -> None:
     monkeypatch.setenv("BODY_FILE", value)
     assert decide('gh issue comment 1 -R furedea/r -F "$BODY_FILE" < .env') == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_cat_planted_on_path_inside_the_checkout_is_not_trusted(monkeypatch: pytest.MonkeyPatch) -> None:
+    planted = Path("bin")
+    planted.mkdir()
+    (planted / "cat").write_text("#!/bin/sh\n")
+    (planted / "cat").chmod(0o755)
+    monkeypatch.setenv("PATH", f"{planted.resolve()}:{os.environ['PATH']}")
+    command = "gh issue comment 1 -R furedea/r -b \"$(cat <<'EOF'\nok\nEOF\n)\""
+    assert decide(command) == "ask"

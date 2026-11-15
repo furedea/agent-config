@@ -224,7 +224,7 @@ def test_reads_and_local_changes_are_allowed_in_any_form(command: str) -> None:
             "gh issue edit 123 -R furedea/r --add-blocked-by other/r#5", "class C", id="a blocker as OWNER/REPO#N"
         ),
         pytest.param(
-            'gh issue edit 123 -R furedea/r --parent "$(printf x)"', "class C", id="a parent computed at run time"
+            'gh issue edit 123 -R furedea/r -t x --parent "$(printf x)"', "class C", id="a parent computed at run time"
         ),
         pytest.param('gh issue comment 1 -R "$R" -b x', "class C", id="a repository known only at run time"),
         pytest.param("gh api repos/other/r/issues/1/comments -f body=x", "class C", id="another owner by REST"),
@@ -313,6 +313,8 @@ def test_reads_and_local_changes_are_allowed_in_any_form(command: str) -> None:
         pytest.param("gh pr review 42 -ca", "class D", id="an approval in a short bundle"),
         pytest.param("gh pr review 42", "needs one of", id="a review without an action, which would prompt"),
         pytest.param("gh issue create -R furedea/r -b safe", "needs one of", id="an issue without a title"),
+        pytest.param("gh issue edit 1 -R furedea/r", "at least one option", id="an issue edit with nothing to change"),
+        pytest.param("gh pr edit 1 -R furedea/r", "at least one option", id="a PR edit with nothing to change"),
         pytest.param("gh pr create -R furedea/r -H topic -b safe", "needs one of", id="a PR without a title"),
         pytest.param("gh stack submit", "needs one of", id="an interactive stack submit"),
         pytest.param("gh stack submit --auto", "class D", id="a stack submit, which pushes unscanned commits"),

@@ -13,6 +13,8 @@ CODE_PARAMETERS = frozenset(
 )
 # Text naming an element of such a parameter, as printf -v or print -v assign to it, attached to an option or not.
 CODE_ELEMENT = re.compile(rf"(?:^-[A-Za-z]*|(?<![A-Za-z0-9_]))(?:{'|'.join(CODE_PARAMETERS)})\[")
+# An argument that names such an element as a whole word, after any option letters, as a builtin assigns it.
+CODE_ELEMENT_WORD = re.compile(rf"^(?:-[A-Za-z]*)?(?:{'|'.join(CODE_PARAMETERS)})\[")
 # Builtins that assign a whole parameter given by name, such as set -A or read -A.
 ASSIGNING_BUILTINS = frozenset({"set", "read", "vared", "print", "printf", "getopts", "mapfile", "readarray"})
 # Builtins whose operands all name parameters to assign.
@@ -34,9 +36,14 @@ SPELLING = re.compile(r"[\\'\"{},]")
 # Its name carries a nonce, so a command cannot define a function the hook would mistake for it.
 CODE_BODY = f"__guard_code_text_{secrets.token_hex(8)}"
 # The prefix of an environment variable bash imports as a function.
-IMPORTED_FUNCTION = re.compile(r"BASH_FUNC_\S*(?:%%|\(\))")
+IMPORTED_FUNCTION = "BASH_FUNC_"
+# Programs that hand a child the environment words they are given.
+ENVIRONMENT_SETTERS = frozenset({"env", "sudo"})
 # Programs that can assign a parameter from an argument, or hand a child an environment variable.
-PARAMETER_SETTERS = frozenset({"env", "sudo", "let", "zparseopts", "zformat", "zstyle", "getln", "popln"})
+PARAMETER_SETTERS = frozenset(
+    "let zparseopts zformat zstyle getln popln zregexparse strftime sysread zstat pcre_match zselect ztcp zsocket "
+    "integer float".split()
+)
 
 
 def scripts(arguments: tuple[str, ...], dynamic: tuple[bool, ...]) -> list[str] | None:
@@ -45,7 +52,7 @@ def scripts(arguments: tuple[str, ...], dynamic: tuple[bool, ...]) -> list[str] 
     Raises:
         UnsupportedSyntaxError: The text is computed at run time, so no rule can judge it.
     """
-    if names_code_parameter(arguments, dynamic) or any(map(IMPORTED_FUNCTION.search, arguments)):
+    if names_code_parameter(arguments, dynamic) or _imports_function(arguments, dynamic):
         raise UnsupportedSyntaxError(
             "defining an alias, a function, or a command path in the command requires explicit review", "wrapper"
         )
@@ -62,7 +69,7 @@ def defines_code(record: dict) -> bool:
     """
     name = record.get("Name") or record.get("Param")
     value = "".join(part.get("Value", "") for part in nodes(record.get("Value")))
-    if IMPORTED_FUNCTION.search(value):
+    if IMPORTED_FUNCTION in value:
         return True
     if not isinstance(name, dict):
         return False
@@ -74,12 +81,30 @@ def names_code_parameter(arguments: tuple[str, ...], dynamic: tuple[bool, ...]) 
 
     A name computed at run time may be any of them.
     """
+    if any(CODE_ELEMENT_WORD.search(argument) for argument in arguments[1:]):
+        return True
     if arguments[0] not in ASSIGNING_BUILTINS | PARAMETER_SETTERS:
         return False
-    if any(CODE_ELEMENT.search(argument) for argument in arguments[1:]):
-        return True
     computed = any(dynamic[index] and _names_by(arguments, index) for index in range(1, len(arguments)))
     return computed or any(argument in CODE_PARAMETERS for argument in arguments[1:])
+
+
+def _imports_function(arguments: tuple[str, ...], dynamic: tuple[bool, ...]) -> bool:
+    """Whether env or sudo may hand a child a function: a BASH_FUNC_ word, or a name built at run time.
+
+    Only the words before the program are environment words; the program's own arguments are not.
+    """
+    if arguments[0] not in ENVIRONMENT_SETTERS:
+        return False
+    if any(IMPORTED_FUNCTION in argument for argument in arguments[1:]):
+        return True
+    for argument, computed in zip(arguments[1:], dynamic[1:], strict=True):
+        named = re.match(r"[A-Za-z_]\w*=", argument) is not None
+        if computed and not named:
+            return True
+        if not named and argument[:1] != "-":
+            return False
+    return False
 
 
 def _names_by(arguments: tuple[str, ...], index: int) -> bool:

@@ -36,6 +36,10 @@ WRAPPERS: dict[str, tuple[frozenset[str], frozenset[str]]] = {
     "nohup": (frozenset(), frozenset()),
     "busybox": (frozenset(), frozenset()),
     "builtin": (frozenset(), frozenset()),
+    # zsh precommand modifiers, which run the command after them.
+    "noglob": (frozenset(), frozenset()),
+    "nocorrect": (frozenset(), frozenset()),
+    "-": (frozenset(), frozenset()),
     "ionice": (frozenset({"-t", "--ignore"}), frozenset({"-c", "-n", "--class", "--classdata"})),
     "script": (
         frozenset({"-a", "-e", "-f", "-q", "-k", "-r", "--append", "--return", "--flush", "--force", "--quiet"}),

@@ -20,6 +20,9 @@ def decide(kind: str, command: str) -> Verdict:
         'f(){ builtin shift; find . "$1"; }; f x -delete',
         'f(){ noglob shift; find . "$1"; }; f x -delete',
         'f(){ find . "$1"; }; noglob f -delete',
+        "noglob trap 'git commit --no-verify -m x' EXIT",
+        "nocorrect eval 'git commit --no-verify -m x'",
+        'f(){ find . -maxdepth "$#" -delete; }; f a',
         "f(){ X=$1 sh -c 'find . \"$X\"'; }; f -delete",
         "true(){ find . \"$1\"; }; eval 't\\rue -delete'",
         'g(){ find . "$1"; }; eval \'"g" -delete\'',
@@ -123,6 +126,17 @@ def test_denials_see_through_builtin_prefixes_and_eval_option_ends(command: str)
         'f(){ find . "$2"; }; zargs -- "$(printf x)" -- f',
         "c=$(printf set); $c -a; f(){ x=$1; sh -c 'find . \"$x\"'; }; f -delete",
         'f(){ find . "${x:-$1}"; }; f -delete',
+        "sysread aliases[g] <<< gh; g pr merge 1",
+        'noglob trap "$X" EXIT',
+        "noglob alias g=gh",
+        "noglob printf -v 'aliases[g]' gh",
+        '- eval "$1"',
+        'f(){ find . "$2"; }; {f,x} -delete',
+        'f(){ find . "$1"; }; f {-del,-foo}ete',
+        "zstat -A aliases[g] x",
+        "env \"$(printf BASH_FUNC_gh)%%=() { gh pr merge 1; }\" bash -c 'gh pr list'",
+        'f(){ n=$#; find . "$n"; }; f -delete',
+        'f(){ find . "${x:-$ARGC}"; }; f a',
         'f(){ find . "${x/y/$1}"; }; f -delete',
         'f(){ x=-delete1; find . "${x%$#}"; }; f a',
         'f(){ find . "$2"; }; mapfile -t -Cf -c1 <<< -delete',
@@ -186,3 +200,7 @@ def test_text_that_only_mentions_code_parameters_runs_unprompted(
 ) -> None:
     (isolated_project / "package.json").write_text("{}\n")
     assert decide(kind, command).decision != "ask"
+
+
+def test_a_precommand_modifier_before_eval_still_asks_for_its_text() -> None:
+    assert decide("allowed", "noglob eval 'gh pr merge 1'").decision == "ask"

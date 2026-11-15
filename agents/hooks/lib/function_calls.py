@@ -8,7 +8,7 @@ from dataclasses import dataclass
 import shell_input
 import variable_changes
 from code_text import ASSIGNING_BUILTINS, CODE_BODY, NAME_OPTION
-from shell_words import PARAMETER_MODIFIERS, UnsupportedSyntaxError, literal_word, nodes, source_text
+from shell_words import PARAMETER_MODIFIERS, UnsupportedSyntaxError, literal_word, nodes, source_text, spreads
 from shell_wrappers import WRAPPERS
 from variable_changes import ARITHMETIC, UNSEEN_ASSIGNERS
 
@@ -30,6 +30,8 @@ SHELL_HOOKS = re.compile(
 # Parameters holding a function's arguments: zsh's argv, bash's BASH_ARGV and BASH_ARGC under extdebug, and $_,
 # the last word of the call.
 ARGUMENT_ARRAYS = frozenset({"argv", "BASH_ARGV", "BASH_ARGC", "_"})
+# The count of a function's arguments: $# and zsh's ARGC.
+ARGUMENT_COUNTS = frozenset({"#", "ARGC"})
 # zsh precommand modifiers, which run the function named after them; builtin and command skip functions.
 FUNCTION_MODIFIERS = frozenset({"noglob", "nocorrect", "-"})
 # Builtins that assign a parameter named by an operand or an option, which may hold or replace the arguments.
@@ -104,6 +106,11 @@ def respelled_calls(records: tuple[dict, ...], data: bytes) -> list[str]:
     respelled = []
     for call in (node for node in records if node.get("Type") == "CallExpr" and node.get("Args")):
         start = _modifier_count(call, data)
+        program = call["Args"][start] if start < len(call["Args"]) else {}
+        if bodies and program and spreads(program, data) and not any(_reads(part, {}) for part in nodes(program)):
+            raise UnsupportedSyntaxError(
+                "calling a program whose name may expand requires explicit review", "expansion"
+            )
         name, dynamic = literal_word(call["Args"][start], data) if start < len(call["Args"]) else ("", True)
         words = call["Args"][start + 1 :]
         for body in [] if dynamic else bodies.get(name, []):
@@ -414,12 +421,16 @@ def _redirections(statement: dict) -> list[dict]:
 
 
 def _counts_arguments(part: dict) -> bool:
-    return part.get("Type") == "ParamExp" and part.get("Param", {}).get("Value") == "#"
+    return part.get("Type") == "ParamExp" and part.get("Param", {}).get("Value") in ARGUMENT_COUNTS
 
 
 def _reads(part: dict, copies: dict[str, str]) -> bool:
-    """Whether a part expands a positional parameter or a plain copy of one."""
-    return _is_positional(part) or (part.get("Type") == "ParamExp" and part["Param"]["Value"] in copies)
+    """Whether a part expands a positional parameter, their count, or a plain copy of one."""
+    return (
+        _is_positional(part)
+        or _counts_arguments(part)
+        or (part.get("Type") == "ParamExp" and part["Param"]["Value"] in copies)
+    )
 
 
 def _is_positional(part: dict) -> bool:
@@ -460,6 +471,10 @@ class _Respelling:
         return "".join(self._part(part, quoted=False) for part in word.get("Parts", []))
 
     def _part(self, part: dict, *, quoted: bool) -> str:
+        if _counts_arguments(part):
+            if any(spreads(word, self.data) for word in self.words):
+                raise UnsupportedSyntaxError("counting function arguments that may split requires explicit review")
+            return str(len(self.words))
         if _reads(part, self.copies):
             name = self.copies.get(part["Param"]["Value"], part["Param"]["Value"])
             words = self.words if name in {"@", "*"} else self.words[int(name) - 1 : int(name)]
@@ -472,7 +487,7 @@ class _Respelling:
     def _spelled(self, word: dict, *, quoted: bool) -> str:
         """The caller's word as the shell hands it over, requoted; unquoted, each field it splits into."""
         value, dynamic = literal_word(word, self.data)
-        if dynamic:
+        if dynamic or spreads(word, self.data):
             raise UnsupportedSyntaxError(
                 "passing a function an argument known only at run time requires explicit review"
             )

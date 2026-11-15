@@ -19,8 +19,8 @@ Out of scope and delegated elsewhere:
 - Language-specific conventions, commands, mock libraries, fixtures, lint rules, assertion style,
   and package managers → the relevant `*-style` skill and project coding rules.
 - Branches, commit authorization and boundaries, commit messages, pushes, and pull requests → the
-  `git-workflow` skill.
-- Project and CI bootstrap before this methodology applies → the `project-setup` skill.
+  `development-cycle` skill.
+- Project and CI bootstrap before this methodology applies → the `development-cycle` skill.
 - Information authority, durable prose placement, duplication, traceability, temporary briefs, and
   agent entry maps → the `source-of-truth` skill.
 - Changes that introduce, reverse, or review a broad decision or durable constraint → the `adr`
@@ -97,7 +97,7 @@ merely because there is more than one assertion or example row.
    abstractions merely to perform a Refactor step.
 7. **Finish in a coherent verified state.** Continue with the next slice while required work
    remains; the first Green does not end the task. VCS recording and delivery are governed by the
-   `git-workflow` skill.
+   `development-cycle` skill.
 
 ### Work without a contract gap
 
@@ -149,7 +149,7 @@ Choose evidence by the kind of change. Details are in
 
 - **Bug fix:** reproduce in the real environment, write a failing reproduction test, then show the
   same reproduction passing. Put the failing and passing outputs in the PR. Commit structure
-  follows `git-workflow`.
+  follows `development-cycle`.
 - **Refactoring:** pin current behavior with a characterization or golden test before moving
   structure, migrate callers before deleting the old API, and show behavior is unchanged.
 - **Performance:** record a baseline, vet each number with the `measurement-evidence` skill, fix,
@@ -200,7 +200,7 @@ than rebuilding the same checks as a separate command sequence. Use its status q
 result freshness is unclear; do not require it after every operation or immediately before verify.
 Direct execution of narrow tests for intermediate decisions is allowed. Report evidence sources
 and known coverage limits. Concrete CLI syntax and delivery ordering belong to
-[Git Delivery](../git-workflow/references/delivery.md#local-verification-before-delivery).
+[Git Delivery](../development-cycle/references/delivery.md#local-verification-before-delivery).
 
 ## Enforcement Mechanisms
 

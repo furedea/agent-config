@@ -11,11 +11,7 @@
 
 # Development Workflow
 
-For implementation, use `issue-workflow` → `git-workflow` → `tsdd` →
-`git-workflow` → `issue-workflow` for issue/plan setup, branching, implementation,
-delivery, and status reconciliation, respectively.
-
-Consult skills as needed and apply only the stages relevant to the request.
+For implementation, use `development-cycle` for the cycle from start to completion and `tsdd` for implementation.
 
 # Coding Guidelines
 

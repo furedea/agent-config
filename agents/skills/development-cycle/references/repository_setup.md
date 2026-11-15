@@ -16,19 +16,20 @@ configuration.
 
 ## New GitHub Repository
 
-1. Establish the target owner/name, visibility, and whether a template is appropriate. Resolve
-   missing choices that affect publication or licensing; do not infer them from a language.
-   Inspect any license inherited from a template as well as explicit creation options.
-2. Use `repo create <owner/name> <visibility> --template <template>` for a supported template,
-   or omit `--template` when a bare repository is intended. Supply exactly one supported visibility
-   option; the command owns the ghq clone destination, so do not add `--clone` or `--source`.
+1. Establish the target owner/name, visibility, and language. Resolve missing choices that
+    affect publication or licensing, default to private visibility, and ask only for what the
+    requirements cannot decide. Inspect any license inherited from a template as well as explicit
+    creation options.
+2. Use `repo create <owner/name> <visibility> --lang <python|typescript|rust|go|tex|minimal>` for a
+    supported language, or omit `--lang` when a bare repository is intended. Supply exactly one supported visibility
+    option; the command owns the ghq clone destination, so do not add `--clone` or `--source`.
 3. Check the exit status before using the printed destination. Do not use `cd "$(repo create ...)"`
-   as a success guard: the outer command can still execute when creation fails.
+    as a success guard: the outer command can still execute when creation fails.
 4. Inspect the clone and local adjustments. The command applies supported manifest-name changes
-   and standard GitHub configuration. It installs Lefthook only when its configuration and the
-   executable are available; check the outcome instead of assuming installation occurred.
+    and standard GitHub configuration. It installs Lefthook only when its configuration and the
+    executable are available; check the outcome instead of assuming installation occurred.
 5. Continue to environment setup only when requested. Template renames may leave local changes;
-   commit and publication are governed by `git-workflow`, not by creation success.
+    commit and publication are governed by [Commits](commits.md) and [Delivery](delivery.md), not by creation success.
 
 Creation and configuration are not atomic. If a later stage fails, inspect the remote and clone
 before retrying. Report completed stages; do not delete the remote or local files to restart.
@@ -45,9 +46,9 @@ This command applies all of the following:
 - Vulnerability alerts and the dependency graph.
 - The common ruleset from `github/ruleset.json`, updating a same-named ruleset or creating it.
 - CodeQL default setup for public repositories; private and already configured ones are skipped.
-  It takes over from any advanced CodeQL workflow, and a failure only warns, so verify its state.
+    It takes over from any advanced CodeQL workflow, and a failure only warns, so verify its state.
 - Immutable releases for every repository, public or private. Only releases published afterwards
-  are locked (tag and assets); earlier releases stay mutable, and a failure only warns.
+    are locked (tag and assets); earlier releases stay mutable, and a failure only warns.
 
 Inspect the current policy payloads and relevant remote state before applying them, including
 whether the ruleset's branch target and required checks fit the repository. The command is not a

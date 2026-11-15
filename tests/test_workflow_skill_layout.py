@@ -27,20 +27,20 @@ SKILL_HANDOFF_PATTERN = re.compile(r"^\.\./([^/]+)/SKILL\.md$")
 
 @pytest.mark.integration
 @pytest.mark.parametrize("provider", ["claude", "codex"])
-def test_issue_skill_renders_with_implicit_invocation(agent_harness: CliRunner, tmp_path: Path, provider: str) -> None:
+def test_cycle_skill_renders_with_implicit_invocation(agent_harness: CliRunner, tmp_path: Path, provider: str) -> None:
     output = tmp_path / provider
     # The production renderer parses and validates source frontmatter.
     agent_harness("generate-skills", "--provider", provider, "--output", str(output))
-    rendered = output / "issue-workflow/SKILL.md"
+    rendered = output / "development-cycle/SKILL.md"
     text = rendered.read_text()
     frontmatter = text.split("---", 2)[1]
-    assert re.search(r"^name:\s*issue-workflow\s*$", frontmatter, re.MULTILINE)
+    assert re.search(r"^name:\s*development-cycle\s*$", frontmatter, re.MULTILINE)
     assert re.search(r"^description:\s*\S", frontmatter, re.MULTILINE)
     assert not re.search(r"^disable-model-invocation:\s*true\s*$", frontmatter, re.MULTILINE)
-    metadata = output / "issue-workflow/agents/openai.yaml"
+    metadata = output / "development-cycle/agents/openai.yaml"
     if metadata.exists():
         assert not re.search(r"allow_implicit_invocation:\s*false", metadata.read_text())
-    assert not _is_model_invocation_disabled("issue-workflow")
+    assert not _is_model_invocation_disabled("development-cycle")
 
 
 @pytest.mark.integration

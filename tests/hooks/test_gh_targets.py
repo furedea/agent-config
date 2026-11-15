@@ -189,3 +189,19 @@ def test_a_writable_path_entry_before_gh_asks_beside_a_command_that_may_write(
     monkeypatch.setenv("PATH", f"{empty}:{os.environ['PATH']}")
     assert decide("cp x later/gh; gh pr list -R furedea/agent-config") == "ask"
     assert decide("gh pr list -R furedea/agent-config") == "allow"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_forced_terminal_in_the_hook_environment_makes_every_call_ask(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GH_FORCE_TTY", "1")
+    assert decide("gh pr view 1 -R furedea/agent-config") == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_writable_path_entry_before_gh_asks_beside_another_gh_call(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    empty = tmp_path / "later"
+    empty.mkdir()
+    monkeypatch.setenv("PATH", f"{empty}:{os.environ['PATH']}")
+    assert decide("gh pr list -R furedea/agent-config && gh pr list -R furedea/agent-config") == "ask"

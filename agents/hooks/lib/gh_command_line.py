@@ -211,7 +211,9 @@ def has_writable_path_entry_before(name: str) -> bool:
     found = shutil.which(name)
     found_directory = Path(found).absolute().parent if found else None
     for entry in os.environ.get("PATH", "").split(os.pathsep):
-        if not entry or not Path(entry).is_absolute() or _in_agent_roots(Path(entry).resolve()):
+        if not entry or not Path(entry).is_absolute():
+            return True
+        if _in_agent_roots(Path(entry).absolute()) or _in_agent_roots(Path(entry).resolve()):
             return True
         if Path(entry).absolute() == found_directory:
             return False

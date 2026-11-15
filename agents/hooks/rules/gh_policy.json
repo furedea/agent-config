@@ -549,47 +549,6 @@
     "search repos": {
       "operation": "search.repos",
       "effect": "read"
-    },
-    "stack view": {
-      "operation": "stack.view",
-      "effect": "read"
-    },
-    "stack init": {
-      "operation": "stack.init",
-      "effect": "local"
-    },
-    "stack add": {
-      "operation": "stack.add",
-      "effect": "local"
-    },
-    "stack rebase": {
-      "operation": "stack.rebase",
-      "effect": "local",
-      "flags": [
-        "--continue",
-        "--abort"
-      ]
-    },
-    "stack submit": {
-      "operation": "stack.submit",
-      "effect": "irreversible",
-      "flags": [
-        "--auto",
-        "--open"
-      ],
-      "required": [
-        [
-          "--auto"
-        ]
-      ]
-    },
-    "stack push": {
-      "operation": "stack.push",
-      "effect": "irreversible"
-    },
-    "stack sync": {
-      "operation": "stack.sync",
-      "effect": "irreversible"
     }
   },
   "rest": [

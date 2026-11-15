@@ -9,6 +9,7 @@ and under root every file the session writes is root-owned, so nothing counts th
 """
 
 import os
+import pwd
 import shutil
 import stat
 from collections.abc import Callable
@@ -57,8 +58,13 @@ def is_system_program(word: str) -> bool:
 
 
 def nix_profiles() -> frozenset[Path]:
-    """The Nix profile directories, which link into the read-only store and lie outside any session's writes."""
-    home, user = Path.home(), os.environ.get("USER", "")
+    """The Nix profile directories, which link into the read-only store and lie outside any session's writes.
+
+    The user's own profile link belongs to the user, whom the session cannot act as outside its sandbox;
+    the account comes from the password database, not from variables the environment could set.
+    """
+    account = pwd.getpwuid(os.getuid())
+    home, user = Path(account.pw_dir), account.pw_name
     return frozenset(
         {
             home / ".nix-profile" / "bin",
@@ -71,13 +77,8 @@ def nix_profiles() -> frozenset[Path]:
 
 
 def _has_fixed_ancestry(directory: Path) -> bool:
-    """Whether nobody but root can replace any step of the path, a link included, before the program runs.
-
-    The Nix store is writable only by the Nix daemon and its entries never change, so it ends the walk.
-    """
+    """Whether nobody but root can replace any step of the path, a link included, before the program runs."""
     for step in (directory, *directory.parents):
-        if step == NIX_STORE:
-            return True
         try:
             metadata = step.lstat()
         except OSError:

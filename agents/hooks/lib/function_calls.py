@@ -19,6 +19,12 @@ PLAIN_FIELDS = re.compile(r"[A-Za-z0-9_./:=@%+,\s-]*")
 RELIED_NAMES = frozenset(
     "echo printf print cd pushd popd shift set getopts builtin command eval trap alias hash source . exec".split()
 ) | frozenset(WRAPPERS)
+# Names the parser reads as declarations, arithmetic, or keywords rather than calls, so their calls go unseen.
+KEYWORD_NAMES = frozenset("declare local export typeset readonly nameref integer float let time coproc".split())
+# Functions bash or zsh call on their own, with words that never follow the function's name.
+SHELL_HOOKS = re.compile(
+    r"command_not_found_handler?|precmd|preexec|chpwd|periodic|zshexit|zshaddhistory|TRAP[A-Z0-9]+"
+)
 # Words before a builtin that still run it, as in builtin shift or command -p shift.
 BUILTIN_PREFIXES = frozenset({"builtin", "command"})
 # Text eval or trap runs that may read or replace a function's arguments, at any depth of eval, once unquoted.
@@ -70,6 +76,24 @@ def respelled_calls(records: tuple[dict, ...], data: bytes) -> list[str]:
     return respelled
 
 
+def unpassed(scripts: list[str], passed: tuple[str, ...]) -> list[str]:
+    """The scripts a shell runs, unless one may read the arguments the shell is handed after them.
+
+    Raises:
+        UnsupportedSyntaxError: A script reads arguments that the nested judgement cannot see.
+    """
+    if passed and any(ARGUMENT_TEXT.search(SPELLING.sub("", script)) for script in scripts):
+        raise UnsupportedSyntaxError(
+            "running a shell script that reads arguments passed to it requires explicit review"
+        )
+    return scripts
+
+
+def operands(arguments: tuple[str, ...]) -> tuple[str, ...]:
+    """The words after a shell's name that are not options, with a -- that ends them."""
+    return tuple(argument for argument in arguments[1:] if argument[:1] not in {"-", "+"} or argument == "--")
+
+
 def _body_respellings(body: dict, words: list[dict], data: bytes) -> list[str]:
     """Each statement of one body that reads its arguments, respelled with one call's words, once per shift."""
     if words and _calls(body, data, "source") + _calls(body, data, "."):
@@ -89,9 +113,10 @@ def _body_respellings(body: dict, words: list[dict], data: bytes) -> list[str]:
 def _defined_name(definition: dict) -> str:
     """The function's name, once neither the name nor a redirection of its body changes what the hook relies on."""
     name = definition["Name"]["Value"]
-    if name in RELIED_NAMES:
+    if name in RELIED_NAMES | KEYWORD_NAMES or SHELL_HOOKS.fullmatch(name):
         raise UnsupportedSyntaxError(
-            "defining a function named after a builtin or wrapper requires explicit review", "expansion"
+            "defining a function named after a builtin, keyword, wrapper, or shell hook requires explicit review",
+            "expansion",
         )
     if definition["Body"].get("Redirs"):
         raise UnsupportedSyntaxError("defining a function with a redirection requires explicit review", "expansion")
@@ -159,10 +184,26 @@ def _followed(body: dict, records: tuple[dict, ...], data: bytes) -> dict:
         or any(_reassigns(_program(call, data)) for call in _calls(body, data))
         or any(_copied(node) is None for node in reading)
         or _reassigned(copies, records, data)
+        or not _attributed(body).isdisjoint(copies)
     )
     if unfollowed:
         raise UnsupportedSyntaxError("a function reading its arguments this way requires explicit review", "expansion")
     return body
+
+
+def _attributed(body: dict) -> set[str]:
+    """Names a declaration in the body gives an attribute, such as -l or -u, which may change a value assigned."""
+    declarations = (node for node in nodes(body) if node.get("Type") == "DeclClause")
+    return {
+        argument["Name"]["Value"]
+        for declaration in declarations
+        if any(
+            argument.get("Naked") and _literal(argument.get("Value"))[:1] in {"-", "+"}
+            for argument in declaration.get("Args", [])
+        )
+        for argument in declaration.get("Args", [])
+        if isinstance(argument.get("Name"), dict)
+    }
 
 
 def _iterates_arguments(loop: dict, copies: dict[str, str]) -> bool:
@@ -298,13 +339,12 @@ class _Respelling:
         return source_text(part, self.data)
 
     def _spelled(self, word: dict, *, quoted: bool) -> str:
-        """The caller's word as the shell hands it over, requoted; unquoted, each field it splits into.
-
-        A word known only at run time keeps its source text.
-        """
+        """The caller's word as the shell hands it over, requoted; unquoted, each field it splits into."""
         value, dynamic = literal_word(word, self.data)
         if dynamic:
-            return source_text(word, self.data)
+            raise UnsupportedSyntaxError(
+                "passing a function an argument known only at run time requires explicit review"
+            )
         if quoted:
             return shlex.quote(value)
         if not PLAIN_FIELDS.fullmatch(value):

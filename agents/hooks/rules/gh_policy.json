@@ -520,20 +520,6 @@
       "operation": "run.watch",
       "effect": "read"
     },
-    "run download": {
-      "operation": "run.download",
-      "effect": "local",
-      "values": [
-        "-D",
-        "--dir",
-        "-n",
-        "--name",
-        "-p",
-        "--pattern",
-        "-R",
-        "--repo"
-      ]
-    },
     "run rerun": {
       "operation": "run.rerun",
       "effect": "irreversible",

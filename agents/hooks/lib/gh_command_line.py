@@ -88,7 +88,7 @@ def _is_output_filter(command: shell_syntax.Command) -> bool:
     It is a listed builtin, or a listed program PATH finds where no one on this account could plant a stand-in.
     """
     name = command.arguments[0]
-    if name not in OUTPUT_FILTERS or command.writes:
+    if name not in OUTPUT_FILTERS or command.writes or has_inherited_function(name):
         return False
     return name in SHELL_BUILTINS or is_system_program(name)
 
@@ -139,8 +139,7 @@ def _only_prints(command: shell_syntax.Command) -> bool:
     name = command.arguments[0]
     if name not in PRINTING_PROGRAMS or command.wrapper_depth or command.writes or command.has_dynamic_words:
         return False
-    # bash runs an exported function, passed as BASH_FUNC_<name>%%, before a builtin of the same name.
-    if any(key.startswith(f"BASH_FUNC_{name}") for key in os.environ):
+    if has_inherited_function(name):
         return False
     if any(not QUOTED_HEREDOC.match(redirect) for redirect in input_redirects(command)):
         return False
@@ -183,3 +182,8 @@ def input_redirects(command: shell_syntax.Command) -> list[str]:
     found = [match[1] for match in INPUT_REDIRECT.finditer(first_line)]
     operators = INPUT_OPERATOR.findall(QUOTED_TEXT.sub("Q", first_line))
     return found if len(operators) == len(found) else [*found, *operators[len(found) :]]
+
+
+def has_inherited_function(name: str) -> bool:
+    """Whether the environment exports a bash function of this name, which bash runs before a builtin or program."""
+    return any(key.startswith(f"BASH_FUNC_{name}%%") or key == f"BASH_FUNC_{name}()" for key in os.environ)

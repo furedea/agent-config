@@ -208,7 +208,9 @@ def _classify_write(words: tuple[Word, ...], spec: CommandSpec, single_call: boo
     _check_write_words(scan)
     _check_sent_values(scan.values_of(spec.values | spec.texts) + scan.positionals, single_call)
     targets = scan.values_of(REPOSITORY_OPTIONS)
-    targets += tuple(word for word in scan.positionals if is_url(word.value))
+    # Only issue and pull request commands take a URL argument as their target; elsewhere it is a name.
+    if spec.operation.startswith(("issue.", "pr.")):
+        targets += tuple(word for word in scan.positionals if is_url(word.value))
     repositories = tuple(None if word.dynamic else repository(word.value) for word in targets)
     # Linked issues and --branch-repo name further repositories the write changes, never its own target.
     linked = scan.values_of(spec.repositories) + _reference_targets(scan.values_of(spec.references))

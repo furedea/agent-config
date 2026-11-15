@@ -20,7 +20,7 @@ import secret_content
 import shell_syntax
 import trusted_owners
 from gh_catalog import Catalog, Effect, TargetClass
-from gh_command_line import QUOTED_HEREDOC, CommandLine, input_redirects
+from gh_command_line import PROGRAM, QUOTED_HEREDOC, CommandLine, has_inherited_function, input_redirects
 from gh_invocation import GhCall, Unclassified
 from gh_repository import Repository
 from hook_decision import Verdict
@@ -98,7 +98,7 @@ def _judged_call(candidate: shell_syntax.Command, line: CommandLine, rules: GhRu
 
 def _environment_problem() -> str:
     """Why the hook's own environment may run something else than gh against github.com, or an empty string."""
-    if any(key.startswith("BASH_FUNC_gh") for key in os.environ):
+    if has_inherited_function(PROGRAM):
         return "the environment carries a shell function that bash would run instead of gh"
     configured_repository = os.environ.get("GH_REPO")
     foreign_repository = configured_repository and gh_repository.repository(configured_repository) is None

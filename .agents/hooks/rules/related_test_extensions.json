@@ -454,7 +454,8 @@
     "tests/hooks/test_zsh_expansion_flags.py",
     "tests/hooks/test_gh_sent_content.py",
     "tests/hooks/test_gh_environment.py",
-    "tests/hooks/test_gh_targets.py"
+    "tests/hooks/test_gh_targets.py",
+    "tests/hooks/test_gh_policy_table.py"
   ],
   "agents/hooks/lib/gh_catalog.py": [
     "tests/hooks/test_gh_effects.py",
@@ -462,7 +463,8 @@
     "tests/hooks/test_allowed_graphql.py",
     "tests/hooks/test_allowed_review_replies.py",
     "tests/hooks/test_quote_normalization.py",
-    "tests/hooks/test_zsh_expansion_flags.py"
+    "tests/hooks/test_zsh_expansion_flags.py",
+    "tests/hooks/test_gh_policy_table.py"
   ],
   "agents/hooks/lib/gh_invocation.py": [
     "tests/hooks/test_gh_effects.py",

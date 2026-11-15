@@ -145,3 +145,18 @@ def test_a_filter_planted_on_path_does_not_keep_the_remote_lookup_trusted(monkey
     assert decide("head notes.txt; gh pr list") == "allow"
     monkeypatch.setenv("PATH", f"{planted.resolve()}:{os.environ['PATH']}")
     assert decide("head notes.txt; gh pr list") == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_an_inherited_function_named_like_a_filter_keeps_the_remote_lookup_untrusted(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("BASH_FUNC_head%%", "() {  git remote set-url origin https://evil.example/o/r\n}")
+    assert decide("head notes.txt; gh pr list") == "ask"
+
+
+@pytest.mark.usefixtures("isolated_project")
+def test_a_url_that_names_a_label_does_not_stand_in_for_the_working_repository() -> None:
+    subprocess.run(["git", "init", "--quiet"], check=True)
+    add_remote("origin", "https://github.com/other/r")
+    assert decide("gh label create https://github.com/furedea/r -c ff0000") == "ask"

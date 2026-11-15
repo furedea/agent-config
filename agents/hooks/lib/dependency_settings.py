@@ -31,7 +31,7 @@ DEPENDENCY_CHANGES = frozenset(
 # Declarations the parser keeps out of its commands, which set variables for the rest of the command.
 DECLARATION = re.compile(r"(^|[\s;&|(){}])(export|declare|typeset|readonly|local)(\s|$)")
 # An assignment statement, which `set -a` or a later export can hand to the dependency change.
-ASSIGNMENT = re.compile(r"(^|[\s;&|(){}])[A-Za-z_][A-Za-z0-9_]*\+?=")
+ASSIGNMENT = re.compile(r"(^|[\s;&|(){}`'\"])[A-Za-z_][A-Za-z0-9_]*\+?=")
 # Options that point a dependency change at another project, manifest, or flake.
 LOCATION_OPTIONS = frozenset(
     {"-C", "--dir", "--prefix", "--global-dir", "--project", "--directory", "--script", "--manifest-path"}
@@ -59,7 +59,7 @@ def objection(command: str, commands: tuple[shell_syntax.Command, ...]) -> Verdi
             f"worktree.\n\nCommand: {preview}",
             _program(changes[0]),
         )
-    if settings or any(item.wrapper_depth for item in changes):
+    if settings or any(item.wrapper_depth or _has_assignment(item) for item in changes):
         return hook_decision.ask(
             "Needs review: a dependency change runs with environment settings the guard cannot read, which can "
             f"install outside the project.\n\nCommand: {preview}",
@@ -75,6 +75,10 @@ def _is_dependency_change(item: shell_syntax.Command) -> bool:
 
 def _program(item: shell_syntax.Command) -> str:
     return Path(item.arguments[0]).name
+
+
+def _has_assignment(item: shell_syntax.Command) -> bool:
+    return not item.raw.lstrip().startswith(item.words[0])
 
 
 def _names_location(item: shell_syntax.Command) -> bool:

@@ -97,6 +97,7 @@ def test_a_dependency_change_beside_other_commands_runs(git_project: Path, comma
         "nix flake update --flake=/other/flake",
         "npm_config_global=true; export npm_config_global; pnpm add cowsay",
         "PNPM_HOME=/tmp/g; pnpm add cowsay",
+        "true;npm_config_global=true pnpm add cowsay",
     ],
 )
 def test_a_dependency_change_aimed_at_another_place_asks(git_project: Path, command: str) -> None:

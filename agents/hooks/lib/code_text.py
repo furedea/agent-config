@@ -20,6 +20,10 @@ NAME_OPERAND_BUILTINS = frozenset({"read", "vared", "mapfile", "readarray", "get
 NAME_OPTION = re.compile(r"-[A-Za-z]*[vAa]")
 # The options trap takes; any other word before the signals is the action, as zsh reads it.
 TRAP_OPTIONS = frozenset({"-l", "-p", "-P"})
+# A function the text of eval or trap is judged inside, as it inherits input and arguments the hook does not see.
+CODE_BODY = "__guard_code_text"
+# The prefix of an environment variable bash imports as a function.
+IMPORTED_FUNCTION = "BASH_FUNC_"
 
 
 def scripts(arguments: tuple[str, ...], dynamic: tuple[bool, ...]) -> list[str] | None:
@@ -28,12 +32,14 @@ def scripts(arguments: tuple[str, ...], dynamic: tuple[bool, ...]) -> list[str] 
     Raises:
         UnsupportedSyntaxError: The text is computed at run time, so no rule can judge it.
     """
-    if names_code_parameter(arguments, dynamic):
+    if names_code_parameter(arguments, dynamic) or any(IMPORTED_FUNCTION in argument for argument in arguments):
         raise UnsupportedSyntaxError(
             "defining an alias, a function, or a command path in the command requires explicit review", "wrapper"
         )
     reader = READERS.get(arguments[0])
-    return None if reader is None else reader(arguments, dynamic)
+    if reader is None:
+        return None
+    return [f"{CODE_BODY}() {{\n{script}\n}}" for script in reader(arguments, dynamic) if script.strip()]
 
 
 def defines_code(record: dict) -> bool:
@@ -42,9 +48,11 @@ def defines_code(record: dict) -> bool:
     An assigned value naming one counts too, as a nameref or a later printf -v "$name" may write through it.
     """
     name = record.get("Name") or record.get("Param")
+    value = "".join(part.get("Value", "") for part in nodes(record.get("Value")))
+    if IMPORTED_FUNCTION in value:
+        return True
     if not isinstance(name, dict):
         return False
-    value = "".join(part.get("Value", "") for part in nodes(record.get("Value")))
     return name.get("Value") in CODE_PARAMETERS or value in CODE_PARAMETERS or bool(CODE_ELEMENT.search(value))
 
 
@@ -70,9 +78,10 @@ def _names_by(arguments: tuple[str, ...], index: int) -> bool:
 
 
 def _eval_scripts(arguments: tuple[str, ...], dynamic: tuple[bool, ...]) -> list[str]:
-    if any(dynamic[1:]):
+    start = 2 if arguments[1:2] == ("--",) else 1
+    if any(dynamic[start:]):
         raise UnsupportedSyntaxError("eval of a computed script requires explicit review", "wrapper")
-    return [" ".join(arguments[1:])]
+    return [" ".join(arguments[start:])]
 
 
 def _trap_scripts(arguments: tuple[str, ...], dynamic: tuple[bool, ...]) -> list[str]:

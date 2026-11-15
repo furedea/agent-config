@@ -180,11 +180,11 @@ def _computed_input() -> UnsupportedSyntaxError:
     )
 
 
-def input_scripts(read: Callable[[], list[str]], tolerant: bool) -> list[str]:
-    """The scripts a shell reads from its input; a tolerant caller already marked its call for review."""
+def input_scripts(read: Callable[[], list[str]], tolerant: bool) -> list[str] | None:
+    """The scripts a shell reads from its input; None when a tolerant caller marks its call for review instead."""
     try:
         return read()
     except UnsupportedSyntaxError:
         if tolerant:
-            return []
+            return None
         raise

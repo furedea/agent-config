@@ -211,9 +211,10 @@ def parse(source: str, depth: int = 0, directories: tuple[Path | None, ...] = ()
         scripts = [(script, layer.wrapper_depth + 1) for layer in layers for script in shell_scripts(layer)]
         unreviewed = name in FOREIGN_SHELLS or any(takes_foreign_option(layer) for layer in layers)
         if (name in SHELLS and not scripts) or _is_foreign_shell(name):
-            inputs = shell_input.input_scripts(partial(sources.scripts, owner, reachable), tolerant=bool(scripts))
-            scripts += [(script, innermost.wrapper_depth + 1) for script in inputs]
-            unreviewed = unreviewed or (name not in SHELLS and bool(inputs))
+            read = partial(sources.scripts, owner, reachable)
+            inputs = shell_input.input_scripts(read, tolerant=bool(scripts) or name not in SHELLS)
+            scripts += [(script, innermost.wrapper_depth + 1) for script in inputs or []]
+            unreviewed = unreviewed or (name not in SHELLS and inputs != [])
         if name == "fish":
             commands += fish_file_commands(innermost, reachable)
         if unreviewed:
@@ -241,7 +242,11 @@ def fish_file_commands(command: Command, directories: tuple[Path | None, ...]) -
 def hidden_from_provider(records: tuple[dict, ...]) -> set[int]:
     """The calls under a time keyword or a negation, or in a function body, which the provider's rules skip."""
     covered = [node["Stmt"] for node in records if node.get("Type") == "TimeClause" and node.get("Stmt")]
-    functions = [node["Body"] for node in records if node.get("Type") == "FuncDecl"]
+    functions = [
+        node["Body"]
+        for node in records
+        if node.get("Type") == "FuncDecl" and node["Name"]["Value"] != code_text.CODE_BODY
+    ]
     return _calls_under(covered + functions + [node for node in records if node.get("Negated")])
 
 

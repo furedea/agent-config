@@ -120,3 +120,33 @@ def test_run_time_words_where_a_hook_skipping_option_could_be_are_left_to_the_us
 @pytest.mark.usefixtures("isolated_project")
 def test_run_time_option_values_and_paths_do_not_need_review(command: str) -> None:
     assert guard.decide({"tool_input": {"command": command}}).decision == "allow"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=core.hooksPath GIT_CONFIG_VALUE_0=/dev/null git commit -m x",
+        'GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0="core.hooksPath" GIT_CONFIG_VALUE_0=/dev/null git commit -m x',
+        "env GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=core.hookspath GIT_CONFIG_VALUE_0=/x git push origin b",
+        "GIT_CONFIG_KEY_3=alias.ci git ci",
+        "GIT_CONFIG_PARAMETERS=\"'core.hooksPath'='/x'\" git commit -m x",
+    ],
+)
+@pytest.mark.usefixtures("isolated_project")
+def test_environment_settings_that_move_the_hooks_are_denied(command: str) -> None:
+    verdict = guard.decide({"tool_input": {"command": command}})
+    assert verdict.decision == "deny"
+    assert REASON in verdict.reason
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=user.name GIT_CONFIG_VALUE_0=a git commit -m x",
+        "GIT_AUTHOR_NAME=a git commit -m x",
+        "env GIT_AUTHOR_NAME=a git status",
+    ],
+)
+@pytest.mark.usefixtures("isolated_project")
+def test_other_environment_settings_pass(command: str) -> None:
+    assert guard.decide({"tool_input": {"command": command}}).decision == "allow"

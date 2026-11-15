@@ -217,6 +217,30 @@ def hook_skip_reason(globals_: tuple[str, ...], verb: str, arguments: tuple[str,
     return ""
 
 
+def environment_reason(arguments: tuple[str, ...], assignments: tuple[str, ...]) -> str:
+    """Name an environment assignment that gives Git a hook-moving setting, as -c does.
+
+    Reads prefix assignments and the NAME=value words of env; GIT_CONFIG_PARAMETERS carries whole
+    settings and is refused, GIT_CONFIG_KEY_<n> only when it names a key that hook_config_key refuses.
+    """
+    program = Path(arguments[0]).name if arguments else ""
+    words = tuple(argument for argument in arguments[1:] if program == "env")
+    for word in (*assignments, *words):
+        name, separator, value = word.partition("=")
+        key = value.strip("'\"")
+        if separator and (
+            name == "GIT_CONFIG_PARAMETERS" or (re.fullmatch(r"GIT_CONFIG_KEY_\d+", name) and hides_hooks(key))
+        ):
+            return f"{name} {HOOK_SKIP_SUFFIX}"
+    return ""
+
+
+def hides_hooks(key: str) -> bool:
+    """Whether a config key moves the hooks or can alias or include a skipping option."""
+    name = key.lower()
+    return name == HOOKS_PATH_KEY or name.startswith(HOOK_CONFIG_PREFIXES)
+
+
 def hook_config_key(globals_: tuple[str, ...]) -> str:
     """The first one-command setting that moves the hooks or can smuggle in a skipping option, by -c or --config-env.
 

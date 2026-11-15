@@ -63,7 +63,7 @@ def inspect(command: str) -> Verdict:
 
 
 def _segment_reason(item: shell_syntax.Command) -> str:
-    reason = git_safety.reason(item.arguments)
+    reason = git_safety.reason(item.arguments) or git_safety.environment_reason(item.arguments, item.assignments)
     if not reason:
         return ""
     if item.wrapper_depth:

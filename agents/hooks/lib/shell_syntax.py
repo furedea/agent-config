@@ -82,12 +82,11 @@ VERSION_SUFFIX = re.compile(r"[0-9._-]+$")
 class Command:
     """A parsed literal command and its original source representation.
 
-    `dynamic` flags arguments whose value is only known at run time (a glob or a parameter other
-    than the home directory); such arguments carry their source text. `writes` lists the files
-    that output redirections would create or overwrite. `appends_input` marks a command that xargs
-    runs with further arguments read from its input. `spreading` flags arguments that may become
-    several words at run time, options included. `unreviewed` marks a shell whose syntax is not
-    bash's receiving a script, which is never allowed without review.
+    `dynamic` flags arguments whose value is only known at run time (a glob or a parameter other than the home
+    directory); such arguments carry their source text. `writes` lists the files that output redirections would
+    create or overwrite. `appends_input` marks a command that xargs runs with further arguments read from its input.
+    `spreading` flags arguments that may become several words at run time, options included. `unreviewed` marks a
+    shell whose syntax is not bash's receiving a script, which is never allowed without review.
     """
 
     raw: str
@@ -102,6 +101,7 @@ class Command:
     spreading: tuple[bool, ...] = ()
     unreviewed: bool = False
     quoted_words: tuple[str, ...] = ()
+    assignments: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         if not self.words:
@@ -351,16 +351,16 @@ def literal_command(node: dict, owner: dict, data: bytes) -> Command:
         raw = raw[:-1].rstrip()
     redirects = [redirect for redirect in owner.get("Redirs", []) if redirect.get("Word")]
     decoded = [literal_word(word, data) for word in node["Args"]]
-    targets = [literal_word(redirect["Word"], data)[0] for redirect in redirects]
     return Command(
         raw,
         tuple(value for value, _ in decoded),
-        redirections=tuple(targets),
+        redirections=tuple(literal_word(redirect["Word"], data)[0] for redirect in redirects),
         words=tuple(source_text(word, data) for word in node["Args"]),
         quoted_words=tuple(single_quoted_source(word, data) for word in node["Args"]),
         trailer=" ".join(source_text(redirect, data) for redirect in redirects),
         dynamic=tuple(flag for _, flag in decoded),
         spreading=tuple(spreads(word, data) for word in node["Args"]),
+        assignments=tuple(source_text(assign, data) for assign in node.get("Assigns") or ()),
         writes=_statement_writes(owner, data),
     )
 

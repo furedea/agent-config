@@ -316,3 +316,8 @@ def test_a_path_directory_linked_to_a_system_directory_asks(
 def test_an_inherited_git_location_asks(git_project: Path, monkeypatch: pytest.MonkeyPatch, name: str) -> None:
     monkeypatch.setenv(name, "/")
     assert judged(git_project, "rm scratch.txt") == "ask"
+
+
+@pytest.mark.parametrize("command", ["rm {x,~/.zshrc}", "rm a{,/../../../../etc/hosts}", "rm {a,b}.txt"])
+def test_an_operand_brace_expansion_can_spread_asks(git_project: Path, command: str) -> None:
+    assert judged(git_project, command) == "ask"

@@ -138,11 +138,15 @@ def _call_reason(call: shell_syntax.Command, directory: Path | None, roots: tupl
 
 
 def _split(call: shell_syntax.Command) -> tuple[list[str], list[tuple[str, bool]]]:
-    """Options and (operand, known only at run time) pairs; every word after `--` is an operand."""
+    """Options and (operand, known only at run time) pairs; every word after `--` is an operand.
+
+    A word that brace expansion or splitting can spread into several counts as known only at run time.
+    """
     options: list[str] = []
     operands: list[tuple[str, bool]] = []
     ended = False
-    for word, dynamic in zip(call.arguments[1:], call.dynamic[1:], strict=True):
+    for word, fixed_dynamic, spreading in zip(call.arguments[1:], call.dynamic[1:], call.spreading[1:], strict=True):
+        dynamic = fixed_dynamic or spreading
         if not ended and word == "--":
             ended = True
         elif not ended and not dynamic and word.startswith("-") and word != "-":

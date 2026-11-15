@@ -61,6 +61,10 @@ AGE_LIMIT = "exclude-newer"
 MINIMUM_AGE = timedelta(days=7)
 SPAN = re.compile(r"(?P<count>\d+)\s*(?P<unit>weeks?|days?)|p(?P<iso_count>\d+)(?P<iso_unit>[wd])")
 ENVIRONMENT_PREFIX = "UV_"
+# pnpm's global setting, from the environment or a settings file it reads.
+PNPM_GLOBAL_VARIABLE = re.compile(r"npm_config_global(_dir)?\s*=", re.IGNORECASE)
+PNPM_GLOBAL_SETTING = re.compile(r"^\s*global(-dir)?\s*[=:]", re.MULTILINE)
+PNPM_SETTINGS = (".npmrc", "pnpm-workspace.yaml")
 DEFAULT_SYSTEM_CONFIG = "/etc/xdg"
 OVERRIDING_SETTINGS = frozenset(
     {"exclude-newer", "exclude-newer-package", "index", "index-url", "extra-index-url", "find-links", "sources"}
@@ -78,7 +82,15 @@ ASSIGNMENT = re.compile(r"(^|[;&|(){}`\n])\s*[A-Za-z_][A-Za-z0-9_]*\+?=")
 
 
 def objection(payload: dict, command: str, commands: tuple[shell_syntax.Command, ...]) -> Verdict:
-    """Ask when a uv dependency change names another place, lifts the age limit, or shares settings."""
+    """Ask when a uv dependency change names another place, lifts the age limit, or shares settings.
+
+    A pnpm add that the environment or a pnpm settings file turns global is denied, as the global flags are.
+    """
+    if any(_is_pnpm_add(item) for item in commands) and (source := _pnpm_global_source(payload, command)):
+        return hook_decision.deny(
+            f"BLOCKED: forbidden command: {source} makes pnpm add install globally; Nix owns globally installed "
+            f"tools, so change the declarative configuration instead.\n\n{hook_decision.REVIEW_HINT}"
+        )
     if leading := next((item for item in commands if _has_option_before_subcommand(item)), None):
         preview = shell_syntax.command_preview(leading.raw)
         return hook_decision.ask(
@@ -284,6 +296,30 @@ def _has_option_before_subcommand(item: shell_syntax.Command) -> bool:
         and arguments[1].startswith("-")
         and not {"add", "lock"}.isdisjoint(arguments[2:])
     )
+
+
+def _is_pnpm_add(item: shell_syntax.Command) -> bool:
+    arguments = command_policy.canonical(item).arguments
+    return arguments[0] == "pnpm" and "add" in arguments[1:]
+
+
+def _pnpm_global_source(payload: dict, command: str) -> str:
+    """What turns pnpm's global setting on: a variable in the command or a settings file pnpm reads."""
+    if PNPM_GLOBAL_VARIABLE.search(command):
+        return "npm_config_global"
+    cwd = payload.get("cwd")
+    directory = Path(cwd).resolve() if isinstance(cwd, str) and Path(cwd).is_absolute() else Path.cwd()
+    home = Path.home()
+    candidates = [folder / name for folder in (directory, *directory.parents) for name in PNPM_SETTINGS]
+    candidates += [home / ".npmrc", home / ".config" / "pnpm" / "rc"]
+    return next((str(path) for path in candidates if _sets_pnpm_global(path)), "")
+
+
+def _sets_pnpm_global(path: Path) -> bool:
+    try:
+        return bool(PNPM_GLOBAL_SETTING.search(path.read_text(errors="replace")))
+    except OSError:
+        return False
 
 
 def _is_dependency_call(item: shell_syntax.Command) -> bool:

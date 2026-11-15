@@ -356,3 +356,14 @@ def test_an_inherited_git_location_before_uv_asks(
 def test_the_default_system_configuration_directory_is_read(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("XDG_CONFIG_DIRS", raising=False)
     assert Path("/etc/xdg/uv/uv.toml") in dependency_settings._system_settings()
+
+
+@pytest.mark.parametrize("command", ["npm_config_global=true pnpm add cowsay", "NPM_CONFIG_GLOBAL=1 pnpm add cowsay"])
+def test_a_pnpm_global_install_through_the_environment_is_denied(git_project: Path, command: str) -> None:
+    assert judged(git_project, command, "allowed") == "deny"
+
+
+@pytest.mark.parametrize("name", [".npmrc", "pnpm-workspace.yaml"])
+def test_a_pnpm_global_install_through_project_settings_is_denied(git_project: Path, name: str) -> None:
+    (git_project / name).write_text("global=true\n" if name == ".npmrc" else "global: true\n")
+    assert judged(git_project, "pnpm add cowsay", "allowed") == "deny"

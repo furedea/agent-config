@@ -19,7 +19,7 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "lib"))
 
 import audit_log
-import comment_scan
+import comment_nodes
 import hook_decision
 import hook_input
 from hook_decision import Verdict
@@ -124,16 +124,24 @@ def _adds(name: str, pattern: re.Pattern[str], change: _Change) -> bool:
     if name not in COMPARED_BY_TEXT:
         return len(pattern.findall(change.added)) > len(pattern.findall(change.removed))
     suffix = Path(change.path).suffix
-    added, removed = (list(_marked_lines(pattern, text, suffix).values()) for text in (change.added, change.removed))
-    return bool(Counter(added) - Counter(removed))
+    added, removed = (_marked_lines(pattern, text, suffix) for text in (change.added, change.removed))
+    if added is None or removed is None:
+        # Comments cannot be told from strings, so any change to text that holds a marker asks.
+        return pattern.search(change.added) is not None and change.added != change.removed
+    return bool(Counter(added.values()) - Counter(removed.values()))
 
 
-def _marked_lines(pattern: re.Pattern[str], text: str, suffix: str) -> dict[int, tuple[bool, str]]:
+def _marked_lines(pattern: re.Pattern[str], text: str, suffix: str) -> dict[int, tuple[bool, str]] | None:
     """By line number, whether each marker is in a comment, with the comment from its start on that line or the line.
 
-    Comments are found across the whole text, so a block comment or a multi-line string around the line counts.
+    The language's parser finds the comments, so a block comment, raw string or block scalar around the line counts.
+    None means the comments cannot be known.
     """
-    spans = comment_scan.comment_spans(text, suffix)
+    if not pattern.search(text):
+        return {}
+    spans = comment_nodes.comment_spans(text, suffix, "ast-grep-ignore")
+    if spans is None:
+        return None
     marked = {}
     offset = 0
     for number, line in enumerate(text.split("\n")):
@@ -253,6 +261,8 @@ def _becomes_comment(text: str, source: str, destination: str) -> set[int]:
         return set()
     pattern = MARKERS["ast-grep-ignore"]
     before, after = (_marked_lines(pattern, text, suffix) for suffix in (source, destination))
+    if before is None or after is None:
+        return {number for number, line in enumerate(_lines(text)) if pattern.search(line)}
     return {number for number, marked in after.items() if marked[0] and marked != before.get(number)}
 
 

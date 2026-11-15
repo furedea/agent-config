@@ -250,3 +250,36 @@ def test_moving_a_marker_out_of_a_heredoc_into_python_asks(tmp_path: Path) -> No
     source.write_text("cat <<EOF\n# ast-grep-ignore: rule\nEOF\n")
     patch = f"*** Begin Patch\n*** Update File: {source}\n*** Move to: {tmp_path / 'run.py'}\n*** End Patch"
     assert decide("apply_patch", {"input": patch}) == "ask"
+
+
+@pytest.mark.parametrize(
+    "name,before,edits",
+    [
+        ("ci.yml", "key: |\n  # ast-grep-ignore: rule\nx: 1\n", [{"old_string": "key: |\n  ", "new_string": ""}]),
+        (
+            "lib.rs",
+            'const S: &str = r#"foo "\n// ast-grep-ignore: rule\n"#;\nfn f() {}\n',
+            [
+                {"old_string": 'const S: &str = r#"foo "\n', "new_string": ""},
+                {"old_string": '\n"#;\n', "new_string": "\n"},
+            ],
+        ),
+    ],
+    ids=["out of a YAML block scalar", "out of a Rust raw string"],
+)
+def test_an_edit_that_turns_a_string_line_into_a_marker_comment_asks(
+    tmp_path: Path, name: str, before: str, edits: list[dict]
+) -> None:
+    target = tmp_path / name
+    target.write_text(before)
+    assert decide("MultiEdit", {"file_path": str(target), "edits": edits}) == "ask"
+
+
+def test_without_the_scanner_any_change_to_a_file_with_a_marker_asks(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Without ast-grep the guard cannot tell comments from strings, so it fails closed."""
+    monkeypatch.setattr(guard.comment_nodes, "SCANNER", "ast-grep-missing-for-test")
+    target = tmp_path / "app.py"
+    target.write_text("x = 1  # ast-grep-ignore: rule_a\n")
+    assert decide("Edit", {"file_path": str(target), "old_string": "x = 1", "new_string": "y = 2"}) == "ask"

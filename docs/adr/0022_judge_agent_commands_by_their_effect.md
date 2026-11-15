@@ -32,23 +32,26 @@ earlier one by prompting more:
 
 ## Classes
 
-| Class | Effect                                 | Examples                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Decision |
-| ----- | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| A     | Stays inside the environment           | edit, build, test, `rm` inside writable roots, shell functions, loops                                                                                                                                                                                                                                                                                                                                                                                                                     | allow    |
-| B     | External, inside the grant, reversible | PR / issue create, edit, comment, review reply, `resolveReviewThread` on a trusted owner's repository; read-only `gh` that reveals no secret; Herdr panes the agent created; dependency adds that run no package code at add time (`cargo add`, `GOTOOLCHAIN=local go get`, `uv add --no-build`, `npm install --ignore-scripts`)                                                                                                                                                          | allow    |
-| C     | Widens authority                       | writes to repositories of owners not in `trusted_owners.json`; non-allowlisted hosts; secrets, including token-revealing reads (`gh auth token`, `gh auth status --show-token`); sandbox escape; fetched-package execution (`npx`, `uvx`, `bunx`, `pnpm dlx`, `nix run`, `nix shell`, `uv run --with`, `npm install` without `--ignore-scripts`, `go get` that may switch toolchains, and any `uv add` without `--no-build`, because resolving or syncing can run an sdist build backend) | ask      |
-| D     | Promotes or cannot be undone           | `gh pr merge`, `gh release create` / `edit` / `upload` / `delete` / `delete-asset`, `gh repo edit`, `gh api` with a write method other than a listed class B call (except the repository DELETE, which is denied), `gh secret set`, `git stash drop` / `clear`, `git remote add` / `set-url`, `kill` / `pkill` that send a signal (not `kill -l` / `-L`), `herdr server` forms that start, stop, reload, or update (not read-only `agent-manifests`)                                      | ask      |
+| Class | Effect                                 | Examples                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Decision |
+| ----- | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| A     | Stays inside the environment           | edit, build, test, `rm` of a generated, ignored, or clean tracked file inside writable roots, shell functions, loops                                                                                                                                                                                                                                                                                                                                                                            | allow    |
+| B     | External, inside the grant, reversible | PR / issue create, edit, comment, review reply, `resolveReviewThread` on a trusted owner's repository; read-only `gh` that reveals no secret; Herdr panes the agent created; dependency adds that run no package code at add time (`cargo add`, `GOTOOLCHAIN=local go get`, `uv add --no-build`, `npm install --ignore-scripts`)                                                                                                                                                                | allow    |
+| C     | Widens authority                       | writes to repositories of owners not in `trusted_owners.json`; non-allowlisted hosts; secrets, including token-revealing reads (`gh auth token`, `gh auth status --show-token`); sandbox escape; fetched-package execution (`npx`, `uvx`, `bunx`, `pnpm dlx`, `nix run`, `nix shell`, `uv run --with`, `npm install` without `--ignore-scripts`, `go get` that may switch toolchains, and any `uv add` without `--no-build`, because resolving or syncing can run an sdist build backend)       | ask      |
+| D     | Promotes or cannot be undone           | `gh pr merge`, `gh release create` / `edit` / `upload` / `delete` / `delete-asset`, `gh api` with a write method other than a listed class B call (including `-X DELETE`, which asks today even for a repository), `rm` of an untracked file or a file with uncommitted edits, `git stash drop` / `clear`, `git remote add` / `set-url`, `kill` / `pkill` that send a signal (not `kill -l` / `-L`), `herdr server` forms that start, stop, reload, or update (not read-only `agent-manifests`) | ask      |
 
-The deny list is unchanged and stays a hard denial, not class D: `gh repo delete`, its API
-equivalent `gh api -X DELETE repos/{owner}/{repo}` (recognized before the generic DELETE rule),
-and `git push --force` without lease. A known program in a form the table does not list is not
+The deny list in `agents/command_permissions.json` is unchanged and is not restated here. What
+it denies today stays a hard denial and is never moved to class D: for example `gh repo
+delete` / `archive` / `rename` / `transfer` / `edit` / `create`, all of `gh secret`, recursive
+`rm`, and `git push --force` without lease. `gh api -X DELETE repos/{owner}/{repo}` is not denied
+today and asks as class D; making it a deny is a separate change. A known program in a form the table does not list is not
 class B: an external operation outside B asks as C or D, so `gh api -X PATCH`, `-X PUT`, and
 `-X POST` on settings, protection, or collaborators ask. Separately, the user decided that
 static ast-grep rules, which check edited source files and not shell commands, block rather than
 advise. This is a decision not yet implemented: it reverses the advice-only reading in ADR-0021,
 which is being amended in a separate change so that both ADRs agree. Class D is the ask tier for operations that are not denied. The classes
-follow one rule: A loses nothing the sandbox does not hold (`rm` in writable roots is
-recoverable from the checkout or by rebuild); D loses state outside the working tree (stashes,
+follow one rule: A loses nothing the sandbox does not hold (a generated, ignored, or clean
+tracked file is recoverable by rebuild or checkout); an `rm` that destroys the only copy asks;
+D loses state outside the working tree (stashes,
 processes, release assets) or promotes work to a shared target. Function and loop bodies are judged by the commands inside them, so a
 class D operation hidden in `f() { gh pr merge 1; }; f` still asks. A construct the guard cannot
 read, or a program it cannot determine (`eval`, `$cmd ...`, a shell fed unreadable input), asks
@@ -82,6 +85,10 @@ The ruleset stops the agent's merge only under two conditions, both settings the
     the rule restricts who counts. The ruleset must require code-owner review with a `CODEOWNERS`
     entry for the owner (this repository has none yet), or otherwise restrict approvals to the
     owner.
+- The ruleset must dismiss stale approvals when new commits are pushed, because the agent can
+    push after the owner approves; otherwise an approval of an earlier revision lets the app
+    merge code the owner never reviewed (or the Gateway enforces owner review of the latest
+    revision).
 - The agent's GitHub App must not be a bypass actor of the ruleset, since a bypass actor merges
     without the rules applying.
 

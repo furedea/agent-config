@@ -32,6 +32,8 @@ ASSIGNING_PROGRAMS = frozenset(
     | {"builtin", "noglob", "nocorrect", "-"}
     # fc, zsh's r, and history rerun or add commands the line's syntax does not show.
     | {"fc", "r", "history"}
+    # enable, disable, zmodload, and autoload load, swap, or define builtins and functions, gh's name included.
+    | {"enable", "disable", "zmodload", "autoload"}
 )
 # Syntax that assigns: a declaration, a loop variable, arithmetic, a ${name:=value} default, or a function,
 # which can stand in for a command of the same name.

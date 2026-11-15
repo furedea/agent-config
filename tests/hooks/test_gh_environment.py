@@ -97,6 +97,10 @@ def test_a_variable_set_on_the_line_makes_every_gh_call_ask(name: str, form: str
             id="a command rerun from history",
         ),
         pytest.param("r; gh issue comment 1 -R furedea/agent-config -b ok", id="zsh's r rerunning a command"),
+        *(
+            pytest.param(f"{load}; gh issue comment 1 -R furedea/agent-config -b ok", id=f"a builtin loaded by {load}")
+            for load in ("enable -f /tmp/evil.so gh", "disable echo", "zmodload zsh/files", "autoload -U gh")
+        ),
     ],
 )
 def test_other_ways_to_change_the_environment_ask(command: str) -> None:

@@ -1,0 +1,27 @@
+# agents/skills/python-style/references/models.md: `FrozenBaseModel` sets `frozen=True`, `extra="forbid"`, `strict=True`,
+# `validate_default=True` and `revalidate_instances="always"`, in class keywords or `model_config`. The class named
+# `FrozenBaseModel` is sent, so the model can follow a named config constant or a split definition. Advisory and
+# unfitted (ADR-0021).
+id: frozen-base-model-sets-all-settings
+language: Python
+kind: noul
+subject: node
+state: located
+threshold: 0.5
+axis: file
+severity: warning
+rule:
+  kind: class_definition
+  has:
+    field: name
+    regex: ^FrozenBaseModel$
+ask: >-
+  This `FrozenBaseModel` may not set all five locked settings.
+criteria:
+  "true": >-
+    After following class keywords, `model_config`, and any named config constant it uses, at least one of `frozen=True`,
+    `extra="forbid"`, `strict=True`, `validate_default=True` and `revalidate_instances="always"` is missing or has
+    another value.
+  "false": >-
+    All five settings are present with these values, whether given in class keywords, in `model_config` (a call or a
+    dict), through a named config constant, or split between them.

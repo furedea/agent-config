@@ -74,6 +74,10 @@ def parse(raw):
     return Money.model_validate(json.loads(raw))
 
 
+class FrozenBaseModel(pydantic.BaseModel):
+    pass
+
+
 class Locked(FrozenBase, strict=False):
     pass
 
@@ -103,9 +107,10 @@ def test_python_style_model_rules_select_the_subjects_they_ask_about(repository:
     # the bare `@fixture` and an aliased `@pytest_fixture` all select a fixture. The module has test functions, so
     # the parametrize rule asks
     # about it. The aliased import is asked about. `parse` is the only `model_validate` call, and `Plain` the only
-    # class with an `__init__`; `Locked` is the only class with class keywords.
+    # class with an `__init__`; `Locked` is the only class with class keywords, and
+    # `FrozenBaseModel` (also a pydantic model, so a third value-object candidate) is the one asked about its settings.
     assert {rule: n for rule, n in counts.items() if rule not in RULE_IDS} == {
-        "value-object-is-immutable": 2,
+        "value-object-is-immutable": 3,
         "construction-placement-by-purity": 1,
         "fixed-choices-use-enum": 1,
         "string-literal-is-named-constant": 2,
@@ -115,4 +120,5 @@ def test_python_style_model_rules_select_the_subjects_they_ask_about(repository:
         "json-parse-uses-model-validate-json": 1,
         "plain-class-defines-slots": 1,
         "frozen-model-subclass-keeps-locked-settings": 1,
+        "frozen-base-model-sets-all-settings": 1,
     }

@@ -2,6 +2,14 @@ id: gha_workflow_permissions_deny_all
 valid:
   - |
     on: push
+    "permissions": {}
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        steps:
+          - run: echo hi
+  - |
+    on: push
     permissions: {}
     jobs:
       build:

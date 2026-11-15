@@ -1,6 +1,13 @@
 id: gha_workflow_default_shell
 valid:
   - |
+    defaults: {run: {shell: bash}}
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        steps:
+          - run: echo hi
+  - |
     defaults:
       run:
         shell: bash

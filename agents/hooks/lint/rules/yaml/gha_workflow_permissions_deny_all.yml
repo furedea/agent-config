@@ -22,7 +22,7 @@ rule:
       all:
         - has:
             field: key
-            regex: ^permissions$
+            regex: ^["']?permissions["']?$
         - has:
             field: value
             regex: ^\{\s*\}$

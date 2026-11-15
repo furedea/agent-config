@@ -45,20 +45,24 @@ rule:
     - not:
         has:
           stopBy: end
-          kind: block_mapping_pair
+          any:
+            - kind: block_mapping_pair
+            - kind: flow_pair
           all:
             - has:
                 field: key
-                regex: ^defaults$
+                regex: ^["']?defaults["']?$
             - has:
                 field: value
                 has:
                   stopBy: end
-                  kind: block_mapping_pair
+                  any:
+                    - kind: block_mapping_pair
+                    - kind: flow_pair
                   all:
                     - has:
                         field: key
-                        regex: ^shell$
+                        regex: ^["']?shell["']?$
                     - has:
                         field: value
                         regex: ^["']?bash["']?$|pipefail

@@ -1,6 +1,12 @@
 id: bash_strict_mode_header
 valid:
   - |
+    #!/usr/bin/env bash
+    set -euo pipefail
+    set +e
+    set -e
+    echo hi
+  - |
     # a comment first, so the next line is not a shebang
     #!/bin/sh
     echo hi

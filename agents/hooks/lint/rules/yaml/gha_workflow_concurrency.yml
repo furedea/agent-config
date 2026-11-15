@@ -2,7 +2,7 @@ id: gha_workflow_concurrency
 language: yaml
 severity: error
 message: "Without `concurrency`, every push to the same ref keeps running superseded workflow runs."
-note: "Add `concurrency: { group: ${{ github.workflow }}-${{ github.ref }}, cancel-in-progress: true }` at the top level (`cancel-in-progress: false` for a deploy that must run in order)."
+note: "Add `concurrency: { group: \"${{ github.workflow }}-${{ github.ref }}\", cancel-in-progress: true }` at the top level (`cancel-in-progress: false` for a deploy that must run in order)."
 files:
   - "**/.github/workflows/**"
 # Scope: Only workflows triggered by `push` or `pull_request` are checked. The value of `cancel-in-progress` is not judged, because a deploy workflow that must run in order sets it to false, and a workflow that is only called or dispatched has no burst of runs per ref.

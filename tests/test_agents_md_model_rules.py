@@ -160,6 +160,10 @@ func Fail() error {
 	return errors.New("bad")
 }
 
+var literal = func() int {
+	return 1
+}
+
 func Run(path string) int {
 	client := NewClient(path)
 	client.Connect()
@@ -236,7 +240,7 @@ EXPECTED = {
     "no-comment-restating-code": 1,
     "no-exposed-mutable-collection": 1,
 }
-FUNCTIONS = {"python": 10, "typescript": 9, "go": 7, "rust": 9}
+FUNCTIONS = {"python": 10, "typescript": 9, "go": 8, "rust": 9}
 
 # A Python docstring is a string, not a comment, and the rule selects it too: `documented` is the second subject.
 EXPECTED_OVERRIDES = {

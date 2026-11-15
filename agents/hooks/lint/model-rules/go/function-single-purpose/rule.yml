@@ -15,6 +15,7 @@ rule:
     - any:
         - kind: function_declaration
         - kind: method_declaration
+        - kind: func_literal
 ask: >-
   This function does more than one job, or mixes high-level steps with low-level details in one body.
 criteria:

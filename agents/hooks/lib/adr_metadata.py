@@ -17,6 +17,7 @@ METADATA = re.compile(r"- ([A-Za-z][\w -]*): ?(.*)")
 AMENDED = re.compile(r"[0-9]{4}-\d{2}-\d{2} \(.+\)")
 # A reference qualified by a repository word, such as `dotfiles ADR-0016`, names another repository's ADR.
 REFERENCE = re.compile(r"(?:\[?([A-Za-z][\w/.-]*) )?ADR-([0-9]{4})(?![0-9A-Za-z_])")
+LINK_TARGET = re.compile(r"(?<=\])\([^)]*\)")
 JOINERS = frozenset({"and", "or", "to", "by", "with", "of", "in", "from", "see"})
 EXEMPT_NAMES = frozenset({"README.md"})
 MARKDOWN_SUFFIXES = frozenset({".md", ".markdown"})
@@ -56,7 +57,7 @@ class Adr:
             (line, match.group(2))
             for line, name, value in self.metadata
             if name == key
-            for match in REFERENCE.finditer(value)
+            for match in REFERENCE.finditer(LINK_TARGET.sub("", value))
             if match.group(1) is None or match.group(1) in JOINERS
         ]
 

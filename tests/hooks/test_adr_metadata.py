@@ -221,6 +221,12 @@ def test_id_digits_must_be_ascii(adr_directory: Path) -> None:
     assert "File name must start with a four-digit ID" in messages(adr_directory)
 
 
+def test_link_targets_are_not_scanned_for_references(adr_directory: Path) -> None:
+    extra = "- Supersedes: [dotfiles ADR-0016](https://example.test/docs/ADR-0016.md)\n"
+    write_adr(adr_directory, "0003_third_decision.md", extra=extra)
+    assert messages(adr_directory) == ""
+
+
 def test_this_repositorys_adr_history_conforms() -> None:
     directory = REPO_ROOT / "docs" / "adr"
     assert adr_metadata.diagnostics(sorted(directory.glob("*.md"))) == ()

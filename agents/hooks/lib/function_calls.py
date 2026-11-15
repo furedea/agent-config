@@ -10,7 +10,7 @@ import variable_changes
 from code_text import ASSIGNING_BUILTINS, CODE_BODY, NAME_OPTION
 from shell_words import PARAMETER_MODIFIERS, UnsupportedSyntaxError, literal_word, nodes, source_text, spreads
 from shell_wrappers import WRAPPERS
-from variable_changes import ARITHMETIC, UNSEEN_ASSIGNERS
+from variable_changes import ARITHMETIC, ARITHMETIC_TEST, UNSEEN_ASSIGNERS
 
 # $1, ${12}, $@, and $*, which take the words a function is called with.
 POSITIONAL = re.compile(r"[1-9][0-9]*|[@*]")
@@ -212,6 +212,7 @@ def _followed(body: dict, records: tuple[dict, ...], data: bytes) -> dict:
             for part in nodes(body)
         )
         or any(part.get("Param", {}).get("Value") in ARGUMENT_ARRAYS for part in nodes(body))
+        or any(_reads(part, copies) for context in _arithmetic(body, data) for part in nodes(context))
         or any(
             "Type" not in node and isinstance(node.get("Name"), dict) and node["Name"].get("Value") in ARGUMENT_ARRAYS
             for node in nodes(body)
@@ -291,6 +292,18 @@ def _attributed(body: dict, data: bytes) -> set[str]:
 def _option_like(word: dict | None, data: bytes) -> bool:
     value, dynamic = literal_word(word, data) if word else ("", False)
     return dynamic or value[:1] in {"-", "+"}
+
+
+def _arithmetic(body: dict, data: bytes) -> list[object]:
+    """The arithmetic in the body, which evaluates an argument's text as code.
+
+    That is $(( )), (( )), let, an index or a slice, and a [[ ]] test comparing numbers.
+    """
+    found: list[object] = [node for node in nodes(body) if node.get("Type") in ARITHMETIC]
+    tests = (node for node in nodes(body) if node.get("Type") == "TestClause")
+    found += [test for test in tests if ARITHMETIC_TEST.search(source_text(test, data))]
+    found += [node.get(key) for node in nodes(body) if node.get("Type") == "ParamExp" for key in ("Index", "Slice")]
+    return [item for item in found if item]
 
 
 def _iterates_arguments(loop: dict, copies: dict[str, str]) -> bool:

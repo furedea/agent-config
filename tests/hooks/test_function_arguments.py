@@ -135,6 +135,10 @@ def test_denials_see_through_builtin_prefixes_and_eval_option_ends(command: str)
         'f(){ a=("$@"); find . "${a[@]}"; }; f -delete',
         'f(){ local -a a=("$@"); find . "${a[@]}"; }; f -delete',
         'f(){ a[0]=$1; find . "${a[0]}"; }; f -delete',
+        "f(){ : $(( $1 )); }; f 'a[$(git commit --no-verify -m x)0]'",
+        "f(){ (( $1 )); }; f 'a[$(git commit --no-verify -m x)0]'",
+        "f(){ [[ $1 -eq 0 ]]; }; f 'a[$(git commit --no-verify -m x)0]'",
+        "f(){ echo \"${x[$1]}\"; }; f '$(git commit --no-verify -m x)'",
         'f(){ find . "$1"; }; f {-del,-foo}ete',
         "zstat -A aliases[g] x",
         "env \"$(printf BASH_FUNC_gh)%%=() { gh pr merge 1; }\" bash -c 'gh pr list'",
@@ -183,6 +187,7 @@ def test_a_function_reading_its_argument_through_a_redirection_is_judged_with_th
     [
         "f(){ trap 'echo done' EXIT; echo hi; }; f",
         't(){ printf "%s\\n" "$@" | sort; }; t b a',
+        'f(){ [[ -n "$1" ]] && echo "$1"; }; f x',
         "eval 'echo hi'",
         "trap 'echo done' EXIT",
     ],

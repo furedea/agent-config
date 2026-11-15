@@ -5,13 +5,28 @@ message: "Building a path from a string that contains a separator hard-codes it 
 note: "Use `Path::new(dir).join(name)` instead of `PathBuf::from(format!(\"{dir}/{name}\"))`."
 rule:
   all:
-    - has:
-        stopBy: end
-        any:
-          - kind: string_literal
-            regex: "[/\\\\]"
-          - kind: raw_string_literal
-            regex: "[/\\\\]"
+    # Only a literal that is part of the format string or of the `+` expression counts, not a literal inside a nested call such as `name.replace("/", "_")`.
+    - any:
+        - has:
+            stopBy: end
+            kind: macro_invocation
+            has:
+              kind: token_tree
+              has:
+                any:
+                  - kind: string_literal
+                    regex: "[/\\\\]"
+                  - kind: raw_string_literal
+                    regex: "[/\\\\]"
+        - has:
+            stopBy: end
+            kind: binary_expression
+            has:
+              any:
+                - kind: string_literal
+                  regex: "[/\\\\]"
+                - kind: raw_string_literal
+                  regex: "[/\\\\]"
     - any:
         - pattern: PathBuf::from(format!($$$ARGS))
         - pattern: std::path::PathBuf::from(format!($$$ARGS))

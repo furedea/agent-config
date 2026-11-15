@@ -12,6 +12,12 @@ valid:
     fn f(stem: String) -> PathBuf { PathBuf::from(stem + ".rs") }
   - |
     fn f(name: &str) { let p = Path::new(&format!("{name}.json")); }
+  - |
+    fn f(name: &str) -> PathBuf { PathBuf::from(format!("{}", name.replace("/", "_"))) }
+  - |
+    fn f(name: &str) -> PathBuf { PathBuf::from(name.replace("/", "_") + ".rs") }
+  - |
+    fn f(name: &str) { let p = Path::new(&format!("{}", name.replace('/', "_"))); }
 invalid:
   - |
     fn f(dir: &str) -> PathBuf { PathBuf::from(format!("{dir}/a")) }
@@ -29,3 +35,7 @@ invalid:
     fn f(dir: &str) -> PathBuf { PathBuf::from(format!(r#"{dir}/child"#)) }
   - |
     fn f(dir: &str) { let p = Path::new(&format!(r"{dir}\child")); }
+  - |
+    fn f(dir: &str, name: &str) -> PathBuf { PathBuf::from(dir.to_owned() + "/" + name) }
+  - |
+    fn f(dir: &str) -> PathBuf { PathBuf::from(format!("{}/a", dir.replace("-", "_"))) }

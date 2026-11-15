@@ -1,6 +1,17 @@
 id: py_dataclass_slots
 valid:
   - |
+    from functools import cached_property as cached
+
+
+    @dataclass(frozen=True)
+    class Report:
+        rows: tuple[int, ...]
+
+        @cached
+        def total(self) -> int:
+            return sum(self.rows)
+  - |
     @dataclass(frozen=True, slots=True)
     class Age:
         value: int

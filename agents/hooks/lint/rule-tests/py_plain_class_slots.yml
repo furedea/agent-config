@@ -49,6 +49,16 @@ valid:
         def run(self) -> None: ...
 invalid:
   - |
+    @functools.total_ordering
+    class Version:
+        def __init__(self, major: int) -> None:
+            self.major = major
+  - |
+    @typing.final
+    class Version:
+        def __init__(self, major: int) -> None:
+            self.major = major
+  - |
     class Pair:
         def __init__(self, pair: tuple[int, int]) -> None:
             self.left, self.right = pair

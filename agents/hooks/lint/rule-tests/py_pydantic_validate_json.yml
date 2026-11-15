@@ -42,6 +42,14 @@ valid:
     def read(text):
         data = tomllib.loads(text)
         return Order.model_validate(data)
+  - |
+    def outer(raw):
+        data = json.loads(raw)
+
+        def inner(data):
+            return Order.model_validate(data)
+
+        return inner(data)
 invalid:
   - |
     order = Order.model_validate(json.loads(payload))

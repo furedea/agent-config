@@ -25,7 +25,7 @@ rule:
           stopBy: end
           has:
             kind: inner_attribute_item
-            regex: ^#!\[cfg\((test|all\((.*,\s*)?test\s*[,)])
+            regex: ^#!\[cfg\((test\s*\)|(all|any)\((.*,\s*)?test\s*[,)])
     # Inside a module that is compiled only for tests.
     - not:
         inside:
@@ -33,7 +33,7 @@ rule:
           stopBy: end
           follows:
             kind: attribute_item
-            regex: ^#\[cfg\((test|all\((.*,\s*)?test\s*[,)])
+            regex: ^#\[cfg\((test\s*\)|(all|any)\((.*,\s*)?test\s*[,)])
             stopBy:
               not:
                 any:

@@ -37,6 +37,16 @@ valid:
   - |
     #[fixture]
     fn user() -> User { User::default() }
+  - |
+    #[cfg(any(test, feature = "test-utils"))]
+    mod tests {
+        #[test]
+        fn works() {}
+    }
+  - |
+    #![cfg(any(test, feature = "test-utils"))]
+    #[test]
+    fn works() {}
 invalid:
   - |
     #[test]
@@ -84,3 +94,15 @@ invalid:
   - |
     #[rstest::rstest]
     fn it_works() {}
+  - |
+    #[cfg(testing)]
+    mod internal {
+        #[test]
+        fn works() {}
+    }
+  - |
+    #[cfg(test_utils)]
+    mod internal {
+        #[test]
+        fn works() {}
+    }

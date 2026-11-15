@@ -18,6 +18,15 @@ valid:
           contents: read
         steps:
           - run: echo hi
+  - |
+    on: push
+    permissions: { # deny all
+    }
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        steps:
+          - run: echo hi
 invalid:
   - |
     on: push

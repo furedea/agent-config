@@ -12,7 +12,7 @@ rule:
   all:
     - kind: command
     - has: { field: name, regex: "^set$" }
-    - regex: "^set\\s+(-[a-zA-Z]*x|(\\S+\\s+)*-o\\s+xtrace)"
+    - regex: "^set\\s+(\\S+\\s+)*(-[a-zA-Z]*x|-o\\s+xtrace)\\b"
 ask: >-
   This script turns on `set -x` and then runs commands that handle a secret (a token, a password, a key) or raw user
   input while tracing is on.

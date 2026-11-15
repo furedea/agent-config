@@ -21,10 +21,24 @@ from hook_decision import Verdict
 
 PROGRAM = "uv"
 # `uv lock` changes dependencies only when it upgrades them; `--check` and the like only verify.
-LOCK_UPGRADES = frozenset({"--upgrade", "-U", "--upgrade-package", "-P"})
+LOCK_UPGRADES = frozenset({"--upgrade", "--upgrade-package"})
 # The only options a dependency change may carry unprompted, by whether each takes a name as its value;
 # any other option could point uv at another project, configuration, index, or source.
-FLAGS = frozenset({"--no-sync", "--frozen", "--locked", "--upgrade", "-U", "--quiet", "-q", "--verbose", "-v"})
+FLAGS = frozenset(
+    {
+        "--no-sync",
+        "--frozen",
+        "--locked",
+        "--upgrade",
+        "-U",
+        "--quiet",
+        "-q",
+        "--verbose",
+        "-v",
+        "--check",
+        "--dry-run",
+    }
+)
 NAMED_OPTIONS = frozenset({"--group", "--optional", "--extra", "--upgrade-package", "-P"})
 NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
 # A registry requirement: a name, optional extras, and version specifiers, with no marker, URL, or path.
@@ -55,19 +69,20 @@ ASSIGNMENT = re.compile(r"(^|[;&|(){}`\n])\s*[A-Za-z_][A-Za-z0-9_]*\+?=")
 
 def objection(payload: dict, command: str, commands: tuple[shell_syntax.Command, ...]) -> Verdict:
     """Ask when a uv dependency change names another place, lifts the age limit, or shares settings."""
-    changes = [item for item in commands if _is_dependency_change(item)]
-    if not changes:
-        return hook_decision.ALLOW
-    reason = _argument_reason(changes) or _neighbour_reason(command, commands, changes) or _project_reason(payload)
+    calls = [item for item in commands if _is_dependency_call(item)]
+    changes = [item for item in calls if _changes_dependencies(item)]
+    reason = _argument_reason(calls)
+    if changes and not reason:
+        reason = _neighbour_reason(command, commands, changes) or _project_reason(payload)
     if not reason:
         return hook_decision.ALLOW
-    preview = shell_syntax.command_preview(changes[0].raw)
+    preview = shell_syntax.command_preview(calls[0].raw)
     return hook_decision.ask(f"Needs review: a uv dependency change {reason}.\n\nCommand: {preview}", PROGRAM)
 
 
-def _argument_reason(changes: list[shell_syntax.Command]) -> str:
-    """Why the dependency change's own words may escape the project or the age limit; unknown words ask."""
-    for item in changes:
+def _argument_reason(calls: list[shell_syntax.Command]) -> str:
+    """Why a uv add or lock call's own words may escape the project or the age limit; unknown words ask."""
+    for item in calls:
         words = iter(zip(item.arguments[2:], item.dynamic[2:], strict=True))
         if word := next((word for word, dynamic in words if not _is_known_word(word, dynamic, words)), ""):
             return f"names '{word}', which may lift the package-age limit or point uv elsewhere"
@@ -94,7 +109,9 @@ def _is_registry_requirement(word: str) -> bool:
     """A name, extras, and specifiers whose name does not end like an archive or compressed file."""
     match = REQUIREMENT.fullmatch(word)
     name = NAME.match(word)
-    return bool(match and name) and name.group().rpartition(".")[2].casefold() not in ARCHIVE_SUFFIXES
+    return bool(match and name) and not any(
+        text.rpartition(".")[2].casefold() in ARCHIVE_SUFFIXES for text in (name.group(), word)
+    )
 
 
 def _neighbour_reason(
@@ -163,12 +180,22 @@ def _dependency_entries(settings: dict) -> list[str]:
     return [entry for entries in lists if isinstance(entries, list) for entry in entries if isinstance(entry, str)]
 
 
-def _is_dependency_change(item: shell_syntax.Command) -> bool:
+def _is_dependency_call(item: shell_syntax.Command) -> bool:
+    """A uv add or lock call, whose options are always judged."""
     arguments = command_policy.canonical(item).arguments
-    if arguments[0] != PROGRAM or len(arguments) < 2:
-        return False
-    upgrades = any(word.partition("=")[0] in LOCK_UPGRADES for word in arguments[2:])
-    return arguments[1] == "add" or (arguments[1] == "lock" and upgrades)
+    return arguments[0] == PROGRAM and len(arguments) > 1 and arguments[1] in {"add", "lock"}
+
+
+def _changes_dependencies(item: shell_syntax.Command) -> bool:
+    """Whether the call resolves anew: every `uv add`, and `uv lock` only when it upgrades (`-Uq`, `-Pruff`)."""
+    arguments = command_policy.canonical(item).arguments
+    return arguments[1] == "add" or any(_is_upgrade(word) for word in arguments[2:])
+
+
+def _is_upgrade(word: str) -> bool:
+    if word.startswith("--"):
+        return word.partition("=")[0] in LOCK_UPGRADES
+    return word.startswith("-") and not {"U", "P"}.isdisjoint(word[1:])
 
 
 def _is_uv(item: shell_syntax.Command) -> bool:

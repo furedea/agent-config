@@ -1,0 +1,36 @@
+id: rs_no_mocking_library
+valid:
+  - |
+    trait Clock { fn now(&self) -> u64; }
+    struct FakeClock(u64);
+  - |
+    use std::collections::HashMap;
+  - |
+    #[cfg_attr(test, derive(Debug))]
+    struct Fake;
+  - |
+    macro_rules! mock { ($($t:tt)*) => {}; }
+    mock! { Clock }
+invalid:
+  - |
+    use mockall::automock;
+  - |
+    #[automock]
+    trait Clock { fn now(&self) -> u64; }
+  - |
+    #[cfg_attr(test, mockall::automock)]
+    trait Clock { fn now(&self) -> u64; }
+  - |
+    #[cfg_attr(test, automock)]
+    trait Clock { fn now(&self) -> u64; }
+  - |
+    mockall::mock! { Clock {} }
+  - |
+    #[faux::create]
+    struct Clock;
+  - |
+    #[mockall_double::double]
+    use dependency::Type;
+  - |
+    use mockall::mock;
+    mock! { Clock {} }

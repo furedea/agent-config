@@ -1,0 +1,13 @@
+id: rs_no_mocking_library
+language: rust
+severity: error
+message: "A generated mock couples tests to call sequences instead of behavior."
+note: "Write a small fake struct that implements the trait, and pass it in instead of `#[automock]`."
+rule:
+  any:
+    - kind: use_declaration
+      regex: ^use (mockall|mockall_double|unimock|faux)\b
+    - kind: attribute_item
+      regex: ^#\[(cfg_attr\([^\]]*?,\s*)?(automock|(mockall|mockall_double|unimock|faux)::[a-z_]+)\b
+    - kind: macro_invocation
+      regex: ^mockall::mock!

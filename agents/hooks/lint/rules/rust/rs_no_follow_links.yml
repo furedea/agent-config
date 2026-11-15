@@ -1,0 +1,27 @@
+id: rs_no_follow_links
+language: rust
+severity: error
+message: "Following symlinks while walking a source tree can loop forever or leave the tree."
+note: "Remove `.follow_links(true)` (the default is `false`). If following links is required, keep it and add a reviewed `// ast-grep-ignore: rs_no_follow_links` comment that states the reason."
+rule:
+  all:
+    - pattern: $WALK.follow_links(true)
+    - has:
+        stopBy: end
+        any:
+          - pattern: WalkDir::new($$$ARGS)
+          - pattern: walkdir::WalkDir::new($$$ARGS)
+          - pattern: WalkBuilder::new($$$ARGS)
+          - pattern: ignore::WalkBuilder::new($$$ARGS)
+    # A walker that is only an argument of another receiver (`Crawler::new(WalkDir::new(p))`) is not the chain start.
+    - not:
+        has:
+          stopBy: end
+          kind: arguments
+          has:
+            stopBy: end
+            any:
+              - pattern: WalkDir::new($$$ARGS)
+              - pattern: walkdir::WalkDir::new($$$ARGS)
+              - pattern: WalkBuilder::new($$$ARGS)
+              - pattern: ignore::WalkBuilder::new($$$ARGS)

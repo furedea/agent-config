@@ -1,0 +1,28 @@
+# rust-style/references/filesystem.md: build paths with Path/PathBuf, not by string concatenation or formatting.
+# Moved from the ast-grep rule rs_no_path_from_format, which parsed string contents with a regex. Advisory and not fitted.
+id: paths-are-joined-not-formatted
+language: Rust
+kind: noul
+subject: node
+state: local
+threshold: 0.5
+axis: file
+severity: warning
+# Over-matches on purpose: any function that builds a Path or PathBuf from a formatted or concatenated string.
+rule:
+  all:
+    - kind: function_item
+    - has:
+        kind: call_expression
+        stopBy: end
+        regex: (?s)^(std::path::)?(PathBuf::from|Path::new)\(.*(format!|\+)
+ask: >-
+  This function builds a Path or PathBuf from a string that is formatted or concatenated, instead of joining path
+  components.
+criteria:
+  "true": >-
+    The string passed to `PathBuf::from` or `Path::new` is produced by `format!` or `+` and contains a path separator
+    (`/` or `\`) or joins a directory and a name, where `Path::join` or `PathBuf::push` would handle the separator.
+  "false": >-
+    The formatted or concatenated string is a single file name or suffix with no separator (`{stem}.rs`), or the path is
+    already built with `Path::join` or `PathBuf::push`.

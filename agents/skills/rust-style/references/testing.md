@@ -5,6 +5,7 @@ verification level. The conventions below govern Rust test tooling and structure
 
 - Use `cargo test` as the default test command.
 - Write unit tests in the target source file or module with `#[cfg(test)] mod tests`.
+- A rare test module that `clippy::tests_outside_test_module` reports, such as one under `#[cfg(all(unix, test))]`, uses `#[expect(clippy::tests_outside_test_module, reason = "...")]`.
 - Use `tests/*.rs` for integration tests that exercise public APIs or CLI behavior.
 - Integration tests compile as a separate crate and should use only public APIs.
 - Use doc tests for public examples that should stay compilable.

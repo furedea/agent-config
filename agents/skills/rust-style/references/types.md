@@ -5,8 +5,6 @@
 - Put module-level constants before types when they configure the following code.
 - Prefer `type` aliases and enums before structs that use them.
 - Put public structs, enums, and traits before their implementations.
-- Put public functions before private helper functions.
-- Keep `#[cfg(test)] mod tests` at the bottom of the file.
 - Keep related types and their `impl` blocks close together.
 
 ## Structs
@@ -50,7 +48,6 @@ impl SkillName {
 - Use enums for fixed states, providers, modes, and policy decisions.
 - Convert user input strings into enums at the boundary.
 - Avoid passing raw string modes through the codebase.
-- Prefer exhaustive `match` statements for domain control flow.
 - Implement `Display` when the enum has a stable user-facing representation.
 - Implement `FromStr` or `TryFrom<&str>` when parsing user input.
 
@@ -87,12 +84,11 @@ pub enum Provider {
 - Accept `impl Into<String>` for constructors that store owned strings.
 - Do not clone to satisfy the borrow checker until the ownership model is understood.
 - Use `Cow` only when profiling or API shape shows it is worthwhile.
-- Prefer slices over `&Vec<T>` in function parameters.
 
 ## Collections
 
 - Use `Vec<T>` for ordered sequences.
-- Use `BTreeMap` or sorted vectors when deterministic output order matters.
+- Use `BTreeMap` or sorted vectors when serialized or printed output must be in a deterministic order; `clippy::iter_over_hash_type` covers only iteration.
 - Use `HashMap` when order is irrelevant and lookup dominates.
 - Do not expose mutable collections directly from domain types.
 
@@ -100,15 +96,12 @@ pub enum Provider {
 
 - Use `&str` for borrowed string input and `String` for owned string storage.
 - Use `format!` when constructing a new owned string from values.
-- Use captured identifiers in formatting when it improves readability: `format!("{name}")`.
-- Prefer `to_owned()` or `String::from` when converting a string literal to `String`.
 - Avoid unnecessary `to_string()` in hot or repeated code.
 - Keep user-facing text separate from machine-readable output.
 
 ## Numeric Conversions
 
 - Use `usize` for indexing and collection lengths.
-- Do not use `as` for narrowing integer conversions.
 - Use `TryFrom` or `try_into` when a conversion can fail.
 - Use newtypes when a number has a domain unit or invariant.
 - Make lossy conversions explicit in the function or variable name.

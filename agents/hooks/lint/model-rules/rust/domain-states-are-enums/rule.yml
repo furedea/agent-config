@@ -1,0 +1,48 @@
+# rust-style/references/types.md (Enums): fixed states, modes, providers and policy decisions are enums, parsed at the
+# boundary, matched exhaustively. Advisory and not fitted: no fixtures or baseline yet (deferred), so the cutoff is the
+# 0.5 starting value.
+id: domain-states-are-enums
+language: Rust
+kind: noul
+subject: node
+state: local
+threshold: 0.5
+axis: file
+severity: warning
+# Functions that take a closed set of values as a string, or that match with a wildcard arm. A wildcard over an integer
+# or a string literal is common and judged by the question, not by the matcher.
+rule:
+  all:
+    - kind: function_item
+    - any:
+        - has:
+            field: parameters
+            kind: parameters
+            has:
+              kind: parameter
+              all:
+                - has:
+                    field: pattern
+                    regex: ^(mode|kind|state|status|provider|policy|strategy|action|level|format|variant|phase)$
+                - has:
+                    field: type
+                    regex: ^(&(')?[a-z_]* ?str|String)$
+        - has:
+            kind: match_arm
+            stopBy: end
+            has:
+              field: pattern
+              kind: match_pattern
+              regex: ^_$
+ask: >-
+  A fixed set of states, modes, providers or policy decisions is carried as a raw string, or matched with a wildcard
+  arm, so that adding a value is not checked by the compiler.
+criteria:
+  "true": >-
+    A parameter or value named for a closed set (a mode, kind, state, provider, policy) is a `&str` or `String` that is
+    compared or matched against string literals past the boundary that read it, or a `match` over a domain enum ends in
+    a `_` arm that hides new variants.
+  "false": >-
+    The function is the boundary that parses a string into an enum, the string is free text or an open set (a path, a
+    name, a message), or the `_` arm covers an open domain such as integers, strings or an error type's non-exhaustive
+    variants.

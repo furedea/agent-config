@@ -81,9 +81,9 @@ def test_any_patch_to_a_file_with_a_top_marker_asks(tmp_path: Path) -> None:
     assert decide("apply_patch", {"input": patch}) == "ask"
 
 
-def test_a_patch_to_a_file_without_a_top_marker_passes(tmp_path: Path) -> None:
+def test_a_patch_to_a_file_without_an_ast_grep_marker_passes(tmp_path: Path) -> None:
     target = tmp_path / "app.py"
-    target.write_text("x = 1\nbad()  # ast-grep-ignore: rule_a\n")
+    target.write_text("x = 1\nbad()  # noqa: E501\n")
     patch = f"*** Begin Patch\n*** Update File: {target}\n@@\n-x = 1\n+x = 2\n*** End Patch"
     assert decide("apply_patch", {"input": patch}) == "allow"
 
@@ -122,3 +122,26 @@ def test_lines_are_split_as_the_scanner_splits_them(tmp_path: Path) -> None:
     target.write_text("x = 1\u2028# ast-grep-ignore: rule_a\nbad()\n")
     values = {"file_path": str(target), "old_string": "\nbad()", "new_string": "\n\nbad()"}
     assert decide("Edit", values) == "ask"
+
+
+def test_a_patch_that_removes_the_lines_above_a_marker_asks(tmp_path: Path) -> None:
+    """Deleting the first line can move a marker followed by a blank line to the top, where it covers the file."""
+    target = tmp_path / "app.py"
+    target.write_text("x = 1\n# ast-grep-ignore: rule_a\n\nbad()\n")
+    patch = f"*** Begin Patch\n*** Update File: {target}\n@@\n-x = 1\n # ast-grep-ignore: rule_a\n*** End Patch"
+    assert decide("apply_patch", {"input": patch}) == "ask"
+
+
+def test_an_edit_that_does_not_apply_to_a_file_with_a_marker_asks(tmp_path: Path) -> None:
+    """When the guard cannot rebuild the file it cannot see the marker's scope, so it fails closed."""
+    target = tmp_path / "app.py"
+    target.write_text("x = 1\n# ast-grep-ignore: rule_a\n\nbad()\n")
+    values = {"file_path": str(target), "old_string": "x  =  1\n", "new_string": ""}
+    assert decide("Edit", values) == "ask"
+
+
+def test_an_edit_that_does_not_apply_to_a_file_without_a_marker_passes(tmp_path: Path) -> None:
+    target = tmp_path / "app.py"
+    target.write_text("x = 1\nbad()\n")
+    values = {"file_path": str(target), "old_string": "x  =  1\n", "new_string": ""}
+    assert decide("Edit", values) == "allow"

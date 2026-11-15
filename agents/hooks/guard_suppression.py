@@ -55,15 +55,16 @@ PATCH_MOVE = re.compile(r"^\*\*\* Move to: (.+)$")
 class _Change:
     """Text an edit adds to and removes from one file.
 
-    `whole` means the two texts are the whole file after and before the edit. `touches_top` means a patch changes
-    a file whose first line holds an ast-grep marker, so the marker's scope may change.
+    `whole` means the two texts are the whole file after and before the edit. `rescopes` means the edit changes a
+    file that holds an ast-grep marker without the guard seeing the whole result, so the marker may come to cover
+    the whole file.
     """
 
     path: str
     added: str
     removed: str
     whole: bool = False
-    touches_top: bool = False
+    rescopes: bool = False
 
 
 def decide(payload: dict) -> Verdict:
@@ -96,7 +97,7 @@ def _new_markers(change: _Change) -> list[str]:
 
 def _widens_file_scope(change: _Change) -> bool:
     """Whether the edit may give a first-line ast-grep marker the whole file, or change the one that has it."""
-    if change.touches_top:
+    if change.rescopes:
         return True
     after = _file_marker(change.added) if change.whole else None
     return after is not None and after != _file_marker(change.removed)
@@ -156,14 +157,16 @@ def _insert_change(path: str, values: dict) -> _Change:
 def _edit_change(path: str, edits: list[dict]) -> _Change:
     """Apply the replacements to the file in order and compare the whole text, so no partial edit is missed.
 
-    When a replacement does not apply to the file, the bare fragments are compared instead.
+    When a replacement does not apply to the file, the bare fragments are compared instead, and an ast-grep marker
+    in the file may come to cover all of it.
     """
     before = _existing_text(path)
     after = before
     pairs = [(_field(edit, "old_string", "old_str"), _field(edit, "new_string", "new_str")) for edit in edits]
     for edit, (old, new) in zip(edits, pairs, strict=True):
         if not old or old not in after:
-            return _Change(path, "\n".join(new for _, new in pairs), "\n".join(old for old, _ in pairs))
+            added, removed = "\n".join(new for _, new in pairs), "\n".join(old for old, _ in pairs)
+            return _Change(path, added, removed, rescopes=_holds_ast_grep_marker(before))
         after = after.replace(old, new) if edit.get("replace_all") else after.replace(old, new, 1)
     return _Change(path, after, before, whole=True)
 
@@ -201,19 +204,17 @@ class _Hunks:
         added = "\n".join(line[1:] for line in self.lines if line.startswith("+"))
         removed = "\n".join(line[1:] for line in self.lines if line.startswith("-"))
         existing = _existing_text(path)
-        source = _Change(path, added, removed, touches_top=self._shows_top_marker(existing))
+        # The applier matches context loosely (whitespace, Unicode punctuation), so where a hunk lands is unknown.
+        source = _Change(path, added, removed, rescopes=bool(self.lines) and _holds_ast_grep_marker(existing))
         if not self.destination:
             return [source]
         carried = existing if Path(path).suffix != Path(self.destination).suffix else ""
-        return [source, _Change(self.destination, f"{carried}\n{added}", removed, touches_top=source.touches_top)]
+        return [source, _Change(self.destination, f"{carried}\n{added}", removed, rescopes=source.rescopes)]
 
-    def _shows_top_marker(self, existing: str) -> bool:
-        """Whether the patch changes a file whose first line holds an ast-grep marker.
 
-        The patch applier matches context loosely (whitespace, Unicode punctuation), so this guard cannot tell
-        whether a hunk lands next to the marker; any change to such a file counts as touching it.
-        """
-        return bool(self.lines) and MARKERS["ast-grep-ignore"].search(_lines(existing)[0]) is not None
+def _holds_ast_grep_marker(text: str) -> bool:
+    """Whether a marker that an edit could move to the top, above a blank line, is in the file."""
+    return MARKERS["ast-grep-ignore"].search(text) is not None
 
 
 def _existing_text(path: str) -> str:

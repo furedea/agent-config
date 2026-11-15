@@ -111,6 +111,10 @@ rule:
                     - pattern: $ALIAS.mark.usefixtures("anyio_backend", $$$AFTER)
                     - pattern: $ALIAS.mark.usefixtures($$$BEFORE, "anyio_backend")
                     - pattern: $ALIAS.mark.usefixtures($$$BEFORE, "anyio_backend", $$$AFTER)
+                    - pattern: $ALIAS.mark.usefixtures('anyio_backend')
+                    - pattern: $ALIAS.mark.usefixtures('anyio_backend', $$$AFTER)
+                    - pattern: $ALIAS.mark.usefixtures($$$BEFORE, 'anyio_backend')
+                    - pattern: $ALIAS.mark.usefixtures($$$BEFORE, 'anyio_backend', $$$AFTER)
       - all:
           - inside:
               kind: module

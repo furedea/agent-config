@@ -120,6 +120,20 @@ valid:
 
         async def test_one(self) -> None:
             assert await work() == 1
+  - |
+    import pytest as pt
+
+
+    @pt.mark.usefixtures('db', 'anyio_backend')
+    async def test_something() -> None:
+        assert await work() == 1
+  - |
+    import pytest as pt
+
+
+    @pt.mark.usefixtures('anyio_backend')
+    async def test_something() -> None:
+        assert await work() == 1
 invalid:
   - |
     @app.mark.usefixtures("anyio_backend")

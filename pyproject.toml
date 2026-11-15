@@ -52,6 +52,7 @@ known_first_party = [
   "model_rules_outcome",
   "model_rules_programs",
   "model_rules_report",
+  "model_rules_resume",
   "model_rules_run",
   "patch_input",
   "provider_adapter",

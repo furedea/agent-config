@@ -24,10 +24,10 @@ def additional_context(output: str) -> str:
     [
         ("py", "x = 1\n", "x = 1\n", ""),
         ("py", "x=1\ny  =   2\n", "x = 1\ny = 2\n", ""),
-        ("sh", '#!/usr/bin/env bash\nset -euCo pipefail\nusage() { :; }\necho "hello"\n', 'echo "hello"', ""),
+        ("sh", '#!/usr/bin/env bash\nset -euo pipefail\necho "hello"\n', 'echo "hello"', ""),
         (
             "sh",
-            '#!/usr/bin/env bash\nset -euCo pipefail\nusage() { :; }\nif true\nthen\necho "x"\nfi\n',
+            '#!/usr/bin/env bash\nset -euo pipefail\nif true\nthen\necho "x"\nfi\n',
             "if true; then",
             "",
         ),

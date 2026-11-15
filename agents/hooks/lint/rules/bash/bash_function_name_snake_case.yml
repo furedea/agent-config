@@ -1,6 +1,6 @@
 id: bash_function_name_snake_case
 language: bash
-severity: warning
+severity: error
 message: "Name functions in `snake_case`, and do not start the name with a digit."
 rule:
   kind: function_definition

@@ -1,6 +1,6 @@
 id: gha_workflow_permissions_deny_all
 language: yaml
-severity: warning
+severity: error
 message: "Declare `permissions: {}` at the workflow level and grant each job only what it needs."
 files:
   - "**/.github/workflows/**"

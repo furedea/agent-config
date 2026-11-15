@@ -2,7 +2,7 @@
 
 ```sh
 #!/usr/bin/env bash
-set -euCo pipefail
+set -euo pipefail
 # Resolve the working directory according to the task; see the parent skill.
 
 function usage() {

@@ -11,6 +11,9 @@ valid:
     build() {
       readonly local_value=1
     }
+  - |
+    parse_args() { :; }
+    readonly -f parse_args
 invalid:
   - |
     readonly max_retry=3

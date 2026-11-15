@@ -8,15 +8,22 @@ description: >
 
 ## Working Directory and Tracing
 
-- Start every executable script with `#!/usr/bin/env bash` and `set -euCo pipefail`; the static rules check only
-  files that already have a `sh` or `bash` shebang, so a missing shebang is not reported.
+- Start every executable script with a shebang; the static rules for the shebang and `set -euo pipefail` check only
+  files that already have one, so a missing shebang is not reported.
 - Choose the working directory by responsibility. Hooks that operate on a project must use the
   target project's working directory. Resolve bundled resources relative to the script's location.
   Use `cd "$(dirname "$0")"` only when all relative operations should use that location.
-- `set -x` prints expanded commands to stderr before execution. Enable tracing only when useful
-  for debugging; keep it disabled by default for scripts handling secrets or user input.
+- `set -x` prints expanded commands to stderr before execution. Keep tracing off by default, and never
+  leave it on for scripts handling secrets or user input. Turn it on without editing the script: run
+  `bash -x ./script.sh`.
+- For a script that is debugged often, this opt-in line may follow the strict-mode header. It is optional, and no
+  rule requires it:
 
-If tracing was explicitly enabled, suppress it around noisy or sensitive sections. Restore it only
+```sh
+if [[ "${TRACE-0}" == "1" ]]; then set -o xtrace; fi
+```
+
+If tracing was enabled, suppress it around noisy or sensitive sections. Restore it only
 when subsequent commands are safe to trace:
 
 ```sh
@@ -27,7 +34,7 @@ set -x
 
 ## usage Function
 
-Print the documentation from the `usage` function with a heredoc inside its body:
+A script that takes arguments defines a `usage` function that prints its documentation with a heredoc inside its body:
 
 ```sh
 function usage() {
@@ -50,7 +57,7 @@ call `usage >&2` and `exit 1`.
 
 ## Constants
 
-Declare constants with `readonly`. Names use `SCREAMING_SNAKE_CASE`:
+Declare constants with `readonly`:
 
 ```sh
 readonly INPUT_DIR="$SCRIPT_DIR/../data/input"
@@ -68,10 +75,7 @@ readonly MAX_RETRY=3
 
 ## Naming
 
-| Kind      | Convention                          | Example                |
-| --------- | ----------------------------------- | ---------------------- |
-| Constants | `SCREAMING_SNAKE_CASE` + `readonly` | `readonly MAX_RETRY=3` |
-| Variables | `snake_case`                        | `input_file="..."`     |
+Variables use `snake_case`, for example `input_file="..."`.
 
 ## Local Variables
 

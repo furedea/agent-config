@@ -1,6 +1,6 @@
 id: gha_job_timeout_minutes
 language: yaml
-severity: warning
+severity: error
 message: "Set `timeout-minutes` on the job; the default is 6 hours."
 note: "A job that calls a reusable workflow (`uses:`) has no `runs-on` and cannot set it, so it is not checked. A job written as a flow mapping is found by its `runs-on` key alone."
 files:

@@ -1,6 +1,6 @@
 id: gha_pinned_uses_version_comment
 language: yaml
-severity: warning
+severity: error
 message: "Record the version of a SHA-pinned action in a trailing comment, such as `# v4.2.1`."
 note: "Local actions (`./path`) and tag references are not checked: the first has no version to record, and the second is rejected by zizmor's unpinned-uses."
 files:

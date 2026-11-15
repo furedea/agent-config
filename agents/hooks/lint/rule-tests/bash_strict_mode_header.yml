@@ -2,13 +2,34 @@ id: bash_strict_mode_header
 valid:
   - |
     #!/usr/bin/env bash
+    set -euo pipefail
+    echo hi
+  - |
+    #!/usr/bin/env bash
+    set -Eeuo pipefail
+    echo hi
+  - |
+    #!/usr/bin/env bash
     set -euCo pipefail
+    echo hi
+  - |
+    #!/usr/bin/env bash
+    set -o errexit -o nounset -o pipefail
+    echo hi
+  - |
+    #!/usr/bin/env bash
+    set -eu
+    set -o pipefail
+    echo hi
+  - |
+    #!/usr/bin/env bash
+    set -e -u -o pipefail
     echo hi
   - |
     #!/usr/bin/env bash
     # comments and function definitions may come before it
     usage() { :; }
-    set -euCo pipefail
+    set -euo pipefail
     echo hi
   - |
     #!/usr/bin/env bats
@@ -26,14 +47,30 @@ invalid:
     echo hi
   - |
     #!/usr/bin/env bash
-    main() {
-      set -euCo pipefail
-    }
+    set -o pipefail
+    echo hi
+  - |
+    #!/usr/bin/env bash
+    set -eo pipefail
+    echo hi
+  - |
+    #!/usr/bin/env bash
+    set -e -o pipefail
+    echo hi
   - |
     #!/usr/bin/env bash
     echo hi
-    set -euCo pipefail
+    set -euo pipefail
   - |
     #!/usr/bin/env bash
     cd /tmp
-    set -euCo pipefail
+    set -euo pipefail
+  - |
+    #!/usr/bin/env bash
+    main() {
+      set -euo pipefail
+    }
+  - |
+    #!/usr/bin/env bash
+    ls -eu
+    pipefail=1

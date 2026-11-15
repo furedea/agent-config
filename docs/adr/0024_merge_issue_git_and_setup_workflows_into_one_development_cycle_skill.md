@@ -28,5 +28,7 @@ Rejected alternatives:
 - Merge `tsdd` too: it mixes a permanent methodology with interim delivery procedures, and it serves requests that
     are not a cycle.
 
-The content moved without a change of rules; only the duplicated authorization statements were merged, and the
-language-to-template table of `project-setup` was replaced by the `--lang` option of `repo create` (ADR-0023).
+The content moved without a change of rules except three: the duplicated authorization statements were merged, the
+language-to-template table of `project-setup` was replaced by the `--lang` option of `repo create` (ADR-0023), and the
+rule against a repository `CLAUDE.md` (and moving an existing one into `AGENTS.md`) was abolished by the user and
+removed from `source-of-truth` and the moved setup content.

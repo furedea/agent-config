@@ -1,8 +1,9 @@
 id: bash_strict_mode_header
 language: bash
 severity: error
-message: "Enable `errexit`, `nounset` and `pipefail` with `set` at the top level, before any command that runs."
-note: "Any spelling that turns the three on is accepted: `set -euo pipefail`, `set -Eeuo pipefail`, `set -o errexit -o nounset -o pipefail`, or split over several `set` commands. Only files with a `sh` or `bash` shebang are checked: a sourced library has none, and a `bats` file keeps its own. Comments, function definitions and other `set` commands may come first, since they run nothing else."
+message: "Without errexit, nounset and pipefail, a failing command, an unset variable or a broken pipe goes unnoticed and the script carries on."
+note: "Add `set -euo pipefail` right after the shebang, before any command that runs, and do not turn those options off again before it."
+# Scope: Any spelling that turns the three on is accepted: `set -euo pipefail`, `set -Eeuo pipefail`, `set -o errexit -o nounset -o pipefail`, or split over several `set` commands. Only files with a `sh` or `bash` shebang are checked: a sourced library has none, and a `bats` file keeps its own. Comments, function definitions and other `set` commands may come first, since they run nothing else.
 rule:
   kind: program
   has:
@@ -54,3 +55,18 @@ rule:
                       - kind: function_definition
                       - kind: command
                         regex: ^set\b
+    # An early `set` that turns one of the three off again leaves it off for the first command that runs.
+    - has:
+        kind: command
+        all:
+          - regex: ^set\s
+          - regex: (^|\s)\+[A-Za-z]*[eu]|\+o\s+(errexit|nounset|pipefail)
+          - not:
+              follows:
+                stopBy: end
+                not:
+                  any:
+                    - kind: comment
+                    - kind: function_definition
+                    - kind: command
+                      regex: ^set\b

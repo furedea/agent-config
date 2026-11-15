@@ -32,12 +32,29 @@ valid:
     set -euo pipefail
     echo hi
   - |
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo hi
+    set +e
+    run_optional
+    set -e
+  - |
     #!/usr/bin/env bats
     @test "x" { true; }
   - |
     # sourced library without a shebang
     helper() { :; }
 invalid:
+  - |
+    #!/usr/bin/env bash
+    set -euo pipefail
+    set +e
+    echo hi
+  - |
+    #!/usr/bin/env bash
+    set -euo pipefail
+    set +o pipefail
+    echo hi
   - |
     #!/usr/bin/env bash
     set -eu

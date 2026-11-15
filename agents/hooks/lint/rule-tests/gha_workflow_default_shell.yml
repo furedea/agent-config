@@ -41,6 +41,11 @@ valid:
           - run: echo hi
 invalid:
   - |
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        steps: [{run: "echo hi"}]
+  - |
     defaults:
       run:
         shell: bash -e {0}

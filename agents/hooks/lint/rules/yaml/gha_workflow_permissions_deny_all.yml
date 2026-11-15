@@ -1,7 +1,8 @@
 id: gha_workflow_permissions_deny_all
 language: yaml
 severity: error
-message: "Declare `permissions: {}` at the workflow level and grant each job only what it needs."
+message: "Without a deny-all default, every job gets the repository's default token permissions, which are broader than most jobs need."
+note: "Add `permissions: {}` at the top level, then grant each job only what it needs, e.g. `permissions: { contents: read }`."
 files:
   - "**/.github/workflows/**"
 rule:

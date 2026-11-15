@@ -1,12 +1,13 @@
 id: gha_pinned_uses_version_comment
 language: yaml
 severity: error
-message: "Record the version of a SHA-pinned action in a trailing comment, such as `# v4.2.1`."
-note: "Local actions (`./path`) and tag references are not checked: the first has no version to record, and the second is rejected by zizmor's unpinned-uses."
+message: "An action pinned to a SHA without a version comment hides which release it is from readers and update tools."
+note: "Append the version after the SHA, e.g. `uses: actions/checkout@<sha> # v4.2.1`."
 files:
   - "**/.github/workflows/**"
   - "**/action.yml"
   - "**/action.yaml"
+# Scope: Local actions (`./path`) and tag references are not checked: the first has no version to record, and the second is rejected by zizmor's unpinned-uses.
 rule:
   any:
     - kind: block_mapping_pair

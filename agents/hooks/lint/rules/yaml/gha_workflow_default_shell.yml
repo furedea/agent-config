@@ -1,10 +1,11 @@
 id: gha_workflow_default_shell
 language: yaml
 severity: error
-message: "Set `defaults.run.shell` to `bash` (or a shell command that enables `pipefail`) so steps fail on a broken pipe."
-note: "Only workflows with a `run:` step are checked: a workflow of reusable-workflow calls has none, and a caller's `defaults` do not reach the called workflow. A `defaults.run.shell` at the workflow or at any job satisfies the rule; whether every job is covered is not judged."
+message: "Without an explicit shell, `run` steps use `bash -e` without pipefail, so a failing command in a pipe is reported as success."
+note: "Add `defaults: { run: { shell: bash } }` at the top level of the workflow."
 files:
   - "**/.github/workflows/**"
+# Scope: Only workflows with a `run:` step are checked: a workflow of reusable-workflow calls has none, and a caller's `defaults` do not reach the called workflow. A `defaults.run.shell` at the workflow or at any job satisfies the rule; whether every job is covered is not judged.
 rule:
   kind: block_mapping
   inside:
@@ -19,16 +20,28 @@ rule:
   all:
     - has:
         stopBy: end
-        kind: block_mapping_pair
-        has:
-          field: key
-          regex: ^run$
-        inside:
-          kind: block_mapping
-          inside:
-            kind: block_node
+        any:
+          - kind: block_mapping_pair
+            has:
+              field: key
+              regex: ^["']?run["']?$
             inside:
-              kind: block_sequence_item
+              kind: block_mapping
+              inside:
+                kind: block_node
+                inside:
+                  kind: block_sequence_item
+          # A step written as a flow mapping inside a flow sequence: `steps: [{run: echo hi}]`.
+          - kind: flow_pair
+            has:
+              field: key
+              regex: ^["']?run["']?$
+            inside:
+              kind: flow_mapping
+              inside:
+                kind: flow_node
+                inside:
+                  kind: flow_sequence
     - not:
         has:
           stopBy: end

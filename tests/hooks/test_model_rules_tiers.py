@@ -81,6 +81,7 @@ def test_the_cap_is_spent_on_the_first_review_before_the_next_is_offered_what_is
 class FailingReview:
     def __init__(self, cost: int) -> None:
         self.cost = cost
+        self.paths = ("a.py",)
 
     def plan(self, _deadline: object, cap: int) -> Plan:
         return Plan((), self.cost, min(self.cost, cap))

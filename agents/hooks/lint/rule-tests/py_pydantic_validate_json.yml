@@ -50,6 +50,11 @@ valid:
             return Order.model_validate(data)
 
         return inner(data)
+  - |
+    def check(data, raw):
+        order = Order.model_validate(data)
+        data = json.loads(raw)
+        return order, data
 invalid:
   - |
     order = Order.model_validate(json.loads(payload))
@@ -91,3 +96,8 @@ invalid:
     def read(payload):
         raw = jsonlib.loads(payload)
         return Order.model_validate(raw, strict=True)
+  - |
+    def load(raw):
+        data = json.loads(raw)
+        if raw:
+            return Order.model_validate(data)

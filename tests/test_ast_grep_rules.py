@@ -63,7 +63,7 @@ def test_ast_grep_accepts_every_valid_case_and_reports_every_invalid_case() -> N
 # Snippet tests carry no path, so a rule scoped by `files:` is exercised by scanning named files.
 FLAGGED_PATHS = {
     "go_no_vague_directory_name": ["util/user.go", "internal/util/user.go", "common/user.go"],
-    "py_async_test_anyio_marker": ["test_user.py", "tests/user_test.py", "tests/conftest.py"],
+    "py_async_test_anyio_marker": ["test_user.py", "tests/user_test.py"],
 }
 CLEAN_PATHS = {
     "go_no_vague_directory_name": [
@@ -73,7 +73,7 @@ CLEAN_PATHS = {
         "internal/store/user.go",
         "internal/package/user.go",
     ],
-    "py_async_test_anyio_marker": ["user.py", "tests/helpers.py", "src/pkg/testing_utils.py"],
+    "py_async_test_anyio_marker": ["user.py", "tests/helpers.py", "tests/conftest.py", "conftest.py"],
 }
 SOURCE_BY_SUFFIX = {".go": "package a\n", ".py": "async def test_user():\n    pass\n"}
 

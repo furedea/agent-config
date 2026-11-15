@@ -40,7 +40,7 @@ rule:
             has:
               kind: import_from_statement
               regex: (?s)^from\s+json\s+import\b.*\bloads\b
-    # passed through a variable assigned from the loader in the same function, and not reassigned
+    # passed through a variable assigned from the loader earlier in the nearest function, and not reassigned
     - all:
         - any:
             - pattern: $MODEL.model_validate($DATA)
@@ -53,9 +53,9 @@ rule:
               - has:
                   stopBy: end
                   any:
-                    - pattern: $DATA = json.loads($$$ARGS)
-                    - pattern: $DATA = orjson.loads($$$ARGS)
-                    - pattern: $DATA = ujson.loads($$$ARGS)
+                      - pattern: $DATA = json.loads($$$ARGS)
+                      - pattern: $DATA = orjson.loads($$$ARGS)
+                      - pattern: $DATA = ujson.loads($$$ARGS)
               - not:
                   has:
                     stopBy: end
@@ -67,6 +67,24 @@ rule:
                             - pattern: $DATA = json.loads($$$LA)
                             - pattern: $DATA = orjson.loads($$$LA)
                             - pattern: $DATA = ujson.loads($$$LA)
+        # the loader assignment must come before the validating statement
+        - inside:
+            stopBy:
+              kind: function_definition
+            all:
+              - not:
+                  any:
+                    - kind: function_definition
+                    - kind: decorated_definition
+                    - kind: class_definition
+              - follows:
+                  stopBy: end
+                  has:
+                    stopBy: end
+                    any:
+                      - pattern: $DATA = json.loads($$$ARGS)
+                      - pattern: $DATA = orjson.loads($$$ARGS)
+                      - pattern: $DATA = ujson.loads($$$ARGS)
     - all:
         - any:
             - pattern: $MODEL.model_validate($DATA)
@@ -79,7 +97,7 @@ rule:
               - has:
                   stopBy: end
                   any:
-                    - pattern: $DATA = $ALIAS.loads($$$ARGS)
+                      - pattern: $DATA = $ALIAS.loads($$$ARGS)
               - not:
                   has:
                     stopBy: end
@@ -92,6 +110,22 @@ rule:
                             - pattern: $DATA = orjson.loads($$$LA)
                             - pattern: $DATA = ujson.loads($$$LA)
                             - pattern: $DATA = $ALIAS.loads($$$LA)
+        # the loader assignment must come before the validating statement
+        - inside:
+            stopBy:
+              kind: function_definition
+            all:
+              - not:
+                  any:
+                    - kind: function_definition
+                    - kind: decorated_definition
+                    - kind: class_definition
+              - follows:
+                  stopBy: end
+                  has:
+                    stopBy: end
+                    any:
+                      - pattern: $DATA = $ALIAS.loads($$$ARGS)
         - inside:
             kind: module
             stopBy: end
@@ -109,7 +143,7 @@ rule:
               - has:
                   stopBy: end
                   any:
-                    - pattern: $DATA = $LOADER($$$ARGS)
+                      - pattern: $DATA = $LOADER($$$ARGS)
               - not:
                   has:
                     stopBy: end
@@ -122,6 +156,22 @@ rule:
                             - pattern: $DATA = orjson.loads($$$LA)
                             - pattern: $DATA = ujson.loads($$$LA)
                             - pattern: $DATA = $LOADER($$$LA)
+        # the loader assignment must come before the validating statement
+        - inside:
+            stopBy:
+              kind: function_definition
+            all:
+              - not:
+                  any:
+                    - kind: function_definition
+                    - kind: decorated_definition
+                    - kind: class_definition
+              - follows:
+                  stopBy: end
+                  has:
+                    stopBy: end
+                    any:
+                      - pattern: $DATA = $LOADER($$$ARGS)
         - inside:
             kind: module
             stopBy: end
@@ -139,7 +189,7 @@ rule:
               - has:
                   stopBy: end
                   any:
-                    - pattern: $DATA = loads($$$ARGS)
+                      - pattern: $DATA = loads($$$ARGS)
               - not:
                   has:
                     stopBy: end
@@ -152,6 +202,22 @@ rule:
                             - pattern: $DATA = orjson.loads($$$LA)
                             - pattern: $DATA = ujson.loads($$$LA)
                             - pattern: $DATA = loads($$$LA)
+        # the loader assignment must come before the validating statement
+        - inside:
+            stopBy:
+              kind: function_definition
+            all:
+              - not:
+                  any:
+                    - kind: function_definition
+                    - kind: decorated_definition
+                    - kind: class_definition
+              - follows:
+                  stopBy: end
+                  has:
+                    stopBy: end
+                    any:
+                      - pattern: $DATA = loads($$$ARGS)
         - inside:
             kind: module
             stopBy: end

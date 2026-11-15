@@ -4,7 +4,6 @@ severity: error
 files:
   - "**/test_*.py"
   - "**/*_test.py"
-  - "**/conftest.py"
 message: "Without the anyio marker pytest never runs this async test, so it silently passes."
 note: "Add `@pytest.mark.anyio` above `async def test_...` (or `pytestmark = pytest.mark.anyio` at module level, or request the `anyio_backend` fixture)."
 utils:

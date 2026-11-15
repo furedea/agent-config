@@ -74,6 +74,10 @@ def parse(raw):
     return Money.model_validate(json.loads(raw))
 
 
+class Locked(FrozenBase, strict=False):
+    pass
+
+
 class Plain:
     def __init__(self, name):
         self.name = name
@@ -99,7 +103,7 @@ def test_python_style_model_rules_select_the_subjects_they_ask_about(repository:
     # the bare `@fixture` and an aliased `@pytest_fixture` all select a fixture. The module has test functions, so
     # the parametrize rule asks
     # about it. The aliased import is asked about. `parse` is the only `model_validate` call, and `Plain` the only
-    # class with an `__init__`.
+    # class with an `__init__`; `Locked` is the only class with class keywords.
     assert {rule: n for rule, n in counts.items() if rule not in RULE_IDS} == {
         "value-object-is-immutable": 2,
         "construction-placement-by-purity": 1,
@@ -110,4 +114,5 @@ def test_python_style_model_rules_select_the_subjects_they_ask_about(repository:
         "import-name-self-explanatory": 1,
         "json-parse-uses-model-validate-json": 1,
         "plain-class-defines-slots": 1,
+        "frozen-model-subclass-keeps-locked-settings": 1,
     }

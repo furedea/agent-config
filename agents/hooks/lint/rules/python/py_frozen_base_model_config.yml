@@ -2,7 +2,7 @@ id: py_frozen_base_model_config
 language: python
 severity: error
 message: "`FrozenBaseModel.model_config` must set `frozen=True`, `extra=\"forbid\"`, `strict=True`, `validate_default=True` and `revalidate_instances=\"always\"`."
-note: "Only a class named `FrozenBaseModel` that inherits pydantic's `BaseModel` is judged. Both `ConfigDict(...)` and a dict literal are accepted."
+note: "Only a class named `FrozenBaseModel` that inherits pydantic's `BaseModel` is judged. `ConfigDict(...)`, a dict literal and class keyword arguments are accepted."
 utils:
   complete_model_config:
     kind: assignment
@@ -132,10 +132,30 @@ rule:
                 has:
                   pattern: $RENAMED
     - not:
-        has:
-          field: body
-          kind: block
-          has:
-            kind: expression_statement
-            has:
-              matches: complete_model_config
+        any:
+          - has:
+              field: body
+              kind: block
+              has:
+                kind: expression_statement
+                has:
+                  matches: complete_model_config
+          - has:
+              field: superclasses
+              kind: argument_list
+              all:
+                - has:
+                    kind: keyword_argument
+                    regex: ^frozen\s*=\s*True$
+                - has:
+                    kind: keyword_argument
+                    regex: ^extra\s*=\s*["']forbid["']$
+                - has:
+                    kind: keyword_argument
+                    regex: ^strict\s*=\s*True$
+                - has:
+                    kind: keyword_argument
+                    regex: ^validate_default\s*=\s*True$
+                - has:
+                    kind: keyword_argument
+                    regex: ^revalidate_instances\s*=\s*["']always["']$

@@ -22,6 +22,15 @@ rule:
               pattern: import json as $ALIAS
     - all:
         - any:
+            - pattern: $MODEL.model_validate($LOADER($$$ARGS))
+            - pattern: $MODEL.model_validate($LOADER($$$ARGS), $$$REST)
+        - inside:
+            kind: module
+            stopBy: end
+            has:
+              pattern: from json import loads as $LOADER
+    - all:
+        - any:
             - pattern: $MODEL.model_validate(loads($$$ARGS))
             - pattern: $MODEL.model_validate(loads($$$ARGS), $$$REST)
         - inside:

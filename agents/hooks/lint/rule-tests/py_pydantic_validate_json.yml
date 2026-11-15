@@ -14,6 +14,10 @@ valid:
     order = Order.model_validate(loads(text))
 invalid:
   - |
+    from json import loads as decode_json
+
+    order = Order.model_validate(decode_json(payload))
+  - |
     order = Order.model_validate(json.loads(payload), strict=True)
   - |
     import json as jsonlib

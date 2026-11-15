@@ -75,6 +75,10 @@ valid:
             assert await work() == 1
 invalid:
   - |
+    @app.mark.usefixtures("anyio_backend")
+    async def test_something() -> None:
+        assert await work() == 1
+  - |
     @app.mark.anyio
     async def test_something() -> None:
         assert await work() == 1

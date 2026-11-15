@@ -1,7 +1,8 @@
 id: py_no_pytest_asyncio
 language: python
 severity: error
-message: "Use `@pytest.mark.anyio` with the `anyio_backend` fixture instead of pytest-asyncio."
+message: "pytest-asyncio is not the async test runner of this project, so its marker and fixtures are not run by anyio."
+note: "Replace `@pytest.mark.asyncio` with `@pytest.mark.anyio`, and drop `import pytest_asyncio`."
 rule:
   any:
     - pattern: pytest.mark.asyncio

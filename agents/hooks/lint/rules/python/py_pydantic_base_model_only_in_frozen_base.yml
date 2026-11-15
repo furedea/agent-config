@@ -1,8 +1,8 @@
 id: py_pydantic_base_model_only_in_frozen_base
 language: python
 severity: error
-message: "Inherit `FrozenBaseModel` instead of pydantic's `BaseModel`; only the class named `FrozenBaseModel` may inherit `BaseModel` directly."
-note: "Resolves `pydantic.BaseModel`, `import pydantic as pd` + `pd.BaseModel`, `from pydantic import BaseModel` and `from pydantic import BaseModel as X`. Another library's `BaseModel` (for example SQLModel) and `pydantic_settings.BaseSettings` are not judged."
+message: "A model that inherits pydantic's `BaseModel` directly skips the shared frozen, strict configuration."
+note: "Change `class Money(BaseModel)` to `class Money(FrozenBaseModel)`; only `class FrozenBaseModel(pydantic.BaseModel)` may inherit `BaseModel`."
 rule:
   kind: class_definition
   all:

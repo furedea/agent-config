@@ -1,8 +1,8 @@
 id: py_plain_class_slots
 language: python
 severity: error
-message: "Declare `__slots__` on a plain class that sets attributes in `__init__`."
-note: "Only dataclass-like decorators (dataclass, attrs) exempt a class; other decorators such as `final` do not. A class that uses `cached_property` is skipped, because it needs the instance `__dict__`. Classes with a base class or a decorator (dataclass, pydantic, Enum, Protocol, exceptions) are skipped, because `__slots__` is for classes that use neither dataclasses nor pydantic."
+message: "A plain class without `__slots__` keeps a per-instance `__dict__`, which costs memory and accepts typo attributes."
+note: "Add `__slots__ = (\"name\", \"age\")` listing the attributes set in `__init__` (a class that uses `cached_property` is skipped)."
 rule:
   kind: class_definition
   all:

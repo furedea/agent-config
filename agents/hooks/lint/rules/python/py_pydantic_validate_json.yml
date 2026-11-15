@@ -1,24 +1,21 @@
 id: py_pydantic_validate_json
 language: python
 severity: error
-message: "Use `Model.model_validate_json(...)` instead of `Model.model_validate(json.loads(...))`; strict mode rejects JSON-natural conversions (for example ISO strings to datetime) otherwise."
-note: "A loader call with extra arguments (`object_hook=`, `parse_float=`) is skipped, because `model_validate_json` cannot replace it. Also judges `import json as alias`, `from json import loads`, `orjson.loads` and `ujson.loads`. TOML and YAML loaders are not JSON and are not judged."
-constraints:
-  ARG:
-    not:
-      kind: keyword_argument
+message: "A strict pydantic model rejects a JSON-derived dict for datetime, UUID and similar fields, because `json.loads` leaves them as strings."
+note: "Use `User.model_validate_json(raw)` instead of `User.model_validate(json.loads(raw))`; for discriminated unions use `TypeAdapter(...).validate_json(raw)`; for key renames use aliases or `model_validator(mode=\"before\")`. Judges `json.loads`, `import json as alias`, `from json import loads [as x]`, `orjson.loads` and `ujson.loads`, passed directly or through a variable assigned in the same function. TOML and YAML loaders are not JSON."
 rule:
   any:
-    - pattern: $MODEL.model_validate(json.loads($ARG))
-    - pattern: $MODEL.model_validate(json.loads($ARG), $$$REST)
-    - pattern: $MODEL.model_validate(orjson.loads($ARG))
-    - pattern: $MODEL.model_validate(orjson.loads($ARG), $$$REST)
-    - pattern: $MODEL.model_validate(ujson.loads($ARG))
-    - pattern: $MODEL.model_validate(ujson.loads($ARG), $$$REST)
+    # passed directly
+    - pattern: $MODEL.model_validate(json.loads($$$ARGS))
+    - pattern: $MODEL.model_validate(json.loads($$$ARGS), $$$REST)
+    - pattern: $MODEL.model_validate(orjson.loads($$$ARGS))
+    - pattern: $MODEL.model_validate(orjson.loads($$$ARGS), $$$REST)
+    - pattern: $MODEL.model_validate(ujson.loads($$$ARGS))
+    - pattern: $MODEL.model_validate(ujson.loads($$$ARGS), $$$REST)
     - all:
         - any:
-            - pattern: $MODEL.model_validate($ALIAS.loads($ARG))
-            - pattern: $MODEL.model_validate($ALIAS.loads($ARG), $$$REST)
+            - pattern: $MODEL.model_validate($ALIAS.loads($$$ARGS))
+            - pattern: $MODEL.model_validate($ALIAS.loads($$$ARGS), $$$REST)
         - inside:
             kind: module
             stopBy: end
@@ -26,8 +23,8 @@ rule:
               pattern: import json as $ALIAS
     - all:
         - any:
-            - pattern: $MODEL.model_validate($LOADER($ARG))
-            - pattern: $MODEL.model_validate($LOADER($ARG), $$$REST)
+            - pattern: $MODEL.model_validate($LOADER($$$ARGS))
+            - pattern: $MODEL.model_validate($LOADER($$$ARGS), $$$REST)
         - inside:
             kind: module
             stopBy: end
@@ -35,8 +32,68 @@ rule:
               pattern: from json import loads as $LOADER
     - all:
         - any:
-            - pattern: $MODEL.model_validate(loads($ARG))
-            - pattern: $MODEL.model_validate(loads($ARG), $$$REST)
+            - pattern: $MODEL.model_validate(loads($$$ARGS))
+            - pattern: $MODEL.model_validate(loads($$$ARGS), $$$REST)
+        - inside:
+            kind: module
+            stopBy: end
+            has:
+              kind: import_from_statement
+              regex: (?s)^from\s+json\s+import\b.*\bloads\b
+    # passed through a variable assigned from the loader in the same function
+    - all:
+        - any:
+            - pattern: $MODEL.model_validate($DATA)
+            - pattern: $MODEL.model_validate($DATA, $$$REST)
+        - inside:
+            kind: function_definition
+            stopBy: end
+            has:
+              stopBy: end
+              any:
+                - pattern: $DATA = json.loads($$$ARGS)
+                - pattern: $DATA = orjson.loads($$$ARGS)
+                - pattern: $DATA = ujson.loads($$$ARGS)
+    - all:
+        - any:
+            - pattern: $MODEL.model_validate($DATA)
+            - pattern: $MODEL.model_validate($DATA, $$$REST)
+        - inside:
+            kind: function_definition
+            stopBy: end
+            has:
+              stopBy: end
+              pattern: $DATA = $ALIAS.loads($$$ARGS)
+        - inside:
+            kind: module
+            stopBy: end
+            has:
+              pattern: import json as $ALIAS
+    - all:
+        - any:
+            - pattern: $MODEL.model_validate($DATA)
+            - pattern: $MODEL.model_validate($DATA, $$$REST)
+        - inside:
+            kind: function_definition
+            stopBy: end
+            has:
+              stopBy: end
+              pattern: $DATA = $LOADER($$$ARGS)
+        - inside:
+            kind: module
+            stopBy: end
+            has:
+              pattern: from json import loads as $LOADER
+    - all:
+        - any:
+            - pattern: $MODEL.model_validate($DATA)
+            - pattern: $MODEL.model_validate($DATA, $$$REST)
+        - inside:
+            kind: function_definition
+            stopBy: end
+            has:
+              stopBy: end
+              pattern: $DATA = loads($$$ARGS)
         - inside:
             kind: module
             stopBy: end

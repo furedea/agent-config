@@ -1,8 +1,8 @@
 id: py_frozen_base_model_no_override
 language: python
 severity: error
-message: "A subclass of `FrozenBaseModel` must not change `frozen`, `extra`, `strict`, `validate_default` or `revalidate_instances` in its own `model_config` or class keywords."
-note: "Other keys such as `alias_generator` are fine. `ConfigDict(...)`, a dict literal, a merge with `|` and class keyword arguments are judged. Only a direct subclass is judged; a subclass of another subclass cannot be resolved from one file."
+message: "Changing a locked setting in a subclass makes it mutable or lenient, which breaks the `FrozenBaseModel` guarantee."
+note: "Remove `frozen`, `extra`, `strict`, `validate_default` and `revalidate_instances` from this class's `model_config` or keywords; keep other keys such as `alias_generator`."
 utils:
   bad_keyword:
     kind: keyword_argument

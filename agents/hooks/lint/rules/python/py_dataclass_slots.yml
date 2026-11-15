@@ -1,8 +1,8 @@
 id: py_dataclass_slots
 language: python
 severity: error
-message: "Declare the dataclass with `slots=True`."
-note: "Classes that use `cached_property` need `__dict__` and are skipped. Whether a dataclass is also `frozen=True` depends on it being a value object, which a syntax rule cannot tell."
+message: "A dataclass without `slots=True` keeps a per-instance `__dict__`, which costs memory and accepts typo attributes."
+note: "Change `@dataclass` to `@dataclass(slots=True)` (a class that uses `cached_property` is skipped, because it needs `__dict__`)."
 rule:
   kind: decorated_definition
   all:

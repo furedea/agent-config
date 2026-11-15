@@ -1,18 +1,6 @@
 id: py_pydantic_validate_json
 valid:
   - |
-    order = Order.model_validate(json.loads(payload, object_hook=decode))
-  - |
-    order = Order.model_validate(json.loads(payload, parse_float=Decimal))
-  - |
-    from json import loads as decode_json
-
-    order = Order.model_validate(decode_json(payload, parse_float=Decimal))
-  - |
-    from json import loads
-
-    order = Order.model_validate(loads(payload, object_hook=decode))
-  - |
     order = Order.model_validate_json(payload)
   - |
     order = Order.model_validate(data)
@@ -24,11 +12,25 @@ valid:
     from tomllib import loads
 
     order = Order.model_validate(loads(text))
+  - |
+    def read(payload):
+        data = json.loads(payload)
+        return data["id"]
+  - |
+    def read(payload, other):
+        data = json.loads(payload)
+        return Order.model_validate(other)
+  - |
+    def read(text):
+        data = tomllib.loads(text)
+        return Order.model_validate(data)
 invalid:
   - |
-    from json import loads as decode_json
-
-    order = Order.model_validate(decode_json(payload))
+    order = Order.model_validate(json.loads(payload))
+  - |
+    order = schemas.Order.model_validate(json.loads(path.read_text()))
+  - |
+    order = Order.model_validate(json.loads(payload, object_hook=decode))
   - |
     order = Order.model_validate(json.loads(payload), strict=True)
   - |
@@ -40,8 +42,26 @@ invalid:
 
     order = Order.model_validate(loads(payload))
   - |
+    from json import loads as decode_json
+
+    order = Order.model_validate(decode_json(payload))
+  - |
     order = Order.model_validate(orjson.loads(payload))
   - |
-    order = Order.model_validate(json.loads(payload))
+    def read(payload):
+        data = json.loads(payload)
+        return Order.model_validate(data)
   - |
-    order = schemas.Order.model_validate(json.loads(path.read_text()))
+    from json import loads
+
+
+    def read(payload):
+        data = loads(payload)
+        return Order.model_validate(data)
+  - |
+    import json as jsonlib
+
+
+    def read(payload):
+        raw = jsonlib.loads(payload)
+        return Order.model_validate(raw, strict=True)

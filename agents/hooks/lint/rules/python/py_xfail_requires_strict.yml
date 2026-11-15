@@ -1,7 +1,8 @@
 id: py_xfail_requires_strict
 language: python
 severity: error
-message: "Add `strict=True` so the run fails when the test unexpectedly passes."
+message: "A non-strict xfail keeps passing silently when the bug is fixed, so the marker goes stale."
+note: "Change `@pytest.mark.xfail(reason=\"...\")` to `@pytest.mark.xfail(strict=True, reason=\"...\")`."
 rule:
   any:
     - all:

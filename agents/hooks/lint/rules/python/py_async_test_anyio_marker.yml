@@ -1,8 +1,8 @@
 id: py_async_test_anyio_marker
 language: python
 severity: error
-message: "Mark the async test with `@pytest.mark.anyio` (or a module-level `pytestmark`) so anyio runs it."
-note: "A test that requests the `anyio_backend` fixture is run by anyio without a marker. A marker on an enclosing class or a module-level `pytestmark = pytest.mark.anyio` also counts."
+message: "Without the anyio marker pytest never runs this async test, so it silently passes."
+note: "Add `@pytest.mark.anyio` above `async def test_...` (or `pytestmark = pytest.mark.anyio` at module level, or request the `anyio_backend` fixture)."
 utils:
   anyio_pytestmark:
     kind: assignment

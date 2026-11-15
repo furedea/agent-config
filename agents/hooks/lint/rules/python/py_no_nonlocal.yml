@@ -1,7 +1,7 @@
 id: py_no_nonlocal
 language: python
 severity: error
-message: "Avoid `nonlocal`; return the new value, or keep the state in an object that owns it."
-note: "`global` is judged by ruff PLW0603, which template-python enables."
+message: "`nonlocal` rebinds a variable from an enclosing scope, which hides state changes from the reader."
+note: "Return the new value, or keep the state in an object: replace `nonlocal total; total += 1` with `total = add_one(total)` or a class field."
 rule:
   kind: nonlocal_statement

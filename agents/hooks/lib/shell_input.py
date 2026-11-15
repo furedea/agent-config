@@ -10,10 +10,11 @@ from shell_words import UnsupportedSyntaxError, literal_word, nodes, source_text
 
 # Options of echo, which writes its remaining arguments; the backslash escapes they toggle are refused.
 ECHO_OPTIONS = re.compile(r"-[neE]+")
-# A word that changes the working directory, or zsh's option that turns a bare directory name into a cd.
-DIRECTORY_CHANGE = re.compile(r"(?<![\w-])(?:cd|pushd|popd|chdir|auto_?cd)(?![\w-])", re.IGNORECASE)
-# Quotes and escapes, which spell a word without writing it plainly.
-SPELLING = re.compile(r"[\\'\"]")
+# A word that changes the working directory, once spelling, underscores, and case are gone: a cd builtin, zsh's
+# auto_cd option, or anything that sets options, which may turn it on.
+DIRECTORY_CHANGE = re.compile(r"(?<![\w-])(?:cd|pushd|popd|chdir|autocd|setopt|emulate|options\[)|\bset\s+[-+]\w*[oj]")
+# Line continuations, quotes, escapes, and underscores, which spell a word or a zsh option without writing it plainly.
+SPELLING = re.compile(r"\\\n|[\\'\"_]")
 # An input redirection, with the descriptor it replaces; only descriptor 0 is the shell's script.
 INPUT_REDIRECTION = re.compile(r"(\d*)(<<<|<<|<&|<>|<(?!\())")
 
@@ -194,6 +195,13 @@ def input_scripts(read: Callable[[], list[str]], tolerant: bool) -> list[str] | 
         raise
 
 
-def moves_directory(source: str) -> bool:
-    """Whether the source may change directory anywhere, so a body run later may run somewhere unknown."""
-    return DIRECTORY_CHANGE.search(SPELLING.sub("", source)) is not None
+def moves_directory(source: str, records: tuple[dict, ...]) -> bool:
+    """Whether the source may change directory anywhere, so a body run later may run somewhere unknown.
+
+    A program named only at run time may be cd.
+    """
+    if DIRECTORY_CHANGE.search(SPELLING.sub("", source).lower()):
+        return True
+    data = source.encode()
+    calls = (node for node in records if node.get("Type") == "CallExpr" and node.get("Args"))
+    return any(literal_word(call["Args"][0], data)[1] for call in calls)

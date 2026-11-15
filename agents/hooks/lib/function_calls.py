@@ -243,7 +243,7 @@ def _followed(body: dict, records: tuple[dict, ...], data: bytes) -> dict:
         or any(_copied(node) is None for node in reading)
         or _reassigned(copies, records, data)
         or not _attributed(body, data).isdisjoint(copies)
-        or _leaks(copies, body, data)
+        or _leaks(body, records, data)
     )
     if unfollowed:
         raise UnsupportedSyntaxError("a function reading its arguments this way requires explicit review", "expansion")
@@ -261,10 +261,27 @@ def _assigns_parameter(statement: dict, data: bytes) -> bool:
     return assigning
 
 
-def _leaks(copies: dict[str, str], body: dict, data: bytes) -> bool:
-    """Whether text outside the body expands a copy, which keeps the argument once the function returns."""
-    outside = (data[: body["Pos"]["Offset"]] + b" " + data[body["End"]["Offset"] :]).decode()
-    return any(re.search(rf"\$\{{?!?{re.escape(name)}(?!\w)", outside) for name in copies)
+def _leaks(body: dict, records: tuple[dict, ...], data: bytes) -> bool:
+    """Whether a copy may outlive the call: named outside the body, however spelled, or exported to children.
+
+    Only a heredoc body with no expansion is left out, as it names nothing.
+    """
+    copies = _copies(body)
+    if not copies:
+        return False
+    spans = [(body["Pos"]["Offset"], body["End"]["Offset"])] + [
+        (record["Hdoc"]["Pos"]["Offset"], record["Hdoc"]["End"]["Offset"])
+        for record in records
+        if isinstance(record.get("Hdoc"), dict) and all(part.get("Type") == "Lit" for part in record["Hdoc"]["Parts"])
+    ]
+    outside = bytearray(data)
+    for start, end in spans:
+        outside[start:end] = b" " * (end - start)
+    text = SPELLING.sub("", re.sub(r"\\\n", "", outside.decode()))
+    if any(re.search(rf"(?<!\w){re.escape(name)}(?!\w)", text) for name in copies):
+        return True
+    exporting = re.search(r"(?<![\w-])(?:export|allexport)(?![\w-])|\bset\s+[-+]\w*a", SPELLING.sub("", data.decode()))
+    return exporting is not None
 
 
 def _attributed(body: dict, data: bytes) -> set[str]:

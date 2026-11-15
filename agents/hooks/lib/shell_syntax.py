@@ -205,7 +205,7 @@ def parse(source: str, depth: int = 0, directories: tuple[Path | None, ...] = ()
         for layer in layers:
             directories = reached_directories(directories, layer)
         deferred = id(node) in later_calls or any(Path(layer.arguments[0]).name == "trap" for layer in layers)
-        reachable = (*directories, None) if deferred and shell_input.moves_directory(source) else directories
+        reachable = (*directories, None) if deferred and shell_input.moves_directory(source, records) else directories
         innermost = layers[-1]
         name = shell_name(Path(innermost.arguments[0]).name)
         scripts = [(script, layer.wrapper_depth + 1) for layer in layers for script in shell_scripts(layer)]

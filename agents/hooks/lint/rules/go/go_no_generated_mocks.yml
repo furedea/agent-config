@@ -1,7 +1,8 @@
 id: go_no_generated_mocks
 language: go
 severity: error
-message: "Write a fake by hand instead of using a generated or framework mock."
+message: "A generated or framework mock couples tests to call order and hides the real behavior."
+note: "Write a small fake type that implements the consumer's interface, and drop the mock import or `//go:generate` line."
 rule:
   any:
     - kind: comment

@@ -1,7 +1,8 @@
 id: go_error_no_failed_to_prefix
 language: go
 severity: error
-message: "Start the error message with the operation, not with \"failed to\"."
+message: "An error that starts with \"failed to\" repeats the failure that every error already states and reads badly once wrapped."
+note: "Start with the operation: `fmt.Errorf(\"failed to read config: %w\", err)` -> `fmt.Errorf(\"read config: %w\", err)`."
 rule:
   any:
     - pattern: fmt.Errorf($MSG, $$$ARGS)

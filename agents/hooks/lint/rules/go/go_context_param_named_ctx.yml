@@ -1,8 +1,9 @@
 id: go_context_param_named_ctx
+# Limits: Named results are not judged. Only a file that imports the standard `context` package without an alias is judged. The position of the parameter is judged by revive `context-as-argument`.
 language: go
 severity: error
-message: "Name a `context.Context` parameter `ctx`."
-note: "Named results are not judged. Only a file that imports the standard `context` package without an alias is judged. The position of the parameter is judged by revive `context-as-argument`."
+message: "A context parameter not named ctx breaks the convention readers and tools rely on."
+note: "Rename the parameter: `func fetch(c context.Context)` -> `func fetch(ctx context.Context)`."
 rule:
   kind: identifier
   not:

@@ -1,8 +1,9 @@
 id: go_no_context_in_struct
+# Limits: Only a file that imports the standard `context` package without an alias is judged.
 language: go
 severity: error
-message: "Do not store a `context.Context` in a struct; pass it as the first parameter."
-note: "Only a file that imports the standard `context` package without an alias is judged."
+message: "A context stored in a struct outlives the call it belongs to, so cancellation and deadlines go stale."
+note: "Pass it as the first parameter: `func (s *Server) Run(ctx context.Context)` instead of a `ctx context.Context` field."
 rule:
   kind: field_declaration
   has:

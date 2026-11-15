@@ -1,8 +1,9 @@
 id: go_mutex_field_documented
+# Limits: Only a file that imports the standard `sync` package without an alias is judged. Only the presence of a preceding comment is judged: its content, a trailing comment on the previous field (which counts as a comment), and whether the mutex sits directly above the fields it guards are not.
 language: go
 severity: error
-message: "Document the fields the mutex guards in a comment above it."
-note: "Only a file that imports the standard `sync` package without an alias is judged. Only the presence of a preceding comment is judged: its content, a trailing comment on the previous field (which counts as a comment), and whether the mutex sits directly above the fields it guards are not."
+message: "A mutex without a comment hides which fields it guards, so callers cannot lock correctly."
+note: "Add a comment above it: `// mu guards items.` then `mu sync.Mutex`."
 rule:
   kind: field_declaration
   has:

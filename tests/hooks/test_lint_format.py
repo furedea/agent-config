@@ -366,6 +366,18 @@ def test_provider_diagnostics_are_bounded_without_losing_truncation_notice(
     assert "diagnostic 0" in context
 
 
+def test_a_block_stays_within_the_notification_limit_with_its_instruction(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    errors = tuple(f"error {index}: {'e' * 2000}" for index in range(20))
+    advice = tuple(f"advice {index}: {'a' * 2000}" for index in range(20))
+    lint_format.emit(lint_format.Report(advice=advice, errors=errors))
+    reason = json.loads(capsys.readouterr().out)["reason"]
+    assert len(reason.encode()) <= lint_format.NOTIFICATION_LIMIT_BYTES
+    assert reason.count(lint_format.FIX_INSTRUCTION) == 1
+    assert reason.startswith("error 0")
+
+
 def test_missing_file_is_not_treated_as_a_successful_check(
     tmp_path: Path, mocker: MockerFixture, capsys: pytest.CaptureFixture[str]
 ) -> None:

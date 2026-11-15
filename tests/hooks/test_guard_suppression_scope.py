@@ -334,3 +334,43 @@ def test_a_patch_that_does_not_match_a_file_with_a_suppression_exactly_asks(tmp_
     target.write_text("x = 1  # noqa: E501\ny = 1\n")
     patch = f"*** Begin Patch\n*** Update File: {target}\n@@\n-y  =  1\n+y = 2\n*** End Patch"
     assert decide("apply_patch", {"input": patch}) == "ask"
+
+
+def test_without_the_scanner_turning_a_go_string_into_a_nolint_comment_asks(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(guard.comment_nodes, "SCANNER", "ast-grep-missing-for-test")
+    target = tmp_path / "user.go"
+    target.write_text('package a\n\nfunc f() {\n\ts := "//nolint"\n\t_ = s\n}\n')
+    edits = [
+        {"old_string": 's := "//nolint"', "new_string": "//nolint"},
+        {"old_string": "\t_ = s\n", "new_string": ""},
+    ]
+    assert decide("MultiEdit", {"file_path": str(target), "edits": edits}) == "ask"
+
+
+def test_an_add_file_patch_over_an_existing_file_is_judged_as_its_new_text(tmp_path: Path) -> None:
+    """Adding a file replaces it, so its old text does not cancel a marker the new text adds."""
+    target = tmp_path / "app.py"
+    target.write_text("x = 1  # noqa: E501\n")
+    patch = f"*** Begin Patch\n*** Add File: {target}\n+y = 2  # noqa: E501\n+z = 3  # noqa: E501\n*** End Patch"
+    assert decide("apply_patch", {"input": patch}) == "ask"
+
+
+@pytest.mark.parametrize(
+    "hunk",
+    ["@@\n-y = 1\n+y = 2\n*** End of File", "@@\n-y = 1\n+y = 2\nnot a hunk line", "@@\n-x = 1\n+x = 2"],
+    ids=["end of file marker", "unknown line", "matches more than once"],
+)
+def test_a_patch_the_guard_cannot_place_exactly_in_a_file_with_a_suppression_asks(tmp_path: Path, hunk: str) -> None:
+    target = tmp_path / "app.py"
+    target.write_text("x = 1\nz = 1  # noqa: E501\nx = 1\ny = 1\n")
+    patch = f"*** Begin Patch\n*** Update File: {target}\n{hunk}\n*** End Patch"
+    assert decide("apply_patch", {"input": patch}) == "ask"
+
+
+def test_an_empty_line_in_a_hunk_is_an_empty_context_line(tmp_path: Path) -> None:
+    target = tmp_path / "app.py"
+    target.write_text("z = 1  # noqa: E501\n\ny = 1\n")
+    patch = f"*** Begin Patch\n*** Update File: {target}\n@@\n z = 1  # noqa: E501\n\n-y = 1\n+y = 2\n*** End Patch"
+    assert decide("apply_patch", {"input": patch}) == "allow"

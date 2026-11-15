@@ -22,6 +22,7 @@ PROCESS_OUTPUT_LIMIT_BYTES = process_runner.PROCESS_OUTPUT_LIMIT_BYTES
 STEP_TIMEOUT_SECONDS = process_runner.STEP_TIMEOUT_SECONDS
 NOTIFICATION_LIMIT_BYTES = 16 * 1024
 MAX_DIAGNOSTICS = 16
+TRUNCATION_MARKER = "\n[diagnostics truncated]"
 FIX_INSTRUCTION = (
     "Fix the code as shown. Do not move or split the code to avoid the rule; if a real exception is needed, "
     "add a suppression comment, which is reviewed."
@@ -73,28 +74,31 @@ def emit(
 ) -> None:
     """Write one structured notification for all diagnostics, a block when any is an error, or remain silent.
 
-    A block lists the errors, then the fix instruction once, then any advice, so truncation never drops an error
-    or the instruction.
+    A block lists the errors, then the fix instruction once, then any advice, all within one size limit; the
+    advice gets what the errors and the instruction leave, so truncation never drops the instruction.
     """
     if report.errors:
-        reason = f"{bounded(report.errors)}\n\n{FIX_INSTRUCTION}"
-        reason += f"\n\n{bounded(report.advice)}" if report.advice else ""
+        instruction = f"\n\n{FIX_INSTRUCTION}"
+        reason = bounded(report.errors, NOTIFICATION_LIMIT_BYTES - len(instruction.encode())) + instruction
+        remaining = NOTIFICATION_LIMIT_BYTES - len(reason.encode()) - len(b"\n\n")
+        if report.advice and remaining > len(TRUNCATION_MARKER.encode()):
+            reason += f"\n\n{bounded(report.advice, remaining)}"
         print(json.dumps(encode_block(reason), ensure_ascii=False))
     elif report.advice:
         print(json.dumps(encode(bounded(report.advice)), ensure_ascii=False))
 
 
-def bounded(messages: tuple[str, ...]) -> str:
+def bounded(messages: tuple[str, ...], limit_bytes: int = NOTIFICATION_LIMIT_BYTES) -> str:
     """Join diagnostics within the count and byte limits, keeping a notice of what was cut."""
     selected = list(messages[:MAX_DIAGNOSTICS])
     if len(messages) > MAX_DIAGNOSTICS:
         selected.append(f"[diagnostics truncated: {len(messages) - MAX_DIAGNOSTICS} more]")
     message = "\n\n".join(selected)
-    marker = "\n[diagnostics truncated]"
+    marker = TRUNCATION_MARKER
     encoded = message.encode()
-    if len(encoded) <= NOTIFICATION_LIMIT_BYTES:
+    if len(encoded) <= limit_bytes:
         return message
-    budget = NOTIFICATION_LIMIT_BYTES - len(marker.encode())
+    budget = limit_bytes - len(marker.encode())
     head = budget // 2
     tail = budget - head
     return encoded[:head].decode(errors="ignore") + marker + encoded[-tail:].decode(errors="ignore")

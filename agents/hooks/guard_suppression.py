@@ -54,7 +54,7 @@ CODE_MARKERS = frozenset({"allow or expect attribute"})
 # An ast-grep marker on the first line followed by a blank line suppresses its rules for the whole file.
 FILE_SCOPE = "ast-grep-ignore for the whole file"
 UNPLACED = "a suppression in a file the guard could not rebuild"
-PATCH_FILE = re.compile(r"^\*\*\* (?:Add|Update) File: (.+)$")
+PATCH_FILE = re.compile(r"^\*\*\* (Add|Update) File: (.+)$")
 PATCH_MOVE = re.compile(r"^\*\*\* Move to: (.+)$")
 
 
@@ -125,17 +125,14 @@ def _lines(text: str) -> list[str]:
 def _adds(name: str, pattern: re.Pattern[str], change: _Change) -> bool:
     """Count markers in comments, or for markers compared by text, find a marker whose text is new.
 
-    Without the scanner, comments cannot be told from strings: an ast-grep marker in changed text asks, and other
-    markers are counted wherever they appear.
+    Without the scanner, comments cannot be told from strings, so any change to text that holds a marker asks.
     """
     if name in CODE_MARKERS:
         return len(pattern.findall(change.added)) > len(pattern.findall(change.removed))
     suffix = Path(change.path).suffix
     added, removed = (_marked_lines(pattern, text, suffix) for text in (change.added, change.removed))
     if added is None or removed is None:
-        if name in COMPARED_BY_TEXT:
-            return pattern.search(change.added) is not None and change.added != change.removed
-        return len(pattern.findall(change.added)) > len(pattern.findall(change.removed))
+        return pattern.search(change.added) is not None and change.added != change.removed
     added_marks, removed_marks = ([mark for marks in found.values() for mark in marks] for found in (added, removed))
     if name in COMPARED_BY_TEXT:
         return bool(Counter(added_marks) - Counter(removed_marks))
@@ -229,10 +226,12 @@ def _patch_changes(patch: str) -> list[_Change]:
     current: _Hunks | None = None
     for line in _lines(patch):
         if match := PATCH_FILE.match(line):
-            current = hunks.setdefault(match.group(1).strip(), _Hunks())
+            current = hunks.setdefault(match.group(2).strip(), _Hunks(added=match.group(1) == "Add"))
         elif current is not None and (move := PATCH_MOVE.match(line)):
             current.destination = move.group(1).strip()
-        elif current is not None and (line[:1] in {"+", "-", " "} or line.startswith("@@")):
+        elif line.startswith("*** ") and line != patch_input.END_OF_FILE:
+            current = None
+        elif current is not None:
             current.lines.append(line)
     return [change for path, file_hunks in hunks.items() for change in file_hunks.changes(path)]
 
@@ -241,6 +240,7 @@ def _patch_changes(patch: str) -> list[_Change]:
 class _Hunks:
     """The hunk lines of one file in a patch and where the file moves to."""
 
+    added: bool = False
     lines: list[str] = field(default_factory=list)
     destination: str = ""
 
@@ -259,6 +259,10 @@ class _Hunks:
         The applier also matches context loosely (whitespace, Unicode punctuation), so where an inexact hunk lands is
         unknown; in a file that holds a marker, that fails closed.
         """
+        if self.added:
+            return _Change(
+                path, "".join(f"{line[1:]}\n" for line in self.lines if line.startswith("+")), existing, True
+            )
         after = patch_input.patched_text(existing, self.lines)
         if after is not None:
             return _Change(path, after, existing, whole=True)

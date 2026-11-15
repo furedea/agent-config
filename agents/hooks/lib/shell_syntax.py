@@ -418,7 +418,7 @@ def shell_scripts(command: Command) -> list[str]:
     script = script_index(arguments, option)
     if command.dynamic[script]:
         raise UnsupportedSyntaxError("a shell wrapper running a computed script requires explicit review", "wrapper")
-    return function_calls.unpassed([arguments[script]], arguments[script + 2 :])
+    return function_calls.unpassed([arguments[script]], arguments[script + 1 :])
 
 
 def _is_foreign_shell(executable: str) -> bool:

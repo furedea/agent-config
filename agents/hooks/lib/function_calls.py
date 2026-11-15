@@ -90,8 +90,13 @@ def unpassed(scripts: list[str], passed: tuple[str, ...]) -> list[str]:
 
 
 def operands(arguments: tuple[str, ...]) -> tuple[str, ...]:
-    """The words after a shell's name that are not options, with a -- that ends them."""
-    return tuple(argument for argument in arguments[1:] if argument[:1] not in {"-", "+"} or argument == "--")
+    """The words a shell takes as arguments: from its first non-option word, or after a - or -- ending options."""
+    for index, argument in enumerate(arguments[1:], 1):
+        if argument in {"-", "--"}:
+            return arguments[index + 1 :]
+        if argument[:1] not in {"-", "+"}:
+            return arguments[index:]
+    return ()
 
 
 def _body_respellings(body: dict, words: list[dict], data: bytes) -> list[str]:
@@ -184,26 +189,34 @@ def _followed(body: dict, records: tuple[dict, ...], data: bytes) -> dict:
         or any(_reassigns(_program(call, data)) for call in _calls(body, data))
         or any(_copied(node) is None for node in reading)
         or _reassigned(copies, records, data)
-        or not _attributed(body).isdisjoint(copies)
+        or not _attributed(body, data).isdisjoint(copies)
     )
     if unfollowed:
         raise UnsupportedSyntaxError("a function reading its arguments this way requires explicit review", "expansion")
     return body
 
 
-def _attributed(body: dict) -> set[str]:
-    """Names a declaration in the body gives an attribute, such as -l or -u, which may change a value assigned."""
+def _attributed(body: dict, data: bytes) -> set[str]:
+    """Names a declaration in the body gives an attribute, such as -l or -u, which may change a value assigned.
+
+    An option word counts however it is quoted or escaped, and so does any word known only at run time.
+    """
     declarations = (node for node in nodes(body) if node.get("Type") == "DeclClause")
     return {
         argument["Name"]["Value"]
         for declaration in declarations
         if any(
-            argument.get("Naked") and _literal(argument.get("Value"))[:1] in {"-", "+"}
+            argument.get("Naked") and _option_like(argument.get("Value"), data)
             for argument in declaration.get("Args", [])
         )
         for argument in declaration.get("Args", [])
         if isinstance(argument.get("Name"), dict)
     }
+
+
+def _option_like(word: dict | None, data: bytes) -> bool:
+    value, dynamic = literal_word(word, data) if word else ("", False)
+    return dynamic or value[:1] in {"-", "+"}
 
 
 def _iterates_arguments(loop: dict, copies: dict[str, str]) -> bool:

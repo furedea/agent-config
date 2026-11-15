@@ -1,5 +1,6 @@
 """Scan edited files with the ast-grep rules of the project that owns them and describe each finding."""
 
+import dataclasses
 import functools
 import json
 import os
@@ -85,15 +86,18 @@ def repository_root(path: Path) -> Path | None:
 def shared_rules_apply(root: Path | None) -> bool:
     """Whether the shared rules run in a checkout: they are the owner's style, so only for trusted owners.
 
-    Any other project's own style takes precedence; a missing or unreadable trusted owners file trusts no one.
+    Any other project's own style takes precedence; a missing or unreadable trusted owners file trusts no one. Only
+    the owner is asked: whether the repository is a fork matters to what model rules may read, not to whose style
+    applies, and its network lookup would slow every edit and turn the rules off when it gets no answer.
     """
     if root is None:
         return False
     configured = Path(os.environ.get("AGENT_TRUSTED_OWNERS", str(TRUSTED_OWNERS_FILE)))
     try:
-        return trusted_owners.distrust_reason(root, trusted_owners.load(configured)) is None
+        owners = dataclasses.replace(trusted_owners.load(configured), exclude_forks=False)
     except ValueError:
         return False
+    return trusted_owners.distrust_reason(root, owners) is None
 
 
 def project_config(path: Path) -> Path | None:

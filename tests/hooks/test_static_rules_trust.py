@@ -89,3 +89,24 @@ def test_an_unreadable_trusted_owners_file_keeps_the_shared_rules_off(
     monkeypatch.setenv("AGENT_TRUSTED_OWNERS", str(broken))
     static_rule_scan.diagnostics([source_in(directory)])
     assert configs(scanned) == []
+
+
+def test_shared_rules_ask_only_the_owner_not_whether_the_repository_is_a_fork(
+    tmp_path: Path,
+    checkout_of: Callable[..., Path],
+    shared_config: Path,
+    scanned: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Style is the owner's, so no network lookup slows each edit or turns the rules off when it gets no answer."""
+    directory = checkout_of(tmp_path / "work")
+    owners = tmp_path / "forks_excluded.json"
+    owners.write_text(json.dumps({"owners": ["trusted-owner"], "exclude_forks": True}))
+    monkeypatch.setenv("AGENT_TRUSTED_OWNERS", str(owners))
+
+    def no_lookup(*_: object) -> None:
+        raise AssertionError("the fork lookup must not run for style rules")
+
+    monkeypatch.setattr(static_rule_scan.trusted_owners, "is_fork", no_lookup)
+    static_rule_scan.diagnostics([source_in(directory)])
+    assert configs(scanned) == [str(shared_config)]

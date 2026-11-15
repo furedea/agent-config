@@ -19,6 +19,7 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "lib"))
 
 import audit_log
+import comment_scan
 import hook_decision
 import hook_input
 from hook_decision import Verdict
@@ -47,9 +48,6 @@ MARKER_SUFFIXES = {"ast-grep-ignore": CODE_SUFFIXES | {".yml", ".yaml", ".nix"}}
 # compared by its comment's text: changing the named rules, or turning a string that holds the word into a comment,
 # asks.
 COMPARED_BY_TEXT = frozenset({"ast-grep-ignore"})
-COMMENT_OPENERS = {".rs": ("//", "/*"), ".lua": ("--",), ".nix": ("#", "/*")}
-SLASH_COMMENT_SUFFIXES = frozenset({".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs", ".go"})
-QUOTES = frozenset("'\"`")
 # An ast-grep marker on the first line followed by a blank line suppresses its rules for the whole file.
 FILE_SCOPE = "ast-grep-ignore for the whole file"
 PATCH_FILE = re.compile(r"^\*\*\* (?:Add|Update) File: (.+)$")
@@ -125,44 +123,27 @@ def _adds(name: str, pattern: re.Pattern[str], change: _Change) -> bool:
     """Count markers, or for markers compared by text, find a marker whose text is new."""
     if name not in COMPARED_BY_TEXT:
         return len(pattern.findall(change.added)) > len(pattern.findall(change.removed))
-    openers = _comment_openers(Path(change.path).suffix)
-    added, removed = (_marked_text(pattern, text, openers) for text in (change.added, change.removed))
+    suffix = Path(change.path).suffix
+    added, removed = (list(_marked_lines(pattern, text, suffix).values()) for text in (change.added, change.removed))
     return bool(Counter(added) - Counter(removed))
 
 
-def _marked_text(pattern: re.Pattern[str], text: str, openers: tuple[str, ...]) -> list[tuple[bool, str]]:
-    """Whether each marker is inside a comment, with the comment from its opener on or else the whole line."""
-    return [marked for line in _lines(text) if (marked := _marked_line(pattern, line, openers)) is not None]
+def _marked_lines(pattern: re.Pattern[str], text: str, suffix: str) -> dict[int, tuple[bool, str]]:
+    """By line number, whether each marker is in a comment, with the comment from its start on that line or the line.
 
-
-def _marked_line(pattern: re.Pattern[str], line: str, openers: tuple[str, ...]) -> tuple[bool, str] | None:
-    if (match := pattern.search(line)) is None:
-        return None
-    start = _comment_start(line, openers)
-    if start is None or start > match.start():
-        return False, line.strip()
-    return True, line[start:].strip()
-
-
-def _comment_openers(suffix: str) -> tuple[str, ...]:
-    if suffix in COMMENT_OPENERS:
-        return COMMENT_OPENERS[suffix]
-    return ("//", "/*") if suffix in SLASH_COMMENT_SUFFIXES else ("#",)
-
-
-def _comment_start(line: str, openers: tuple[str, ...]) -> int | None:
-    """Where the first comment outside a quoted string starts; a quote the guard misreads only makes it ask."""
-    quote = ""
-    escaped = False
-    for index, char in enumerate(line):
-        if quote:
-            quote = "" if char == quote and not escaped else quote
-            escaped = not escaped and char == "\\"
-        elif char in QUOTES:
-            quote = char
-        elif line.startswith(openers, index):
-            return index
-    return None
+    Comments are found across the whole text, so a block comment or a multi-line string around the line counts.
+    """
+    spans = comment_scan.comment_spans(text, suffix)
+    marked = {}
+    offset = 0
+    for number, line in enumerate(text.split("\n")):
+        if match := pattern.search(line):
+            position = offset + match.start()
+            start = next((first for first, end in spans if first <= position < end), None)
+            comment = start is not None
+            marked[number] = (comment, line[max(start - offset, 0) :].strip() if comment else line.strip())
+        offset += len(line) + 1
+    return marked
 
 
 def _changes(payload: dict) -> list[_Change]:
@@ -261,20 +242,18 @@ def _newly_honored(text: str, source: str, destination: str) -> str:
         for name, pattern in MARKERS.items()
         if destination in (suffixes := MARKER_SUFFIXES.get(name, CODE_SUFFIXES)) and source not in suffixes
     ]
-    return "\n".join(
-        line
-        for line in _lines(text)
-        if any(pattern.search(line) for pattern in honored) or _becomes_comment(line, source, destination)
-    )
+    lines = _lines(text)
+    carried = {number for number, line in enumerate(lines) if any(pattern.search(line) for pattern in honored)}
+    return "\n".join(lines[number] for number in sorted(carried | _becomes_comment(text, source, destination)))
 
 
-def _becomes_comment(line: str, source: str, destination: str) -> bool:
-    """Whether an ast-grep marker on the line is in a comment at the destination that the source did not read so."""
+def _becomes_comment(text: str, source: str, destination: str) -> set[int]:
+    """Lines whose ast-grep marker is in a comment at the destination that the source did not read so."""
     if source == destination or destination not in MARKER_SUFFIXES["ast-grep-ignore"]:
-        return False
+        return set()
     pattern = MARKERS["ast-grep-ignore"]
-    after = _marked_line(pattern, line, _comment_openers(destination))
-    return after is not None and after[0] and after != _marked_line(pattern, line, _comment_openers(source))
+    before, after = (_marked_lines(pattern, text, suffix) for suffix in (source, destination))
+    return {number for number, marked in after.items() if marked[0] and marked != before.get(number)}
 
 
 def _holds_ast_grep_marker(text: str) -> bool:

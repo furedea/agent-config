@@ -204,3 +204,49 @@ def test_a_move_that_turns_an_inert_marker_into_a_comment_asks(
     source.write_text(text)
     patch = f"*** Begin Patch\n*** Update File: {source}\n*** Move to: {tmp_path / destination_name}\n*** End Patch"
     assert decide("apply_patch", {"input": patch}) == "ask"
+
+
+@pytest.mark.parametrize(
+    "name,before,edits",
+    [
+        (
+            "app.ts",
+            'const marker =\n  "ast-grep-ignore: rule";\nfoo()\n',
+            [
+                {"old_string": "const marker =\n", "new_string": "/*\n"},
+                {"old_string": ";\nfoo", "new_string": ";\n*/\nfoo"},
+            ],
+        ),
+        (
+            "app.py",
+            'DOC = """\n# ast-grep-ignore: rule\n"""\nbad()\n',
+            [{"old_string": 'DOC = """\n', "new_string": ""}, {"old_string": '\n"""\n', "new_string": "\n"}],
+        ),
+    ],
+    ids=["into a block comment", "out of a multi-line string"],
+)
+def test_an_edit_that_puts_a_marker_line_into_a_comment_across_lines_asks(
+    tmp_path: Path, name: str, before: str, edits: list[dict]
+) -> None:
+    target = tmp_path / name
+    target.write_text(before)
+    assert decide("MultiEdit", {"file_path": str(target), "edits": edits}) == "ask"
+
+
+def test_editing_code_beside_an_unchanged_marker_in_a_block_comment_passes(tmp_path: Path) -> None:
+    target = tmp_path / "app.ts"
+    target.write_text("/*\n  ast-grep-ignore: rule\n*/\nfoo()\n")
+    assert decide("Edit", {"file_path": str(target), "old_string": "foo()", "new_string": "bar()"}) == "allow"
+
+
+def test_an_edit_that_ends_a_heredoc_before_a_marker_line_asks(tmp_path: Path) -> None:
+    target = tmp_path / "run.sh"
+    target.write_text("cat <<EOF\n# ast-grep-ignore: rule\nEOF\nbad\n")
+    assert decide("Edit", {"file_path": str(target), "old_string": "cat <<EOF\n", "new_string": ""}) == "ask"
+
+
+def test_moving_a_marker_out_of_a_heredoc_into_python_asks(tmp_path: Path) -> None:
+    source = tmp_path / "run.sh"
+    source.write_text("cat <<EOF\n# ast-grep-ignore: rule\nEOF\n")
+    patch = f"*** Begin Patch\n*** Update File: {source}\n*** Move to: {tmp_path / 'run.py'}\n*** End Patch"
+    assert decide("apply_patch", {"input": patch}) == "ask"

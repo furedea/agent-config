@@ -109,6 +109,18 @@ func (c *Client) TestEnabled() bool {
 	c.enabled = true
 	return c.enabled
 }
+
+func main() {}
+
+func Start(ch chan int) {
+	go func() { close(ch) }()
+	panic("unreachable")
+}
+
+func Report(logger Logger, err error) error {
+	logger.Errorf("load: %v", err)
+	return err
+}
 """
 
 RUST_SOURCE = """\
@@ -353,11 +365,25 @@ def test_go_rules_select_the_functions_they_ask_about(repository: Path) -> None:
     # `TestSuiteSkip`, which are not top-level functions taking `*testing.T`; `TestLoad` and `TestBare` are named for
     # what they verify. Only `Load` builds an error; three skips carry a known-defect marker: `t.Skip`, `t.SkipNow`
     # and the suite form `s.T().Skip`.
+    # `main` is in `package sample`, so main-is-thin selects nothing. `Start` holds one goroutine, one `close` and one
+    # `panic`; only `Report` logs.
     assert counts == {
-        "command-query-naming": 5,
+        "command-query-naming": 8,
         "error-message-names-operation": 1,
         "known-defect-marker-names-removal": 3,
+        "goroutine-has-termination-path": 1,
+        "channel-closed-by-sender": 1,
+        "panic-only-for-programmer-errors": 1,
+        "error-handled-once": 1,
     }
+
+
+def test_main_is_thin_selects_func_main_of_package_main(repository: Path) -> None:
+    (repository / "main.go").write_text("package main\n\nfunc main() {}\n")
+
+    counts = subjects_by_rule(plan(repository))
+
+    assert counts["main-is-thin"] == 1
 
 
 def test_rust_rules_select_the_functions_they_ask_about(repository: Path) -> None:

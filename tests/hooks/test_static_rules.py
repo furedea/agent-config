@@ -123,7 +123,8 @@ def test_findings_are_returned_as_context_with_rule_file_line_and_message(
         "--config",
         str(lint_directory / "sgconfig.yml"),
         "--json=stream",
-        str(source),
+        "--",
+        "src/source.py",
     ]
 
 
@@ -326,3 +327,24 @@ class TestRealAstGrep:
         status, output = hook.run(source)
         assert status == 0
         assert "Static rules failed" in context_of(output)
+
+
+def test_each_configuration_matches_globs_against_its_own_base_directory(
+    hook: Hook, executable: StubWriter, tmp_path: Path, scanner_calls: Path, shared_config: Path
+) -> None:
+    deploy_shared_rules(shared_config)
+    project = tmp_path / "repo" / "packages" / "app"
+    source = project / "src" / "source.py"
+    source.parent.mkdir(parents=True)
+    source.write_text("print('x')\n")
+    (tmp_path / "repo" / ".git").mkdir()
+    (project / "sgconfig.yml").write_text("ruleDirs:\n  - rules\n")
+    install_scanner(executable, [], status=0)
+
+    hook.run(source)
+
+    calls = [json.loads(line) for line in scanner_calls.read_text().splitlines()]
+    assert {call[2]: call[5] for call in calls} == {
+        str(shared_config): "packages/app/src/source.py",
+        str(project / "sgconfig.yml"): "src/source.py",
+    }

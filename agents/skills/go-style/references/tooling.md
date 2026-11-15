@@ -14,7 +14,7 @@
 - Start with `main.go` at the module root.
 - Move to `cmd/<name>/main.go` when the module has several commands.
 - Put non-public packages under `internal/`.
-- Do not create `pkg/`, `util/`, or `common/`; name packages by domain.
+- `pkg/` is allowed when it helps, for example in a polyglot monorepo; the official Go documentation does not forbid it.
 - Keep `main` thin: parse flags, wire dependencies, and call library code.
 
 ## Quality Gates
@@ -30,6 +30,4 @@ go test -race ./...
 govulncheck ./...
 ```
 
-- gofumpt and goimports run as golangci-lint formatters.
 - Do not loosen linter configuration to make code pass; fix the code.
-- Every `//nolint` names the linter and carries a reason: `//nolint:gosec // path is validated by Parse`.

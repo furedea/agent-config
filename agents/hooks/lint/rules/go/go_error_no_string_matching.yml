@@ -1,8 +1,9 @@
 id: go_error_no_string_matching
+# Limits: Test files are skipped because tests may assert the exact message of an error they create.
 language: go
-severity: warning
-message: "Compare with `errors.Is` or `errors.As` instead of matching the message text."
-note: "Test files are skipped because tests may assert the exact message of an error they create."
+severity: error
+message: "Matching an error's text breaks silently when the message is reworded and ignores wrapped errors."
+note: "Use `errors.Is(err, ErrNotFound)` or `errors.As(err, &target)` instead of `err.Error() == \"not found\"`."
 ignores:
   - "**/*_test.go"
 rule:

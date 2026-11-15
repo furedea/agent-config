@@ -1,0 +1,13 @@
+id: go_no_generated_mocks
+language: go
+severity: error
+message: "A generated or framework mock couples tests to call order and hides the real behavior."
+note: "Write a small fake type that implements the consumer's interface, and drop the mock import or `//go:generate` line."
+rule:
+  any:
+    - kind: comment
+      regex: ^//go:generate\s.*\b(mockgen|mockery|counterfeiter|moq|minimock)\b
+    - kind: import_spec
+      has:
+        field: path
+        regex: ^"(github\.com/golang/mock/gomock|go\.uber\.org/mock/gomock|github\.com/stretchr/testify/mock|github\.com/vektra/mockery(/v\d+)?(/.*)?|github\.com/maxbrunsfeld/counterfeiter(/v\d+)?(/.*)?)"$

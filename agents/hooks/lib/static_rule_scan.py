@@ -12,6 +12,7 @@ from lib.formatter_policy import Step
 SCANNER = "ast-grep"
 CONFIG_NAME = "sgconfig.yml"
 SHARED_CONFIG = Path(__file__).resolve().parent.parent / "lint" / CONFIG_NAME
+PROJECT_MARKERS = ("go.mod", "go.work", "Cargo.toml", "pyproject.toml", "package.json")
 FAILURE_OUTPUT_LINES = 8
 TRUNCATED = "Static rule output truncated\nThe scanner output exceeded the size limit; some findings may be missing."
 
@@ -25,11 +26,33 @@ def diagnostics(paths: Iterable[Path]) -> tuple[str, ...]:
     """
     if shutil.which(SCANNER) is None:
         return ()
-    by_config: dict[Path, list[str]] = {}
-    scans = [(config, str(path)) for path in paths if path.is_file() for config in configs_for(path)]
-    for config, file in scans:
-        by_config.setdefault(config, []).append(file)
-    return tuple(message for config, files in by_config.items() for message in scan(config, files))
+    by_scope: dict[tuple[Path, Path], list[str]] = {}
+    for path in paths:
+        if not path.is_file():
+            continue
+        for config in configs_for(path):
+            root = scan_root(path, config)
+            by_scope.setdefault((config, root), []).append(str(path.relative_to(root)))
+    return tuple(message for (config, root), files in by_scope.items() for message in scan(config, root, files))
+
+
+def scan_root(path: Path, config: Path) -> Path:
+    """Pick the directory that the `files:` globs of a configuration match against.
+
+    A project configuration matches paths relative to its own directory. The shared configuration matches paths
+    relative to the repository, else the directory of the project configuration or manifest, else the file, so
+    directories above the project, such as `~/common/`, stay out of the globs.
+    """
+    if config != SHARED_CONFIG:
+        return config.parent
+    repository = next((d for d in path.parents if (d / ".git").exists()), None)
+    if repository is not None:
+        return repository
+    project = project_config(path)
+    if project is not None:
+        return project.parent
+    manifest_directory = next((d for d in path.parents if any((d / m).is_file() for m in PROJECT_MARKERS)), None)
+    return manifest_directory or path.parent
 
 
 def configs_for(path: Path) -> tuple[Path, ...]:
@@ -44,33 +67,34 @@ def project_config(path: Path) -> Path | None:
     return next((c for directory in path.parents if (c := directory / CONFIG_NAME).is_file()), None)
 
 
-def scan(config: Path, files: list[str]) -> tuple[str, ...]:
-    """Run the scanner once for files sharing one configuration."""
-    step = Step("ast-grep scan", (SCANNER, "scan", "--config", str(config), "--json=stream", *files))
+def scan(config: Path, root: Path, files: list[str]) -> tuple[str, ...]:
+    """Run the scanner once, from `root`, for files sharing one configuration."""
+    step = Step("ast-grep scan", (SCANNER, "scan", "--config", str(config), "--json=stream", "--", *files), cwd=root)
     try:
-        result = process_runner.run_process(step, Path(files[0]), dict(os.environ))
+        result = process_runner.run_process(step, root / files[0], dict(os.environ))
     except OSError as error:
         return (f"Static rules failed\n{error}",)
     output = result.diagnostics.decode(errors="replace")
-    found = tuple(message for line in output.splitlines() if (message := finding(line)))
+    found = tuple(message for line in output.splitlines() if (message := finding(line, root)))
     notes = (TRUNCATED,) if result.output_truncated else ()
     if result.timed_out or result.returncode not in (0, 1):
-        notes += (failure(output, result.timed_out),)
+        notes += (failure(output, result.timed_out, root),)
     return found + notes
 
 
-def finding(line: str) -> str:
+def finding(line: str, root: Path) -> str:
     """Format one JSON line of scanner output, or return an empty string for any other line."""
     try:
         record = json.loads(line)
-        message = f"Static rule {record['ruleId']} · {record['file']}:{record['range']['start']['line'] + 1}"
+        file = root / record["file"]
+        message = f"Static rule {record['ruleId']} · {file}:{record['range']['start']['line'] + 1}"
         return f"{message}\n{record['message']}"
     except ValueError, KeyError, TypeError:
         return ""
 
 
-def failure(output: str, timed_out: bool) -> str:
+def failure(output: str, timed_out: bool, root: Path) -> str:
     """Describe a scanner that produced no findings and did not finish normally."""
-    lines = [line for line in output.strip().splitlines() if not finding(line)]
+    lines = [line for line in output.strip().splitlines() if not finding(line, root)]
     reason = "timed out" if timed_out else "\n".join(lines[:FAILURE_OUTPUT_LINES])
     return f"Static rules failed\n{reason or 'No diagnostic output.'}"

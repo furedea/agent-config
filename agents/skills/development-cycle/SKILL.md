@@ -2,8 +2,9 @@
 name: development-cycle
 description: >
     Use for repository changes and their delivery, including edits that stop short of a commit:
-    starting a new project (creating a GitHub repository or setting up a development
-    environment), securing Issues and saving plan comments, resuming Issue-based work,
+    starting a new project (creating a GitHub repository, applying standard GitHub settings to
+    an existing one, or setting up a development environment), securing, creating, updating, and
+    closing Issues, saving and updating plan comments, resuming and reconciling Issue-based work,
     branch/worktree selection, commits, pushes, pull requests, CI and review handling, and
     permitted merge and Git cleanup. Explanation, investigation, review, or plan discussion alone
     does not authorize publication or implementation.

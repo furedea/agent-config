@@ -188,7 +188,26 @@ def _environment_reason() -> str:
         return "runs without a package-age limit of at least a week in the user's uv configuration"
     if overrides := sorted((OVERRIDING_SETTINGS - {AGE_LIMIT}) & set(settings)):
         return f"runs with the user's uv setting {overrides[0]}, which adds a source the age limit does not cover"
-    return ""
+    return next(
+        (f"runs with the system uv configuration {path}" for path in _system_settings() if _overrides(path)), ""
+    )
+
+
+def _system_settings() -> list[Path]:
+    """The system uv.toml files uv merges beneath the user's: each XDG_CONFIG_DIRS entry, then /etc."""
+    directories = [entry for entry in os.environ.get("XDG_CONFIG_DIRS", "").split(os.pathsep) if entry]
+    return [Path(directory) / "uv" / "uv.toml" for directory in [*directories, "/etc"]]
+
+
+def _overrides(path: Path) -> bool:
+    """Whether a system file sets a source or exception the age limit does not cover; one that cannot be read does."""
+    try:
+        settings = tomllib.loads(path.read_text())
+    except FileNotFoundError:
+        return False
+    except OSError, UnicodeDecodeError, tomllib.TOMLDecodeError:
+        return True
+    return not (OVERRIDING_SETTINGS - {AGE_LIMIT}).isdisjoint(settings)
 
 
 def _program_reason(changes: list[shell_syntax.Command]) -> str:
@@ -196,7 +215,7 @@ def _program_reason(changes: list[shell_syntax.Command]) -> str:
 
     git finds the worktree the project checks rely on, so it must be a system program too.
     """
-    if not system_programs.is_system_program("git"):
+    if not system_programs.is_system_program("git") or system_programs.inherits_git_location():
         return "runs where git, which finds the worktree, does not resolve to a root-owned system program"
     program = next(
         (item.arguments[0] for item in changes if not system_programs.is_system_program(item.arguments[0])), ""
@@ -255,9 +274,14 @@ def _dependency_entries(settings: dict) -> list[str]:
 
 
 def _has_option_before_subcommand(item: shell_syntax.Command) -> bool:
-    """A uv call whose first word after the program is an option, such as `uv -q add` or `uv --directory x add`."""
+    """A uv add or lock call with an option before its subcommand, such as `uv -q add` or `uv --directory x add`."""
     arguments = command_policy.canonical(item).arguments
-    return arguments[0] == PROGRAM and len(arguments) > 1 and arguments[1].startswith("-")
+    return (
+        arguments[0] == PROGRAM
+        and len(arguments) > 1
+        and arguments[1].startswith("-")
+        and not {"add", "lock"}.isdisjoint(arguments[2:])
+    )
 
 
 def _is_dependency_call(item: shell_syntax.Command) -> bool:

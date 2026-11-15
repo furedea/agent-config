@@ -322,3 +322,28 @@ def test_an_inherited_shell_function_before_uv_asks(git_project: Path, monkeypat
 )
 def test_an_option_before_the_uv_subcommand_asks(git_project: Path, command: str) -> None:
     assert judged(git_project, command, "allowed") == "ask"
+
+
+@pytest.mark.parametrize(
+    "command", ["uv --version", "uv -V", "uv --help", "uv -q run --frozen pytest", "uv --directory sub sync --frozen"]
+)
+def test_an_option_before_a_subcommand_that_changes_nothing_is_not_judged(git_project: Path, command: str) -> None:
+    assert judged(git_project, command, "allowed") == "allow"
+
+
+def test_a_system_uv_configuration_that_adds_a_source_asks(
+    git_project: Path, monkeypatch: pytest.MonkeyPatch, tmp_path_factory: pytest.TempPathFactory
+) -> None:
+    system = tmp_path_factory.mktemp("xdg-system")
+    (system / "uv").mkdir()
+    (system / "uv" / "uv.toml").write_text('find-links = ["/tmp/links"]\n')
+    monkeypatch.setenv("XDG_CONFIG_DIRS", str(system))
+    assert judged(git_project, "uv add httpx", "allowed") == "ask"
+
+
+@pytest.mark.parametrize("name", ["GIT_WORK_TREE", "GIT_DIR"])
+def test_an_inherited_git_location_before_uv_asks(
+    git_project: Path, monkeypatch: pytest.MonkeyPatch, name: str
+) -> None:
+    monkeypatch.setenv(name, "/")
+    assert judged(git_project, "uv add httpx", "allowed") == "ask"

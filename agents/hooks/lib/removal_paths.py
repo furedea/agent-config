@@ -62,7 +62,8 @@ def objection(payload: dict, command: str, commands: tuple[shell_syntax.Command,
             PROGRAM,
         )
     programs = [item.arguments[0] for item in commands if not _runs_a_system_program(item)]
-    if program := next(iter(programs), "") or ("" if system_programs.is_system_program("git") else "git"):
+    trusted_git = system_programs.is_system_program("git") and not system_programs.inherits_git_location()
+    if program := next(iter(programs), "") or ("" if trusted_git else "git"):
         return hook_decision.ask(
             f"Needs review: '{program}' does not resolve to a system program, so it may not be the program the "
             f"guard judged, or git may report another worktree.\n\nCommand: {preview}",

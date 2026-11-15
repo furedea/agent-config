@@ -25,7 +25,7 @@ rule:
         - has:
             field: type
             kind: type_annotation
-            not: { regex: ':\s*(Promise<unknown>|unknown)$' }
+            not: { regex: '\bunknown\b' }
         - has:
             field: value
             any:
@@ -37,7 +37,7 @@ rule:
         - has:
             field: return_type
             kind: type_annotation
-            not: { regex: ':\s*(Promise<unknown>|unknown)$' }
+            not: { regex: '\bunknown\b' }
         - has:
             field: body
             any:
@@ -60,7 +60,7 @@ rule:
             has:
               field: return_type
               kind: type_annotation
-              not: { regex: ':\s*(Promise<unknown>|unknown)$' }
+              not: { regex: '\bunknown\b' }
             stopBy:
               any:
                 - kind: function_declaration
@@ -71,4 +71,4 @@ constraints:
   RESPONSE: { regex: '(?i)res(ponse)?$' }
   TYPE:
     not:
-      regex: ^(Promise<unknown>|unknown)$
+      regex: \bunknown\b

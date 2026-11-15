@@ -58,5 +58,15 @@ rule:
               - kind: parenthesized_expression
     - not:
         has: { kind: spread_element, stopBy: end }
+    - not:
+        has:
+          stopBy: end
+          any:
+            - all:
+                - kind: pair
+                - has: { field: key, regex: '^cause$' }
+            - all:
+                - kind: shorthand_property_identifier
+                - regex: '^cause$'
 constraints:
   ERROR: { regex: Error$ }

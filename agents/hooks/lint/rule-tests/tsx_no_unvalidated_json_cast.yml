@@ -13,6 +13,10 @@ valid:
   - |
     const body: Promise<unknown> = response.json();
   - |
+    const raw: unknown | null = JSON.parse(text);
+  - |
+    const body: Promise<unknown | undefined> = response.json();
+  - |
     const body: Promise<Body> = validatedClient.json();
   - |
     function load(text: string): unknown {

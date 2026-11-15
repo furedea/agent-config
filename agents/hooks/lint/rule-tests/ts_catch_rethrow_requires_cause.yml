@@ -28,6 +28,20 @@ valid:
     try {
       run();
     } catch (error) {
+      const cause = error instanceof Error ? error : new Error(String(error));
+      throw new Error("read config", { cause });
+    }
+  - |
+    try {
+      run();
+    } catch (error) {
+      const wrapped = toError(error);
+      throw new XError("read config", { cause: wrapped });
+    }
+  - |
+    try {
+      run();
+    } catch (error) {
       throw new AppError({ message: "read config", error });
     }
   - |

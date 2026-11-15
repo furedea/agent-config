@@ -184,6 +184,21 @@ def reason(arguments: tuple[str, ...]) -> str:
     return _git_reason(arguments) if executable == "git" else ""
 
 
+def hook_bypass_reason(arguments: tuple[str, ...], assignments: tuple[str, ...] = ()) -> str:
+    """The hook-skipping objection that its literal words already settle, whatever run-time words sit beside them."""
+    if reason := environment_reason(arguments, assignments):
+        return reason
+    if not arguments or Path(arguments[0]).name != "git":
+        return ""
+    try:
+        globals_, command = git_arguments(arguments)
+    except ValueError:
+        return ""
+    if not command:
+        return ""
+    return hook_skip_reason(globals_, command[0], spelled_out(command[0], command[1:]))
+
+
 def _git_reason(arguments: tuple[str, ...]) -> str:
     globals_, command = git_arguments(arguments)
     if not command:

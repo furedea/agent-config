@@ -150,3 +150,25 @@ def test_environment_settings_that_move_the_hooks_are_denied(command: str) -> No
 @pytest.mark.usefixtures("isolated_project")
 def test_other_environment_settings_pass(command: str) -> None:
     assert guard.decide({"tool_input": {"command": command}}).decision == "allow"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        'git commit --no-verify "$FILE"',
+        'git merge --no-verify "$BRANCH"',
+        "git commit -n -m $MESSAGE",
+        'git -c core.hooksPath=/x commit -m "$MESSAGE"',
+        'GIT_CONFIG_KEY_0=core.hooksPath git commit "$FILE"',
+    ],
+)
+@pytest.mark.usefixtures("isolated_project")
+def test_a_settled_hook_skip_is_denied_even_beside_a_run_time_word(command: str) -> None:
+    verdict = guard.decide({"tool_input": {"command": command}})
+    assert verdict.decision == "deny"
+    assert REASON in verdict.reason
+
+
+@pytest.mark.usefixtures("isolated_project")
+def test_a_run_time_operand_without_a_forbidden_option_is_still_reviewed() -> None:
+    assert guard.decide({"tool_input": {"command": 'git merge "$BRANCH"'}}).decision == "ask"

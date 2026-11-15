@@ -51,6 +51,8 @@ def inspect(command: str) -> Verdict:
         preview = shell_syntax.command_preview(command)
         return hook_decision.ask(f"Needs review: {error}.\n\nCommand: {preview}", "syntax")
     for item in commands:
+        if reason := _hook_bypass(item):
+            raise ValueError(reason)
         if _hides_verdict(item):
             preview = shell_syntax.command_preview(item.raw)
             return hook_decision.ask(
@@ -62,8 +64,17 @@ def inspect(command: str) -> Verdict:
     return hook_decision.ALLOW
 
 
+def _hook_bypass(item: shell_syntax.Command) -> str:
+    """The deny reason for a hook-skipping form, which approving a run-time-word review must not override."""
+    return _described(item, git_safety.hook_bypass_reason(item.arguments, item.assignments))
+
+
 def _segment_reason(item: shell_syntax.Command) -> str:
     reason = git_safety.reason(item.arguments) or git_safety.environment_reason(item.arguments, item.assignments)
+    return _described(item, reason)
+
+
+def _described(item: shell_syntax.Command, reason: str) -> str:
     if not reason:
         return ""
     if item.wrapper_depth:

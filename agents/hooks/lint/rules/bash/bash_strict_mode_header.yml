@@ -8,6 +8,7 @@ rule:
   kind: program
   has:
     kind: comment
+    nthChild: 1
     regex: ^#!.*\b(ba)?sh\b
   any:
     - not:

@@ -52,6 +52,9 @@ SHELL_PART = re.compile(r"""'[^']*'|"[^"]*"|[^'"]+""")
 PLAIN_PARAMETER = re.compile(r"\$(?:([A-Za-z_][A-Za-z0-9_]*)|\{([A-Za-z_][A-Za-z0-9_]*)\})")
 # Variables naming a file or directory a non-interactive shell sources before the command runs.
 STARTUP_FILE_VARIABLES = ("BASH_ENV", "ENV", "ZDOTDIR")
+# Variables that make git run another program, or read configuration from a file the guard does not check.
+GIT_OVERRIDE_VARIABLES = ("GIT_SSH", "GIT_EXEC_PATH", "GIT_PROXY_COMMAND", "GIT_ASKPASS", "SSH_ASKPASS")
+GIT_OVERRIDE_VARIABLES += ("GIT_CONFIG_GLOBAL", "GIT_CONFIG_SYSTEM")
 IRREVERSIBLE_REASON = "cannot be taken back or promotes work (class D)"
 TARGET_REASONS = {
     TargetClass.UNTRUSTED: "writes to a repository whose owner is not in trusted_owners.json (class C)",
@@ -135,8 +138,11 @@ def _override_problem() -> str:
     if any(os.environ.get(name) for name in STARTUP_FILE_VARIABLES):
         return "the environment names a startup file the shell sources first, which may redefine gh or git"
     ssh_command = os.environ.get("GIT_SSH_COMMAND", "ssh").split(maxsplit=1)
-    if os.environ.get("GIT_SSH") or ssh_command[:1] != ["ssh"]:
+    if any(os.environ.get(name) for name in GIT_OVERRIDE_VARIABLES) or ssh_command[:1] != ["ssh"]:
         return "the environment tells git to run another program than the checked ssh"
+    transports = _git_output("config", "--get-regexp", r"^core\.(sshcommand|gitproxy)$")
+    if transports is None or transports.strip():
+        return "git configuration names a program git runs in place of the checked ssh"
     return ""
 
 

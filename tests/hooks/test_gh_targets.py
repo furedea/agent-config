@@ -304,7 +304,14 @@ def test_an_ssh_planted_where_the_agent_writes_makes_every_call_ask(monkeypatch:
 
 @pytest.mark.usefixtures("furedea_checkout")
 @pytest.mark.parametrize(
-    ("name", "value"), [("GIT_SSH", "/tmp/evil"), ("GIT_SSH_COMMAND", "/tmp/evil"), ("GIT_SSH_COMMAND", "sh -c x")]
+    ("name", "value"),
+    [
+        ("GIT_SSH", "/tmp/evil"),
+        ("GIT_SSH_COMMAND", "/tmp/evil"),
+        ("GIT_SSH_COMMAND", "sh -c x"),
+        *((name, "/tmp/evil") for name in ("GIT_EXEC_PATH", "GIT_PROXY_COMMAND", "GIT_ASKPASS", "SSH_ASKPASS")),
+        *((name, "/tmp/evil") for name in ("GIT_CONFIG_GLOBAL", "GIT_CONFIG_SYSTEM")),
+    ],
 )
 def test_an_ssh_override_in_the_hook_environment_makes_every_call_ask(
     monkeypatch: pytest.MonkeyPatch, name: str, value: str
@@ -330,3 +337,11 @@ def test_a_clone_with_a_hook_template_asks(monkeypatch: pytest.MonkeyPatch) -> N
 def test_a_clone_under_a_configured_template_or_hooks_path_asks(key: str) -> None:
     subprocess.run(["git", "config", key, "hooks"], check=True)
     assert decide("gh repo clone furedea/agent-config") == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+@pytest.mark.parametrize("key", ["core.sshCommand", "core.gitProxy"])
+def test_a_configured_ssh_or_proxy_program_makes_every_call_ask(key: str) -> None:
+    assert decide("gh pr view 1 -R furedea/agent-config") == "allow"
+    subprocess.run(["git", "config", key, "/tmp/evil"], check=True)
+    assert decide("gh pr view 1 -R furedea/agent-config") == "ask"

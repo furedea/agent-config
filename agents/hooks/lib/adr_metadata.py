@@ -78,7 +78,7 @@ def diagnostics(paths: Iterable[Path]) -> tuple[str, ...]:
     findings = (
         finding
         for directory in directories
-        if follows_convention(directory, edited)
+        if follows_convention(directory)
         for finding in check_directory(directory)
         if directory in deleted or edited & {finding.path.resolve(), *(p.resolve() for p in finding.also_involves)}
     )
@@ -95,14 +95,14 @@ def is_adr_file(path: Path) -> bool:
     )
 
 
-def follows_convention(directory: Path, edited: set[Path]) -> bool:
-    """Tell whether the ADRs beside the edited ones are named like this check expects.
+def follows_convention(directory: Path) -> bool:
+    """Tell whether any ADR of the directory is named like this check expects.
 
-    A directory whose other ADRs all use another scheme, such as adr-tools' `0001-title.md`, keeps its own
-    convention, so none of its ADRs is reported.
+    A directory whose ADRs all use another scheme, such as adr-tools' `0001-title.md`, keeps its own convention, so
+    none of its ADRs is reported. A directory with no ADR yet is checked.
     """
-    others = [path for path in markdown_files(directory) if path.resolve() not in edited]
-    return not others or any(FILE_NAME.fullmatch(path.name) for path in others)
+    files = markdown_files(directory)
+    return not files or any(FILE_NAME.fullmatch(path.name) for path in files)
 
 
 def markdown_files(directory: Path) -> list[Path]:

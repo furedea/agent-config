@@ -204,6 +204,15 @@ def test_directory_with_another_naming_scheme_is_left_alone(tmp_path: Path) -> N
     assert adr_metadata.diagnostics([edited]) == ()
 
 
+def test_directory_edited_in_full_keeps_its_own_naming_scheme(tmp_path: Path) -> None:
+    directory = tmp_path / "docs" / "adr"
+    directory.mkdir(parents=True)
+    files = [directory / "0001-first.md", directory / "0002-second.md"]
+    for path in files:
+        path.write_text("# 1. Title\n")
+    assert adr_metadata.diagnostics(files) == ()
+
+
 def test_deleting_the_readme_is_not_an_adr_deletion(adr_directory: Path) -> None:
     write_adr(adr_directory, "0001_first_decision.md", status="Draft")
     assert adr_metadata.diagnostics([adr_directory / "README.md"]) == ()

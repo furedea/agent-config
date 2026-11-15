@@ -68,10 +68,6 @@
         "--body-file",
         "--attach"
       ],
-      "flags": [
-        "-w",
-        "--web"
-      ],
       "required": [
         [
           "-b",
@@ -170,9 +166,7 @@
       ],
       "flags": [
         "--create-if-none",
-        "--edit-last",
-        "-w",
-        "--web"
+        "--edit-last"
       ],
       "irreversible_flags": [
         "--delete-last",
@@ -324,9 +318,7 @@
         "-d",
         "--draft",
         "--dry-run",
-        "--no-maintainer-edit",
-        "-w",
-        "--web"
+        "--no-maintainer-edit"
       ],
       "required": [
         [
@@ -413,9 +405,7 @@
       ],
       "flags": [
         "--create-if-none",
-        "--edit-last",
-        "-w",
-        "--web"
+        "--edit-last"
       ],
       "irreversible_flags": [
         "--delete-last",

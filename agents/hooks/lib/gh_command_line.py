@@ -163,7 +163,7 @@ def is_system_program(name: str) -> bool:
     if found is None or not Path(found).is_absolute():
         return False
     resolved = Path(found).resolve()
-    writable = os.access(resolved, os.W_OK) or os.access(resolved.parent, os.W_OK)
+    writable = any(os.access(path, os.W_OK) for path in (resolved, *resolved.parents))
     return not writable and not resolved.is_relative_to(Path.cwd().resolve())
 
 

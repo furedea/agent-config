@@ -160,3 +160,11 @@ def test_a_url_that_names_a_label_does_not_stand_in_for_the_working_repository()
     subprocess.run(["git", "init", "--quiet"], check=True)
     add_remote("origin", "https://github.com/other/r")
     assert decide("gh label create https://github.com/furedea/r -c ff0000") == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+@pytest.mark.parametrize("name", ["GH_BROWSER", "BROWSER"])
+def test_an_inherited_browser_program_makes_every_call_ask(monkeypatch: pytest.MonkeyPatch, name: str) -> None:
+    monkeypatch.setenv(name, "/tmp/evil")
+    assert decide("gh pr view 1 --web") == "ask"
+    assert decide("gh issue create -R furedea/agent-config -t safe -b safe") == "ask"

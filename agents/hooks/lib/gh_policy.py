@@ -100,6 +100,8 @@ def _environment_problem() -> str:
     """Why the hook's own environment may run something else than gh against github.com, or an empty string."""
     if has_inherited_function(PROGRAM):
         return "the environment carries a shell function that bash would run instead of gh"
+    if os.environ.get("GH_BROWSER") or os.environ.get("BROWSER"):
+        return "the environment names a browser program gh would run for --web"
     configured_repository = os.environ.get("GH_REPO")
     foreign_repository = configured_repository and gh_repository.repository(configured_repository) is None
     if os.environ.get("GH_HOST", GITHUB_HOST).lower() != GITHUB_HOST or foreign_repository:

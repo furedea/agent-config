@@ -52,7 +52,7 @@ def inspect(command: str) -> Verdict:
         return hook_decision.ask(f"Needs review: {error}.\n\nCommand: {preview}", "syntax")
     for item in commands:
         if reason := _hook_bypass(item):
-            raise ValueError(reason)
+            raise ValueError(f"git hook bypass denied: {reason}")
     for item in commands:
         if _hides_verdict(item):
             preview = shell_syntax.command_preview(item.raw)

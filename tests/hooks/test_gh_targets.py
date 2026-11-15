@@ -345,7 +345,9 @@ def test_a_clone_under_a_configured_template_or_hooks_path_asks(key: str) -> Non
 
 
 @pytest.mark.usefixtures("furedea_checkout")
-@pytest.mark.parametrize("key", ["core.sshCommand", "core.gitProxy"])
+@pytest.mark.parametrize(
+    "key", ["core.sshCommand", "core.gitProxy", "url.ext::/tmp/evil .insteadOf", "protocol.ext.allow"]
+)
 def test_a_configured_ssh_or_proxy_program_makes_every_call_ask(key: str) -> None:
     assert decide("gh pr view 1 -R furedea/agent-config") == "allow"
     subprocess.run(["git", "config", key, "/tmp/evil"], check=True)

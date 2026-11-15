@@ -52,6 +52,8 @@ SHELL_PART = re.compile(r"""'[^']*'|"[^"]*"|[^'"]+""")
 PLAIN_PARAMETER = re.compile(r"\$(?:([A-Za-z_][A-Za-z0-9_]*)|\{([A-Za-z_][A-Za-z0-9_]*)\})")
 # Variables naming a file or directory a non-interactive shell sources before the command runs.
 STARTUP_FILE_VARIABLES = ("BASH_ENV", "ENV", "ZDOTDIR")
+# git settings that run a program for a transport, rewrite a URL to another transport, or enable one.
+TRANSPORT_SETTINGS = r"^(core\.(sshcommand|gitproxy)|url\..*\.(insteadof|pushinsteadof)|protocol\..*)$"
 # The GIT_SSH_COMMAND the sandbox runtime sets: ssh through the proxy command the runtime itself provides.
 SANDBOX_SSH_COMMAND = (
     "ssh -o ControlMaster=no -o ControlPath=none -o ProxyCommand=\"/bin/sh -c 'eval "
@@ -146,9 +148,9 @@ def _override_problem() -> str:
     ssh_command = os.environ.get("GIT_SSH_COMMAND", "ssh")
     if any(os.environ.get(name) for name in GIT_OVERRIDE_VARIABLES) or ssh_command not in {"ssh", SANDBOX_SSH_COMMAND}:
         return "the environment tells git to run another program than the checked ssh"
-    transports = _git_output("config", "--get-regexp", r"^core\.(sshcommand|gitproxy)$")
+    transports = _git_output("config", "--get-regexp", TRANSPORT_SETTINGS)
     if transports is None or transports.strip():
-        return "git configuration names a program git runs in place of the checked ssh"
+        return "git configuration rewrites URLs or names a transport program git may run"
     return ""
 
 

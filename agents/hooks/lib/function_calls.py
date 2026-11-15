@@ -25,6 +25,8 @@ KEYWORD_NAMES = frozenset("declare local export typeset readonly nameref integer
 SHELL_HOOKS = re.compile(
     r"command_not_found_handler?|precmd|preexec|chpwd|periodic|zshexit|zshaddhistory|TRAP[A-Z0-9]+"
 )
+# Arrays holding a function's arguments: zsh's argv, and bash's BASH_ARGV and BASH_ARGC under extdebug.
+ARGUMENT_ARRAYS = frozenset({"argv", "BASH_ARGV", "BASH_ARGC"})
 # Words before a builtin that still run it, as in builtin shift or command -p shift.
 BUILTIN_PREFIXES = frozenset({"builtin", "command"})
 # Text eval or trap runs that may read or replace a function's arguments, at any depth of eval, once unquoted.
@@ -184,7 +186,9 @@ def _followed(body: dict, records: tuple[dict, ...], data: bytes) -> dict:
     reading = [node for node in _assignments(body) if any(_reads(part, copies) for part in nodes(node["Value"]))]
     unfollowed = (
         any(_reads(part, copies) and any(map(part.get, PARAMETER_MODIFIERS)) for part in nodes(body))
-        or any(part.get("Param", {}).get("Value") == "argv" for part in nodes(body))
+        or any(part.get("Param", {}).get("Value") in ARGUMENT_ARRAYS for part in nodes(body))
+        or any(part.get("Type") == "ParamExp" and part.get("Excl") for part in nodes(body))
+        or any(_runs_unseen(call, copies, data) for call in _calls(body, data))
         or any(_iterates_arguments(node, copies) for node in nodes(body) if node.get("Type") == "WordIter")
         or any(_reassigns(_program(call, data)) for call in _calls(body, data))
         or any(_copied(node) is None for node in reading)
@@ -278,11 +282,22 @@ def _reads_unquoted(body: dict) -> bool:
 
 
 def _program(call: dict, data: bytes) -> list[str]:
-    """The call's words from the program it runs, past builtin, command, and the options command takes."""
-    words = [source_text(word, data) for word in call["Args"]]
-    while len(words) > 1 and words[0] in BUILTIN_PREFIXES:
+    """The call's words as the shell runs them, from the program on, past builtin, command, and command's options."""
+    return [value for value, _ in _program_words(call, data)]
+
+
+def _runs_unseen(call: dict, copies: dict[str, str], data: bytes) -> bool:
+    """Whether the program is known only at run time, and not from the arguments a respelling supplies."""
+    words = _program_words(call, data)
+    program = call["Args"][len(call["Args"]) - len(words)]
+    return words[0][1] and not any(_reads(part, copies) for part in nodes(program))
+
+
+def _program_words(call: dict, data: bytes) -> list[tuple[str, bool]]:
+    words = [literal_word(word, data) for word in call["Args"]]
+    while len(words) > 1 and words[0][0] in BUILTIN_PREFIXES:
         words = words[1:]
-        while len(words) > 1 and words[0][:1] == "-":
+        while len(words) > 1 and words[0][0][:1] == "-":
             words = words[1:]
     return words
 

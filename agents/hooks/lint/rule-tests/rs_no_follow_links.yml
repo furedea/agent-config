@@ -8,6 +8,8 @@ valid:
     fn crawl(c: Crawler) { c.follow_links(true); }
   - |
     fn crawl() { HttpCrawler::new(url).follow_links(true); }
+  - |
+    fn crawl() { HttpCrawler::new(WalkDir::new(".")).follow_links(true); }
 invalid:
   - |
     fn walk() { WalkDir::new(".").follow_links(true); }

@@ -1,0 +1,31 @@
+# bash-style: every executable script enables `set -euo pipefail` before its first command. Advisory; it was a blocking
+# ast-grep rule (bash_strict_mode_header) until review showed the many equivalent spellings and the execution order of
+# `set` cannot be judged from syntax alone (ADR-0021).
+id: strict-mode-header
+language: Bash
+kind: noul
+subject: node
+state: located
+threshold: 0.5
+axis: file
+severity: warning
+# The whole script, since the header's position relative to the first command is the question. Only a script whose first
+# line is an `sh` or `bash` shebang: a zsh script or a bats test has its own header, and a sourced library has no shebang.
+rule:
+  kind: program
+  has:
+    kind: comment
+    nthChild: 1
+    regex: "^#!.*\\b(ba)?sh\\b"
+ask: >-
+  This script does not enable errexit, nounset and pipefail before its first executable statement, or it turns one of
+  them off for the rest of the script.
+criteria:
+  "true": >-
+    Before the first command that does work, no `set` (in any spelling: `set -euo pipefail`, `set -Eeuo pipefail`,
+    `set -o errexit -o nounset -o pipefail`, or several `set` commands together) has enabled all three options, or a
+    later `set +e`, `set +u` or `set +o pipefail` disables one and nothing re-enables it before the commands that
+    follow.
+  "false": >-
+    All three options are enabled before the first command that does work, and any option that is switched off is
+    switched back on before the commands that depend on it, or the shebang names another interpreter (zsh, bats).

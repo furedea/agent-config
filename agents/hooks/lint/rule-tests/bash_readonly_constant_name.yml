@@ -1,0 +1,34 @@
+id: bash_readonly_constant_name
+valid:
+  - |
+    readonly MAX_RETRY=3
+  - |
+    readonly -a TARGET_DIRS=(a b)
+  - |
+    SCRIPT_DIR="$(pwd)"
+    readonly SCRIPT_DIR
+  - |
+    build() {
+      readonly local_value=1
+    }
+  - |
+    parse_args() { :; }
+    readonly -f parse_args
+  - |
+    input=a
+    readonly OUTPUT="$input"
+  - |
+    input=a
+    readonly OUT=$input OUT2="${input}"
+invalid:
+  - |
+    readonly max_retry=3
+  - |
+    readonly MaxRetry=3
+  - |
+    value=1
+    readonly value
+  - |
+    readonly usage="usage: foo -f FILE"
+  - |
+    readonly listing="$(ls -lf)"

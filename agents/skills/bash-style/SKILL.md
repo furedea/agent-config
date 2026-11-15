@@ -6,28 +6,35 @@ description: >
 
 # Shell Script Coding Style Guidelines
 
-## File Header (every script)
+## Working Directory and Tracing
 
-Start executable Bash scripts with the following interpreter and error-handling defaults:
+- Start every executable script with `#!/usr/bin/env bash`, followed by the strict-mode header:
 
 ```sh
 #!/usr/bin/env bash
-set -euCo pipefail
+set -euo pipefail
 ```
 
-- `#!/usr/bin/env bash` — resolve Bash from `PATH` and run with it explicitly, not with `sh`
-- `set -euCo pipefail`:
     - `-e`: exit on error
     - `-u`: exit on undefined variable reference
-    - `-C`: prohibit overwriting files with `>` (use `>|` to force)
     - `-o pipefail`: fail if any command in a pipe chain fails
+
+  The static shebang rule checks only files that already have one, so a missing shebang is not reported. Enable all
+  three options before the first command that does work; if a section must turn one off, turn it back on afterwards.
 - Choose the working directory by responsibility. Hooks that operate on a project must use the
   target project's working directory. Resolve bundled resources relative to the script's location.
   Use `cd "$(dirname "$0")"` only when all relative operations should use that location.
-- `set -x` prints expanded commands to stderr before execution. Enable tracing only when useful
-  for debugging; keep it disabled by default for scripts handling secrets or user input.
+- `set -x` prints expanded commands to stderr before execution. Keep tracing off by default, and never
+  leave it on for scripts handling secrets or user input. Turn it on without editing the script: run
+  `bash -x ./script.sh`.
+- For a script that is debugged often, this opt-in line may follow the strict-mode header. It is optional, and no
+  rule requires it:
 
-If tracing was explicitly enabled, suppress it around noisy or sensitive sections. Restore it only
+```sh
+if [[ "${TRACE-0}" == "1" ]]; then set -o xtrace; fi
+```
+
+If tracing was enabled, suppress it around noisy or sensitive sections. Restore it only
 when subsequent commands are safe to trace:
 
 ```sh
@@ -38,7 +45,7 @@ set -x
 
 ## usage Function
 
-Every script must define a `usage` function that prints documentation. Use a heredoc inside the function body:
+A script that takes arguments defines a `usage` function that prints its documentation with a heredoc inside its body:
 
 ```sh
 function usage() {
@@ -61,18 +68,15 @@ call `usage >&2` and `exit 1`.
 
 ## Constants
 
-Declare constants with `readonly`. Names use `SCREAMING_SNAKE_CASE`:
+Declare constants with `readonly`:
 
 ```sh
 readonly INPUT_DIR="$SCRIPT_DIR/../data/input"
 readonly MAX_RETRY=3
 ```
 
-Always quote the right-hand side — values may contain spaces or special characters.
-
 ## Variables
 
-- Quote all parameter expansions and string values to guard against word splitting and glob expansion (shellcheck SC2086 catches unquoted uses)
 - Use default values for variables that may be empty or undefined:
     ```sh
     readonly OUTPUT="${1:-output.txt}"   # default value
@@ -82,18 +86,11 @@ Always quote the right-hand side — values may contain spaces or special charac
 
 ## Naming
 
-| Kind            | Convention                          | Example                 |
-| --------------- | ----------------------------------- | ----------------------- |
-| Constants       | `SCREAMING_SNAKE_CASE` + `readonly` | `readonly MAX_RETRY=3`  |
-| Variables       | `snake_case`                        | `input_file="..."`      |
-| Functions       | `snake_case`                        | `function parse_args()` |
-| Local variables | `_snake_case` (leading underscore)  | `local _tmp_dir`        |
-
-Do not start names with a digit.
+Variables use `snake_case`, for example `input_file="..."`.
 
 ## Local Variables
 
-Declare function-local variables with `local` and prefix with `_`:
+Declare function-local variables with `local`:
 
 ```sh
 function build_output() {
@@ -105,7 +102,7 @@ function build_output() {
 
 ## Formatting
 
-Indent with **2 spaces** (Google Shell Style Guide convention). Configure via `.editorconfig` at the project root; `shfmt` reads it automatically. Run `shfmt -d <file>` to check. Common quoting errors are caught by `shellcheck`. The conventions above describe what those tools do not enforce.
+Indent with **2 spaces** (Google Shell Style Guide convention). Configure via `.editorconfig` at the project root; `shfmt` reads it automatically. Run `shfmt -d <file>` to check.
 
 ## Task-Specific References
 

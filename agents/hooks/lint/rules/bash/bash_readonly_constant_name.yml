@@ -1,0 +1,28 @@
+id: bash_readonly_constant_name
+language: bash
+severity: error
+message: "A constant whose name is not SCREAMING_SNAKE_CASE reads as an ordinary variable."
+note: "Rename it, e.g. `readonly max_retry=3` to `readonly MAX_RETRY=3`."
+# Scope: Only `readonly` declarations at script level are checked: inside a function, `local -r` and `readonly` name a local value.
+rule:
+  any:
+    - all:
+        - kind: variable_assignment
+        - has:
+            field: name
+            kind: variable_name
+            regex: ^[^A-Z]|[^A-Z0-9_]
+    - all:
+        - kind: variable_name
+        - regex: ^[^A-Z]|[^A-Z0-9_]
+  inside:
+    kind: declaration_command
+    all:
+      - regex: ^readonly\b
+      # `readonly -f` names a function, not a constant.
+      - not:
+          regex: ^readonly(\s+-[a-zA-Z]+)*\s+-[a-zA-Z]*f\b
+      - not:
+          inside:
+            kind: function_definition
+            stopBy: end

@@ -1,0 +1,30 @@
+id: bash_shebang_env_bash
+valid:
+  - |
+    #!/usr/bin/env bash
+    # an old shebang kept as a comment
+    #!/bin/bash
+    echo hi
+  - |
+    # a comment first
+    #!/bin/sh
+    echo hi
+  - |
+    #!/usr/bin/env bash
+    echo hi
+  - |
+    # not a shebang
+    echo hi
+  - |
+    #!/usr/bin/env bats
+    @test "x" { true; }
+  - |
+    #!/usr/bin/env zsh
+    echo hi
+invalid:
+  - |
+    #!/bin/bash
+    echo hi
+  - |
+    #!/bin/sh
+    echo hi

@@ -1,0 +1,15 @@
+id: bash_shebang_env_bash
+language: bash
+severity: error
+message: "A shebang that names `sh` or a fixed path can run the script with a different or older shell than Bash."
+note: "Make the first line `#!/usr/bin/env bash`."
+# Scope: Only the first node of the file counts as a shebang, so a later `#!` comment is ignored. Only shebangs that name `sh` or `bash` are checked; `bats` and `zsh` files that ast-grep reads as Bash keep their own interpreter. `env` resolves Bash from PATH, and naming `bash` runs the script with Bash and not with `sh`.
+rule:
+  kind: comment
+  nthChild: 1
+  regex: ^#!.*\b(ba)?sh\b
+  not:
+    regex: ^#!/usr/bin/env bash$
+  inside:
+    kind: program
+    stopBy: neighbor

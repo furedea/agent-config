@@ -1,0 +1,60 @@
+id: gha_job_timeout_minutes
+language: yaml
+severity: error
+message: "A hung job without `timeout-minutes` runs for up to 6 hours and burns runner minutes silently."
+note: "Add `timeout-minutes: 10` (or a value that fits the job) to the job."
+files:
+  - "**/.github/workflows/**"
+# Scope: A job that calls a reusable workflow (`uses:`) has no `runs-on` and cannot set it, so it is not checked. A job written as a flow mapping is found by its `runs-on` key alone.
+rule:
+  any:
+    - kind: block_mapping
+      inside:
+        kind: block_node
+        inside:
+          kind: block_mapping_pair
+          inside:
+            kind: block_mapping
+            inside:
+              kind: block_node
+              inside:
+                kind: block_mapping_pair
+                has:
+                  field: key
+                  regex: ^["']?jobs["']?$
+      has:
+        kind: block_mapping_pair
+        has:
+          field: key
+          regex: ^["']?runs-on["']?$
+      not:
+        has:
+          kind: block_mapping_pair
+          has:
+            field: key
+            regex: ^["']?timeout-minutes["']?$
+    - kind: flow_mapping
+      inside:
+        kind: flow_node
+        inside:
+          kind: block_mapping_pair
+          inside:
+            kind: block_mapping
+            inside:
+              kind: block_node
+              inside:
+                kind: block_mapping_pair
+                has:
+                  field: key
+                  regex: ^["']?jobs["']?$
+      has:
+        kind: flow_pair
+        has:
+          field: key
+          regex: ^["']?runs-on["']?$
+      not:
+        has:
+          kind: flow_pair
+          has:
+            field: key
+            regex: ^["']?timeout-minutes["']?$

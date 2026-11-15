@@ -1,0 +1,29 @@
+id: gha_workflow_permissions_deny_all
+language: yaml
+severity: error
+message: "Without a deny-all default, every job gets the repository's default token permissions, which are broader than most jobs need."
+note: "Add `permissions: {}` at the top level, then grant each job only what it needs, e.g. `permissions: { contents: read }`."
+files:
+  - "**/.github/workflows/**"
+rule:
+  kind: block_mapping
+  inside:
+    kind: block_node
+    inside:
+      kind: document
+  has:
+    kind: block_mapping_pair
+    has:
+      field: key
+      regex: ^["']?jobs["']?$
+  not:
+    has:
+      kind: block_mapping_pair
+      all:
+        - has:
+            field: key
+            regex: ^["']?permissions["']?$
+        - has:
+            field: value
+            # An empty flow mapping, possibly with comments inside, or an alias that is resolved elsewhere.
+            regex: ^(\{(\s|#[^\n]*)*\}|\*\S+)$

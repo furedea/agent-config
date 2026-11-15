@@ -1,0 +1,56 @@
+# github-actions-style: "grant only what each job actually requires". Advisory; the prose stays until the rule is
+# promoted (ADR-0021).
+id: job-permissions-least-privilege
+language: Yaml
+kind: noul
+subject: node
+state: located
+threshold: 0.5
+axis: file
+severity: warning
+# A `permissions:` value that grants something, a mapping or `read-all` / `write-all`; `permissions: {}` grants nothing.
+rule:
+  all:
+    - kind: block_mapping_pair
+    - has: { field: key, regex: "^[\"']?permissions[\"']?$" }
+    - has: { field: value, not: { regex: "^\\{\\s*\\}$" } }
+    # Only the workflow's own `permissions:` or a job's: a direct key of the top-level mapping of a file that has `jobs`,
+    # or of a job mapping. An action input named `permissions` under `with:` is neither.
+    - any:
+        - inside:
+            kind: block_mapping
+            inside:
+              kind: block_node
+              inside:
+                kind: document
+                has:
+                  kind: block_node
+                  has:
+                    kind: block_mapping
+                    has:
+                      kind: block_mapping_pair
+                      has: { field: key, regex: "^jobs$" }
+        - inside:
+            kind: block_mapping
+            inside:
+              kind: block_node
+              inside:
+                kind: block_mapping_pair
+                inside:
+                  kind: block_mapping
+                  inside:
+                    kind: block_node
+                    inside:
+                      kind: block_mapping_pair
+                      has: { field: key, regex: "^jobs$" }
+ask: >-
+  This `permissions` block grants a scope or an access level that the steps of the job (or of every job, at the workflow
+  level) do not use.
+criteria:
+  "true": >-
+    A granted scope has no step that needs it (no checkout for `contents`, no comment or review call for
+    `pull-requests`, no OIDC use for `id-token`, no push or release for `contents: write`), or write access is granted
+    where read is enough.
+  "false": >-
+    Each granted scope is used by a step of the job, with the lowest level that step needs, or the grant is needed by a
+    reusable workflow that the job calls and that the file names.

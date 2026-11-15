@@ -1,0 +1,12 @@
+id: bash_function_name_snake_case
+language: bash
+severity: error
+message: "A function name that is not snake_case breaks the naming convention that every caller relies on."
+note: "Rename it in snake_case, e.g. `parseArgs()` or `parse-args()` to `parse_args()`."
+rule:
+  kind: function_definition
+  has:
+    field: name
+    kind: word
+    not:
+      regex: ^[a-z_][a-z0-9_]*$

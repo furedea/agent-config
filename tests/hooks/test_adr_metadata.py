@@ -32,7 +32,7 @@ def adr_directory(tmp_path: Path) -> Path:
 
 
 def messages(directory: Path) -> str:
-    return "\n".join(adr_metadata.diagnostics([next(directory.glob("0001_*.md"))]))
+    return "\n".join(adr_metadata.diagnostics(sorted(directory.glob("*.md"))))
 
 
 def test_conforming_directory_is_silent(adr_directory: Path) -> None:
@@ -147,6 +147,26 @@ def test_readme_and_non_adr_directories_are_ignored(adr_directory: Path, tmp_pat
     (other / "bad name.md").write_text("no title\n")
     assert adr_metadata.diagnostics([adr_directory / "README.md", other / "bad name.md"]) == ()
     assert messages(adr_directory) == ""
+
+
+def test_reference_after_a_joining_word_is_checked(adr_directory: Path) -> None:
+    write_adr(adr_directory, "0003_third_decision.md", extra="- Refines: ADR-0001 and ADR-0042\n")
+    assert "Refines names ADR-0042" in messages(adr_directory)
+
+
+def test_violations_of_adrs_the_edit_did_not_touch_are_not_reported(adr_directory: Path) -> None:
+    write_adr(adr_directory, "0001_first_decision.md", status="Draft")
+    assert adr_metadata.diagnostics([adr_directory / "0002_second_decision.md"]) == ()
+
+
+def test_supersession_is_reported_when_either_side_is_edited(adr_directory: Path) -> None:
+    write_adr(adr_directory, "0003_third_decision.md", extra="- Supersedes: ADR-0001\n")
+    assert adr_metadata.diagnostics([adr_directory / "0001_first_decision.md"]) != ()
+
+
+def test_duplicate_id_is_reported_when_either_file_is_edited(adr_directory: Path) -> None:
+    other = write_adr(adr_directory, "0002_other_decision.md")
+    assert adr_metadata.diagnostics([other]) != ()
 
 
 def test_this_repositorys_adr_history_conforms() -> None:

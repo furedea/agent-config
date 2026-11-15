@@ -16,7 +16,8 @@ TITLE = re.compile(r"# ADR-(\d{4}): \S.*")
 METADATA = re.compile(r"- ([A-Za-z][A-Za-z ]*): ?(.*)")
 AMENDED = re.compile(r"\d{4}-\d{2}-\d{2} \(.+\)")
 # A reference qualified by a repository word, such as `dotfiles ADR-0016`, names another repository's ADR.
-LOCAL_REFERENCE = re.compile(r"(?<![\w/.-] )(?<![\w/.-])ADR-(\d{4})(?!\d)")
+REFERENCE = re.compile(r"(?:\[?([A-Za-z][\w/.-]*) )?ADR-(\d{4})(?!\d)")
+JOINERS = frozenset({"and", "or", "to", "by", "with", "of", "in", "from", "see"})
 EXEMPT_NAMES = frozenset({"README.md"})
 
 
@@ -27,6 +28,7 @@ class Finding:
     path: Path
     line: int
     message: str
+    also_involves: tuple[Path, ...] = ()
 
     def describe(self) -> str:
         """Format the finding like the other hook diagnostics."""
@@ -50,10 +52,11 @@ class Adr:
     def references(self, key: str) -> list[tuple[int, str]]:
         """Return the line and ID of every local ADR reference in the entries named `key`."""
         return [
-            (line, match.group(1))
+            (line, match.group(2))
             for line, name, value in self.metadata
             if name == key
-            for match in LOCAL_REFERENCE.finditer(value)
+            for match in REFERENCE.finditer(value)
+            if match.group(1) is None or match.group(1) in JOINERS
         ]
 
     def report(self, line: int, message: str) -> None:
@@ -62,9 +65,19 @@ class Adr:
 
 
 def diagnostics(paths: Iterable[Path]) -> tuple[str, ...]:
-    """Describe violations in every ADR directory that holds one of the edited files; stay silent otherwise."""
-    directories = dict.fromkeys(path.parent for path in paths if is_adr_file(path))
-    findings = (finding for directory in directories for finding in check_directory(directory))
+    """Describe the violations that involve an edited ADR; stay silent for other files and for clean ADRs.
+
+    The whole directory is read, because uniqueness, references and supersession span files, but a violation in an
+    ADR the edit did not touch is not reported, so a repository with another ADR convention is not flooded.
+    """
+    edited = {path.resolve() for path in paths if is_adr_file(path)}
+    directories = dict.fromkeys(path.parent for path in edited)
+    findings = (
+        finding
+        for directory in directories
+        for finding in check_directory(directory)
+        if edited & {finding.path.resolve(), *(p.resolve() for p in finding.also_involves)}
+    )
     return tuple(finding.describe() for finding in sorted(findings, key=lambda f: (f.path, f.line, f.message)))
 
 
@@ -153,7 +166,12 @@ def duplicate_identifiers(adrs: list[Adr]) -> list[Finding]:
         if adr.identifier is not None:
             by_identifier[adr.identifier].append(adr)
     return [
-        Finding(adr.path, 1, f"ID {identifier} is used by more than one ADR: {', '.join(a.path.name for a in same)}.")
+        Finding(
+            adr.path,
+            1,
+            f"ID {identifier} is used by more than one ADR: {', '.join(a.path.name for a in same)}.",
+            tuple(a.path for a in same),
+        )
         for identifier, same in by_identifier.items()
         if len(same) > 1
         for adr in same
@@ -174,10 +192,15 @@ def unknown_references(adrs: list[Adr]) -> list[Finding]:
 
 def unsuperseded_targets(adrs: list[Adr]) -> list[Finding]:
     """Report an ADR named by `Supersedes` whose own Status is not `Superseded`."""
-    statuses = {adr.identifier: adr.values("Status") for adr in adrs}
+    by_identifier = {adr.identifier: adr for adr in adrs}
     return [
-        Finding(adr.path, line, f"ADR-{identifier} is superseded here, so its Status must be `Superseded`.")
+        Finding(
+            adr.path,
+            line,
+            f"ADR-{identifier} is superseded here, so its Status must be `Superseded`.",
+            (by_identifier[identifier].path,),
+        )
         for adr in adrs
         for line, identifier in adr.references("Supersedes")
-        if identifier in statuses and "Superseded" not in statuses[identifier]
+        if identifier in by_identifier and "Superseded" not in by_identifier[identifier].values("Status")
     ]

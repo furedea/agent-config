@@ -80,7 +80,6 @@ def check_directory(directory: Path) -> list[Finding]:
     findings += duplicate_identifiers(adrs)
     findings += unknown_references(adrs)
     findings += unsuperseded_targets(adrs)
-    findings += skipped_identifiers(adrs)
     return findings
 
 
@@ -182,16 +181,3 @@ def unsuperseded_targets(adrs: list[Adr]) -> list[Finding]:
         for line, identifier in adr.references("Supersedes")
         if identifier in statuses and "Superseded" not in statuses[identifier]
     ]
-
-
-def skipped_identifiers(adrs: list[Adr]) -> list[Finding]:
-    """Report the newest ADR when its ID skips numbers, but only while the earlier history has no gap."""
-    numbers = sorted({int(adr.identifier) for adr in adrs if adr.identifier is not None})
-    if len(numbers) < 3 or numbers[-1] - numbers[-2] == 1:
-        return []
-    earlier = numbers[:-1]
-    if earlier != list(range(earlier[0], earlier[-1] + 1)):
-        return []
-    skipped = numbers[-1] - numbers[-2] - 1
-    message = f"ID {numbers[-1]:04d} skips {skipped} number(s) after ADR-{numbers[-2]:04d}."
-    return [Finding(adr.path, 1, message) for adr in adrs if adr.identifier == f"{numbers[-1]:04d}"]

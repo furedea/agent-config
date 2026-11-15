@@ -134,13 +134,7 @@ def test_multi_line_entry_continues_on_indented_lines(adr_directory: Path) -> No
     assert "Supersedes names ADR-0042" in messages(adr_directory)
 
 
-def test_new_adr_that_skips_an_id_is_reported_while_history_has_no_gap(adr_directory: Path) -> None:
-    write_adr(adr_directory, "0003_third_decision.md")
-    write_adr(adr_directory, "0005_fifth_decision.md")
-    assert "ID 0005 skips 1 number(s) after ADR-0003" in messages(adr_directory)
-
-
-def test_existing_gaps_are_not_reported(adr_directory: Path) -> None:
+def test_gaps_in_ids_are_not_reported_because_parallel_branches_reserve_numbers(adr_directory: Path) -> None:
     write_adr(adr_directory, "0004_fourth_decision.md")
     write_adr(adr_directory, "0006_sixth_decision.md")
     assert messages(adr_directory) == ""

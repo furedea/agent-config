@@ -13,7 +13,7 @@ rule:
     - kind: function_item
     - follows:
         kind: attribute_item
-        regex: ^#\[((([A-Za-z_][A-Za-z0-9_]*::)*test)|rstest|test_case)\b
+        regex: ^#\[(cfg_attr\([^\]]*,\s*)?((([A-Za-z_][A-Za-z0-9_]*::)*test)|rstest|test_case)\b
         stopBy:
           not:
             any:

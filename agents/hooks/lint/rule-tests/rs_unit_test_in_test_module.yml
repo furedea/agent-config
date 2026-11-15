@@ -39,3 +39,9 @@ invalid:
   - |
     #[rstest]
     fn works() {}
+  - |
+    #[cfg_attr(test, test)]
+    fn works() {}
+  - |
+    #[cfg_attr(feature = "tokio", tokio::test)]
+    async fn works() {}

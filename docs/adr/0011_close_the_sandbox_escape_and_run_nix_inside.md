@@ -1,9 +1,10 @@
-# ADR-0011: Close the sandbox escape and run Nix inside
+---
+status: accepted
+date: 2026-10-17
+related: [dotfiles/ADR-0038, ADR-0013]  # ADR-0013: who supplies the token
+---
 
-- Status: Accepted
-- Date: 2026-10-17
-- Originally: furedea/dotfiles ADR-0038
-- Related: [ADR-0013](0013_let_the_host_supply_the_agent_github_token.md) (who supplies the token)
+# ADR-0011: Close the sandbox escape and run Nix inside
 
 In the context of [ADR-0009](0009_review_only_commands_that_reach_past_the_sandbox.md), which
 reserves prompts for effects the sandbox cannot contain, facing sessions that read an empty

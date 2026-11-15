@@ -1,9 +1,11 @@
-# ADR-0003: Register verification in native hooks
+---
+status: accepted
+date: 2026-09-16
+supersedes: [ADR-0002]
+related: [dotfiles/ADR-0029]
+---
 
-- Status: Accepted
-- Date: 2026-09-16
-- Originally: furedea/dotfiles ADR-0029
-- Supersedes: ADR-0002
+# ADR-0003: Register verification in native hooks
 
 In the context of automatic verification for Claude Code and Codex, facing the
 maintenance cost and CLI restrictions of a custom launcher, we decided for

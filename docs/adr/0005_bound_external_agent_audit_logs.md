@@ -1,8 +1,10 @@
-# ADR-0005: Bound external agent audit logs
+---
+status: accepted
+date: 2026-09-18
+related: [dotfiles/ADR-0032]
+---
 
-- Status: Accepted
-- Date: 2026-09-18
-- Originally: furedea/dotfiles ADR-0032
+# ADR-0005: Bound external agent audit logs
 
 In the context of native Claude Code and Codex hook observations, facing repository-local logs
 that could retain prompts, commands, patches, URLs, and unbounded history, we decided for

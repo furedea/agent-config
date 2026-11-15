@@ -1,7 +1,9 @@
-# ADR-0014: Check the agent-harness download against its release checksum
+---
+status: accepted
+date: 2026-10-24
+---
 
-- Status: Accepted
-- Date: 2026-10-24
+# ADR-0014: Check the agent-harness download against its release checksum
 
 In the context of the server bootstrap that
 [ADR-0012](0012_keep_the_personal_agent_source_in_its_own_repository.md) kept with hash-unverified

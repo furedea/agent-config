@@ -1,9 +1,11 @@
-# ADR-0009: Review only commands that reach past the sandbox
+---
+status: accepted
+date: 2026-10-17
+supersedes: [ADR-0007]
+related: [dotfiles/ADR-0036]
+---
 
-- Status: Accepted
-- Date: 2026-10-17
-- Originally: furedea/dotfiles ADR-0036
-- Supersedes: ADR-0007
+# ADR-0009: Review only commands that reach past the sandbox
 
 In the context of the sandbox tiers from
 [ADR-0007](0007_ask_only_for_effects_that_escape_the_sandbox.md) and agent git running inside the

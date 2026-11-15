@@ -1,8 +1,10 @@
-# ADR-0020: Adopt jev-lint behind the judgement backend abstraction
+---
+status: proposed
+date: 2026-11-07
+partly-superseded-by: [ADR-0021]
+---
 
-- Status: Proposed
-- Date: 2026-11-07
-- Partly superseded by: ADR-0021
+# ADR-0020: Adopt jev-lint behind the judgement backend abstraction
 
 > **Note (ADR-0021).** ADR-0021 replaces two parts of this decision: the run mode (`npx` over a Nix-provided Node;
 > `jev-lint` is now built and pinned through Nix as `packages.<system>.jev-lint` in agent-config) and the judgement

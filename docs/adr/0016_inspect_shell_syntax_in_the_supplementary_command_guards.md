@@ -1,9 +1,10 @@
-# ADR-0016: Inspect shell syntax in the supplementary command guards
+---
+status: accepted
+date: 2026-10-24
+related: [dotfiles/ADR-0026, ADR-0015]  # dotfiles/ADR-0026: the command-guard paragraph was the origin; ADR-0015: what the guards judge
+---
 
-- Status: Accepted
-- Date: 2026-10-24
-- Originally: the command-guard paragraph of furedea/dotfiles ADR-0026
-- Related: [ADR-0015](0015_judge_only_statically_determinable_shell_text_in_the_guards.md) (what the guards judge)
+# ADR-0016: Inspect shell syntax in the supplementary command guards
 
 In the context of personal hooks that decide whether an agent's shell command may run, facing
 provider permission rules that match command prefixes and cannot see what a pipeline, a redirection,

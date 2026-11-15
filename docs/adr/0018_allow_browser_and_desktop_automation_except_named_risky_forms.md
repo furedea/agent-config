@@ -1,8 +1,10 @@
-# ADR-0018: Allow browser and desktop automation except named risky forms
+---
+status: accepted
+date: 2026-11-03
+related: [ADR-0009]  # refines
+---
 
-- Status: Accepted
-- Date: 2026-11-03
-- Refines: ADR-0009
+# ADR-0018: Allow browser and desktop automation except named risky forms
 
 In the context of `agent-browser` and `agent-desktop` working only outside the Claude sandbox and
 being called many times in a row, facing either a prompt on every call or no review at all, we

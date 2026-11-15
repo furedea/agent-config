@@ -1,9 +1,10 @@
-# ADR-0012: Keep the personal agent source in its own repository
+---
+status: accepted
+date: 2026-10-24
+related: [dotfiles/ADR-0016, dotfiles/ADR-0030]  # both superseded by this ADR (other repository)
+---
 
-- Status: Accepted
-- Date: 2026-10-24
-- Supersedes: [dotfiles ADR-0016](https://github.com/furedea/dotfiles/blob/main/docs/adr/0016_own_personal_agent_source.md),
-  [dotfiles ADR-0030](https://github.com/furedea/dotfiles/blob/main/docs/adr/0030_bootstrap_the_agent_harness_on_servers_without_nix.md)
+# ADR-0012: Keep the personal agent source in its own repository
 
 In the context of the personal agent-harness source that `furedea/dotfiles` ADR-0016 placed under
 `agents/` and that ADR-0030 deployed to servers without Nix by cloning dotfiles, facing hosts that

@@ -1,8 +1,10 @@
-# ADR-0017: Ask for every docker form the allowlist does not list
+---
+status: accepted
+date: 2026-10-28
+related: [ADR-0009]  # refines
+---
 
-- Status: Accepted
-- Date: 2026-10-28
-- Refines: ADR-0009
+# ADR-0017: Ask for every docker form the allowlist does not list
 
 In the context of `docker *` running outside the Claude sandbox and docker reaching host files
 through `-v`, `--mount`, `cp`, `--env-file`, build contexts, compose files, and bind-backed named

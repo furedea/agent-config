@@ -400,3 +400,24 @@ def test_a_patch_that_names_one_file_twice_asks(tmp_path: Path) -> None:
         f"*** Add File: {target}\n+x = 2\n*** End Patch"
     )
     assert decide("apply_patch", {"input": patch}) == "ask"
+
+
+def test_a_marker_that_is_a_comment_only_in_the_middle_of_the_moved_file_asks(tmp_path: Path) -> None:
+    """A carried marker counts by itself, not by how its line parses when cut out of the file."""
+    source = tmp_path / "tool.py"
+    source.write_text('x = 1\ns = """\n"""  // nolint\n')
+    patch = f"*** Begin Patch\n*** Update File: {source}\n*** Move to: {tmp_path / 'tool.go'}\n*** End Patch"
+    assert decide("apply_patch", {"input": patch}) == "ask"
+
+
+@pytest.mark.parametrize(
+    "second",
+    ["*** Add File: {dir}/./app.py\n+x = 2\n", "*** Update File: {dir}/other.py\n*** Move to: {dir}/app.py\n"],
+    ids=["same file through another spelling", "another file moved onto it"],
+)
+def test_a_patch_that_reaches_one_file_twice_asks(tmp_path: Path, second: str) -> None:
+    (tmp_path / "app.py").write_text("x = 1\n")
+    (tmp_path / "other.py").write_text("y = 1\n")
+    first = f"*** Update File: {tmp_path}/app.py\n@@\n-x = 1\n+x = 2\n"
+    patch = f"*** Begin Patch\n{first}{second.format(dir=tmp_path)}*** End Patch"
+    assert decide("apply_patch", {"input": patch}) == "ask"

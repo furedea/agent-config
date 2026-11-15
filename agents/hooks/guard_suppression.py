@@ -8,6 +8,7 @@ marker is compared by its text, so changing the rules it names asks too.
 """
 
 import json
+import os
 import re
 import sys
 from collections import Counter
@@ -54,6 +55,7 @@ CODE_MARKERS = frozenset({"allow or expect attribute"})
 # An ast-grep marker on the first line followed by a blank line suppresses its rules for the whole file.
 FILE_SCOPE = "ast-grep-ignore for the whole file"
 UNPLACED = "a suppression in a file the guard could not rebuild"
+MOVED_IN = "a suppression that takes effect where the file moves"
 PATCH_FILE = re.compile(r"^\*\*\* (Add|Update) File: (.+)$")
 PATCH_MOVE = re.compile(r"^\*\*\* Move to: (.+)$")
 
@@ -71,6 +73,7 @@ class _Change:
     removed: str
     whole: bool = False
     unplaced: bool = False
+    moved_in: bool = False
 
 
 def decide(payload: dict) -> Verdict:
@@ -100,6 +103,8 @@ def _new_markers(change: _Change) -> list[str]:
         found.append(FILE_SCOPE)
     if change.unplaced:
         found.append(UNPLACED)
+    if change.moved_in:
+        found.append(MOVED_IN)
     return found
 
 
@@ -226,22 +231,46 @@ def _patch_changes(patch: str) -> list[_Change]:
 
     A moved file is judged at its destination too, where markers the source's file type did not honor take effect.
     """
-    hunks: dict[str, _Hunks] = {}
+    files = _PatchFiles()
     current: _Hunks | None = None
     for line in _lines(patch):
         if match := PATCH_FILE.match(line):
-            path = str(Path(match.group(2).strip()))
-            # A file named twice is applied in an order this does not model, so it fails closed.
-            repeated = path in hunks
-            current = hunks.setdefault(path, _Hunks(added=match.group(1) == "Add"))
-            current.repeated = current.repeated or repeated
+            current = files.start(match.group(2).strip(), added=match.group(1) == "Add")
         elif current is not None and (move := PATCH_MOVE.match(line)):
-            current.destination = move.group(1).strip()
+            files.move(current, move.group(1).strip())
         elif line.startswith("*** ") and line != patch_input.END_OF_FILE:
             current = None
         elif current is not None:
             current.lines.append(line)
-    return [change for path, file_hunks in hunks.items() for change in file_hunks.changes(path)]
+    return [change for path, file_hunks in files.sections.items() for change in file_hunks.changes(path)]
+
+
+@dataclass(slots=True)
+class _PatchFiles:
+    """The file sections of a patch, keyed by the path each names.
+
+    A file reached twice, as a section or a move destination under any spelling, is applied in an order this does
+    not model, so its sections are marked repeated and fail closed.
+    """
+
+    sections: dict[str, _Hunks] = field(default_factory=dict)
+    owners: dict[str, _Hunks] = field(default_factory=dict)
+
+    def start(self, path: str, *, added: bool) -> _Hunks:
+        """Begin the section of a file, or mark the section that already reaches it as repeated."""
+        owner = self.owners.get(os.path.realpath(path))
+        if owner is not None:
+            owner.repeated = True
+            return owner
+        self.sections[path] = self.owners[os.path.realpath(path)] = _Hunks(added=added)
+        return self.sections[path]
+
+    def move(self, hunks: _Hunks, destination: str) -> None:
+        """Record where a section's file moves, marking both sections when another already reaches it."""
+        hunks.destination = destination
+        owner = self.owners.setdefault(os.path.realpath(destination), hunks)
+        if owner is not hunks:
+            owner.repeated = hunks.repeated = True
 
 
 @dataclass(slots=True)
@@ -258,8 +287,11 @@ class _Hunks:
         source = self._source(path, existing)
         if not self.destination:
             return [source]
-        carried = _newly_honored(existing, Path(path).suffix, Path(self.destination).suffix)
-        destination = _Change(self.destination, f"{carried}\n{source.added}", source.removed, unplaced=source.unplaced)
+        # A carried marker counts by itself; cut out of the file, its line could parse differently.
+        moved_in = bool(_newly_honored(existing, Path(path).suffix, Path(self.destination).suffix))
+        destination = _Change(
+            self.destination, source.added, source.removed, source.whole, source.unplaced, moved_in=moved_in
+        )
         return [source, destination]
 
     def _source(self, path: str, existing: str) -> _Change:

@@ -91,8 +91,6 @@ HOOK_SKIPPING_VALUED = {
     "rebase": frozenset("-s -X -x -C --strategy --strategy-option --exec --onto --whitespace --empty".split()),
 }
 """The valued options of the hook-skipping verbs that VALUED_OPTIONS does not list."""
-HOOK_ENABLING_OPTIONS = frozenset({"--verify", "--post-rewrite"})
-"""The opposites of the skipping options: the last of an option and its opposite decides whether the hook runs."""
 ATTACHED_VALUE_FLAGS = {"commit": frozenset({"-u", "-S"}), "am": frozenset({"-S"})}
 """The short flags whose optional value is only read when attached, so the rest of a cluster is that value."""
 HOOK_CONFIG_PREFIXES = ("alias.", "include.", "includeif.")
@@ -233,54 +231,48 @@ def hook_config_key(globals_: tuple[str, ...]) -> str:
 
 
 def hook_skipping_option(verb: str, arguments: tuple[str, ...]) -> str:
-    """The skipping option of the verb that is still in effect at the end, reading option values as data.
+    """The first skipping option of the verb, reading option values as data; empty when there is none.
 
-    A later --verify or --post-rewrite switches the hook back on, as Git reads it; empty when every hook runs.
+    A later --verify or --post-rewrite does not clear it: an option this module does not know could take that
+    word as its value, so a skip is never taken back.
     """
     skipping = HOOK_SKIPPING_OPTIONS.get(verb, set())
     valued = VALUED_OPTIONS.get(verb, frozenset()) | HOOK_SKIPPING_VALUED.get(verb, frozenset())
     attached = ATTACHED_VALUE_FLAGS.get(verb, frozenset())
-    in_effect: dict[str, str] = {}
     takes_value = False
     for argument in arguments:
         if takes_value:
             takes_value = False
         elif argument == "--":
             break
+        elif option := skipped_in(argument, skipping, valued | attached):
+            return option
         else:
-            in_effect.update(toggles_in(argument, skipping, valued | attached))
             takes_value = reads_next_value(argument, argument, valued) and not attached_value(argument, attached)
-    return next((option for option in in_effect.values() if option), "")
+    return ""
 
 
-def toggles_in(argument: str, skipping: set[str], reading_value: frozenset[str]) -> dict[str, str]:
-    """The hook switches an argument sets, keyed by hook: the skipping option spelled, or empty when enabled.
+def skipped_in(argument: str, skipping: set[str], reading_value: frozenset[str]) -> str:
+    """The skipping option an argument spells: a long option or its abbreviation, or a short flag in a cluster.
 
     A flag in reading_value ends a short cluster, since the rest of it is that flag's value.
     """
     if argument.startswith("--"):
         key = argument.split("=", 1)[0]
-        if key in HOOK_ENABLING_OPTIONS:
-            return {hook_of(key): ""}
-        return {hook_of(name): name for name in sorted(skipping) if abbreviates(key, name)}
+        return next((name for name in sorted(skipping) if abbreviates(key, name)), "")
     if not re.fullmatch(r"-[A-Za-z0-9]+", argument):
-        return {}
+        return ""
     for flag in argument[1:]:
         if f"-{flag}" in reading_value:
-            return {}
+            return ""
         if f"-{flag}" in skipping:
-            return {hook_of(f"-{flag}"): f"-{flag}"}
-    return {}
+            return f"-{flag}"
+    return ""
 
 
 def attached_value(argument: str, attached: frozenset[str]) -> bool:
     """Whether a short cluster ends in a flag that only reads an attached value, so it leaves the next word alone."""
     return bool(re.fullmatch(r"-[A-Za-z0-9]+", argument)) and any(f"-{flag}" in attached for flag in argument[1:])
-
-
-def hook_of(option: str) -> str:
-    """Which hook an option switches: the post-rewrite hook, or else the verification hooks."""
-    return "post-rewrite" if "post-rewrite" in option else "verify"
 
 
 def abbreviates(key: str, name: str) -> bool:

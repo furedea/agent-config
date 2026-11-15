@@ -14,6 +14,15 @@ rule:
   all:
     - kind: block_mapping_pair
     - has: { field: key, regex: "^[\"']?run[\"']?$" }
+    # Only a GitHub Actions file: a rule cannot be scoped by path, so the document must carry a `runs-on` (a workflow job)
+    # or `using` (a composite action) key. A CircleCI or GitLab file with `run:` steps has neither.
+    - inside:
+        kind: document
+        stopBy: end
+        has:
+          stopBy: end
+          kind: block_mapping_pair
+          has: { field: key, regex: "^[\"']?(runs-on|using)[\"']?$" }
     # A key of a step mapping itself, not of a nested `with:` or `env:` mapping.
     - inside:
         kind: block_mapping
@@ -29,4 +38,4 @@ criteria:
     word `pipefail`, for example as an environment variable name, does not count.
   "false": >-
     The workflow or the job sets `defaults.run.shell: bash` (or a custom shell that enables `pipefail`), or the step
-    sets such a `shell:` itself, or the runner is Windows and the step needs PowerShell.
+    sets such a `shell:` itself, or the runner is Windows and the step needs PowerShell, or the file is not a GitHub Actions workflow or composite action (for example CircleCI or GitLab CI).

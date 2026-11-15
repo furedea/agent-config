@@ -53,6 +53,7 @@ def inspect(command: str) -> Verdict:
     for item in commands:
         if reason := _hook_bypass(item):
             raise ValueError(reason)
+    for item in commands:
         if _hides_verdict(item):
             preview = shell_syntax.command_preview(item.raw)
             return hook_decision.ask(

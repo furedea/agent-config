@@ -172,3 +172,15 @@ def test_a_settled_hook_skip_is_denied_even_beside_a_run_time_word(command: str)
 @pytest.mark.usefixtures("isolated_project")
 def test_a_run_time_operand_without_a_forbidden_option_is_still_reviewed() -> None:
     assert guard.decide({"tool_input": {"command": 'git merge "$BRANCH"'}}).decision == "ask"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        'git merge "$BRANCH"; git commit -n -m x',
+        'git push origin "$B" && git commit --no-verify -m x',
+    ],
+)
+@pytest.mark.usefixtures("isolated_project")
+def test_a_hook_skip_in_a_later_segment_is_denied_before_an_earlier_review(command: str) -> None:
+    assert guard.decide({"tool_input": {"command": command}}).decision == "deny"

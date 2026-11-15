@@ -70,7 +70,10 @@ def _advise(record: SessionRecord, stop_hook_active: bool, deadline: model_rules
         return stop.judged()
     resume = model_rules_resume.load(receipt.get("resume"))
     if resume is None:
-        return stop.answered_from(receipt)
+        advice = stop.answered_from(receipt)
+        if advice.blocking:
+            _save(record, {**receipt, "outcome": SHOWN})
+        return advice
     return replace(stop, shown=_shown(receipt)).judged(resume)
 
 
@@ -105,10 +108,7 @@ class _Stop:
 
     def answered_from(self, receipt: dict) -> Advice:
         """The advice a complete receipt for the same inputs gives; findings not shown yet block, once."""
-        advice = _answer_from(receipt, self.stop_hook_active)
-        if advice.blocking:
-            _save(self.record, {**receipt, "outcome": SHOWN})
-        return advice
+        return _answer_from(receipt, self.stop_hook_active)
 
     def _receipt(self, outcome: Judgement, seen: int) -> dict:
         """What a later Stop on the same inputs reuses, and the measurements that let the timing be studied.

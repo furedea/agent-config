@@ -44,21 +44,21 @@ def load(record: object) -> Resume | None:
 
 def _finding(item: dict) -> Finding:
     if not isinstance(item, dict):
-        raise TypeError("a finding must be an object")
+        raise TypeError("reading a resume from the receipt: a finding must be an object")
     rule, file, message = item["rule"], item["file"], item["message"]
     if not all(isinstance(text, str) for text in (rule, file, message)):
-        raise TypeError("finding fields must be strings")
+        raise TypeError("reading a resume from the receipt: finding fields must be strings")
     scores = tuple(None if item[key] is None else _number(item[key]) for key in ("score", "cutoff"))
     return Finding(rule, file, _integer(item["line"]), message, *scores)
 
 
 def _integer(value: object) -> int:
     if isinstance(value, bool) or not isinstance(value, int):
-        raise TypeError("an integer is required")
+        raise TypeError(f"reading a resume from the receipt: expected an integer, got {value!r}")
     return value
 
 
 def _number(value: object) -> float:
     if isinstance(value, bool) or not isinstance(value, int | float):
-        raise TypeError("a number is required")
+        raise TypeError(f"reading a resume from the receipt: expected a number, got {value!r}")
     return float(value)

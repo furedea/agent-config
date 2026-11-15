@@ -158,6 +158,9 @@ def _project_reason(payload: dict) -> str:
         return "runs outside a repository"
     for folder in (directory, *directory.parents):
         found = [folder / name for name in PROJECT_SETTINGS if (folder / name).exists()]
+        linked = [path for path in [*found, folder / "uv.lock"] if os.path.lexists(path)]
+        if any(not path.resolve().is_relative_to(root.resolve()) for path in linked if folder.is_relative_to(root)):
+            return f"would write a project file in {folder} that links outside the worktree"
         if found and not folder.is_relative_to(root):
             return f"may resolve the project at {folder}, outside the worktree"
         if any(_sets_age_limit(path) for path in found):
@@ -267,4 +270,4 @@ def _is_companion(item: shell_syntax.Command) -> bool:
 
 
 def _has_assignment(item: shell_syntax.Command) -> bool:
-    return not item.raw.lstrip().startswith(item.words[0])
+    return shell_inspection.has_prefix_assignment(item.raw, item.words[0])

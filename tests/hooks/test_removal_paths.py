@@ -5,7 +5,7 @@ import tempfile
 from pathlib import Path
 
 import pytest
-from tests.hooks.system_programs import trust_directory, use_own_program, use_system_programs
+from tests.hooks.system_programs import system_programs, trust_directory, use_own_program, use_system_programs
 from tests.runtime import load_script_module
 
 guard = load_script_module("agents/hooks/guard_command.py", "guard_command")
@@ -248,7 +248,14 @@ def test_a_program_found_in_a_directory_the_session_writes_asks(
 
 @pytest.mark.parametrize(
     "command",
-    ["PATH=.venv/bin rm scratch.txt", "LD_PRELOAD=./x.so rm scratch.txt"],
+    [
+        "PATH=.venv/bin rm scratch.txt",
+        "LD_PRELOAD=./x.so rm scratch.txt",
+        "rmx=1 rm scratch.txt",
+        "PATH=.venv/bin; rm scratch.txt",
+        "export PATH=.venv/bin; rm scratch.txt",
+        "LD_PRELOAD=./x.so; rm scratch.txt",
+    ],
 )
 def test_an_rm_whose_program_the_command_can_change_asks(git_project: Path, command: str) -> None:
     assert judged(git_project, command) == "ask"
@@ -277,3 +284,8 @@ def test_a_builtin_name_behind_an_external_wrapper_is_looked_up_on_path(
     use_own_program(git_project / ".venv" / "bin", monkeypatch, "echo")
     assert judged(git_project, "echo hi && rm scratch.txt") == "allow"
     assert judged(git_project, "nohup echo hi && rm scratch.txt") == "ask"
+
+
+def test_a_root_session_trusts_no_program_by_its_owner(git_project: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(system_programs.os, "geteuid", lambda: 0)
+    assert judged(git_project, "rm scratch.txt") == "ask"

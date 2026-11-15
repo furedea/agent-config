@@ -284,3 +284,17 @@ def test_a_user_configuration_that_adds_a_source_asks(git_project: Path, setting
     config = Path(os.environ["XDG_CONFIG_HOME"]) / "uv" / "uv.toml"
     config.write_text(f'exclude-newer = "1 week"\n{setting}\n')
     assert judged(git_project, "uv add httpx", "allowed") == "ask"
+
+
+@pytest.mark.parametrize("name", ["pyproject.toml", "uv.toml", "uv.lock"])
+def test_a_project_file_linked_outside_the_worktree_asks(
+    git_project: Path, tmp_path_factory: pytest.TempPathFactory, name: str
+) -> None:
+    outside = tmp_path_factory.mktemp("outside") / name
+    outside.write_text('[project]\nname = "x"\n' if name == "pyproject.toml" else "")
+    (git_project / name).symlink_to(outside)
+    assert judged(git_project, "uv add httpx", "allowed") == "ask"
+
+
+def test_a_prefix_lookalike_assignment_before_uv_asks(git_project: Path) -> None:
+    assert judged(git_project, "uvx=1 uv add httpx", "allowed") == "ask"

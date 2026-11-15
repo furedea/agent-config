@@ -1,5 +1,6 @@
 """Inspect literal text and pipeline structure for supplementary command policy."""
 
+import re
 from collections.abc import Callable
 
 import shell_syntax
@@ -112,3 +113,20 @@ def _pipeline_length(statement: dict) -> int:
 
 def _has_statement_flag(statement: dict) -> bool:
     return any(statement.get(flag) for flag in ("Background", "Coprocess", "Negated", "Disown", "Redirs"))
+
+
+# A declaration or an assignment where a command word can start; either changes variables, PATH
+# included, for the commands after it.
+VARIABLE_CHANGE = re.compile(
+    r"(^|[\s;&|(){}`])(export|declare|typeset|readonly|local)(\s|$)|(^|[;&|(){}`\n])\s*[A-Za-z_][A-Za-z0-9_]*\+?="
+)
+
+
+def changes_variables(command: str) -> bool:
+    """Whether the command text, outside single quotes, declares or assigns a shell variable."""
+    return bool(VARIABLE_CHANGE.search(text_outside_single_quotes(command)))
+
+
+def has_prefix_assignment(raw: str, program: str) -> bool:
+    """Whether a call's source starts with something other than its program word, such as `PATH=x`."""
+    return not re.match(rf"\s*{re.escape(program)}(\s|$)", raw)

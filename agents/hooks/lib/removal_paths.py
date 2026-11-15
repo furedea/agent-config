@@ -14,6 +14,7 @@ import automation_paths
 import command_policy
 import hook_decision
 import session_snapshot
+import shell_inspection
 import shell_syntax
 import system_programs
 from hook_decision import Verdict
@@ -42,7 +43,7 @@ PROVIDER_TEMPORARY_PREFIX = "claude-"
 PER_USER_TEMPORARY_ROOT = re.compile(r"/(private/)?var/folders/[^/]+/[^/]+/T")
 
 
-def objection(payload: dict, commands: tuple[shell_syntax.Command, ...]) -> Verdict:
+def objection(payload: dict, command: str, commands: tuple[shell_syntax.Command, ...]) -> Verdict:
     """Ask when any rm call may delete something outside the session's writable roots or Git's own files."""
     calls = [candidate for item in commands if (candidate := command_policy.canonical(item)).arguments[0] == PROGRAM]
     if not calls:
@@ -52,6 +53,12 @@ def objection(payload: dict, commands: tuple[shell_syntax.Command, ...]) -> Verd
         return hook_decision.ask(
             f"Needs review: rm shares the command with '{other}', which may change the working directory or the "
             f"file a path names, so its operands cannot be resolved beforehand.\n\nCommand: {preview}",
+            PROGRAM,
+        )
+    if shell_inspection.changes_variables(command):
+        return hook_decision.ask(
+            f"Needs review: rm runs beside a variable change, such as PATH, that can swap the program it runs."
+            f"\n\nCommand: {preview}",
             PROGRAM,
         )
     if program := next((item.arguments[0] for item in commands if not _runs_a_system_program(item)), ""):
@@ -96,7 +103,11 @@ def _is_safe_companion(item: shell_syntax.Command) -> bool:
     name = command_policy.canonical(item).arguments[0]
     if name == PROGRAM:
         return True
-    bare = not item.program_is_dynamic and item.arguments[0] == name and item.raw.lstrip().startswith(name)
+    bare = (
+        not item.program_is_dynamic
+        and item.arguments[0] == name
+        and not shell_inspection.has_prefix_assignment(item.raw, name)
+    )
     return bare and name in COMPANIONS | WRAPPERS
 
 
@@ -108,7 +119,9 @@ def _runs_a_system_program(item: shell_syntax.Command) -> bool:
     """
     if item.arguments[0] in BUILTINS and not item.wrapper_depth:
         return True
-    return item.raw.lstrip().startswith(item.words[0]) and system_programs.is_system_program(item.arguments[0])
+    return not shell_inspection.has_prefix_assignment(item.raw, item.words[0]) and system_programs.is_system_program(
+        item.arguments[0]
+    )
 
 
 def _call_reason(call: shell_syntax.Command, directory: Path | None, roots: tuple[Path, ...]) -> str:

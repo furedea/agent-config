@@ -4,7 +4,8 @@ A command the guard lets through by its name runs whatever PATH finds first, and
 may start with a directory the session writes, such as a project `.venv/bin`. A program counts as a
 system one only when the directory PATH found it in and the file it resolves to are both owned by
 root and writable by nobody else, so a link the session placed to a system file does not count.
-Relative names and relative PATH entries depend on a directory the hook cannot see, so they never do.
+Relative names and relative PATH entries depend on a directory the hook cannot see, so they never do,
+and under root every file the session writes is root-owned, so nothing counts there.
 """
 
 import os
@@ -21,7 +22,7 @@ TRUSTED_DIRECTORIES: frozenset[Path] = frozenset()
 
 def is_system_program(word: str) -> bool:
     """Whether `word`, an absolute path or a name looked up on PATH, runs a root-owned system file."""
-    if "/" in word and not word.startswith("/"):
+    if os.geteuid() == ROOT_UID or ("/" in word and not word.startswith("/")):
         return False
     entries = os.environ.get("PATH", "").split(os.pathsep)
     if "/" not in word and not all(Path(entry).is_absolute() for entry in entries):

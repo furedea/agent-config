@@ -100,7 +100,8 @@ class _Stop:
         if not outcome.failed_reviews or outcome.resume:
             _save(self.record, self._receipt(outcome, seen))
         message = model_rules_report.describe_line(outcome)
-        return Advice(message, blocking, model_rules_report.describe_details(outcome) if blocking else "")
+        unseen = replace(outcome, findings=outcome.findings[self.shown :])
+        return Advice(message, blocking, model_rules_report.describe_details(unseen) if blocking else "")
 
     def answered_from(self, receipt: dict) -> Advice:
         """The advice a complete receipt for the same inputs gives; findings not shown yet block, once."""

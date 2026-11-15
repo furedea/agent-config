@@ -226,3 +226,13 @@ def test_a_retry_that_cannot_run_keeps_the_receipt_for_the_next_stop(monkeypatch
     stops.stop()
 
     assert stops.resumes[2] == Resume(1, 3, Judgement((FINDING,), 3))
+
+
+def test_a_retry_that_finds_more_shows_only_the_findings_not_shown_before(monkeypatch: pytest.MonkeyPatch) -> None:
+    stops = Stops(monkeypatch, partial((FINDING,)), Judgement((FINDING, LATER), 6))
+
+    stops.stop()
+    advice = stops.stop()
+
+    assert "b.py:2" in advice.details
+    assert "a.py:1" not in advice.details

@@ -256,7 +256,7 @@ def env_assignments(arguments: tuple[str, ...]) -> tuple[str, ...]:
     index = 0
     while index < len(arguments):
         argument = arguments[index]
-        if argument in {"-u", "-C", "-S"}:
+        if argument in {"-u", "-C", "-S", "-P", "--unset", "--chdir", "--split-string"}:
             index += 1
         elif re.match(r"[A-Za-z_][A-Za-z0-9_]*=", argument):
             assignments.append(argument)
@@ -304,7 +304,7 @@ def appends_to_hook_verb(arguments: tuple[str, ...]) -> bool:
         _, command = git_arguments(arguments)
     except ValueError:
         return False
-    return bool(command) and Path(arguments[0]).name == "git" and command[0] in HOOK_SKIPPING_OPTIONS
+    return Path(arguments[0]).name == "git" and (not command or command[0] in HOOK_SKIPPING_OPTIONS)
 
 
 def hides_hook_skip(verb: str, arguments: tuple[str, ...], dynamic: tuple[bool, ...]) -> bool:

@@ -204,6 +204,8 @@ def test_env_words_after_the_wrapped_command_are_its_arguments_not_settings(comm
     [
         "env -u HOME GIT_CONFIG_PARAMETERS=x git commit -m y",
         "env -i GIT_CONFIG_KEY_0=core.hooksPath git push origin b",
+        "env --unset FOO GIT_CONFIG_PARAMETERS=x git commit -m y",
+        "env --chdir /tmp GIT_CONFIG_KEY_0=core.hooksPath git commit -m y",
     ],
 )
 @pytest.mark.usefixtures("isolated_project")
@@ -213,7 +215,11 @@ def test_env_settings_after_env_options_are_still_read(command: str) -> None:
 
 @pytest.mark.parametrize(
     "command",
-    ["printf '%s\\n' --no-verify | xargs git commit -m x", "echo b | xargs git merge topic"],
+    [
+        "printf '%s\\n' --no-verify | xargs git commit -m x",
+        "echo b | xargs git merge topic",
+        "echo commit | xargs git",
+    ],
 )
 @pytest.mark.usefixtures("isolated_project")
 def test_xargs_input_that_could_add_a_skipping_option_is_reviewed(command: str) -> None:

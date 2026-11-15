@@ -30,6 +30,8 @@ ASSIGNING_PROGRAMS = frozenset(
     | {"alias", "hash", "set", "source", ".", "trap", "typeset", "unalias", "unset", "vared", "zparseopts"}
     # builtin, and zsh's precommand modifiers, run any of these by name, so the syntax no longer shows which.
     | {"builtin", "noglob", "nocorrect", "-"}
+    # fc, zsh's r, and history rerun or add commands the line's syntax does not show.
+    | {"fc", "r", "history"}
 )
 # Syntax that assigns: a declaration, a loop variable, arithmetic, a ${name:=value} default, or a function,
 # which can stand in for a command of the same name.

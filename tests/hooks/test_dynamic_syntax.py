@@ -417,6 +417,7 @@ def test_any_spelling_that_names_ifs_beside_a_function_asks(kind: str, command: 
         "while read -r l; do bash < script.sh; done < list",
         "trap 'sh < script.sh' EXIT",
         "f(){ sh < script.sh; }; f",
+        "set -euo pipefail; for d in a b; do sh < script.sh; done",
     ],
 )
 def test_a_body_reads_a_relative_script_where_nothing_changes_directory(command: str, isolated_project: Path) -> None:

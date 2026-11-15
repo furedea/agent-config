@@ -81,6 +81,7 @@ known_first_party = [
   "system_programs",
   "trusted_owners",
   "verification_session",
+  "variable_changes",
 ]
 
 [tool.vulture]

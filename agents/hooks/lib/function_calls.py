@@ -5,14 +5,13 @@ import shlex
 from collections import Counter
 from dataclasses import dataclass
 
+import variable_changes
 from code_text import ASSIGNING_BUILTINS, CODE_BODY, NAME_OPTION
 from shell_words import PARAMETER_MODIFIERS, UnsupportedSyntaxError, literal_word, nodes, source_text
 from shell_wrappers import WRAPPERS
 
 # $1, ${12}, $@, and $*, which take the words a function is called with.
 POSITIONAL = re.compile(r"[1-9][0-9]*|[@*]")
-LITERALS = frozenset({"Lit", "SglQuoted"})
-EXPANSIONS = frozenset({"ParamExp", "CmdSubst", "ProcSubst", "ArithmExp"})
 # A caller's word that an unquoted expansion splits and globs no differently from its plain text.
 PLAIN_FIELDS = re.compile(r"[A-Za-z0-9_./:=@%+,\s-]*")
 # Builtins and wrappers whose meaning the hook relies on; a function of that name would change it.
@@ -53,7 +52,6 @@ ARGUMENT_CHANGERS = (
 )
 ARITHMETIC = frozenset({"ArithmCmd", "ArithmExp", "LetClause"})
 ARITHMETIC_TEST = re.compile(r"\s-(?:eq|ne|lt|le|gt|ge)\s")
-GLOB_CHARACTERS = re.compile(r"[*?\[]")
 
 
 def with_definitions(records: tuple[dict, ...], data: bytes, script: str) -> str:
@@ -88,7 +86,11 @@ def respelled_calls(records: tuple[dict, ...], data: bytes) -> list[str]:
     bodies: dict[str, list[dict]] = {}
     for node in (node for node in records if node.get("Type") == "FuncDecl" and node["Name"]["Value"] != CODE_BODY):
         bodies.setdefault(_defined_name(node), []).append(_followed(node["Body"], records, data))
-    if bodies and _may_change_ifs(records, data):
+    if any(_named_as_word(name, records, data) for name, defined in bodies.items() if any(map(_reads_any, defined))):
+        raise UnsupportedSyntaxError(
+            "naming a function that reads its arguments other than as a command requires explicit review", "expansion"
+        )
+    if bodies and variable_changes.may_change_ifs(records, data):
         raise UnsupportedSyntaxError("calling a function after changing IFS requires explicit review", "expansion")
     splitting = any(_reads_unquoted(body) for definitions in bodies.values() for body in definitions)
     if splitting and _may_assign_unseen(records, data):
@@ -158,6 +160,22 @@ def _body_respellings(body: dict, words: list[dict], data: bytes) -> list[str]:
     ]
 
 
+def _reads_any(body: dict) -> bool:
+    copies = _copies(body)
+    return any(_reads(part, copies) for part in nodes(body))
+
+
+def _named_as_word(name: str, records: tuple[dict, ...], data: bytes) -> bool:
+    """Whether a word other than a command name, or an assigned value, names the function: a callback may call it."""
+    token = re.compile(rf"(?<![\w-]){re.escape(name)}(?![\w-])")
+    calls = (node for node in records if node.get("Type") == "CallExpr" and node.get("Args"))
+    # eval and trap text is judged with the definitions in front of it, so a call there is respelled.
+    judged = (call for call in calls if _program(call, data)[0] not in {"eval", "trap"})
+    words = [word for call in judged for word in call["Args"][_modifier_count(call, data) + 1 :]]
+    values = [record["Value"] for record in records if "Type" not in record and isinstance(record.get("Value"), dict)]
+    return any(token.search(literal_word(word, data)[0]) for word in words + values)
+
+
 def _defined_name(definition: dict) -> str:
     """The function's name, once neither the name nor a redirection of its body changes what the hook relies on."""
     name = definition["Name"]["Value"]
@@ -169,21 +187,6 @@ def _defined_name(definition: dict) -> str:
     if definition["Body"].get("Redirs"):
         raise UnsupportedSyntaxError("defining a function with a redirection requires explicit review", "expansion")
     return name
-
-
-def _may_change_ifs(records: tuple[dict, ...], data: bytes) -> bool:
-    """Whether IFS may be named: however quoted, escaped, or spelled, or by a name known only at run time."""
-    if "IFS" in SPELLING.sub("", data.decode()):
-        return True
-    if any(record.get("Type") in {"SglQuoted", "DblQuoted"} and record.get("Dollar") for record in records):
-        return True
-    names = (record.get("Name") or record.get("Param") for record in records)
-    if any(isinstance(name, dict) and name.get("Value") == "IFS" for name in names):
-        return True
-    words = (record for record in records if "Type" not in record and isinstance(record.get("Parts"), list))
-    if any("IFS" in _literal(word) for word in words):
-        return True
-    return any(_computed_declaration(record) for record in records if record.get("Type") == "DeclClause")
 
 
 def _may_assign_unseen(records: tuple[dict, ...], data: bytes) -> bool:
@@ -204,21 +207,6 @@ def _may_assign_unseen(records: tuple[dict, ...], data: bytes) -> bool:
         words[0] in UNSEEN_ASSIGNERS or (words[0] in {"print", "printf"} and any(map(NAME_OPTION.fullmatch, words)))
         for words in calls
     )
-
-
-def _computed_declaration(declaration: dict) -> bool:
-    """Whether a declaration names its variable at run time or by a glob, or makes a nameref."""
-    naked = [argument for argument in declaration.get("Args", []) if argument.get("Naked")]
-    options = "".join(text for argument in naked if (text := _literal(argument.get("Value"))).startswith("-"))
-    return "n" in options or any(
-        any(part.get("Type") in EXPANSIONS for part in nodes(argument))
-        or GLOB_CHARACTERS.search(_literal(argument.get("Value")))
-        for argument in naked
-    )
-
-
-def _literal(word: dict | None) -> str:
-    return "".join(part.get("Value", "") for part in nodes(word) if part.get("Type") in LITERALS)
 
 
 def _followed(body: dict, records: tuple[dict, ...], data: bytes) -> dict:
@@ -280,8 +268,7 @@ def _leaks(body: dict, records: tuple[dict, ...], data: bytes) -> bool:
     text = SPELLING.sub("", re.sub(r"\\\n", "", outside.decode()))
     if any(re.search(rf"(?<!\w){re.escape(name)}(?!\w)", text) for name in copies):
         return True
-    exporting = re.search(r"(?<![\w-])(?:export|allexport)(?![\w-])|\bset\s+[-+]\w*a", SPELLING.sub("", data.decode()))
-    return exporting is not None
+    return variable_changes.may_export(records, data)
 
 
 def _attributed(body: dict, data: bytes) -> set[str]:

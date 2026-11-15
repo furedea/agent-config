@@ -7,12 +7,15 @@ from pathlib import Path
 from typing import Self
 
 from shell_words import UnsupportedSyntaxError, literal_word, nodes, source_text, spreads
+from shell_wrappers import ASSIGNMENT, WRAPPERS
 
 # Options of echo, which writes its remaining arguments; the backslash escapes they toggle are refused.
 ECHO_OPTIONS = re.compile(r"-[neE]+")
 # A word that changes the working directory, once spelling, underscores, and case are gone: a cd builtin, zsh's
 # auto_cd option, or anything that sets options, which may turn it on.
-DIRECTORY_CHANGE = re.compile(r"(?<![\w-])(?:cd|pushd|popd|chdir|autocd|setopt|emulate|options\[)|\bset\s+[-+]\w*[oj]")
+DIRECTORY_CHANGE = re.compile(r"(?<![\w-])(?:cd|pushd|popd|chdir|autocd|setopt|emulate|options\[)")
+# Words before a program that still run it, so a program named only at run time behind them may be cd.
+PROGRAM_PREFIXES = frozenset({"builtin", "command", "noglob", "nocorrect", "-", "exec", "time"})
 # Line continuations, quotes, escapes, and underscores, which spell a word or a zsh option without writing it plainly.
 SPELLING = re.compile(r"\\\n|[\\'\"_]")
 # An input redirection, with the descriptor it replaces; only descriptor 0 is the shell's script.
@@ -198,10 +201,38 @@ def input_scripts(read: Callable[[], list[str]], tolerant: bool) -> list[str] | 
 def moves_directory(source: str, records: tuple[dict, ...]) -> bool:
     """Whether the source may change directory anywhere, so a body run later may run somewhere unknown.
 
-    A program named only at run time may be cd.
+    A program named only at run time may be cd, and set -J turns on zsh's auto_cd, as -o autocd does.
     """
-    if DIRECTORY_CHANGE.search(SPELLING.sub("", source).lower()):
+    if DIRECTORY_CHANGE.search(normalized(source)):
         return True
     data = source.encode()
-    calls = (node for node in records if node.get("Type") == "CallExpr" and node.get("Args"))
-    return any(literal_word(call["Args"][0], data)[1] for call in calls)
+    calls = [node for node in records if node.get("Type") == "CallExpr" and node.get("Args")]
+    if any(word[:1] in {"-", "+"} and "j" in word for word in set_options(calls, data)):
+        return True
+    return any(_runs_unseen(call, data) for call in calls)
+
+
+def normalized(text: str) -> str:
+    """The text without line continuations, quotes, escapes, underscores, or case, as zsh reads option names."""
+    return SPELLING.sub("", text).lower()
+
+
+def set_options(calls: list[dict], data: bytes) -> list[str]:
+    """The option words, normalized, that each set call gives, together with the names -o and +o take."""
+    options = []
+    for call in calls:
+        words = [normalized(literal_word(word, data)[0]) for word in call["Args"]]
+        if words[0] == "set":
+            options += [word for word in words[1:] if word[:1] in {"-", "+"} or word.isalpha()]
+    return options
+
+
+def _runs_unseen(call: dict, data: bytes) -> bool:
+    """Whether the program, past prefixes, wrappers, options, and assignments, is named only at run time."""
+    for value, dynamic in (literal_word(word, data) for word in call["Args"]):
+        if dynamic:
+            return True
+        passed = value in PROGRAM_PREFIXES or value[:1] in {"-", "+"} or Path(value).name in WRAPPERS
+        if not passed and ASSIGNMENT.match(value) is None:
+            return False
+    return False

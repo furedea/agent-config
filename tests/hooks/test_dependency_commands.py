@@ -34,6 +34,8 @@ def decisions(prefix: tuple[str, ...]) -> set[str]:
         "uv add --group audit vulture --no-sync",
         "uv lock --upgrade",
         "uv lock -P ruff",
+        "uv add zope.interface",
+        "uv add backports.zoneinfo==0.2.1",
     ],
 )
 def test_uv_dependency_changes_inside_the_age_limit_run(git_project: Path, command: str) -> None:
@@ -120,6 +122,12 @@ def test_dependency_changes_no_age_limit_guards_ask(prefix: tuple[str, ...]) -> 
         "uv add evil.zip",
         "uv add evil-1.0.tar.bz2",
         "uv add evil.egg",
+        "uv add evil-1.0.tar.lz",
+        "uv add evil-1.0.tar.lzma",
+        "uv add evil-1.0.tlz",
+        "uv add evil-1.0.tar.zst",
+        "uv add evil-1.0.tzst",
+        "uv add 'evil-1.0.TAR.GZ'",
     ],
 )
 def test_a_uv_change_that_could_escape_the_limit_or_the_project_asks(git_project: Path, command: str) -> None:
@@ -182,3 +190,9 @@ def test_a_project_that_adds_its_own_package_sources_asks(git_project: Path, set
 def test_a_project_with_harmless_uv_settings_runs(git_project: Path) -> None:
     (git_project / "pyproject.toml").write_text('[project]\nname = "x"\n\n[tool.uv]\npackage = false\n')
     assert judged(git_project, "uv add httpx", "allowed") == "allow"
+
+
+@pytest.mark.parametrize("command", ["uv lock --check", "uv lock --dry-run", "uv lock --locked", "uv lock"])
+def test_uv_lock_without_an_upgrade_is_not_a_dependency_change(git_project: Path, command: str) -> None:
+    (git_project / "pyproject.toml").write_text('[tool.uv]\nexclude-newer = "1 week"\n')
+    assert judged(git_project, command, "allowed") == "allow"

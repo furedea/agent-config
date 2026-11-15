@@ -20,7 +20,8 @@ import shell_syntax
 from hook_decision import Verdict
 
 PROGRAM = "uv"
-SUBCOMMANDS = frozenset({"add", "lock"})
+# `uv lock` changes dependencies only when it upgrades them; `--check` and the like only verify.
+LOCK_UPGRADES = frozenset({"--upgrade", "-U", "--upgrade-package", "-P"})
 # The only options a dependency change may carry unprompted, by whether each takes a name as its value;
 # any other option could point uv at another project, configuration, index, or source.
 FLAGS = frozenset({"--no-sync", "--frozen", "--locked", "--upgrade", "-U", "--quiet", "-q", "--verbose", "-v"})
@@ -30,7 +31,10 @@ NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
 SPECIFIER = r"(===|==|!=|~=|>=|<=|>|<)[A-Za-z0-9.*+!_-]+"
 REQUIREMENT = re.compile(rf"{NAME.pattern}(\[[A-Za-z0-9._,-]+\])?({SPECIFIER}(,{SPECIFIER})*)?")
 # A bare archive name, which uv reads as a local file rather than a registry name.
-ARCHIVE = re.compile(r"\.(whl|zip|tar|tar\.gz|tgz|tar\.bz2|tbz2?|tar\.xz|txz|egg)$", re.IGNORECASE)
+ARCHIVE_SUFFIXES = frozenset(
+    {"whl", "zip", "egg", "tar", "gz", "tgz", "bz2", "tbz", "tbz2", "xz", "txz", "lz", "lzma", "tlz", "zst", "tzst"}
+    | {"z", "7z", "rar"}
+)
 # A dependency entry the age limit cannot judge: a direct reference, a URL, or a path.
 DIRECT_REFERENCE = re.compile(r"@|://|^\s*[./~]")
 # Project files and the uv settings in them that replace the user's limit or add a package source.
@@ -87,7 +91,10 @@ def _is_known_word(word: str, dynamic: bool, rest: Iterator[tuple[str, bool]]) -
 
 
 def _is_registry_requirement(word: str) -> bool:
-    return bool(REQUIREMENT.fullmatch(word)) and not ARCHIVE.search(word)
+    """A name, extras, and specifiers whose name does not end like an archive or compressed file."""
+    match = REQUIREMENT.fullmatch(word)
+    name = NAME.match(word)
+    return bool(match and name) and name.group().rpartition(".")[2].casefold() not in ARCHIVE_SUFFIXES
 
 
 def _neighbour_reason(
@@ -158,7 +165,10 @@ def _dependency_entries(settings: dict) -> list[str]:
 
 def _is_dependency_change(item: shell_syntax.Command) -> bool:
     arguments = command_policy.canonical(item).arguments
-    return arguments[0] == PROGRAM and len(arguments) > 1 and arguments[1] in SUBCOMMANDS
+    if arguments[0] != PROGRAM or len(arguments) < 2:
+        return False
+    upgrades = any(word.partition("=")[0] in LOCK_UPGRADES for word in arguments[2:])
+    return arguments[1] == "add" or (arguments[1] == "lock" and upgrades)
 
 
 def _is_uv(item: shell_syntax.Command) -> bool:

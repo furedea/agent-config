@@ -470,3 +470,27 @@ def test_a_new_rust_attribute_inside_a_macro_body_asks(tmp_path: Path) -> None:
         "new_string": "        #[allow(dead_code)]\n        fn f()",
     }
     assert decide("Edit", values) == "ask"
+
+
+def test_moving_a_rust_attribute_out_of_a_python_comment_into_rust_asks(tmp_path: Path) -> None:
+    source = tmp_path / "tool.py"
+    source.write_text("#[allow(dead_code)]\nfn_f = 1\n")
+    patch = f"*** Begin Patch\n*** Update File: {source}\n*** Move to: {tmp_path / 'tool.rs'}\n*** End Patch"
+    assert decide("apply_patch", {"input": patch}) == "ask"
+
+
+def test_a_suppression_in_a_file_with_an_upper_case_suffix_asks() -> None:
+    values = {"file_path": "src/App.PY", "old_string": "x = 1", "new_string": "x = 1  # noqa"}
+    assert decide("Edit", values) == "ask"
+
+
+def test_a_patch_header_with_surrounding_spaces_is_still_read(tmp_path: Path) -> None:
+    target = tmp_path / "app.py"
+    target.write_text("x = 1\n")
+    patch = f"*** Begin Patch\n  *** Update File: {target}  \n@@\n-x = 1\n+x = 1  # noqa\n*** End Patch"
+    assert decide("apply_patch", {"input": patch}) == "ask"
+
+
+def test_an_ast_grep_marker_glued_to_a_word_asks() -> None:
+    values = {"file_path": "src/app.py", "old_string": "x = 1", "new_string": "x = 1  # xast-grep-ignore"}
+    assert decide("Edit", values) == "ask"

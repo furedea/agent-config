@@ -43,8 +43,9 @@ MARKERS = {
     "allow or expect attribute": re.compile(r"#!?\[\s*(?:allow|expect)\s*\("),
     "shellcheck disable": re.compile(r"#\s*shellcheck\s+disable="),
     "nolint": re.compile(r"//\s*nolint\b"),
-    # ast-grep honors the word anywhere in a comment, so any mention asks; a false positive only asks.
-    "ast-grep-ignore": re.compile(r"\bast-grep-ignore\b"),
+    # ast-grep honors the word anywhere in a comment, even inside a longer word, so any mention asks; a false
+    # positive only asks.
+    "ast-grep-ignore": re.compile(r"ast-grep-ignore"),
 }
 # The lint hook also scans YAML and Nix, so a project's own ast-grep rules can be suppressed there.
 MARKER_SUFFIXES = {"ast-grep-ignore": CODE_SUFFIXES | {".yml", ".yaml", ".nix"}}
@@ -98,7 +99,7 @@ def decide(payload: dict) -> Verdict:
 
 
 def _new_markers(change: _Change) -> list[str]:
-    suffix = Path(change.path).suffix
+    suffix = Path(change.path).suffix.lower()
     found = [
         name
         for name, pattern in MARKERS.items()
@@ -138,7 +139,7 @@ def _adds(name: str, pattern: re.Pattern[str], change: _Change) -> bool:
     Without the scanner, comments cannot be told from strings: a marker line whose text is new asks, and so does a
     change to a line that may open or close a string or comment in text that holds a marker.
     """
-    suffix = Path(change.path).suffix
+    suffix = Path(change.path).suffix.lower()
     added, removed = (
         _marked_lines(pattern, text, _span_reader(name, suffix)) for text in (change.added, change.removed)
     )
@@ -251,7 +252,7 @@ def _edit_change(path: str, edits: list[dict]) -> _Change:
     for edit, (old, new) in zip(edits, pairs, strict=True):
         if not old or old not in after:
             added, removed = "\n".join(new for _, new in pairs), "\n".join(old for old, _ in pairs)
-            return _Change(path, added, removed, unplaced=_holds_marker(before, Path(path).suffix))
+            return _Change(path, added, removed, unplaced=_holds_marker(before, Path(path).suffix.lower()))
         after = after.replace(old, new) if edit.get("replace_all") else after.replace(old, new, 1)
     return _Change(path, after, before, whole=True)
 
@@ -269,11 +270,13 @@ def _patch_changes(patch: str) -> list[_Change]:
     files = _PatchFiles()
     current: _Hunks | None = None
     for line in _lines(patch):
-        if match := PATCH_FILE.match(line):
+        # The applier reads a header with the spaces around it trimmed.
+        header = line.strip()
+        if match := PATCH_FILE.match(header):
             current = files.start(match.group(2).strip(), added=match.group(1) == "Add")
-        elif current is not None and (move := PATCH_MOVE.match(line)):
+        elif current is not None and (move := PATCH_MOVE.match(header)):
             files.move(current, move.group(1).strip())
-        elif line.startswith("*** ") and line != patch_input.END_OF_FILE:
+        elif header.startswith("***") and header != patch_input.END_OF_FILE:
             current = None
         elif current is not None:
             current.lines.append(line)
@@ -328,7 +331,7 @@ class _Hunks:
         if not self.destination:
             return [source]
         # A carried marker counts by itself; cut out of the file, its line could parse differently.
-        moved_in = bool(_newly_honored(existing, Path(path).suffix, Path(self.destination).suffix))
+        moved_in = bool(_newly_honored(existing, Path(path).suffix.lower(), Path(self.destination).suffix.lower()))
         destination = _Change(
             self.destination, source.added, source.removed, source.whole, source.unplaced, moved_in=moved_in
         )
@@ -351,7 +354,7 @@ class _Hunks:
             return _Change(path, after, existing, whole=True)
         added = "\n".join(line[1:] for line in self.lines if line.startswith("+"))
         removed = "\n".join(line[1:] for line in self.lines if line.startswith("-"))
-        return _Change(path, added, removed, unplaced=_holds_marker(existing, Path(path).suffix))
+        return _Change(path, added, removed, unplaced=_holds_marker(existing, Path(path).suffix.lower()))
 
 
 def _newly_honored(text: str, source: str, destination: str) -> str:

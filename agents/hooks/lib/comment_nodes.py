@@ -40,20 +40,20 @@ def comment_spans(text: str, suffix: str) -> list[tuple[int, int]] | None:
 
     None means the suffix has no grammar, the scanner is missing, or it failed; the caller must then fail closed.
     """
-    language = LANGUAGES.get(suffix)
+    language = LANGUAGES.get(suffix.lower())
     if language is None or shutil.which(SCANNER) is None:
         return None
     return _scan(text, language, COMMENT_KINDS.get(language, ("comment",)))
 
 
 def inert_spans(text: str, suffix: str) -> list[tuple[int, int]] | None:
-    """The offsets of each Rust string or comment, where an attribute cannot apply; none outside Rust.
+    """The offsets of each Rust string or comment, where an attribute cannot apply; the whole text outside Rust.
 
     Anything else counts, including a macro body, whose attributes take effect once the macro expands. None means
     they cannot be known.
     """
-    if LANGUAGES.get(suffix) != "rust":
-        return []
+    if LANGUAGES.get(suffix.lower()) != "rust":
+        return [(0, len(text) + 1)]
     if shutil.which(SCANNER) is None:
         return None
     return _scan(text, "rust", RUST_INERT_KINDS)

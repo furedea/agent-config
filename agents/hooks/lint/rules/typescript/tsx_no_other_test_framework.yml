@@ -43,6 +43,11 @@ rule:
         - not:
             inside:
               stopBy: end
+              kind: catch_clause
+              has: { field: parameter, kind: identifier, regex: ^jest$ }
+        - not:
+            inside:
+              stopBy: end
               any:
                 - kind: program
                 - kind: statement_block

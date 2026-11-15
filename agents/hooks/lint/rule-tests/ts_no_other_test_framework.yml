@@ -43,6 +43,12 @@ valid:
   - |
     import * as jest from "./domain_formatter";
     jest.format();
+  - |
+    try {
+      run();
+    } catch (jest) {
+      if (isFormatter(jest)) jest.format();
+    }
 invalid:
   - |
     const mock = jest.fn();

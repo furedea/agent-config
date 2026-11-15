@@ -14,7 +14,25 @@ valid:
     type Server struct {
         ctx context.Context
     }
+  - |
+    import "context"
+
+    type Server struct {
+        cancel context.CancelFunc
+    }
 invalid:
+  - |
+    import "context"
+
+    type Server struct {
+        ctx *context.Context
+    }
+  - |
+    import "context"
+
+    type Server struct {
+        *context.Context
+    }
   - |
     import "context"
 

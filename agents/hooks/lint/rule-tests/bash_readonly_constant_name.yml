@@ -9,8 +9,16 @@ valid:
     readonly SCRIPT_DIR
   - |
     build() {
-      readonly local_value=1
+      local -r local_value=1
     }
+  - |
+    build() {
+      declare -r local_value=1
+    }
+  - |
+    declare -r MAX_RETRY=3
+  - |
+    declare -rf parse_args
   - |
     parse_args() { :; }
     readonly -f parse_args
@@ -21,6 +29,16 @@ valid:
     input=a
     readonly OUT=$input OUT2="${input}"
 invalid:
+  - |
+    build() {
+      readonly local_value=1
+    }
+  - |
+    declare -r max_retry=3
+  - |
+    typeset -r max_retry=3
+  - |
+    declare -ar target_dirs=(a b)
   - |
     readonly max_retry=3
   - |

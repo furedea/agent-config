@@ -1,11 +1,20 @@
 id: go_use_slog
-# Limits: A function whose parameter is named `log` is skipped. Test files are skipped. A `*log.Logger` held in a variable or built by `log.New` is not followed; a file that imports `log` under another name is skipped. Only a file that imports the standard `log` package is judged.
+# Limits: A function whose parameter, receiver or named result is named `log` is skipped; a local variable named `log` is not, because telling it apart needs scope analysis. Test files are skipped. A `*log.Logger` held in a variable or built by `log.New` is not followed; a file that imports `log` under another name is skipped. Only a file that imports the standard `log` package is judged.
 language: go
 severity: error
 message: "The standard log package writes unstructured text that cannot be filtered by level or field."
 note: "Use `slog.Info(\"start\", \"port\", port)` instead of `log.Printf(\"start %d\", port)`."
 ignores:
   - "**/*_test.go"
+utils:
+  binds-log:
+    kind: parameter_list
+    has:
+      kind: parameter_declaration
+      has:
+        field: name
+        regex: ^log$
+      stopBy: end
 rule:
   kind: call_expression
   regex: ^log\.(Default\(\)\.)?(Print|Printf|Println|Fatal|Fatalf|Fatalln|Panic|Panicf|Panicln|Output)\(
@@ -29,12 +38,27 @@ rule:
             - kind: function_declaration
             - kind: method_declaration
             - kind: func_literal
+          # The parameters, the receiver and the named results each bind a name for the whole body.
           has:
             field: parameters
-            has:
-              kind: parameter_declaration
-              has:
-                field: name
-                regex: ^log$
-              stopBy: end
+            matches: binds-log
+          stopBy: end
+    - not:
+        inside:
+          any:
+            - kind: function_declaration
+            - kind: method_declaration
+          has:
+            field: receiver
+            matches: binds-log
+          stopBy: end
+    - not:
+        inside:
+          any:
+            - kind: function_declaration
+            - kind: method_declaration
+            - kind: func_literal
+          has:
+            field: result
+            matches: binds-log
           stopBy: end

@@ -5,6 +5,7 @@ message: "Without a deny-all default, every job gets the repository's default to
 note: "Add `permissions: {}` at the top level, then grant each job only what it needs, e.g. `permissions: { contents: read }`."
 files:
   - "**/.github/workflows/**"
+# Scope: A workflow whose whole root is a flow mapping (`{on: push, jobs: {...}}`) is not checked; no workflow in practice is written that way.
 rule:
   kind: block_mapping
   inside:

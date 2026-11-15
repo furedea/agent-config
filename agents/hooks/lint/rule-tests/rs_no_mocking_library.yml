@@ -11,7 +11,34 @@ valid:
   - |
     macro_rules! mock { ($($t:tt)*) => {}; }
     mock! { Clock }
+  - |
+    use mockall_extras::helper;
+  - |
+    #[cfg_attr(automock, derive(Debug))]
+    struct Fake;
+  - |
+    #[cfg_attr(feature = "automock", derive(Debug))]
+    struct Fake;
 invalid:
+  - |
+    use automock::mock;
+  - |
+    #[automock::mock]
+    trait Clock { fn now(&self) -> u64; }
+  - |
+    use {mockall::automock};
+  - |
+    pub use mockall::automock;
+  - |
+    pub(crate) use mockall::automock;
+  - |
+    use ::mockall::automock;
+  - |
+    #[cfg_attr(test, derive(Debug), automock)]
+    trait Clock { fn now(&self) -> u64; }
+  - |
+    #[cfg_attr(test, faux::create)]
+    struct Clock;
   - |
     use mockall::automock;
   - |

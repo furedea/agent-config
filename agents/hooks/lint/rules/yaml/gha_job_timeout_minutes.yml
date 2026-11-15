@@ -5,7 +5,7 @@ message: "A hung job without `timeout-minutes` runs for up to 6 hours and burns 
 note: "Add `timeout-minutes: 10` (or a value that fits the job) to the job."
 files:
   - "**/.github/workflows/**"
-# Scope: A job that calls a reusable workflow (`uses:`) has no `runs-on` and cannot set it, so it is not checked. A job written as a flow mapping is found by its `runs-on` key alone.
+# Scope: A job that calls a reusable workflow (`uses:`) has no `runs-on` and cannot set it, so it is not checked. A job written as a flow mapping is found by its `runs-on` key alone. A `jobs` key whose value is itself a flow mapping (`jobs: {build: {...}}`) is not checked.
 rule:
   any:
     - kind: block_mapping

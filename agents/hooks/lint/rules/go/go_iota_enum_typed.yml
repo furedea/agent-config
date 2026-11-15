@@ -1,4 +1,5 @@
 id: go_iota_enum_typed
+# Decision (#196): `iota + 1` stays skipped. `1 << (10 * iota)` and `iota + 1` are the standard untyped idioms for sizes and offsets, so telling them from an enum needs the intent, not the syntax.
 # Limits: Only the plain form `X = iota` is judged. Any expression (`iota + Step`, a conversion, a builtin call, a shift, a list of values) is skipped, because a syntactic matcher cannot tell whether an operand is typed. A blank `_ = iota` is judged only when the next spec writes neither a type nor a value of its own. Whether the type has a `String()` method is not judged.
 language: go
 severity: error

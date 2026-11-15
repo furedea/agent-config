@@ -126,7 +126,9 @@ own repositories get model judgement.
 ## Which rules ast-grep may block
 
 A blocking ast-grep rule must judge one construct, locally and reliably. A rule that needs any of the following goes to
-the language's own linter, compiler, or test runner when one can judge it, and otherwise to `jev-lint`:
+the language's own linter, compiler, or test runner when one can judge it, and otherwise to `jev-lint` only if the
+function, its file's imports, and its enclosing declarations (all that `jev-lint` is given) are enough. A rule that no
+tool can judge with the context it has stays as prose:
 
 1. Information outside the file: configuration, `conftest.py`, other modules.
 2. Data flow or execution order: values passed through assignments, scopes, or a class hierarchy.

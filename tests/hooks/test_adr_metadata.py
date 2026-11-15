@@ -39,12 +39,16 @@ def test_conforming_directory_is_silent(adr_directory: Path) -> None:
     assert messages(adr_directory) == ""
 
 
-@pytest.mark.parametrize(
-    "name", ["1_short.md", "0003-dashes.md", "0003_Upper.md", "0003_.md", "0003_a__b.md", "adr_three.md"]
-)
-def test_file_name_must_be_four_digits_then_lowercase_underscore_words(adr_directory: Path, name: str) -> None:
+@pytest.mark.parametrize("name", ["1_short.md", "adr_three.md", "00031_long.md", "third.md"])
+def test_file_name_must_start_with_a_four_digit_id(adr_directory: Path, name: str) -> None:
     write_adr(adr_directory, name, identifier="0003")
-    assert "File name must be `NNNN_<words>.md`" in messages(adr_directory)
+    assert "File name must start with a four-digit ID" in messages(adr_directory)
+
+
+@pytest.mark.parametrize("name", ["0003-dashes.md", "0003_Upper.md", "0003.md"])
+def test_any_naming_style_after_the_id_is_accepted(adr_directory: Path, name: str) -> None:
+    write_adr(adr_directory, name, identifier="0003")
+    assert messages(adr_directory) == ""
 
 
 def test_duplicate_id_is_reported_for_both_files(adr_directory: Path) -> None:
@@ -179,11 +183,6 @@ def test_exactly_one_status_is_required(adr_directory: Path) -> None:
     assert "Exactly one `- Status:` is required; found 2" in messages(adr_directory)
 
 
-def test_wrong_markdown_extension_is_a_file_name_violation(adr_directory: Path) -> None:
-    path = write_adr(adr_directory, "0003_third_decision.MD", identifier="0003")
-    assert "File name must be `NNNN_<words>.md`" in "\n".join(adr_metadata.diagnostics([path]))
-
-
 def test_deleting_an_adr_reports_references_that_now_dangle(adr_directory: Path) -> None:
     write_adr(adr_directory, "0001_first_decision.md", extra="- Related: ADR-0003\n")
     deleted = adr_directory / "0003_third_decision.md"
@@ -193,24 +192,6 @@ def test_deleting_an_adr_reports_references_that_now_dangle(adr_directory: Path)
 def test_superseded_by_requires_superseded_status(adr_directory: Path) -> None:
     write_adr(adr_directory, "0001_first_decision.md", extra="- Superseded by: ADR-0002\n")
     assert "Superseded by ADR-0002 requires `- Status: Superseded`" in messages(adr_directory)
-
-
-def test_directory_with_another_naming_scheme_is_left_alone(tmp_path: Path) -> None:
-    directory = tmp_path / "docs" / "adr"
-    directory.mkdir(parents=True)
-    (directory / "0001-record-architecture-decisions.md").write_text("# 1. Record architecture decisions\n")
-    edited = directory / "0002-use-postgres.md"
-    edited.write_text("# 2. Use Postgres\n")
-    assert adr_metadata.diagnostics([edited]) == ()
-
-
-def test_directory_edited_in_full_keeps_its_own_naming_scheme(tmp_path: Path) -> None:
-    directory = tmp_path / "docs" / "adr"
-    directory.mkdir(parents=True)
-    files = [directory / "0001-first.md", directory / "0002-second.md"]
-    for path in files:
-        path.write_text("# 1. Title\n")
-    assert adr_metadata.diagnostics(files) == ()
 
 
 def test_deleting_the_readme_is_not_an_adr_deletion(adr_directory: Path) -> None:

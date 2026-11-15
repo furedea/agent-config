@@ -64,9 +64,9 @@ Rules:
 - Follow existing repository naming conventions. Otherwise use underscores between the ID and
   decision words, as shown above. Do not rename existing ADRs solely to normalize filenames.
 - Create `docs/adr/` if it does not exist.
-- The hooks check file names, IDs, the title line, status values, metadata keys, ADR references, and
-  supersession consistency after each ADR edit; fix what they report for the files you changed, unless the
-  repository has its own established ADR convention, which takes precedence.
+- The hooks check the four-digit ID prefix and its uniqueness, the title ID, status values, metadata keys, ADR
+  references, and supersession consistency after each ADR edit; fix what they report for the files you changed.
+  Naming after the ID is the repository's own convention and is not checked.
 - If the repository has no ADRs yet and the task adopts ADRs as a practice, create `0001_record_architecture_decisions.md` first.
 
 ## Status Rules

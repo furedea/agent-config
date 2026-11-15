@@ -11,7 +11,7 @@ STATUSES = ("Proposed", "Accepted", "Superseded", "Deprecated")
 RELATION_KEYS = ("Supersedes", "Superseded by", "Partly superseded by", "Refines", "Related")
 PLAIN_KEYS = ("Status", "Date", "Amended", "Originally", "Historical sources")
 KEYS = frozenset(RELATION_KEYS + PLAIN_KEYS)
-FILE_NAME = re.compile(r"(\d{4})_[a-z0-9]+(?:_[a-z0-9]+)*\.md")
+FILE_ID = re.compile(r"(\d{4})(?=[-_.])")
 TITLE = re.compile(r"# ADR-(\d{4}): \S.*")
 METADATA = re.compile(r"- ([A-Za-z][\w -]*): ?(.*)")
 AMENDED = re.compile(r"\d{4}-\d{2}-\d{2} \(.+\)")
@@ -78,7 +78,6 @@ def diagnostics(paths: Iterable[Path]) -> tuple[str, ...]:
     findings = (
         finding
         for directory in directories
-        if follows_convention(directory)
         for finding in check_directory(directory)
         if directory in deleted or edited & {finding.path.resolve(), *(p.resolve() for p in finding.also_involves)}
     )
@@ -93,16 +92,6 @@ def is_adr_file(path: Path) -> bool:
         and path.parent.name == "adr"
         and path.parent.parent.name == "docs"
     )
-
-
-def follows_convention(directory: Path) -> bool:
-    """Tell whether any ADR of the directory is named like this check expects.
-
-    A directory whose ADRs all use another scheme, such as adr-tools' `0001-title.md`, keeps its own convention, so
-    none of its ADRs is reported. A directory with no ADR yet is checked.
-    """
-    files = markdown_files(directory)
-    return not files or any(FILE_NAME.fullmatch(path.name) for path in files)
 
 
 def markdown_files(directory: Path) -> list[Path]:
@@ -127,10 +116,10 @@ def check_directory(directory: Path) -> list[Finding]:
 
 def read_adr(path: Path) -> Adr:
     """Read one ADR file and record the problems visible in it alone."""
-    name_match = FILE_NAME.fullmatch(path.name)
+    name_match = FILE_ID.match(path.name)
     adr = Adr(path, name_match.group(1) if name_match else None)
     if name_match is None:
-        adr.report(1, "File name must be `NNNN_<words>.md`: four digits, lowercase words joined by `_`.")
+        adr.report(1, "File name must start with a four-digit ID, such as `0001-` or `0001_`.")
     lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
     check_title(adr, lines)
     adr.metadata = metadata_entries(lines[adr.title_line :], adr.title_line)

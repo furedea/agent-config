@@ -5,22 +5,24 @@ message: "A new Error thrown inside a catch without `cause` hides the original e
 note: "Write `throw new Error(\"read config\", { cause: error })` instead of `throw new Error(\"read config\")`."
 rule:
   all:
-    - any:
-        - pattern: new $ERROR($MESSAGE)
-        - pattern: new $ERROR($MESSAGE, $OPTIONS)
+    - pattern: new $ERROR($$$ARGS)
     - inside:
         kind: throw_statement
         inside:
           any:
             - kind: catch_clause
-              has: { field: parameter, regex: '.' }
+              has: { field: parameter, kind: identifier, pattern: $CAUGHT }
             - all:
                 - any:
                     - kind: arrow_function
                     - kind: function_expression
                 - any:
-                    - has: { field: parameter, regex: '.' }
-                    - has: { field: parameters, regex: '^\(\s*[^\s)]' }
+                    - has: { field: parameter, kind: identifier, pattern: $CAUGHT }
+                    - has:
+                        field: parameters
+                        has:
+                          kind: required_parameter
+                          has: { field: pattern, kind: identifier, pattern: $CAUGHT }
                 - inside:
                     kind: arguments
                     inside:
@@ -32,8 +34,29 @@ rule:
               - kind: function_expression
               - kind: arrow_function
               - kind: method_definition
+    - not:
+        has:
+          pattern: $CAUGHT
+          stopBy: end
+          any:
+            - kind: identifier
+            - kind: shorthand_property_identifier
+    - not:
+        has:
+          kind: arguments
+          has:
+            any:
+              - kind: identifier
+              - kind: member_expression
+              - kind: call_expression
+              - kind: subscript_expression
+              - kind: spread_element
+              - kind: await_expression
+              - kind: ternary_expression
+              - kind: as_expression
+              - kind: non_null_expression
+              - kind: parenthesized_expression
+    - not:
+        has: { kind: spread_element, stopBy: end }
 constraints:
   ERROR: { regex: Error$ }
-  OPTIONS:
-    kind: object
-    not: { regex: '\bcause\b' }

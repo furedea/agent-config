@@ -13,6 +13,48 @@ valid:
       throw error;
     }
   - |
+    try {
+      run();
+    } catch (error) {
+      throw new AppError({ message: "read config", cause: error });
+    }
+  - |
+    try {
+      run();
+    } catch (error) {
+      throw new WrappedError(error);
+    }
+  - |
+    try {
+      run();
+    } catch (error) {
+      throw new AppError({ message: "read config", error });
+    }
+  - |
+    try {
+      run();
+    } catch (error) {
+      throw new Error(`read config: ${error}`);
+    }
+  - |
+    try {
+      run();
+    } catch (error) {
+      throw new XError("read config", { ...options });
+    }
+  - |
+    request().catch((error) => {
+      throw new WrappedError(error);
+    });
+  - |
+    request().catch(function (error) {
+      throw new AppError({ cause: error });
+    });
+  - |
+    request().catch(error => {
+      throw new WrappedError(error);
+    });
+  - |
     request().catch((error) => {
       throw new Error("request failed", { cause: error });
     });
@@ -54,6 +96,22 @@ invalid:
   - |
     request().catch(function (error) {
       throw new TypeError("request failed");
+    });
+  - |
+    try {
+      run();
+    } catch (error) {
+      throw new XError("read config");
+    }
+  - |
+    try {
+      run();
+    } catch (error) {
+      throw new AppError({ message: "read config" });
+    }
+  - |
+    request().catch(error => {
+      throw new Error("request failed");
     });
   - |
     try {

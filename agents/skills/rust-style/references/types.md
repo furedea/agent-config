@@ -89,6 +89,7 @@ pub enum Provider {
 ## Collections
 
 - Use `Vec<T>` for ordered sequences.
+- Use `BTreeMap` or sorted vectors when serialized or printed output must be in a deterministic order; `clippy::iter_over_hash_type` covers only iteration.
 - Use `HashMap` when order is irrelevant and lookup dominates.
 - Do not expose mutable collections directly from domain types.
 

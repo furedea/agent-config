@@ -13,6 +13,16 @@ import pytest
 from tests.runtime import REPO_ROOT, CliRunner, StubWriter
 
 
+def pytest_runtest_setup(item: pytest.Item) -> None:
+    """Skip jev-lint tests without the linter; REQUIRE_JEV_LINT=1 (CI) makes its absence a failure."""
+    if item.get_closest_marker("needs_jev_lint") is None or shutil.which("jev-lint") is not None:
+        return
+    reason = "jev-lint is provided by `nix build .#jev-lint`"
+    if os.environ.get("REQUIRE_JEV_LINT") == "1":
+        pytest.fail(reason)
+    pytest.skip(reason)
+
+
 @pytest.fixture
 def executable(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> StubWriter:
     """Install explicit process-boundary fakes on an isolated PATH."""

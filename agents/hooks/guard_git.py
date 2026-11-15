@@ -51,6 +51,9 @@ def inspect(command: str) -> Verdict:
         preview = shell_syntax.command_preview(command)
         return hook_decision.ask(f"Needs review: {error}.\n\nCommand: {preview}", "syntax")
     for item in commands:
+        if reason := _hook_bypass(item):
+            raise ValueError(f"git hook bypass denied: {reason}")
+    for item in commands:
         if _hides_verdict(item):
             preview = shell_syntax.command_preview(item.raw)
             return hook_decision.ask(
@@ -59,11 +62,25 @@ def inspect(command: str) -> Verdict:
             )
         if reason := _segment_reason(item):
             raise ValueError(reason)
+        if item.appends_input and git_safety.appends_to_hook_verb(item.arguments):
+            preview = shell_syntax.command_preview(item.raw)
+            return hook_decision.ask(
+                f"Needs review: xargs may add a hook-skipping option.\n\nSegment: {preview}", "syntax"
+            )
     return hook_decision.ALLOW
 
 
+def _hook_bypass(item: shell_syntax.Command) -> str:
+    """The deny reason for a hook-skipping form, which approving a run-time-word review must not override."""
+    return _described(item, git_safety.hook_bypass_reason(item.arguments, item.assignments))
+
+
 def _segment_reason(item: shell_syntax.Command) -> str:
-    reason = git_safety.reason(item.arguments)
+    reason = git_safety.reason(item.arguments) or git_safety.environment_reason(item.arguments, item.assignments)
+    return _described(item, reason)
+
+
+def _described(item: shell_syntax.Command, reason: str) -> str:
     if not reason:
         return ""
     if item.wrapper_depth:
@@ -99,7 +116,7 @@ def _git_hides_verdict(item: shell_syntax.Command) -> bool:
     except ValueError:
         return False
     start = 1 + len(globals_)
-    if not command or item.dynamic[start]:
+    if not command or item.dynamic[start] or _config_is_dynamic(item, start):
         return True
     verb = command[0]
     if verb == "push" and any(item.dynamic[1:start]) and git_safety.pushes_current_branch(command[1:]):
@@ -108,7 +125,20 @@ def _git_hides_verdict(item: shell_syntax.Command) -> bool:
         return item.dynamic[start + 1] or (
             command[1] in git_safety.SUBCOMMAND_VERBS[verb] and any(item.dynamic[start + 2 :])
         )
+    if verb in git_safety.HOOK_SKIPPING_OPTIONS and (
+        any(item.spreading[start + 1 :]) or git_safety.hides_hook_skip(verb, command[1:], item.dynamic[start + 1 :])
+    ):
+        return True
     return verb in git_safety.OPTION_VERBS and any(item.dynamic[start + 1 :])
+
+
+def _config_is_dynamic(item: shell_syntax.Command, start: int) -> bool:
+    """Whether a run-time word is a global -c setting or --config-env word, which could move hooks or alias options."""
+    globals_ = item.arguments[1:start]
+    setting_of_c = any(option == "-c" and item.dynamic[2 + index] for index, option in enumerate(globals_[:-1]))
+    return setting_of_c or any(
+        item.dynamic[1 + index] and option.startswith("--config-env") for index, option in enumerate(globals_)
+    )
 
 
 def _session(payload: object) -> str:

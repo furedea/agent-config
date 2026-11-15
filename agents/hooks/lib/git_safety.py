@@ -2,6 +2,7 @@
 
 import re
 import subprocess
+from itertools import pairwise
 from pathlib import Path
 
 PROTECTED_BRANCHES = {"main", "master"}
@@ -74,6 +75,28 @@ VALUED_OPTIONS = {
     "push": frozenset("-o --push-option --repo --receive-pack --exec".split()),
 }
 """The options of each judged verb that read the next argument as their value, which is never an option."""
+HOOK_SKIPPING_OPTIONS = {
+    "commit": {"-n", "--no-verify", "--no-post-rewrite"},
+    "push": {"--no-verify"},
+    "merge": {"--no-verify"},
+    "pull": {"--no-verify"},
+    "am": {"-n", "--no-verify"},
+    "rebase": {"--no-verify"},
+}
+"""The options that make each verb skip client-side hooks, as `git <verb> -h` lists them for this Git."""
+HOOK_SKIPPING_VALUED = {
+    "merge": frozenset("-m -F -s -X --message --file --strategy --strategy-option --into-name --cleanup".split()),
+    "pull": frozenset("-s -X -o --strategy --strategy-option --depth --upload-pack --server-option".split()),
+    "am": frozenset("-p -C --directory --exclude --include --whitespace --patch-format --resolvemsg".split()),
+    "rebase": frozenset("-s -X -x -C --strategy --strategy-option --exec --onto --whitespace --empty".split()),
+}
+"""The valued options of the hook-skipping verbs that VALUED_OPTIONS does not list."""
+ATTACHED_VALUE_FLAGS = {"commit": frozenset({"-u", "-S"}), "am": frozenset({"-S"})}
+"""The short flags whose optional value is only read when attached, so the rest of a cluster is that value."""
+HOOK_CONFIG_PREFIXES = ("alias.", "include.", "includeif.")
+MIN_ABBREVIATION = len("--no-v")
+HOOKS_PATH_KEY = "core.hookspath"
+HOOK_SKIP_SUFFIX = "skips repository hooks; let the hooks run"
 
 
 def branch(arguments: tuple[str, ...] = ()) -> str:
@@ -161,12 +184,29 @@ def reason(arguments: tuple[str, ...]) -> str:
     return _git_reason(arguments) if executable == "git" else ""
 
 
+def hook_bypass_reason(arguments: tuple[str, ...], assignments: tuple[str, ...] = ()) -> str:
+    """The hook-skipping objection that its literal words already settle, whatever run-time words sit beside them."""
+    if reason := environment_reason(arguments, assignments):
+        return reason
+    if not arguments or Path(arguments[0]).name != "git":
+        return ""
+    try:
+        globals_, command = git_arguments(arguments)
+    except ValueError:
+        return ""
+    if not command:
+        return ""
+    return hook_skip_reason(globals_, command[0], spelled_out(command[0], command[1:]))
+
+
 def _git_reason(arguments: tuple[str, ...]) -> str:
     globals_, command = git_arguments(arguments)
     if not command:
         return ""
     verb, *rest = command
     remaining = spelled_out(verb, tuple(rest))
+    if skipped := hook_skip_reason(globals_, verb, remaining):
+        return skipped
     if sandboxed := sandbox_form_reason(verb, remaining):
         return sandboxed
     options = {argument.split("=", 1)[0] for argument in remaining}
@@ -181,6 +221,140 @@ def _git_reason(arguments: tuple[str, ...]) -> str:
     if verb == "restore":
         destructive = restores_worktree(remaining)
     return f"destructive git operation: {verb}" if destructive else ""
+
+
+def hook_skip_reason(globals_: tuple[str, ...], verb: str, arguments: tuple[str, ...]) -> str:
+    """Name the option or setting that makes Git skip repository hooks, or nothing when the hooks run."""
+    if key := hook_config_key(globals_):
+        return f"-c {key} can hide an option that {HOOK_SKIP_SUFFIX}"
+    if option := hook_skipping_option(verb, arguments):
+        return f"git {verb} {option} {HOOK_SKIP_SUFFIX}"
+    return ""
+
+
+def environment_reason(arguments: tuple[str, ...], assignments: tuple[str, ...]) -> str:
+    """Name an environment assignment that gives Git a hook-moving setting, as -c does.
+
+    Reads prefix assignments and the NAME=value words of env; GIT_CONFIG_PARAMETERS carries whole
+    settings and is refused, GIT_CONFIG_KEY_<n> only when it names a key that hook_config_key refuses.
+    """
+    program = Path(arguments[0]).name if arguments else ""
+    words = env_assignments(arguments[1:]) if program == "env" else ()
+    for word in (*assignments, *words):
+        name, separator, value = word.partition("=")
+        key = value.strip("'\"")
+        if separator and (
+            name == "GIT_CONFIG_PARAMETERS" or (re.fullmatch(r"GIT_CONFIG_KEY_\d+", name) and hides_hooks(key))
+        ):
+            return f"{name} {HOOK_SKIP_SUFFIX}"
+    return ""
+
+
+def env_assignments(arguments: tuple[str, ...]) -> tuple[str, ...]:
+    """The NAME=value words env sets before the command it runs, skipping its options; the command's words are not."""
+    assignments: list[str] = []
+    index = 0
+    while index < len(arguments):
+        argument = arguments[index]
+        if argument in {"-u", "-C", "-S", "-P", "--unset", "--chdir", "--split-string"}:
+            index += 1
+        elif re.match(r"[A-Za-z_][A-Za-z0-9_]*=", argument):
+            assignments.append(argument)
+        elif not argument.startswith("-"):
+            break
+        index += 1
+    return tuple(assignments)
+
+
+def hides_hooks(key: str) -> bool:
+    """Whether a config key moves the hooks or can alias or include a skipping option."""
+    name = key.lower()
+    return name == HOOKS_PATH_KEY or name.startswith(HOOK_CONFIG_PREFIXES)
+
+
+def hook_config_key(globals_: tuple[str, ...]) -> str:
+    """The first one-command setting that moves the hooks or can smuggle in a skipping option, by -c or --config-env.
+
+    core.hooksPath moves them; alias.* and include.* hide a skipping option behind a name or a file.
+    """
+    settings = [value for option, value in pairwise(globals_) if option == "-c"]
+    settings += [option.removeprefix("--config-env=") for option in globals_ if option.startswith("--config-env=")]
+    keys = (setting.split("=", 1)[0] for setting in settings)
+    return next(
+        (key for key in keys if key.lower() == HOOKS_PATH_KEY or key.lower().startswith(HOOK_CONFIG_PREFIXES)), ""
+    )
+
+
+def hook_skipping_option(verb: str, arguments: tuple[str, ...]) -> str:
+    """The first skipping option of the verb, reading option values as data; empty when there is none.
+
+    A later --verify or --post-rewrite does not clear it: an option this module does not know could take that
+    word as its value, so a skip is never taken back.
+    """
+    skipping = HOOK_SKIPPING_OPTIONS.get(verb, set())
+    reading_value = VALUED_OPTIONS.get(verb, frozenset()) | HOOK_SKIPPING_VALUED.get(verb, frozenset())
+    reading_value |= ATTACHED_VALUE_FLAGS.get(verb, frozenset())
+    skipped = (skipped_in(arguments[index], skipping, reading_value) for index in option_positions(verb, arguments))
+    return next(filter(None, skipped), "")
+
+
+def appends_to_hook_verb(arguments: tuple[str, ...]) -> bool:
+    """Whether the command is a Git verb with hook-skipping options, run by xargs, which appends words from input."""
+    try:
+        _, command = git_arguments(arguments)
+    except ValueError:
+        return False
+    return Path(arguments[0]).name == "git" and (not command or command[0] in HOOK_SKIPPING_OPTIONS)
+
+
+def hides_hook_skip(verb: str, arguments: tuple[str, ...], dynamic: tuple[bool, ...]) -> bool:
+    """Whether a run-time word sits where an option could be, so it might spell a skipping option."""
+    return verb in HOOK_SKIPPING_OPTIONS and any(dynamic[index] for index in option_positions(verb, arguments))
+
+
+def option_positions(verb: str, arguments: tuple[str, ...]) -> list[int]:
+    """The indexes of the arguments that Git reads as options: not a value, and none after a bare `--`."""
+    valued = VALUED_OPTIONS.get(verb, frozenset()) | HOOK_SKIPPING_VALUED.get(verb, frozenset())
+    attached = ATTACHED_VALUE_FLAGS.get(verb, frozenset())
+    positions: list[int] = []
+    takes_value = False
+    for index, argument in enumerate(arguments):
+        if takes_value:
+            takes_value = False
+        elif argument == "--":
+            break
+        else:
+            positions.append(index)
+            takes_value = reads_next_value(argument, argument, valued) and not attached_value(argument, attached)
+    return positions
+
+
+def skipped_in(argument: str, skipping: set[str], reading_value: frozenset[str]) -> str:
+    """The skipping option an argument spells: a long option or its abbreviation, or a short flag in a cluster.
+
+    A flag in reading_value ends a short cluster, since the rest of it is that flag's value.
+    """
+    if argument.startswith("--"):
+        key = argument.split("=", 1)[0]
+        return next((name for name in sorted(skipping) if abbreviates(key, name)), "")
+    if not re.fullmatch(r"-[A-Za-z0-9]+", argument):
+        return ""
+    for flag in argument[1:]:
+        if f"-{flag}" in reading_value:
+            return ""
+        if f"-{flag}" in skipping:
+            return f"-{flag}"
+    return ""
+
+
+def attached_value(argument: str, attached: frozenset[str]) -> bool:
+    """Whether a short cluster ends in a flag that only reads an attached value, so it leaves the next word alone."""
+    return bool(re.fullmatch(r"-[A-Za-z0-9]+", argument)) and any(f"-{flag}" in attached for flag in argument[1:])
+
+
+def abbreviates(key: str, name: str) -> bool:
+    """Whether key is name or a prefix long enough that Git could read it as name; a shared prefix over-matches."""
+    return key == name or (name.startswith("--") and len(key) >= MIN_ABBREVIATION and name.startswith(key))
 
 
 def forces_deletion(arguments: tuple[str, ...]) -> bool:

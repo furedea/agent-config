@@ -70,6 +70,15 @@ def three():
     return 3
 
 
+def parse(raw):
+    return Money.model_validate(json.loads(raw))
+
+
+class Plain:
+    def __init__(self, name):
+        self.name = name
+
+
 def test_a(one):
     assert one == 1
 
@@ -89,7 +98,8 @@ def test_python_style_model_rules_select_the_subjects_they_ask_about(repository:
     # up by key; plain strings in `label` and `say`, and a docstring (`only_doc`), are not subjects. `pytest.fixture`,
     # the bare `@fixture` and an aliased `@pytest_fixture` all select a fixture. The module has test functions, so
     # the parametrize rule asks
-    # about it. The aliased import is asked about.
+    # about it. The aliased import is asked about. `parse` is the only `model_validate` call, and `Plain` the only
+    # class with an `__init__`.
     assert {rule: n for rule, n in counts.items() if rule not in RULE_IDS} == {
         "value-object-is-immutable": 2,
         "construction-placement-by-purity": 1,
@@ -98,4 +108,6 @@ def test_python_style_model_rules_select_the_subjects_they_ask_about(repository:
         "fixture-justified": 3,
         "repeated-tests-use-parametrize": 1,
         "import-name-self-explanatory": 1,
+        "json-parse-uses-model-validate-json": 1,
+        "plain-class-defines-slots": 1,
     }

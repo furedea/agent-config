@@ -1,0 +1,24 @@
+# agents/skills/python-style/references/models.md: parse JSON with `Model.model_validate_json(...)`; a strict model
+# rejects a dict built by `json.loads` for datetime, UUID and similar fields. Every `model_validate(...)` call is sent so
+# the model can follow where the argument came from. Advisory and unfitted (ADR-0021).
+id: json-parse-uses-model-validate-json
+language: Python
+kind: noul
+subject: node
+state: located
+threshold: 0.5
+axis: file
+severity: warning
+rule:
+  kind: call
+  regex: \.model_validate\(
+ask: >-
+  This `model_validate(...)` call validates a value that came from a JSON loader instead of using
+  `model_validate_json`.
+criteria:
+  "true": >-
+    The argument is the result of `json.loads`, `orjson.loads` or `ujson.loads` (directly, or through a variable that
+    holds it unchanged), so `Model.model_validate_json(raw)` would do the same job and keep strict mode working.
+  "false": >-
+    The argument is not parsed JSON (a dict built in code, a TOML or YAML result, a function argument), the loaded value
+    is changed before validation, or the call needs options `model_validate_json` cannot take.

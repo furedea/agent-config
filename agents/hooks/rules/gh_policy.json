@@ -502,7 +502,7 @@
     },
     "run cancel": {
       "operation": "run.cancel",
-      "effect": "reversible",
+      "effect": "irreversible",
       "flags": [
         "--force"
       ]
@@ -652,7 +652,7 @@
       "method": "POST",
       "path": "repos/{owner}/{repo}/actions/runs/{number}/cancel",
       "operation": "run.cancel",
-      "effect": "reversible"
+      "effect": "irreversible"
     }
   ],
   "graphql_mutations": {

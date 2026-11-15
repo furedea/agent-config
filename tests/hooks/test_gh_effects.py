@@ -104,7 +104,6 @@ def reason(command: str) -> str:
         pytest.param("gh pr review 42 -cb 'Looks good'", id="a bundled review comment"),
         pytest.param("gh pr close 42", id="a PR close"),
         pytest.param("gh pr ready 42 --undo", id="a draft toggle"),
-        pytest.param("gh run cancel 123", id="a run cancel"),
         pytest.param("gh label create bug --color FF0000 -d 'Something broke'", id="a label"),
         pytest.param("gh pr comment https://github.com/furedea/agent-config/pull/1 -b ok", id="a URL target"),
         pytest.param("gh issue comment 1 -R FUREDEA/agent-config -b ok", id="an owner in another case"),
@@ -319,6 +318,10 @@ def test_reads_and_local_changes_are_allowed_in_any_form(command: str) -> None:
         pytest.param("gh stack submit --auto", "class D", id="a stack submit, which pushes unscanned commits"),
         pytest.param("gh stack push", "class D", id="a stack push"),
         pytest.param("gh run rerun 123 --failed", "class D", id="a run rerun, whose jobs act outside"),
+        pytest.param("gh run cancel 123", "class D", id="a run cancel, which cannot be resumed"),
+        pytest.param(
+            "gh issue develop --list 1 -R evil.example/o/r", "another host", id="a branch list on another host"
+        ),
         pytest.param("gh api -X POST repos/furedea/r/actions/runs/1/rerun", "class D", id="a REST rerun"),
         pytest.param("gh run download 1 --foo", "operation table", id="a download with an unlisted option"),
         pytest.param("cd ../other && gh pr list", "remotes", id="a read after a directory change"),

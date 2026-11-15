@@ -46,8 +46,9 @@ ASSIGNING_PROGRAMS = frozenset(
     {"declare", "eval", "export", "getopts", "let", "local", "mapfile", "read", "readarray", "readonly"}
     | {"alias", "hash", "set", "source", ".", "trap", "typeset", "unalias", "unset", "vared", "zparseopts"}
 )
-# Syntax that assigns: a declaration, a loop variable, arithmetic, or a ${name:=value} default.
-ASSIGNING_NODES = frozenset({"DeclClause", "ForClause", "CStyleLoop", "ArithmCmd", "ArithmExp"})
+# Syntax that assigns: a declaration, a loop variable, arithmetic, a ${name:=value} default, or a function,
+# which can stand in for a command of the same name.
+ASSIGNING_NODES = frozenset({"DeclClause", "ForClause", "CStyleLoop", "ArithmCmd", "ArithmExp", "FuncDecl"})
 DEFAULT_ASSIGNMENT = re.compile(r"\$\{[^}]*?:?=")
 # Input redirections in a call's trailer: a heredoc whose delimiter is quoted keeps its body literal
 # and in the line; a file is read at run time; anything else, a herestring, an unquoted heredoc, or a
@@ -100,7 +101,8 @@ class CommandLine:
     script another program reads, whose assignments the line's own syntax does not show; gh may then
     not see the harness environment.
     `changes_directory` says another command on the line is not an output filter, so the directory or
-    its remotes may differ from what the hook reads.
+    its remotes may differ from what the hook reads, and `arguments` joins every command's arguments
+    as the shell passes them, substituted commands included, for the secret scan.
     """
 
     source: str
@@ -108,6 +110,7 @@ class CommandLine:
     hides_code: bool
     changes_environment: bool
     changes_directory: bool = False
+    arguments: str = ""
 
 
 def command_line(source: str, commands: tuple[shell_syntax.Command, ...]) -> CommandLine:
@@ -121,7 +124,8 @@ def command_line(source: str, commands: tuple[shell_syntax.Command, ...]) -> Com
     )
     others = [item for item in commands if not is_gh(command_policy.canonical(item))]
     moves = not all(Path(item.arguments[0]).name in OUTPUT_FILTERS for item in others)
-    return CommandLine(source, _is_single_call(source, commands), hides_code, changes, moves)
+    arguments = " ".join(argument for item in commands for argument in item.arguments)
+    return CommandLine(source, _is_single_call(source, commands), hides_code, changes, moves, arguments)
 
 
 def _assigns_in_syntax(source: str) -> bool:
@@ -167,7 +171,7 @@ def _is_single_call(source: str, commands: tuple[shell_syntax.Command, ...]) -> 
 
 def _only_prints(command: shell_syntax.Command) -> bool:
     """Whether a command inside a substitution prints only literal text or its heredoc, never a file."""
-    name = Path(command.arguments[0]).name
+    name = command.arguments[0]
     if name not in PRINTING_PROGRAMS or command.wrapper_depth or command.writes or command.has_dynamic_words:
         return False
     if any(not QUOTED_HEREDOC.match(redirect) for redirect in input_redirects(command)):
@@ -200,7 +204,7 @@ def verdict(candidate: shell_syntax.Command, line: CommandLine, rules: GhRules) 
         return _ask(call, preview)
     if problem := _ungranted(call, line, rules):
         return _ask(f"'{call.label}' {problem}", preview, call.label)
-    text = "\n".join([_sent_text(call, line), " ".join(candidate.arguments)])
+    text = "\n".join([_sent_text(call, line), line.arguments])
     match = secret_content.first_match(text, rules.secret_patterns)
     if match is None:
         return hook_decision.ALLOW

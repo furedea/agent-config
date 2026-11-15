@@ -222,7 +222,8 @@ def _classify_write(words: tuple[Word, ...], spec: CommandSpec, single_call: boo
         if not literal and not scan.flags & group & (spec.flags | spec.irreversible_flags):
             raise UnclassifiableError(f"'{spec.operation}' needs one of {', '.join(sorted(group))}")
     if scan.flags & spec.read_flags:
-        return GhCall((spec.operation,), Effect.READ)
+        _check_read_repositories(words)
+        return GhCall((spec.operation,), Effect.READ, reads_working_repository=True)
     effect = Effect.IRREVERSIBLE if scan.flags & spec.irreversible_flags else spec.effect
     files = scan.values_of(spec.files)
     paths = [sent_path(word.value) for word in files if not word.dynamic]

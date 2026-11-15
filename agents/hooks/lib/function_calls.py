@@ -25,8 +25,9 @@ KEYWORD_NAMES = frozenset("declare local export typeset readonly nameref integer
 SHELL_HOOKS = re.compile(
     r"command_not_found_handler?|precmd|preexec|chpwd|periodic|zshexit|zshaddhistory|TRAP[A-Z0-9]+"
 )
-# Arrays holding a function's arguments: zsh's argv, and bash's BASH_ARGV and BASH_ARGC under extdebug.
-ARGUMENT_ARRAYS = frozenset({"argv", "BASH_ARGV", "BASH_ARGC"})
+# Parameters holding a function's arguments: zsh's argv, bash's BASH_ARGV and BASH_ARGC under extdebug, and $_,
+# the last word of the call.
+ARGUMENT_ARRAYS = frozenset({"argv", "BASH_ARGV", "BASH_ARGC", "_"})
 # Words before a builtin that still run it, as in builtin shift or command -p shift.
 BUILTIN_PREFIXES = frozenset({"builtin", "command"})
 # Text eval or trap runs that may read or replace a function's arguments, at any depth of eval, once unquoted.
@@ -35,6 +36,8 @@ ARGUMENT_TEXT = re.compile(r"[$`]|(?<![\w-])(?:shift|set|getopts|read|mapfile|re
 SPELLING = re.compile(r"[\\'\"{},?*\[\]]")
 # Builtins that may assign a variable named only at run time, or run code that does.
 UNSEEN_ASSIGNERS = frozenset({"read", "mapfile", "readarray", "vared", "getopts", "source", ".", "eval", "trap"})
+# Programs a caller's word may name that change the arguments or run code, when a body runs that word.
+ARGUMENT_CHANGERS = RELIED_NAMES | KEYWORD_NAMES | UNSEEN_ASSIGNERS | {"unset"}
 ARITHMETIC = frozenset({"ArithmCmd", "ArithmExp", "LetClause"})
 ARITHMETIC_TEST = re.compile(r"\s-(?:eq|ne|lt|le|gt|ge)\s")
 GLOB_CHARACTERS = re.compile(r"[*?\[]")
@@ -61,6 +64,11 @@ def respelled_calls(records: tuple[dict, ...], data: bytes) -> list[str]:
     Raises:
         UnsupportedSyntaxError: A body reads its arguments in a way the respelling cannot follow.
     """
+    code_bodies = [
+        node["Body"] for node in records if node.get("Type") == "FuncDecl" and node["Name"]["Value"] == CODE_BODY
+    ]
+    if any(node.get("Type") == "FuncDecl" for body in code_bodies for node in nodes(body)):
+        raise UnsupportedSyntaxError("defining a function in eval or trap text requires explicit review", "expansion")
     bodies: dict[str, list[dict]] = {}
     for node in (node for node in records if node.get("Type") == "FuncDecl" and node["Name"]["Value"] != CODE_BODY):
         bodies.setdefault(_defined_name(node), []).append(_followed(node["Body"], records, data))
@@ -103,11 +111,19 @@ def operands(arguments: tuple[str, ...]) -> tuple[str, ...]:
 
 def _body_respellings(body: dict, words: list[dict], data: bytes) -> list[str]:
     """Each statement of one body that reads its arguments, respelled with one call's words, once per shift."""
-    if words and _calls(body, data, "source") + _calls(body, data, "."):
+    reading = any(_reads(part, _copies(body)) for part in nodes(body))
+    if (words or reading) and _calls(body, data, "source") + _calls(body, data, "."):
         raise UnsupportedSyntaxError(
-            "calling a function that sources a file with arguments requires explicit review", "expansion"
+            "calling a function that sources a file and passes or reads arguments requires explicit review",
+            "expansion",
         )
     copies = _copies(body)
+    named = any(_names_by_arguments(call, _program_words(call, data), copies) for call in _calls(body, data))
+    if named and not {literal_word(word, data)[0] for word in words}.isdisjoint(ARGUMENT_CHANGERS):
+        raise UnsupportedSyntaxError(
+            "calling a function that runs its argument as a builtin changing arguments requires explicit review",
+            "expansion",
+        )
     shifts = range(len(words) + 1) if _calls(body, data, "shift") else range(1)
     return [
         _Respelling(words[shift:], data, copies).statement(statement)
@@ -289,8 +305,12 @@ def _program(call: dict, data: bytes) -> list[str]:
 def _runs_unseen(call: dict, copies: dict[str, str], data: bytes) -> bool:
     """Whether the program is known only at run time, and not from the arguments a respelling supplies."""
     words = _program_words(call, data)
+    return words[0][1] and not _names_by_arguments(call, words, copies)
+
+
+def _names_by_arguments(call: dict, words: list[tuple[str, bool]], copies: dict[str, str]) -> bool:
     program = call["Args"][len(call["Args"]) - len(words)]
-    return words[0][1] and not any(_reads(part, copies) for part in nodes(program))
+    return any(_reads(part, copies) for part in nodes(program))
 
 
 def _program_words(call: dict, data: bytes) -> list[tuple[str, bool]]:

@@ -53,7 +53,9 @@ PLAIN_PARAMETER = re.compile(r"\$(?:([A-Za-z_][A-Za-z0-9_]*)|\{([A-Za-z_][A-Za-z
 # Variables naming a file or directory a non-interactive shell sources before the command runs.
 STARTUP_FILE_VARIABLES = ("BASH_ENV", "ENV", "ZDOTDIR")
 # git settings that run a program for a transport, rewrite a URL to another transport, or enable one.
-TRANSPORT_SETTINGS = r"^(core\.(sshcommand|gitproxy)|url\..*\.(insteadof|pushinsteadof)|protocol\..*)$"
+TRANSPORT_SETTINGS = r"^(core\.(sshcommand|gitproxy)|url\..*\.(insteadof|pushinsteadof)|protocol\.(.*\.)?allow)$"
+# git settings that give a new clone hooks, or a filter program its checkout runs.
+CHECKOUT_SETTINGS = r"^(init\.templatedir|core\.hookspath|filter\..*\.(smudge|process))$"
 # The GIT_SSH_COMMAND the sandbox runtime sets: ssh through the proxy command the runtime itself provides.
 SANDBOX_SSH_COMMAND = (
     "ssh -o ControlMaster=no -o ControlPath=none -o ProxyCommand=\"/bin/sh -c 'eval "
@@ -61,7 +63,7 @@ SANDBOX_SSH_COMMAND = (
 )
 # Variables that make git run another program, or read configuration from a file the guard does not check.
 GIT_OVERRIDE_VARIABLES = ("GIT_SSH", "GIT_EXEC_PATH", "GIT_PROXY_COMMAND", "GIT_ASKPASS", "SSH_ASKPASS")
-GIT_OVERRIDE_VARIABLES += ("GIT_CONFIG_GLOBAL", "GIT_CONFIG_SYSTEM")
+GIT_OVERRIDE_VARIABLES += ("GIT_CONFIG_GLOBAL", "GIT_CONFIG_SYSTEM", "GIT_ALLOW_PROTOCOL")
 IRREVERSIBLE_REASON = "cannot be taken back or promotes work (class D)"
 TARGET_REASONS = {
     TargetClass.UNTRUSTED: "writes to a repository whose owner is not in trusted_owners.json (class C)",
@@ -234,7 +236,7 @@ def _ungranted(call: GhCall, line: CommandLine, rules: GhRules) -> str:
     if not all(rules.catalog.grant(target, operation, call.effect) for operation in call.operations):
         return IRREVERSIBLE_REASON if call.effect is Effect.IRREVERSIBLE else TARGET_REASONS[target]
     if "repo.clone" in call.operations and _clone_may_run_hooks():
-        return "clones with a hook template or hooks path that may run code after the checkout"
+        return "clones with a hook template, hooks path, or filter that may run code on the checkout"
     if problem := _file_problem(call, line):
         return problem
     if call.unscanned_files and (call.effect is Effect.READ or target is not TargetClass.TRUSTED):
@@ -389,10 +391,13 @@ def _file_head(path: Path) -> str:
 
 
 def _clone_may_run_hooks() -> bool:
-    """Whether a new clone may get hooks: from a template directory, or a configured hooks path."""
+    """Whether a new clone may run code on checkout: hooks from a template or hooks path, or a filter program.
+
+    A filter runs for any path whose .gitattributes, which the cloned repository supplies, names it.
+    """
     if os.environ.get("GIT_TEMPLATE_DIR"):
         return True
-    output = _git_output("config", "--get-regexp", r"^(init\.templatedir|core\.hookspath)$")
+    output = _git_output("config", "--get-regexp", CHECKOUT_SETTINGS)
     return output is None or bool(output.strip())
 
 

@@ -313,7 +313,7 @@ def test_an_ssh_planted_where_the_agent_writes_makes_every_call_ask(monkeypatch:
         ("GIT_SSH_COMMAND", "ssh -o ProxyCommand=/tmp/evil"),
         ("GIT_SSH_COMMAND", "ssh -F /tmp/evil"),
         *((name, "/tmp/evil") for name in ("GIT_EXEC_PATH", "GIT_PROXY_COMMAND", "GIT_ASKPASS", "SSH_ASKPASS")),
-        *((name, "/tmp/evil") for name in ("GIT_CONFIG_GLOBAL", "GIT_CONFIG_SYSTEM")),
+        *((name, "/tmp/evil") for name in ("GIT_CONFIG_GLOBAL", "GIT_CONFIG_SYSTEM", "GIT_ALLOW_PROTOCOL")),
     ],
 )
 def test_an_ssh_override_in_the_hook_environment_makes_every_call_ask(
@@ -338,7 +338,7 @@ def test_a_clone_with_a_hook_template_asks(monkeypatch: pytest.MonkeyPatch) -> N
 
 
 @pytest.mark.usefixtures("furedea_checkout")
-@pytest.mark.parametrize("key", ["init.templateDir", "core.hooksPath"])
+@pytest.mark.parametrize("key", ["init.templateDir", "core.hooksPath", "filter.pwn.smudge", "filter.pwn.process"])
 def test_a_clone_under_a_configured_template_or_hooks_path_asks(key: str) -> None:
     subprocess.run(["git", "config", key, "hooks"], check=True)
     assert decide("gh repo clone furedea/agent-config") == "ask"
@@ -366,3 +366,10 @@ def test_a_configured_ssh_or_proxy_program_makes_every_call_ask(key: str) -> Non
 )
 def test_a_clone_url_must_use_a_known_transport(url: str, expected: str) -> None:
     assert decide(f"gh repo clone {url}") == expected
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_protocol_version_setting_keeps_calls_allowed() -> None:
+    subprocess.run(["git", "config", "protocol.version", "2"], check=True)
+    assert decide("gh pr view 1 -R furedea/agent-config") == "allow"
+    assert decide("gh repo clone furedea/agent-config") == "allow"

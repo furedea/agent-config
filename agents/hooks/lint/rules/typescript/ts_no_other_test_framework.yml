@@ -43,11 +43,16 @@ rule:
         - not:
             inside:
               stopBy: end
-              kind: program
+              any:
+                - kind: program
+                - kind: statement_block
               has:
-                stopBy: end
-                kind: variable_declarator
-                has: { field: name, kind: identifier, regex: ^jest$ }
+                any:
+                  - kind: lexical_declaration
+                  - kind: variable_declaration
+                has:
+                  kind: variable_declarator
+                  has: { field: name, kind: identifier, regex: ^jest$ }
     - all:
         - kind: export_statement
         - has:

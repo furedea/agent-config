@@ -29,7 +29,18 @@ valid:
       const jest = makeFormatter();
       return jest.format();
     }
+  - |
+    const jest = makeFormatter();
+    function render() {
+      return jest.format();
+    }
 invalid:
+  - |
+    const mock = jest.fn();
+    function render() {
+      const jest = makeFormatter();
+      return jest.format();
+    }
   - |
     import { describe, it } from "node:test";
   - |

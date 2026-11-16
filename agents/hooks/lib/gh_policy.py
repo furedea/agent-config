@@ -40,8 +40,6 @@ RUN_TIME_FILE = re.compile(r'^<\s*"[^"`]*\$[^"`]*"$')
 # A run-time path the guard would expand differently from the shell: a glob, substitution, tilde,
 # escape, parameter operator or subscript, or a zsh modifier such as `$f:h`.
 UNEXPANDABLE_PATH = re.compile(r"[`*?\[~\\]|\$\(|\$\{[^}]*[^A-Za-z0-9_}]|\$\{?[A-Za-z_][A-Za-z0-9_]*\}?:")
-# Positional and special parameters, which only the running shell knows.
-SPECIAL_PARAMETER = re.compile(r"\$\{?[0-9#?$!@*-]")
 # Parameters the shell sets or changes itself, even when the hook's environment holds them.
 SHELL_MANAGED = frozenset(
     {"SECONDS", "RANDOM", "SRANDOM", "LINENO", "SHLVL", "_", "OLDPWD", "PPID", "BASHPID", "EPOCHSECONDS"}
@@ -185,7 +183,8 @@ def _is_predictable(source: str) -> bool:
     exported parameter it leaves alone counts, and PWD, which the hook's directory gives.
     """
     unquoted = "".join(part for part in SHELL_PART.findall(source) if not part.startswith("'"))
-    if SPECIAL_PARAMETER.search(unquoted):
+    # Any `$` left once plain parameters are removed is a positional, special, or zsh-flagged expansion.
+    if "$" in PLAIN_PARAMETER.sub("", unquoted):
         return False
     return all(name == "PWD" or (name in os.environ and name not in SHELL_MANAGED) for name in _expanded_names(source))
 

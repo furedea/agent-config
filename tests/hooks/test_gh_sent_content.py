@@ -401,6 +401,7 @@ def test_a_run_time_body_path_the_guard_cannot_read_asks_even_for_a_trusted_owne
         '"body$1"',
         '"body$?"',
         '"body$SHLVL"',
+        '"body$+HOME"',
     ],
 )
 def test_a_run_time_path_the_hook_environment_cannot_predict_asks(path: str, monkeypatch: pytest.MonkeyPatch) -> None:

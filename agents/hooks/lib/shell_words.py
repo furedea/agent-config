@@ -25,10 +25,10 @@ GLOB = re.compile(r"(?<!\\)[*?]|(?<!\\)\[.+\]")
 # Brace expansion can pair braces across quoted parts, so any unquoted brace counts.
 BRACES = frozenset("{}")
 LINE_CONTINUATION = "\\\n"
-# shfmt reads `$=name`, `$~name`, and `$^name` as a `$` and literal text, but zsh splits, globs, or distributes the
-# value (`=`, `~`, and `^` are the only characters zsh accepts there, in or out of double quotes); a dollar
+# shfmt reads `$=name`, `$~name`, `$^name`, and `$+name` as a `$` and literal text, but zsh splits, globs,
+# distributes, or tests the value (`=`, `~`, `^`, and `+` are the characters zsh accepts there); a dollar
 # sign after an even run of backslashes (each pair is one literal backslash) is not escaped.
-ZSH_EXPANSION_FLAG = re.compile(r"(?<!\\)(?:\\\\)*\$[=~^]")
+ZSH_EXPANSION_FLAG = re.compile(r"(?<!\\)(?:\\\\)*\$[=~^+]")
 # Inside double quotes the shell still expands or rewrites only these, `!` being history expansion.
 DOUBLE_QUOTE_SPECIAL = re.compile(r"[$`\\!]")
 

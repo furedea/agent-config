@@ -7,7 +7,6 @@ suppression marker to a code file, or changes the rules or lints one names, asks
 one does not.
 """
 
-import bisect
 import difflib
 import json
 import os
@@ -25,6 +24,7 @@ import audit_log
 import comment_nodes
 import hook_decision
 import hook_input
+import marker_scope
 import patch_input
 from hook_decision import Verdict
 
@@ -195,62 +195,10 @@ def _marked_lines(name: str, text: str, suffix: str) -> dict[int, tuple[tuple[bo
     spans = find(text, suffix)
     if spans is None:
         return None
-    layout = _Layout.of(text, spans, closing=name in CODE_MARKERS)
     marked: dict[int, list[tuple[bool, str]]] = {}
-    # Each scope stops at the next marker, which takes up the text from there, so the work grows with the text alone.
-    for start, following in zip(starts, [*starts[1:], len(text)], strict=True):
-        node_end = layout.node_end(start)
-        end = min(node_end if node_end is not None else layout.code_end(start), following)
-        marked.setdefault(layout.line(start), []).append((node_end is not None, " ".join(text[start:end].split())))
+    for mark in marker_scope.Layout.of(text, spans, attribute=name in CODE_MARKERS).marks(starts):
+        marked.setdefault(mark.line, []).append((mark.in_node, mark.scope))
     return {number: tuple(marks) for number, marks in marked.items()}
-
-
-@dataclass(frozen=True, slots=True)
-class _Layout:
-    """Where the lines, deciding nodes and brackets of a text start and end, for lookups by offset."""
-
-    line_starts: list[int]
-    spans: list[tuple[int, int]]
-    closings: dict[int, int]
-
-    @classmethod
-    def of(cls, text: str, spans: list[tuple[int, int]], *, closing: bool) -> _Layout:
-        """Index `text` once; `closing` also matches its square brackets, for attributes that span lines."""
-        # The last entry starts a line past the text, so every line has an end.
-        line_starts = [0, *(match.end() for match in re.finditer("\n", text)), len(text) + 1]
-        return cls(line_starts, sorted(spans), _closing_brackets(text) if closing else {})
-
-    def line(self, position: int) -> int:
-        """The number of the line that holds `position`."""
-        return bisect.bisect_right(self.line_starts, position) - 1
-
-    def node_end(self, position: int) -> int | None:
-        """Where the node that holds `position` ends, or None outside every node."""
-        index = bisect.bisect_right(self.spans, (position, float("inf"))) - 1
-        return self.spans[index][1] if index >= 0 and position < self.spans[index][1] else None
-
-    def code_end(self, position: int) -> int:
-        """Past the bracket that closes an attribute at `position`, else the end of its line."""
-        if position in self.closings:
-            return self.closings[position] + 1
-        return self.line_starts[self.line(position) + 1] - 1
-
-
-def _closing_brackets(text: str) -> dict[int, int]:
-    """For the `#` or `#!` that opens each attribute, the offset of the `]` that closes it."""
-    pairs: list[tuple[int, int]] = []
-    opened: list[int] = []
-    for position, character in enumerate(text):
-        if character == "[":
-            opened.append(position)
-        elif character == "]" and opened:
-            pairs.append((opened.pop(), position))
-    return {
-        start - len(prefix): end
-        for start, end in pairs
-        for prefix in ("#!", "#")
-        if text[start - len(prefix) : start] == prefix
-    }
 
 
 def _marker_lines(pattern: re.Pattern[str], text: str) -> list[str]:

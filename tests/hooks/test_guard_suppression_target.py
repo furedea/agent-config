@@ -27,6 +27,10 @@ def decide_edit(target: Path, old: str, new: str) -> str:
         ("lib.rs", "#[allow(\n    dead_code,\n)]\nfn a() {}\n", "dead_code,", "dead_code,\n    unused,"),
         ("lib.rs", "#[expect(clippy::too_many_lines)]\nfn a() {}\n", "clippy::too_many_lines", "clippy::all"),
         ("run.sh", "# shellcheck disable=SC2086\necho $x\n", "SC2086", "SC2086,SC2046"),
+        ("lib.rs", "#[allow(a, /* #[allow( */ b)]\nfn f() {}\n", "b)]", "b, c)]"),
+        ("lib.rs", "#[allow(a /* ] */, b)]\nfn f() {}\n", "b)]", "b, c)]"),
+        ("lib.rs", '#[allow(a, b = "]", c)]\nfn f() {}\n', "c)]", "c, d)]"),
+        ("lib.rs", "#[allow(a,\n    b,\n", "b,", "b, c,"),
     ],
     ids=[
         "nolint loses its linter",
@@ -40,6 +44,10 @@ def decide_edit(target: Path, old: str, new: str) -> str:
         "multi-line allow gains a lint on its own line",
         "expect names another lint",
         "shellcheck gains a code",
+        "allow gains a lint after a marker in its comment",
+        "allow gains a lint after a bracket in its comment",
+        "allow gains a lint after a bracket in its string",
+        "unclosed allow gains a lint below",
     ],
 )
 def test_changing_what_a_suppression_names_asks(tmp_path: Path, name: str, before: str, old: str, new: str) -> None:

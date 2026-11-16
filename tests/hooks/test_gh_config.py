@@ -34,6 +34,7 @@ def test_a_gh_config_directory_the_agent_can_write_makes_every_call_ask(monkeypa
         ("hosts:\n  github.com:\n    http_unix_socket: /tmp/evil.sock", "ask"),
         ("http_unix_socket:", "allow"),
         ('http_unix_socket: ""', "allow"),
+        ('"http_unix_sock\\x65t": /tmp/evil.sock', "ask"),
     ],
 )
 def test_a_unix_socket_in_the_gh_config_makes_every_call_ask(

@@ -111,7 +111,28 @@ def _gh_config_problem() -> str:
             return f"gh's {name} cannot be read to check where it sends requests"
         if any("http_unix_socket" in line and not EMPTY_UNIX_SOCKET.fullmatch(line) for line in lines):
             return "gh's configuration may send its requests through a Unix socket"
+    # YAML escapes or anchors can spell the key in a way no line matches, so ask gh how it reads it.
+    if _configured_socket() != "":
+        return "gh's configuration sends its requests through a Unix socket, or cannot be read"
     return ""
+
+
+def _configured_socket() -> str | None:
+    """The http_unix_socket gh reads for github.com, falling back to its global value; None when gh cannot say."""
+    found = shutil.which(PROGRAM)
+    if found is None:
+        return ""
+    try:
+        result = subprocess.run(
+            [found, "config", "get", "http_unix_socket", "--host", GITHUB_HOST],
+            capture_output=True,
+            text=True,
+            timeout=REMOTE_LOOKUP_TIMEOUT_SECONDS,
+            check=False,
+        )
+    except OSError, subprocess.SubprocessError:
+        return None
+    return result.stdout.strip() if result.returncode == 0 else None
 
 
 def _stand_in_problem(name: str, line: CommandLine) -> str:

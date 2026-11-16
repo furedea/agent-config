@@ -64,8 +64,8 @@ For what the PR body owns relative to the Issue and plan, follow
 ## Wait for CI
 
 After every push, wait for the PR's checks before handling review findings or reporting.
-A repository with no PR CI workflow or no required checks has nothing to wait for here; a missing
-run or an empty `--required` result in such a repository is not a failure.
+A repository with no PR CI workflow has nothing to wait for here; a missing run in such a
+repository is not a failure.
 
 1. Find the CI run for the pushed commit (`git rev-parse HEAD`) with `gh run list --commit <sha>`;
     the run exists from push time, possibly `queued`. If none is listed, wait briefly and look again, up to a fixed
@@ -77,8 +77,8 @@ run or an empty `--required` result in such a repository is not a failure.
     command until the run finishes: ending the turn while CI runs makes the lane look `done` to its
     parent. Do not poll: one blocking command, or one bounded wait for the run to appear, is fine;
     repeated manual checks across turns are not.
-3. When the runs have finished, confirm the repository's required check (`all-green` where it
-    exists) with `gh pr checks <n> --required`.
+3. When the runs have finished, confirm the `all-green` row of `gh pr checks <n>`. The ruleset's
+    required check is not visible to `--required`, so name `all-green` instead.
 4. On failure, identify the failing check with `gh pr checks <n>` and read its log with
     `gh run view <run-id> --log-failed`.
 5. Classify the cause:
@@ -109,8 +109,10 @@ mechanism is in the
     Codex Review Summary (`codex-review-state`), with
     `gh api repos/<owner>/<repo>/pulls/<n>/comments --paginate` (the path comes right after
     `gh api`, or the command asks for confirmation) and `gh pr view <n> --comments`.
-3. Fix every finding of any severity, then push; the push re-runs both reviews. Do not defer a
-    finding to the user.
+3. Fix every finding of any severity within the task's scope, then push; the push re-runs both
+    reviews. Do not defer a finding to the user. When the brief or Issue plan states a scope and
+    threat model, a finding outside it is not fixed: answer it in its thread citing that scope and
+    record it in the PR body. Correctness defects within the scope are still fixed.
 4. Do not change the work for a finding that repeats on the same grounds, is a matter of taste, or
     is refuted with evidence. Answer it in its thread and record it in the PR body with the reason.
 5. Stop and report the open findings instead of looping when a P0 or P1 finding repeats, when an

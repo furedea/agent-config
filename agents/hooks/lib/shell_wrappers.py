@@ -242,3 +242,12 @@ def script_index(arguments: tuple[str, ...], option: int) -> int:
     if index >= len(arguments):
         raise UnsupportedSyntaxError("shell wrapper has no literal command", "wrapper")
     return index
+
+
+def script_position(arguments: tuple[str, ...]) -> int | None:
+    """Where a shell's -c script sits, or None when the shell has no -c."""
+    flags = (
+        index for index, word in enumerate(arguments[1:], 1) if word[:1] == "-" and word[:2] != "--" and "c" in word
+    )
+    option = next(flags, None)
+    return None if option is None else script_index(arguments, option)

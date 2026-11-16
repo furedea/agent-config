@@ -29,6 +29,11 @@ ARGUMENT_ARRAYS = frozenset({"argv", "BASH_ARGV", "BASH_ARGC", "_"})
 # A zsh expansion or parameter flag, as $^@, $=1, ${~id}, or ${(s: :)1}, which the parser shows as other text and
 # which may read the arguments or a copy of them.
 ZSH_FLAGGED_ARGUMENT = re.compile(r"\$\{?[=~^]|\$\{\(")
+# POSIX special builtins and declarations, after which an assignment before them keeps its value.
+SPECIAL_BUILTINS = frozenset(
+    ": . break continue eval exec exit export readonly return set shift times trap unset source declare local "
+    "typeset".split()
+)
 # zsh precommand modifiers, which run the function named after them; builtin and command skip functions.
 FUNCTION_MODIFIERS = frozenset({"noglob", "nocorrect", "-"})
 # Builtins that assign a parameter named by an operand or an option, which may hold or replace the arguments.
@@ -288,7 +293,7 @@ def _followed(body: dict, records: tuple[dict, ...], data: bytes) -> dict:
             for part in nodes(node)
         )
         or ZSH_FLAGGED_ARGUMENT.search(source_text(body, data)) is not None
-        or _feeds_a_shell(body, copies, data)
+        or body_calls.feeds_a_shell(body, copies, data)
         or respelling.modified_in_zsh(body, copies)
         or any(
             respelling.reads(part, copies)
@@ -417,23 +422,6 @@ def _copied(assignment: dict) -> str | None:
     return parts[0]["Param"]["Value"] if len(parts) == 1 and respelling.is_positional(parts[0]) else None
 
 
-def _feeds_a_shell(body: dict, copies: dict[str, str], data: bytes) -> bool:
-    """Whether the arguments flow into a shell's input, by a pipe or a redirection, where its script reads them."""
-    shells = [call for call in body_calls.calls(body, data) if body_calls.may_run_shell(call, data)]
-    if not shells:
-        return False
-    pipes = (node for node in nodes(body) if node.get("Type") == "BinaryCmd" and shell_input.is_pipe(node, data))
-    if any(respelling.reads(part, copies) for pipe in pipes for part in nodes(pipe["X"])):
-        return True
-    statements = (node for node in nodes(body) if node.get("Cmd") in shells)
-    return any(
-        respelling.reads(part, copies)
-        for statement in statements
-        for redirect in statement.get("Redirs", [])
-        for part in nodes(redirect)
-    )
-
-
 def _unsettled_copy(body: dict, copies: dict[str, str]) -> bool:
     """Whether a copy may not hold its argument where it is read: assigned only on some path, or after a read.
 
@@ -464,11 +452,20 @@ def _unsettled_copy(body: dict, copies: dict[str, str]) -> bool:
 
 
 def _copies(body: dict) -> dict[str, str]:
-    """The plain copies of arguments; an assignment before a command lasts only for it and is respelled with it."""
+    """The plain copies of arguments.
+
+    An assignment before a command lasts only for it and is respelled with it, unless the command is a special
+    builtin such as export, after which the value stays.
+    """
     prefixed = {
         id(assign)
         for call in nodes(body)
-        if call.get("Type") == "CallExpr" and call.get("Args")
+        if call.get("Type") == "CallExpr"
+        and call.get("Args")
+        and not any(
+            "".join(part.get("Value", "") for part in word.get("Parts", [])) in SPECIAL_BUILTINS
+            for word in call["Args"]
+        )
         for assign in call.get("Assigns", [])
     }
     return {

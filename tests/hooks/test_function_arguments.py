@@ -168,6 +168,9 @@ def test_denials_see_through_builtin_prefixes_and_eval_option_ends(command: str)
         'X=BASH_; declare "${X}CMDS[ls]=/usr/bin/git"; ls commit --no-verify -m x',
         'X=BASH_; typeset "${X}ALIASES[g]=gh"; g pr merge 1',
         'X=alias; declare "${X}es[g]=gh"',
+        'f(){ id=$1 export id; find . "$id"; }; f -delete',
+        'f(){ id=$1 readonly id; find . "$id"; }; f -delete',
+        'f(){ id=$1 :; find . "$id"; }; f -delete',
         'f(){ diff <(cat "$1") /dev/null; }; f ~/.ssh/id_rsa',
         'zsh_directory_name(){ find . "$2"; reply=(/tmp); }; x=~[-delete]',
         "f(){ printf '%s\\n' \"$1\" | bash -c 'read x; find . \"$x\"'; }; f -delete",
@@ -289,3 +292,19 @@ def test_a_quoted_argument_list_with_no_words_vanishes_so_the_program_after_it_i
 @pytest.mark.parametrize("kind", ["allowed", "forbidden"])
 def test_a_scalar_copy_of_all_arguments_holds_them_as_one_word(kind: str) -> None:
     assert decide(kind, 'f(){ id="$@"; find . -name "$id"; }; f -delete safe').decision == "allow"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "bash -c 'git commit --no-verify -m \"$1\"' _ msg",
+        "sh -c 'find . -delete; echo \"$1\"' _ x",
+        "find . -exec sh -c 'git commit --no-verify -m \"$1\"' _ {} \\;",
+    ],
+)
+def test_a_denied_command_in_a_script_handed_arguments_is_still_denied(command: str) -> None:
+    assert decide("forbidden", command).decision == "deny"
+
+
+def test_a_script_reading_arguments_handed_to_it_still_asks_when_nothing_is_denied() -> None:
+    assert decide("allowed", "sh -c 'find . \"$1\"' _ x").decision == "ask"

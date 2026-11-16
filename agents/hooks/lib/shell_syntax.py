@@ -14,8 +14,9 @@ import fish_script
 import function_calls
 import powershell_options
 import shell_input
+import shell_wrappers
 from shell_words import UnsupportedSyntaxError, literal_word, nodes, single_quoted_source, source_text, spreads
-from shell_wrappers import ASSIGNMENT, WRAPPERS, OptionScan, script_index, wrapped_index
+from shell_wrappers import ASSIGNMENT, WRAPPERS, OptionScan, wrapped_index
 
 COMMAND_PREVIEW_LIMIT = 200
 RUN_TIME_PLACEHOLDER = "_"
@@ -209,11 +210,15 @@ def parse(source: str, depth: int = 0, directories: tuple[Path | None, ...] = ()
         innermost = layers[-1]
         name = shell_name(Path(innermost.arguments[0]).name)
         scripts = [(script, layer.wrapper_depth + 1) for layer in layers for script in shell_scripts(layer)]
-        unreviewed = name in FOREIGN_SHELLS or any(takes_foreign_option(layer) for layer in layers)
+        unreviewed = name in FOREIGN_SHELLS or any(
+            takes_foreign_option(item) or passes_to_script(item) for item in layers
+        )
         if (name in SHELLS and not scripts) or _is_foreign_shell(name):
             read = partial(sources.scripts, owner, reachable)
             inputs = shell_input.input_scripts(read, tolerant=bool(scripts) or name not in SHELLS)
-            inputs = shell_input.unpassed(inputs or [], shell_input.operands(innermost.arguments)) or inputs
+            unreviewed = unreviewed or shell_input.reads_passed(
+                inputs or [], shell_input.operands(innermost.arguments)
+            )
             scripts += [(script, innermost.wrapper_depth + 1) for script in inputs or []]
             unreviewed = unreviewed or (name not in SHELLS and inputs != [])
         if name == "fish":
@@ -310,7 +315,9 @@ def _statement_writes(statement: dict, data: bytes) -> tuple[str, ...]:
     redirects = [redirect for redirect in statement.get("Redirs", []) if redirect.get("Word")]
     targets = [literal_word(redirect["Word"], data)[0] for redirect in redirects]
     return tuple(
-        target for redirect, target in zip(redirects, targets, strict=True) if writes_file(redirect, target, data)
+        target
+        for redirect, target in zip(redirects, targets, strict=True)
+        if shell_input.writes_file(redirect, target, data)
     )
 
 
@@ -368,21 +375,6 @@ def literal_command(node: dict, owner: dict, data: bytes) -> Command:
     )
 
 
-def writes_file(redirect: dict, target: str, data: bytes) -> bool:
-    """Whether a redirection creates or overwrites a file, judged by its operator text, not by parser codes."""
-    symbol = _redirect_operator(redirect, data)
-    if not symbol:
-        return True
-    if symbol in {">&", "<&"}:
-        return symbol == ">&" and not (target.isdigit() or target == "-")
-    return symbol in {">", ">>", ">|", "&>", "&>>", "<>"}
-
-
-def _redirect_operator(redirect: dict, data: bytes) -> str:
-    operator = re.match(r"\d*(&>>|&>|>>|>\||>&|<&|<<<|<>|<|>)", source_text(redirect, data))
-    return operator.group(1) if operator else ""
-
-
 def unwrapped(command: Command) -> list[Command]:
     """Peel process wrappers so policy sees the program they eventually run."""
     exposed: list[Command] = []
@@ -403,22 +395,22 @@ def shell_scripts(command: Command) -> list[str]:
         return wrapper_scripts(command, executable)
     if _is_foreign_shell(executable):
         return foreign_scripts(command)
-    if shell_name(executable) not in SHELLS:
+    if shell_name(executable) not in SHELLS or (script := shell_wrappers.script_position(arguments)) is None:
         return []
-    option = next(
-        (
-            index
-            for index, argument in enumerate(arguments[1:], 1)
-            if argument.startswith("-") and not argument.startswith("--") and "c" in argument
-        ),
-        None,
-    )
-    if option is None:
-        return []
-    script = script_index(arguments, option)
     if command.dynamic[script]:
         raise UnsupportedSyntaxError("a shell wrapper running a computed script requires explicit review", "wrapper")
-    return shell_input.unpassed([arguments[script]], arguments[script + 1 :])
+    return [arguments[script]]
+
+
+def passes_to_script(command: Command) -> bool:
+    """Whether a shell's -c script may read the arguments after it, which its nested judgement cannot see."""
+    arguments = command.arguments
+    if (
+        shell_name(Path(arguments[0]).name) not in SHELLS
+        or (script := shell_wrappers.script_position(arguments)) is None
+    ):
+        return False
+    return shell_input.reads_passed([arguments[script]], arguments[script + 1 :])
 
 
 def _is_foreign_shell(executable: str) -> bool:

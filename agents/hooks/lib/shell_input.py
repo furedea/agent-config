@@ -264,17 +264,12 @@ def runs_unseen(call: dict, data: bytes) -> bool:
     return False
 
 
-def unpassed(scripts: list[str], passed: tuple[str, ...]) -> list[str]:
-    """The scripts a shell runs, unless one may read the arguments the shell is handed after them.
+def reads_passed(scripts: list[str], passed: tuple[str, ...]) -> bool:
+    """Whether a script a shell runs may read the arguments it is handed, which its nested judgement cannot see.
 
-    Raises:
-        UnsupportedSyntaxError: A script reads arguments that the nested judgement cannot see.
+    The scripts are still judged, so a deny inside them stands; only what would pass is held for review.
     """
-    if passed and any(ARGUMENT_TEXT.search(CODE_SPELLING.sub("", script)) for script in scripts):
-        raise UnsupportedSyntaxError(
-            "running a shell script that reads arguments passed to it requires explicit review"
-        )
-    return scripts
+    return bool(passed) and any(ARGUMENT_TEXT.search(CODE_SPELLING.sub("", script)) for script in scripts)
 
 
 def operands(arguments: tuple[str, ...]) -> tuple[str, ...]:
@@ -285,3 +280,18 @@ def operands(arguments: tuple[str, ...]) -> tuple[str, ...]:
         if argument[:1] not in {"-", "+"}:
             return arguments[index:]
     return ()
+
+
+def writes_file(redirect: dict, target: str, data: bytes) -> bool:
+    """Whether a redirection creates or overwrites a file, judged by its operator text, not by parser codes."""
+    symbol = _redirect_operator(redirect, data)
+    if not symbol:
+        return True
+    if symbol in {">&", "<&"}:
+        return symbol == ">&" and not (target.isdigit() or target == "-")
+    return symbol in {">", ">>", ">|", "&>", "&>>", "<>"}
+
+
+def _redirect_operator(redirect: dict, data: bytes) -> str:
+    operator = re.match(r"\d*(&>>|&>|>>|>\||>&|<&|<<<|<>|<|>)", source_text(redirect, data))
+    return operator.group(1) if operator else ""

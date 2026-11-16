@@ -65,3 +65,20 @@ def may_run_shell(call: dict, data: bytes) -> bool:
         return True
     # A wrapper's option operand may sit where the program seems to be, so any word naming a shell counts.
     return any(SHELL_NAME.fullmatch(Path(value).name) for value, _ in words)
+
+
+def feeds_a_shell(body: dict, copies: dict[str, str], data: bytes) -> bool:
+    """Whether the arguments flow into a shell's input, by a pipe or a redirection, where its script reads them."""
+    shells = [call for call in calls(body, data) if may_run_shell(call, data)]
+    if not shells:
+        return False
+    pipes = (node for node in nodes(body) if node.get("Type") == "BinaryCmd" and shell_input.is_pipe(node, data))
+    if any(respelling.reads(part, copies) for pipe in pipes for part in nodes(pipe["X"])):
+        return True
+    statements = (node for node in nodes(body) if node.get("Cmd") in shells)
+    return any(
+        respelling.reads(part, copies)
+        for statement in statements
+        for redirect in statement.get("Redirs", [])
+        for part in nodes(redirect)
+    )

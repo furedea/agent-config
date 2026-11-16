@@ -77,7 +77,9 @@ complete. Supply:
   uncommitted code, identify whether staged, unstaged, and untracked files are included, and
   provide a stable snapshot when the checkout may still change.
 - **Scope and focus:** the boundaries of the assignment and the review aspects that matter
-  (for example correctness, boundaries, verification, or a specific risk).
+  (for example correctness, boundaries, verification, or a specific risk), and the threat model:
+  which input is trusted and which edge cases are out of scope, so out-of-scope review findings
+  can be answered by citing it.
 - **Authority:** permitted edits, excluded files or tasks, and any existing delivery authorization.
 - **Completion:** observable acceptance conditions, relevant verification, and the expected
   response described below.

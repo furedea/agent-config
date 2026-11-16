@@ -511,6 +511,18 @@
         "--force"
       ]
     },
+    "run download": {
+      "operation": "run.download",
+      "effect": "reversible",
+      "values": [
+        "-D",
+        "--dir",
+        "-n",
+        "--name",
+        "-p",
+        "--pattern"
+      ]
+    },
     "search code": {
       "operation": "search.code",
       "effect": "read"

@@ -426,3 +426,17 @@ def test_a_clone_under_an_untrusted_credential_helper_asks(helper: str) -> None:
 def test_a_credential_helper_reset_keeps_a_clone_allowed() -> None:
     subprocess.run(["git", "config", "credential.helper", ""], check=True)
     assert decide("gh repo clone furedea/agent-config") == "allow"
+
+
+@pytest.mark.parametrize(
+    ("command", "expected"),
+    [
+        pytest.param("gh run download 123 -R furedea/agent-config -D out -n dist", "allow", id="a trusted repository"),
+        pytest.param("gh run download 123", "allow", id="the trusted working repository"),
+        pytest.param("gh run download 123 -R other/r -D out", "ask", id="another owner's repository"),
+        pytest.param("gh run download 123 -R furedea/agent-config -R other/r", "ask", id="a later repository option"),
+    ],
+)
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_run_download_is_allowed_only_from_a_trusted_owner(command: str, expected: str) -> None:
+    assert decide(command) == expected

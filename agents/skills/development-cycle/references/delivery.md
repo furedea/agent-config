@@ -77,8 +77,9 @@ repository is not a failure.
     command until the run finishes: ending the turn while CI runs makes the lane look `done` to its
     parent. Do not poll: one blocking command, or one bounded wait for the run to appear, is fine;
     repeated manual checks across turns are not.
-3. When the runs have finished, confirm the `all-green` row of `gh pr checks <n>`. The ruleset's
-    required check is not visible to `--required`, so name `all-green` instead.
+3. When the runs have finished, confirm the `all-green` row of `gh pr checks <n>`; where the
+    repository has no `all-green`, confirm that every listed check passed. Do not use `--required`:
+    it does not see a ruleset's required check.
 4. On failure, identify the failing check with `gh pr checks <n>` and read its log with
     `gh run view <run-id> --log-failed`.
 5. Classify the cause:

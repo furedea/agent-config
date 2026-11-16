@@ -118,6 +118,7 @@ def reason(command: str) -> str:
         ),
         pytest.param("gh issue comment 1 -R furedea/r -b ok && gh pr list", id="a write in an && list"),
         pytest.param("gh issue develop 1 --list -R other/r", id="a linked branch listing, which reads"),
+        pytest.param("gh api repos/furedea/r/pulls -f title=x -f head=b -f base=main", id="a REST pull request"),
     ],
 )
 def test_reversible_writes_to_a_trusted_owner_are_allowed(command: str) -> None:
@@ -227,6 +228,11 @@ def test_reads_and_local_changes_are_allowed_in_any_form(command: str) -> None:
             "gh api repos/furedea/r/issues -F title=x -F parent_issue_id=123456",
             "links an issue",
             id="a REST issue under a parent named by ID",
+        ),
+        pytest.param(
+            "gh api repos/furedea/r/pulls -F issue=12 -f head=b -f base=main",
+            "links an issue",
+            id="a REST pull request converting an issue",
         ),
         pytest.param(
             "gh api repos/furedea/r/issues -X POST --input body.json", "--input", id="a REST issue with an input body"

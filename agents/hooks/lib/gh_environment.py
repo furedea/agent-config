@@ -59,8 +59,8 @@ def environment_problem(line: CommandLine) -> str:
     for name in (PROGRAM, "git", "ssh"):
         if problem := _stand_in_problem(name, line):
             return problem
-    if os.environ.get("GH_FORCE_TTY"):
-        return "the environment forces a terminal, so gh would start the pager program it names"
+    if os.environ.get("GH_FORCE_TTY") or not all(_is_locked_pager(name) for name in ("GH_PAGER", "PAGER")):
+        return "the environment forces a terminal or names a pager program gh may start"
     if not is_system_program("rg"):
         return "PATH finds an rg this account could replace, so the secret scan cannot be trusted"
     if problem := _override_problem():
@@ -70,6 +70,14 @@ def environment_problem(line: CommandLine) -> str:
     if os.environ.get("GH_HOST", GITHUB_HOST).lower() != GITHUB_HOST or foreign_repository:
         return "the environment sends gh to another host than github.com"
     return ""
+
+
+def _is_locked_pager(name: str) -> bool:
+    """Whether a pager variable is unset or runs a locked program with plain options, such as `less -R`."""
+    value = os.environ.get(name, "")
+    if not value:
+        return True
+    return bool(SAFE_HELPER.fullmatch(value)) and is_system_program(value.split(maxsplit=1)[0])
 
 
 def _override_problem() -> str:

@@ -46,8 +46,8 @@ API_FLAGS = frozenset(
 READ_METHODS = frozenset({"GET", "HEAD"})
 GRAPHQL_PATHS = frozenset({"graphql", "api/graphql"})
 METHOD_OVERRIDE = re.compile(r"\s*x-(?:http-)?method(?:-override)?\s*:", re.IGNORECASE)
-# Body fields that link an issue by ID, whose repository the path does not name.
-LINKING_FIELDS = frozenset({"parent_issue_id"})
+# Body fields that link an issue by ID, whose repository the path does not name, or turn one into a pull request.
+LINKING_FIELDS = frozenset({"parent_issue_id", "issue"})
 FIELD_KEY = re.compile(r"[A-Za-z_][A-Za-z0-9_]*=")
 DOT_SEGMENT = re.compile(r"(?:^|/)(?:\.|%2e){1,2}(?:/|$)", re.IGNORECASE)
 # --web, or a short option bundle holding -w, which opens the browser gh is configured with.
@@ -315,7 +315,7 @@ def _classify_api(words: tuple[Word, ...], catalog: Catalog, single_call: bool) 
     route = catalog.route(request.method, request.path)
     if route is None:
         return GhCall((f"api.{request.method.lower()}",), Effect.IRREVERSIBLE, unknown_target=True)
-    if route.operation.startswith("issue."):
+    if route.operation.startswith("issue.") or route.operation == "pr.create":
         _check_issue_fields(request)
     match = REPOSITORY_PATH.match(request.path)
     repositories = (Repository(match["owner"], match["name"]),) if match else ()

@@ -28,8 +28,8 @@ TRAP_OPTIONS = frozenset({"-l", "-p", "-P"})
 # A trap action reading or replacing the positional parameters, which are a running function's under set -E or -T:
 # directly, through ${!name} (spelled $!name once braces go), argv, or a builtin that assigns them.
 TRAP_ARGUMENT_TEXT = re.compile(
-    r"\$(?:[0-9@*_!]|argv\b|BASH_ARG[VC])"
-    r"|(?<![\w-])(?:shift|getopts|zparseopts|argv|BASH_ARG[VC]|read|mapfile|readarray|vared|source|\.)(?![\w-])"
+    r"\$(?:[0-9@*_!#]|argv\b|BASH_ARG[VC]|ARGC)|argv|BASH_ARG[VC]|ARGC|(?<![\w-])\d+\+?="
+    r"|(?<![\w-])(?:shift|getopts|zparseopts|read|mapfile|readarray|vared|source|\.)(?![\w-])"
     r"|(?<![\w-])set(?:\s+[-+]\S*)*\s+(?:--|[^-+\s])"
 )
 # Quotes, escapes, and braces, which spell a word without writing it plainly.

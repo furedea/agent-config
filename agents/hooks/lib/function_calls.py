@@ -269,6 +269,7 @@ def _followed(body: dict, records: tuple[dict, ...], data: bytes) -> dict:
             for node in reading
         )
         or _reassigned(copies, records, data)
+        or _unsettled_copy(body, copies)
         or not _attributed(body, data).isdisjoint(copies)
         or _leaks(body, records, data)
     )
@@ -353,7 +354,8 @@ def _iterates_arguments(loop: dict, copies: dict[str, str]) -> bool:
 def _reassigns(words: list[str]) -> bool:
     """Whether a call may replace the arguments: getopts, zparseopts, set, code text, or assigning argv."""
     program, arguments = words[0], words[1:]
-    if program in {"getopts", "zparseopts"}:
+    # zsh assigns a positional parameter as 1=value.
+    if program in {"getopts", "zparseopts"} or re.match(r"\d+\+?=", program):
         return True
     if program in NAME_ASSIGNERS and any(
         not ARGUMENT_ARRAYS.isdisjoint(re.findall(r"[A-Za-z_]\w*", word)) for word in arguments
@@ -394,6 +396,27 @@ def _copied(assignment: dict) -> str | None:
     if len(parts) == 1 and parts[0].get("Type") == "DblQuoted":
         parts = parts[0].get("Parts", [])
     return parts[0]["Param"]["Value"] if len(parts) == 1 and respelling.is_positional(parts[0]) else None
+
+
+def _unsettled_copy(body: dict, copies: dict[str, str]) -> bool:
+    """Whether a copy may not hold its argument where it is read: assigned only on some path, or after a read.
+
+    Only a statement of the body itself runs on every call, and a read before it sees an inherited value.
+    """
+    if not copies:
+        return False
+    direct = [statement for statement in body.get("Cmd", {}).get("Stmts", []) if not statement.get("Negated")]
+    settled = {
+        id(node)
+        for statement in direct
+        if statement.get("Cmd", {}).get("Type") in {"CallExpr", "DeclClause"}
+        for node in nodes(statement["Cmd"])
+    }
+    assigned = {node["Name"]["Value"]: node for node in _assignments(body) if node["Name"]["Value"] in copies}
+    if any(id(node) not in settled for node in assigned.values()):
+        return True
+    reads = (part for part in nodes(body) if part.get("Type") == "ParamExp" and part["Param"]["Value"] in copies)
+    return any(part["Pos"]["Offset"] < assigned[part["Param"]["Value"]]["Pos"]["Offset"] for part in reads)
 
 
 def _copies(body: dict) -> dict[str, str]:

@@ -21,7 +21,7 @@ SPELLING = re.compile(r"\\\n|[\\'\"_]")
 # Text eval or trap runs that may read or replace a function's arguments, at any depth of eval, once unquoted;
 # an argument array counts wherever its name appears, as an element like argv[1] loses its brackets.
 ARGUMENT_TEXT = re.compile(
-    r"[$`]|argv|BASH_ARG[VC]|(?<![\w-])(?:shift|set|getopts|zparseopts|read|mapfile|readarray|vared|source|\.)(?![\w-])"
+    r"[$`]|argv|BASH_ARG[VC]|(?<![\w-])\d+\+?=|(?<![\w-])(?:shift|set|getopts|zparseopts|read|mapfile|readarray|vared|source|\.)(?![\w-])"
 )
 # Quotes, escapes, braces, and glob characters, which spell a word in code text without writing it plainly.
 CODE_SPELLING = re.compile(r"[\\'\"{},?*\[\]]")

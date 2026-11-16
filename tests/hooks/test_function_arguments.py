@@ -140,6 +140,8 @@ def test_denials_see_through_builtin_prefixes_and_eval_option_ends(command: str)
         'f(){ id=$1; local -n r=id; r=-delete; find . "$id"; }; f safe',
         "f(){ local id=$1; eval 'id=-delete'; find . \"$id\"; }; f safe",
         'f(){ a=$1; shift; b=$1; shift; find . "$a" "$b"; }; f x -delete',
+        'f(){ for i in 1 2; do a=$1; shift; done; find . "$a"; }; f x -delete',
+        'f(){ while [ -n "$1" ]; do a=$1; shift; done; find . "$a"; }; f x -delete',
         'f(){ id=$1; typeset -n r=id; r=-delete; find . "$id"; }; f safe',
         'f(){ find . "$(printf %s "$1" | tr A-Z a-z)"; }; f -DELETE',
         'f(){ find . `printf %s "$1"`; }; f -delete',

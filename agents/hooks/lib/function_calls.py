@@ -138,7 +138,8 @@ def _body_respellings(body: dict, words: list[dict], data: bytes) -> list[str]:
             "expansion",
         )
     shift_calls = _calls(body, data, "shift")
-    if copies and len(shift_calls) > 1:
+    loops = any(node.get("Type") in {"ForClause", "WhileClause"} for node in nodes(body))
+    if copies and (len(shift_calls) > 1 or (shift_calls and loops)):
         raise UnsupportedSyntaxError("a function reading its arguments this way requires explicit review", "expansion")
     first = min((call["Pos"]["Offset"] for call in shift_calls), default=len(data))
     early = frozenset(node["Name"]["Value"] for node in _assignments(body) if node["Pos"]["Offset"] < first)

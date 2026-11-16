@@ -405,7 +405,12 @@ def _reassigned(copies: dict[str, str], records: tuple[dict, ...], data: bytes) 
 
 
 def _copied(assignment: dict) -> str | None:
-    """The positional parameter a plain copy such as id=$1 or id="$1" takes, or None."""
+    """The positional parameter a plain copy such as id=$1 or id="$1" takes, or None.
+
+    An append such as id+=$1 keeps whatever value the variable had, so it is no copy.
+    """
+    if assignment.get("Append"):
+        return None
     parts = assignment["Value"].get("Parts", [])
     if len(parts) == 1 and parts[0].get("Type") == "DblQuoted":
         parts = parts[0].get("Parts", [])

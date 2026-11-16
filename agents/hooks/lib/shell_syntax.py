@@ -186,7 +186,7 @@ def parse(source: str, depth: int = 0, directories: tuple[Path | None, ...] = ()
     directories = directories or (Path.cwd(),)
     if not source.strip():
         return ()
-    if depth > 8:
+    if depth > 8 or function_calls.exhausted(depth):
         raise UnsupportedSyntaxError("shell wrapper nesting exceeds the inspection limit", "wrapper")
     records = tuple(nodes(syntax_tree(source)))
     owners = {id(node["Cmd"]): node for node in records if isinstance(node.get("Cmd"), dict)}

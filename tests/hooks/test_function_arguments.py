@@ -197,6 +197,8 @@ def test_a_function_reading_its_argument_through_a_redirection_is_judged_with_th
         "f(){ trap 'echo done' EXIT; echo hi; }; f",
         't(){ printf "%s\\n" "$@" | sort; }; t b a',
         'f(){ [[ -n "$1" ]] && echo "$1"; }; f x',
+        'f(){ find . -name "$*"; }; f -delete safe',
+        "f(){ echo \"$1\"; }; printf '%s\\n' -f",
         "eval 'echo hi'",
         "trap 'echo done' EXIT",
     ],
@@ -223,3 +225,9 @@ def test_text_that_only_mentions_code_parameters_runs_unprompted(
 
 def test_a_precommand_modifier_before_eval_still_asks_for_its_text() -> None:
     assert decide("allowed", "noglob eval 'gh pr merge 1'").decision == "ask"
+
+
+def test_a_recursive_function_asks_before_the_hook_runs_out_of_time() -> None:
+    calls = "; ".join(["f x"] * 10)
+    command = f'f(){{ echo "$1" >f; {calls}; }}; f x; git commit --no-verify -m x'
+    assert decide("forbidden", command).decision != "allow"

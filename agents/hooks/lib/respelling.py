@@ -86,11 +86,23 @@ class Respelling:
             name = self.copies.get(part["Param"]["Value"], part["Param"]["Value"])
             source = self.unshifted if part["Param"]["Value"] in self.early else self.words
             words = source if name in {"@", "*"} else source[int(name) - 1 : int(name)]
+            if quoted and name == "*":
+                return (
+                    '"' + shlex.quote(" ".join(literal_word(word, self.data)[0] for word in self._plain(words))) + '"'
+                )
             value = " ".join(self._spelled(word, quoted=quoted) for word in words) or "''"
             return f'"{value}"' if quoted else value
         if part.get("Type") == "DblQuoted" and not part.get("Dollar"):
             return '"' + "".join(self._part(item, quoted=True) for item in part.get("Parts", [])) + '"'
         return source_text(part, self.data)
+
+    def _plain(self, words: list[dict]) -> list[dict]:
+        """The words, once none is known only at run time or may expand into others."""
+        if any(literal_word(word, self.data)[1] or spreads(word, self.data) for word in words):
+            raise UnsupportedSyntaxError(
+                "passing a function an argument known only at run time requires explicit review"
+            )
+        return words
 
     def _spelled(self, word: dict, *, quoted: bool) -> str:
         """The caller's word as the shell hands it over, requoted; unquoted, each field it splits into."""

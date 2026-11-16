@@ -29,6 +29,11 @@ ARGUMENT_ARRAYS = frozenset({"argv", "BASH_ARGV", "BASH_ARGC", "_"})
 FUNCTION_MODIFIERS = frozenset({"noglob", "nocorrect", "-"})
 # Builtins that assign a parameter named by an operand or an option, which may hold or replace the arguments.
 NAME_ASSIGNERS = ASSIGNING_BUILTINS | frozenset({"zformat", "zstyle", "zregexparse", "zparseopts", "getln", "popln"})
+# The line ending the definitions put before a script, whose calls were respelled where they first appeared.
+DEFINITIONS_END = f"# __guard_definitions_end_{CODE_BODY}\n"
+# Nested parses one command may cost, as each respelled call is parsed again; past it the command asks.
+PARSE_BUDGET = 400
+_PARSES = [0]
 # Builtins that call a function they are given by name, with arguments the call never shows.
 CALLBACK_TAKERS = frozenset(
     "mapfile readarray complete compgen compdef zle add-zsh-hook bind sched zstyle trap zargs zmv".split()
@@ -62,7 +67,17 @@ def with_definitions(records: tuple[dict, ...], data: bytes, script: str) -> str
         and node["Name"]["Value"] != CODE_BODY
         and re.search(rf"(?<![\w-]){re.escape(node['Name']['Value'])}(?![\w-])", plain)
     )
-    return "".join(named) + script
+    definitions = "".join(named)
+    return definitions + DEFINITIONS_END + script if definitions else script
+
+
+def exhausted(depth: int) -> bool:
+    """Count one nested parse of a command, starting afresh at its top; whether the budget for it is spent.
+
+    Each respelled call is parsed again, so the count bounds the work a command can cost the hook.
+    """
+    _PARSES[0] = 0 if depth == 0 else _PARSES[0] + 1
+    return _PARSES[0] > PARSE_BUDGET
 
 
 def respelled_calls(records: tuple[dict, ...], data: bytes) -> list[str]:
@@ -95,7 +110,13 @@ def respelled_calls(records: tuple[dict, ...], data: bytes) -> list[str]:
     if splitting and variable_changes.may_assign_unseen(records, data):
         raise UnsupportedSyntaxError("calling a function after changing IFS requires explicit review", "expansion")
     respelled = []
-    for call in (node for node in records if node.get("Type") == "CallExpr" and node.get("Args")):
+    # Calls in definitions put before a script were respelled where they were first defined.
+    start = data.find(DEFINITIONS_END.encode()) + len(DEFINITIONS_END) if DEFINITIONS_END.encode() in data else 0
+    for call in (
+        node
+        for node in records
+        if node.get("Type") == "CallExpr" and node.get("Args") and node["Pos"]["Offset"] >= start
+    ):
         start = _modifier_count(call, data)
         program = call["Args"][start] if start < len(call["Args"]) else {}
         if (
@@ -170,8 +191,12 @@ def _named_as_word(name: str, records: tuple[dict, ...], data: bytes) -> bool:
     words = [word for call in judged for word in call["Args"][_modifier_count(call, data) + 1 :]]
     values = [record for record in records if "Type" not in record and isinstance(record.get("Value"), dict)]
     texts = [literal_word(word, data)[0] for word in words + [value["Value"] for value in values]]
-    # An option may carry the name attached, as mapfile -Cf does.
-    if any(token.search(re.sub(r"^-[A-Za-z]*?(?=" + re.escape(name) + ")", "", text)) for text in texts):
+    if any(map(token.search, texts)):
+        return True
+    # A callback builtin's option may carry the name attached, as mapfile -Cf does.
+    attached = re.compile(rf"-[A-Za-z]*{re.escape(name)}")
+    callback_words = (word for call in calls if _program(call, data)[0] in CALLBACK_TAKERS for word in call["Args"])
+    if any(attached.fullmatch(literal_word(word, data)[0]) for word in callback_words):
         return True
     if HOOK_VARIABLES.search(SPELLING.sub("", data.decode())):
         return True

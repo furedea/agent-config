@@ -40,6 +40,8 @@ LFS_FILTER = re.compile(r"filter\.lfs\.(?:smudge git-lfs smudge -- %f|process gi
 BOOLEAN_FSMONITOR = re.compile(r"core\.fsmonitor (?:true|false|yes|no|on|off|1|0)?", re.IGNORECASE)
 # The only http_unix_socket line gh's configuration may hold: the key with an empty value, at any level.
 EMPTY_UNIX_SOCKET = re.compile(r"""\s*http_unix_socket:\s*(?:""|'')?\s*(?:#.*)?""")
+KNOWN_PAGERS = frozenset({"less", "more", "cat"})
+PAGER_FLAGS = re.compile(r"-[A-Za-z]+")
 CREDENTIAL_HELPERS = r"^credential\..*helper$"
 SAFE_HELPER = re.compile(r"[A-Za-z0-9_./ -]+")
 # The GIT_SSH_COMMAND the sandbox runtime sets: ssh through the proxy command the runtime itself provides.
@@ -73,11 +75,16 @@ def environment_problem(line: CommandLine) -> str:
 
 
 def _is_locked_pager(name: str) -> bool:
-    """Whether a pager variable is unset or runs a locked program with plain options, such as `less -R`."""
-    value = os.environ.get(name, "")
-    if not value:
+    """Whether a pager variable is unset or runs a locked known pager with short flags only, such as `less -R`.
+
+    Any other argument could be a script for an interpreter such as /bin/sh.
+    """
+    words = os.environ.get(name, "").split()
+    if not words:
         return True
-    return bool(SAFE_HELPER.fullmatch(value)) and is_system_program(value.split(maxsplit=1)[0])
+    program, *options = words
+    known = Path(program).name in KNOWN_PAGERS and all(PAGER_FLAGS.fullmatch(option) for option in options)
+    return known and is_system_program(program)
 
 
 def _override_problem() -> str:

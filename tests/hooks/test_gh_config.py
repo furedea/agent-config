@@ -96,7 +96,16 @@ def test_an_inherited_command_not_found_handler_makes_every_call_ask(monkeypatch
 @pytest.mark.usefixtures("furedea_checkout")
 @pytest.mark.parametrize("name", ["GH_PAGER", "PAGER"])
 @pytest.mark.parametrize(
-    ("pager", "expected"), [("/tmp/evil", "ask"), ("less -R; /tmp/evil", "ask"), ("cat", "allow"), ("", "allow")]
+    ("pager", "expected"),
+    [
+        ("/tmp/evil", "ask"),
+        ("less -R; /tmp/evil", "ask"),
+        ("/bin/sh /tmp/evil", "ask"),
+        ("less /tmp/x", "ask"),
+        ("less -R", "allow"),
+        ("cat", "allow"),
+        ("", "allow"),
+    ],
 )
 def test_a_pager_must_be_a_locked_program(
     monkeypatch: pytest.MonkeyPatch, name: str, pager: str, expected: str

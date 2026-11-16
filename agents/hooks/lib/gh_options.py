@@ -4,9 +4,10 @@ A value option takes the next word whatever it holds, short options may bundle, 
 positional arguments. A word the guard cannot read the way gh will makes the call unclassifiable.
 """
 
+import os
 import re
 from dataclasses import dataclass
-from pathlib import Path, PurePosixPath
+from pathlib import PurePosixPath
 
 import shell_syntax
 import shell_words
@@ -151,17 +152,17 @@ def is_one_substitution(source: str) -> bool:
     return len(statements) == 1 and (statements[0].get("Cmd") or {}).get("Type") == "CallExpr"
 
 
-def is_plain_subdirectory(words: tuple[Word, ...]) -> bool:
-    """Whether the last word names a new literal relative directory below the working directory, none of it hidden.
+def is_new_subdirectory(words: tuple[Word, ...]) -> bool:
+    """Whether the last word names a literal, visible, relative directory none of whose parts exists yet.
 
     Artifacts an untrusted run produced must not land in .git, a tool's dot directory, outside the checkout,
-    or over existing files that a later command may run.
+    over existing files a later command may run, or through a link that points anywhere of these. The caller
+    allows this only on a line that is the one call, so the hook's directory is gh's.
     """
-    if not words or words[-1].dynamic or Path(words[-1].value).exists():
+    if not words or words[-1].dynamic:
         return False
-    parts = PurePosixPath(words[-1].value).parts
-    return (
-        bool(parts)
-        and not PurePosixPath(words[-1].value).is_absolute()
-        and not any(part.startswith((".", "~")) for part in parts)
-    )
+    path = PurePosixPath(words[-1].value)
+    if not path.parts or path.is_absolute() or any(part.startswith((".", "~")) for part in path.parts):
+        return False
+    # Even the first part must be new, so no existing directory or link, dangling or not, lies on the path.
+    return not os.path.lexists(path.parts[0])

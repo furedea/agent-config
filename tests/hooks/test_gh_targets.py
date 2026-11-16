@@ -453,4 +453,16 @@ def test_a_run_download_is_allowed_only_from_a_trusted_owner(command: str, expec
 def test_a_run_download_into_an_existing_directory_asks() -> None:
     Path("scripts").mkdir()
     assert decide("gh run download 123 -D scripts") == "ask"
-    assert decide("gh run download 123 -D scripts/new") == "allow"
+    assert decide("gh run download 123 -D scripts/new") == "ask"
+    assert decide("gh run download 123 -D artifacts/new") == "allow"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_run_download_through_a_link_or_beside_another_command_asks() -> None:
+    Path("hooks-link").symlink_to(".git/hooks")
+    Path("dangling").symlink_to("nowhere")
+    assert decide("gh run download 123 -D hooks-link/new") == "ask"
+    assert decide("gh run download 123 -D dangling") == "ask"
+    assert decide("cd sub && gh run download 123 -D new") == "ask"
+    assert decide("ln -s .git/hooks new; gh run download 123 -D new") == "ask"
+    assert decide("gh run download 123 -D new") == "allow"

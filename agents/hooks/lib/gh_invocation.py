@@ -243,7 +243,9 @@ def _classify_write(words: tuple[Word, ...], spec: CommandSpec, single_call: boo
         _check_read_repositories(words)
         return GhCall((spec.operation,), Effect.READ, reads_working_repository=True)
     effect = Effect.IRREVERSIBLE if scan.flags & spec.irreversible_flags else spec.effect
-    if spec.operation == "run.download" and not gh_options.is_plain_subdirectory(scan.values_of(DOWNLOAD_DIRS)[-1:]):
+    if spec.operation == "run.download" and not (
+        single_call and gh_options.is_new_subdirectory(scan.values_of(DOWNLOAD_DIRS)[-1:])
+    ):
         raise UnclassifiableError("a download needs one literal, visible subdirectory of the checkout as -D")
     files = scan.values_of(spec.files)
     if any("#" in word.value for word in scan.values_of(ATTACH_OPTIONS)):

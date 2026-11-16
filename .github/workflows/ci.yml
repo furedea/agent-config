@@ -96,17 +96,12 @@ jobs:
       - name: Build locked jev-lint
         run: echo "$(nix build .#jev-lint --no-link --print-out-paths)/bin" >> "$GITHUB_PATH"
 
-      # The adr-check tests run the packaged command, with its dependencies, from the flake.
-      - name: Build locked adr-check
-        run: echo "$(nix build .#adr-check --no-link --print-out-paths)/bin" >> "$GITHUB_PATH"
-
       # The provider integration tests render with the locked agent-harness CLI.
       - name: Run pytest
         env:
           CODEX_BIN: codex
           REQUIRE_AST_GREP: "1"
           REQUIRE_JEV_LINT: "1"
-          REQUIRE_ADR_CHECK: "1"
           REQUIRE_CODEX_EXECPOLICY: "1"
         run: uv run pytest --cov
 

@@ -228,7 +228,9 @@ def options_given_to_set(calls: list[dict], data: bytes) -> list[str]:
     """The option words, normalized, that each set call gives, past prefixes and wrappers, with the names -o takes."""
     options = []
     for call in calls:
-        words = [normalized(literal_word(word, data)[0]) for word in call["Args"]]
+        decoded = [literal_word(word, data) for word in call["Args"]]
+        # A word known only at run time may give any option, so it stands as -aj, the letters that matter.
+        words = ["-aj" if dynamic else normalized(value) for value, dynamic in decoded]
         words = words[program_index(words) :]
         if words and words[0] == "set":
             options += [word for word in words[1:] if word[:1] in {"-", "+"} or word.isalpha()]

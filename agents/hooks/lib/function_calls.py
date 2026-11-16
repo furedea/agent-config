@@ -401,17 +401,23 @@ def _copied(assignment: dict) -> str | None:
 def _unsettled_copy(body: dict, copies: dict[str, str]) -> bool:
     """Whether a copy may not hold its argument where it is read: assigned only on some path, or after a read.
 
-    Only a statement of the body itself runs on every call, and a read before it sees an inherited value.
+    Only a bare assignment or declaration in the foreground, directly in the body, runs on every call and keeps its
+    value; a read before it sees an inherited value.
     """
     if not copies:
         return False
-    direct = [statement for statement in body.get("Cmd", {}).get("Stmts", []) if not statement.get("Negated")]
-    settled = {
-        id(node)
-        for statement in direct
-        if statement.get("Cmd", {}).get("Type") in {"CallExpr", "DeclClause"}
-        for node in nodes(statement["Cmd"])
-    }
+    flags = ("Negated", "Background", "Coprocess", "Disown")
+    direct = [
+        statement["Cmd"]
+        for statement in body.get("Cmd", {}).get("Stmts", [])
+        if not any(map(statement.get, flags)) and isinstance(statement.get("Cmd"), dict)
+    ]
+    bare = (
+        cmd
+        for cmd in direct
+        if cmd.get("Type") == "DeclClause" or (cmd.get("Type") == "CallExpr" and not cmd.get("Args"))
+    )
+    settled = {id(node) for cmd in bare for node in nodes(cmd)}
     assigned = {node["Name"]["Value"]: node for node in _assignments(body) if node["Name"]["Value"] in copies}
     if any(id(node) not in settled for node in assigned.values()):
         return True
@@ -420,7 +426,18 @@ def _unsettled_copy(body: dict, copies: dict[str, str]) -> bool:
 
 
 def _copies(body: dict) -> dict[str, str]:
-    return {node["Name"]["Value"]: name for node in _assignments(body) if (name := _copied(node)) is not None}
+    """The plain copies of arguments; an assignment before a command lasts only for it and is respelled with it."""
+    prefixed = {
+        id(assign)
+        for call in nodes(body)
+        if call.get("Type") == "CallExpr" and call.get("Args")
+        for assign in call.get("Assigns", [])
+    }
+    return {
+        node["Name"]["Value"]: name
+        for node in _assignments(body)
+        if id(node) not in prefixed and (name := _copied(node)) is not None
+    }
 
 
 def _reads_unquoted(body: dict) -> bool:

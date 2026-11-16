@@ -83,9 +83,7 @@ class Respelling:
                 raise UnsupportedSyntaxError("counting function arguments that may split requires explicit review")
             return str(len(self.words))
         if reads(part, self.copies):
-            name = self.copies.get(part["Param"]["Value"], part["Param"]["Value"])
-            source = self.unshifted if part["Param"]["Value"] in self.early else self.words
-            words = source if name in {"@", "*"} else source[int(name) - 1 : int(name)]
+            name, words = self._resolved(part)
             if quoted and name == "*":
                 return (
                     '"' + shlex.quote(" ".join(literal_word(word, self.data)[0] for word in self._plain(words))) + '"'
@@ -94,8 +92,24 @@ class Respelling:
             value = value or ("''" if quoted else "")
             return f'"{value}"' if quoted else value
         if part.get("Type") == "DblQuoted" and not part.get("Dollar"):
-            return '"' + "".join(self._part(item, quoted=True) for item in part.get("Parts", [])) + '"'
+            items = part.get("Parts", [])
+            # A quoted "$@" alone, with no words to stand for, becomes no word at all.
+            if len(items) == 1 and reads(items[0], self.copies) and self._resolved(items[0]) == ("@", []):
+                return ""
+            return '"' + "".join(self._part(item, quoted=True) for item in items) + '"'
         return source_text(part, self.data)
+
+    def _resolved(self, part: dict) -> tuple[str, list[dict]]:
+        """The parameter a read stands for, and the call's words it takes.
+
+        A copy of $@ in a scalar holds the words joined, as $* does.
+        """
+        param = part["Param"]["Value"]
+        name = self.copies.get(param, param)
+        if param in self.copies and name == "@":
+            name = "*"
+        source = self.unshifted if param in self.early else self.words
+        return name, source if name in {"@", "*"} else source[int(name) - 1 : int(name)]
 
     def _plain(self, words: list[dict]) -> list[dict]:
         """The words, once none is known only at run time or may expand into others."""

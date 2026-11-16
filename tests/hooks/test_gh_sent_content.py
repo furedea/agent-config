@@ -391,10 +391,25 @@ def test_a_run_time_body_path_the_guard_cannot_read_asks_even_for_a_trusted_owne
 
 
 @pytest.mark.usefixtures("furedea_checkout")
-@pytest.mark.parametrize("path", ['"body$SECONDS"', '"body$RANDOM"', '"body$$"', '"$NO_SUCH_BODY_VAR/body"'])
+@pytest.mark.parametrize(
+    "path",
+    [
+        '"body$SECONDS"',
+        '"body$RANDOM"',
+        '"body$$"',
+        '"$NO_SUCH_BODY_VAR/body"',
+        '"body$1"',
+        '"body$?"',
+        '"body$SHLVL"',
+    ],
+)
 def test_a_run_time_path_the_hook_environment_cannot_predict_asks(path: str, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("NO_SUCH_BODY_VAR", raising=False)
+    monkeypatch.setenv("SHLVL", "1")
     Path("body").write_text("No secrets.\n")
+    # A file named with the literal text must not stand in for what the shell expands.
+    if "/" not in path:
+        Path(path.strip('"')).write_text("No secrets.\n")
     assert decide(f"gh issue comment 1 -R furedea/r -F {path}") == "ask"
     monkeypatch.setenv("BODY_NAME", "body")
     assert decide('gh issue comment 1 -R furedea/r -F "$BODY_NAME"') == "allow"

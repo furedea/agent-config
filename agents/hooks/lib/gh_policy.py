@@ -40,6 +40,13 @@ RUN_TIME_FILE = re.compile(r'^<\s*"[^"`]*\$[^"`]*"$')
 # A run-time path the guard would expand differently from the shell: a glob, substitution, tilde,
 # escape, parameter operator or subscript, or a zsh modifier such as `$f:h`.
 UNEXPANDABLE_PATH = re.compile(r"[`*?\[~\\]|\$\(|\$\{[^}]*[^A-Za-z0-9_}]|\$\{?[A-Za-z_][A-Za-z0-9_]*\}?:")
+# Positional and special parameters, which only the running shell knows.
+SPECIAL_PARAMETER = re.compile(r"\$\{?[0-9#?$!@*-]")
+# Parameters the shell sets or changes itself, even when the hook's environment holds them.
+SHELL_MANAGED = frozenset(
+    {"SECONDS", "RANDOM", "SRANDOM", "LINENO", "SHLVL", "_", "OLDPWD", "PPID", "BASHPID", "EPOCHSECONDS"}
+    | {"EPOCHREALTIME", "HISTCMD", "BASH_COMMAND", "BASH_SUBSHELL", "COLUMNS", "LINES", "OPTIND", "OPTARG", "REPLY"}
+)
 # A word's single-quoted, double-quoted, and bare parts, in order.
 SHELL_PART = re.compile(r"""'[^']*'|"[^"]*"|[^'"]+""")
 # A plain parameter in a run-time path; one the environment lacks expands to nothing, as in the shell.
@@ -140,9 +147,7 @@ def _with_expanded_paths(call: GhCall) -> GhCall:
 
 def _expanded_path(source: str) -> str | None:
     """The file a run-time path names after quote removal and plain parameter expansion, when it exists."""
-    if UNEXPANDABLE_PATH.search(source) or any(
-        name not in os.environ and name != "PWD" for name in _expanded_names(source)
-    ):
+    if UNEXPANDABLE_PATH.search(source) or not _is_predictable(source):
         return None
     expanded = shell_expanded(source)
     return expanded if expanded and Path(expanded).exists() else None
@@ -168,10 +173,21 @@ def _run_time_path_problem(sources: tuple[str, ...]) -> str:
         return "sends a file whose path the guard cannot expand as the shell does"
     if any(_names_special_input(shell_expanded(source)) for source in sources):
         return "sends standard input or a device through a path named at run time"
-    # The shell sets SECONDS, RANDOM, and other parameters the hook never sees, so only exported ones count.
-    if any(name not in os.environ and name != "PWD" for source in sources for name in _expanded_names(source)):
+    if not all(_is_predictable(source) for source in sources):
         return "sends a file whose path the guard cannot expand: a parameter the hook's environment does not hold"
     return ""
+
+
+def _is_predictable(source: str) -> bool:
+    """Whether every parameter a run-time path expands holds in the shell what it holds in the hook.
+
+    The shell sets SECONDS, RANDOM, SHLVL, `_`, positional and special parameters itself, so only an
+    exported parameter it leaves alone counts, and PWD, which the hook's directory gives.
+    """
+    unquoted = "".join(part for part in SHELL_PART.findall(source) if not part.startswith("'"))
+    if SPECIAL_PARAMETER.search(unquoted):
+        return False
+    return all(name == "PWD" or (name in os.environ and name not in SHELL_MANAGED) for name in _expanded_names(source))
 
 
 def _expanded_names(source: str) -> list[str]:

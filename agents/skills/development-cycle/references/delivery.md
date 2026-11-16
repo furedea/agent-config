@@ -112,11 +112,11 @@ mechanism is in the
     `gh api`, or the command asks for confirmation) and `gh pr view <n> --comments`.
 3. Fix every finding of any severity within the task's scope, then push; the push re-runs both
     reviews. Do not defer a finding to the user. When the brief or Issue plan states a scope and
-    threat model, a finding outside it is not fixed: answer it in its thread citing that scope,
-    resolve the thread (the `codex-review` gate fails while it is open), and record it in the PR
-    body. Correctness defects within the scope are still fixed.
+    threat model, a finding outside it is not fixed: answer it as in step 4, citing that scope.
+    Correctness defects within the scope are still fixed.
 4. Do not change the work for a finding that repeats on the same grounds, is a matter of taste, or
-    is refuted with evidence. Answer it in its thread and record it in the PR body with the reason.
+    is refuted with evidence. Answer it in its thread, resolve the thread (`codex-review` fails
+    while one is open), and record it in the PR body with the reason.
 5. Stop and report the open findings instead of looping when a P0 or P1 finding repeats, when an
     area keeps failing, or after the third re-review that still raises new findings.
 

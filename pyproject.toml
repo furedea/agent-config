@@ -32,6 +32,7 @@ known_first_party = [
   "dev_shell",
   "explicit_targets",
   "fish_script",
+  "body_calls",
   "function_calls",
   "respelling",
   "foreign_shell_policy",

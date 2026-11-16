@@ -69,13 +69,36 @@ def defines_code(record: dict) -> bool:
 
     An assigned value naming one counts too, as a nameref or a later printf -v "$name" may write through it.
     """
+    if record.get("Type") == "DeclClause":
+        return _references_unseen(record)
     name = record.get("Name") or record.get("Param")
     value = "".join(part.get("Value", "") for part in nodes(record.get("Value")))
     if IMPORTED_FUNCTION in value:
         return True
+    # A quoted declaration word, such as 'BASH_CMDS[git]=./x', is parsed with its name inside the value.
+    if record.get("Naked") and (CODE_ELEMENT.search(value) or value.split("=")[0] in CODE_PARAMETERS):
+        return True
     if not isinstance(name, dict):
         return False
     return name.get("Value") in CODE_PARAMETERS or value in CODE_PARAMETERS or bool(CODE_ELEMENT.search(value))
+
+
+def _references_unseen(declaration: dict) -> bool:
+    """Whether a declaration makes a nameref whose target is built at run time, so it may name any parameter."""
+    arguments = declaration.get("Args", [])
+    options = "".join(
+        part.get("Value", "")
+        for argument in arguments
+        if argument.get("Naked")
+        for part in nodes(argument.get("Value"))
+        if part.get("Value", "").startswith("-")
+    )
+    expanding = any(
+        part.get("Type") in {"ParamExp", "CmdSubst", "ProcSubst", "ArithmExp"}
+        for argument in arguments
+        for part in nodes(argument)
+    )
+    return "n" in options and expanding
 
 
 def names_code_parameter(arguments: tuple[str, ...], dynamic: tuple[bool, ...]) -> bool:

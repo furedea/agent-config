@@ -2,7 +2,9 @@
 
 import re
 from collections import Counter
+from pathlib import Path
 
+import body_calls
 import respelling
 import shell_input
 import variable_changes
@@ -28,6 +30,8 @@ ARGUMENT_ARRAYS = frozenset({"argv", "BASH_ARGV", "BASH_ARGC", "_"})
 # A zsh expansion or parameter flag, as $^@, $=1, ${~id}, or ${(s: :)1}, which the parser shows as other text and
 # which may read the arguments or a copy of them.
 ZSH_FLAGGED_ARGUMENT = re.compile(r"\$\{?[=~^]|\$\{\(")
+# A program name that runs a shell, which may read its script's data from its input.
+SHELL_NAME = re.compile(r"\w*sh|fish|pwsh")
 # zsh precommand modifiers, which run the function named after them; builtin and command skip functions.
 FUNCTION_MODIFIERS = frozenset({"noglob", "nocorrect", "-"})
 # Builtins that assign a parameter named by an operand or an option, which may hold or replace the arguments.
@@ -43,8 +47,6 @@ CALLBACK_TAKERS = frozenset(
 )
 # Variables naming functions the shell calls on its own.
 HOOK_VARIABLES = re.compile(r"PROMPT_COMMAND|(?:precmd|preexec|chpwd|periodic|zshexit|zshaddhistory)_functions")
-# Words before a builtin that still run it, as in builtin shift, command -p shift, or zsh's noglob shift.
-BUILTIN_PREFIXES = frozenset({"builtin", "command", "noglob", "nocorrect", "-"})
 # Quotes, escapes, braces, and glob characters, which spell a name without writing it plainly.
 SPELLING = re.compile(r"[\\'\"{},?*\[\]]")
 # Builtins that may assign a variable named only at run time, or run code that does.
@@ -151,29 +153,32 @@ def _modifier_count(call: dict, data: bytes) -> int:
 def _body_respellings(body: dict, words: list[dict], data: bytes) -> list[str]:
     """Each statement of one body that reads its arguments, respelled with one call's words, once per shift."""
     reading = any(respelling.reads(part, _copies(body)) for part in nodes(body))
-    if (words or reading) and _calls(body, data, "source") + _calls(body, data, "."):
+    if (words or reading) and body_calls.calls(body, data, "source") + body_calls.calls(body, data, "."):
         raise UnsupportedSyntaxError(
             "calling a function that sources a file and passes or reads arguments requires explicit review",
             "expansion",
         )
     copies = _copies(body)
-    named = any(_names_by_arguments(call, _program_words(call, data), copies) for call in _calls(body, data))
+    named = any(
+        _names_by_arguments(call, body_calls.program_words(call, data), copies)
+        for call in body_calls.calls(body, data)
+    )
     if named and not {literal_word(word, data)[0] for word in words}.isdisjoint(ARGUMENT_CHANGERS):
         raise UnsupportedSyntaxError(
             "calling a function that runs its argument as a builtin changing arguments requires explicit review",
             "expansion",
         )
-    shift_calls = _calls(body, data, "shift")
+    shift_calls = body_calls.calls(body, data, "shift")
     loops = any(node.get("Type") in {"ForClause", "WhileClause"} for node in nodes(body))
     if copies and (len(shift_calls) > 1 or (shift_calls and loops)):
         raise UnsupportedSyntaxError("a function reading its arguments this way requires explicit review", "expansion")
     first = min((call["Pos"]["Offset"] for call in shift_calls), default=len(data))
-    early = frozenset(node["Name"]["Value"] for node in _assignments(body) if node["Pos"]["Offset"] < first)
+    early = frozenset(node["Name"]["Value"] for node in body_calls.assignments(body) if node["Pos"]["Offset"] < first)
     shifts = range(len(words) + 1) if shift_calls else range(1)
     return [
         respelling.Respelling(words[shift:], data, copies, words, early & copies.keys()).statement(statement)
-        for statement in _statements(body)
-        if any(respelling.reads(part, copies) for part in nodes(_respelled_nodes(statement)))
+        for statement in body_calls.statements(body)
+        if any(respelling.reads(part, copies) for part in nodes(body_calls.respelled_nodes(statement)))
         for shift in shifts
     ]
 
@@ -192,7 +197,7 @@ def _named_as_word(name: str, records: tuple[dict, ...], data: bytes) -> bool:
     token = re.compile(rf"(?<![\w-]){re.escape(name)}(?![\w-])")
     calls = [node for node in records if node.get("Type") == "CallExpr" and node.get("Args")]
     # eval and trap text is judged with the definitions in front of it, so a call there is respelled.
-    judged = (call for call in calls if _program(call, data)[0] not in {"eval", "trap"})
+    judged = (call for call in calls if body_calls.program(call, data)[0] not in {"eval", "trap"})
     words = [word for call in judged for word in call["Args"][_modifier_count(call, data) + 1 :]]
     values = [record for record in records if "Type" not in record and isinstance(record.get("Value"), dict)]
     texts = [literal_word(word, data)[0] for word in words + [value["Value"] for value in values]]
@@ -200,16 +205,18 @@ def _named_as_word(name: str, records: tuple[dict, ...], data: bytes) -> bool:
         return True
     # A callback builtin's option may carry the name attached, as mapfile -Cf does.
     attached = re.compile(rf"-[A-Za-z]*{re.escape(name)}")
-    callback_words = (word for call in calls if _program(call, data)[0] in CALLBACK_TAKERS for word in call["Args"])
+    callback_words = (
+        word for call in calls if body_calls.program(call, data)[0] in CALLBACK_TAKERS for word in call["Args"]
+    )
     if any(attached.fullmatch(literal_word(word, data)[0]) for word in callback_words):
         return True
     if HOOK_VARIABLES.search(SPELLING.sub("", data.decode())):
         return True
-    callbacks = (call for call in calls if _program(call, data)[0] in CALLBACK_TAKERS)
+    callbacks = (call for call in calls if body_calls.program(call, data)[0] in CALLBACK_TAKERS)
     if any(literal_word(word, data)[1] for call in callbacks for word in call["Args"]):
         return True
     return any(
-        shell_input.runs_unseen(call, data) and not _names_by_arguments(call, _program_words(call, data), {})
+        shell_input.runs_unseen(call, data) and not _names_by_arguments(call, body_calls.program_words(call, data), {})
         for call in calls
     )
 
@@ -265,12 +272,12 @@ def _followed(body: dict, records: tuple[dict, ...], data: bytes) -> dict:
         )
         or (
             any(respelling.reads(part, copies) for part in nodes(body))
-            and any(_assigns_parameter(statement, data) for statement in _statements(body))
+            and any(_assigns_parameter(statement, data) for statement in body_calls.statements(body))
         )
         or any(part.get("Type") == "ParamExp" and part.get("Excl") for part in nodes(body))
-        or any(_runs_unseen(call, copies, data) for call in _calls(body, data))
+        or any(_runs_unseen(call, copies, data) for call in body_calls.calls(body, data))
         or any(_iterates_arguments(node, copies) for node in nodes(body) if node.get("Type") == "WordIter")
-        or any(_reassigns(_program(call, data)) for call in _calls(body, data))
+        or any(_reassigns(body_calls.program(call, data)) for call in body_calls.calls(body, data))
         or any(
             not isinstance(node.get("Value"), dict) or node.get("Array") or node.get("Index") or _copied(node) is None
             for node in reading
@@ -284,6 +291,8 @@ def _followed(body: dict, records: tuple[dict, ...], data: bytes) -> dict:
             for part in nodes(node)
         )
         or ZSH_FLAGGED_ARGUMENT.search(source_text(body, data)) is not None
+        or _feeds_a_shell(body, copies, data)
+        or _modified_in_zsh(body, copies)
         or not _attributed(body, data).isdisjoint(copies)
         or _leaks(body, records, data)
     )
@@ -296,7 +305,7 @@ def _assigns_parameter(statement: dict, data: bytes) -> bool:
     """Whether a builtin such as printf -v or read assigns a parameter, which may take the arguments by any path."""
     if not statement["Cmd"].get("Args"):
         return False
-    words = _program(statement["Cmd"], data)
+    words = body_calls.program(statement["Cmd"], data)
     assigning = words[0] in NAME_ASSIGNERS - {"print", "printf"} or (
         words[0] in {"print", "printf"} and any(map(NAME_OPTION.fullmatch, words))
     )
@@ -378,18 +387,14 @@ def _reassigned(copies: dict[str, str], records: tuple[dict, ...], data: bytes) 
         if isinstance(record.get("Name"), dict) and record.get("Type") in {None, "WordIter"}
     )
     named: set[str] = set()
-    for words in (_program(call, data) for call in records if call.get("Type") == "CallExpr" and call.get("Args")):
+    for words in (
+        body_calls.program(call, data) for call in records if call.get("Type") == "CallExpr" and call.get("Args")
+    ):
         if words[0] in ASSIGNING_BUILTINS | {"unset", "let", "eval", "trap"}:
             named.update(name for word in words[1:] for name in re.findall(r"[A-Za-z_]\w*", word))
     for record in (record for record in records if record.get("Type") in ARITHMETIC):
         named.update(name for part in nodes(record) for name in re.findall(r"[A-Za-z_]\w*", part.get("Value", "")))
     return any(assigned[name] > 1 or name in named for name in copies)
-
-
-def _assignments(body: dict) -> list[dict]:
-    return [
-        node for node in nodes(body) if "Type" not in node and "Name" in node and isinstance(node.get("Value"), dict)
-    ]
 
 
 def _copied(assignment: dict) -> str | None:
@@ -398,6 +403,37 @@ def _copied(assignment: dict) -> str | None:
     if len(parts) == 1 and parts[0].get("Type") == "DblQuoted":
         parts = parts[0].get("Parts", [])
     return parts[0]["Param"]["Value"] if len(parts) == 1 and respelling.is_positional(parts[0]) else None
+
+
+def _modified_in_zsh(body: dict, copies: dict[str, str]) -> bool:
+    """Whether an argument read is followed by a zsh modifier or subscript, as $1:l or $1[2,-1], changing its value."""
+    words = (node for node in nodes(body) if isinstance(node.get("Parts"), list))
+    return any(
+        respelling.reads(part, copies) and after.get("Type") == "Lit" and after.get("Value", "")[:1] in {":", "["}
+        for word in words
+        for part, after in zip(word["Parts"], word["Parts"][1:], strict=False)
+    )
+
+
+def _feeds_a_shell(body: dict, copies: dict[str, str], data: bytes) -> bool:
+    """Whether the arguments flow into a shell's input, by a pipe or a redirection, where its script reads them."""
+    shells = [
+        call
+        for call in body_calls.calls(body, data)
+        if SHELL_NAME.fullmatch(Path(body_calls.program(call, data)[0]).name)
+    ]
+    if not shells:
+        return False
+    pipes = (node for node in nodes(body) if node.get("Type") == "BinaryCmd" and shell_input.is_pipe(node, data))
+    if any(respelling.reads(part, copies) for pipe in pipes for part in nodes(pipe["X"])):
+        return True
+    statements = (node for node in nodes(body) if node.get("Cmd") in shells)
+    return any(
+        respelling.reads(part, copies)
+        for statement in statements
+        for redirect in statement.get("Redirs", [])
+        for part in nodes(redirect)
+    )
 
 
 def _unsettled_copy(body: dict, copies: dict[str, str]) -> bool:
@@ -420,7 +456,9 @@ def _unsettled_copy(body: dict, copies: dict[str, str]) -> bool:
         if cmd.get("Type") == "DeclClause" or (cmd.get("Type") == "CallExpr" and not cmd.get("Args"))
     )
     settled = {id(node) for cmd in bare for node in nodes(cmd)}
-    assigned = {node["Name"]["Value"]: node for node in _assignments(body) if node["Name"]["Value"] in copies}
+    assigned = {
+        node["Name"]["Value"]: node for node in body_calls.assignments(body) if node["Name"]["Value"] in copies
+    }
     if any(id(node) not in settled for node in assigned.values()):
         return True
     reads = (part for part in nodes(body) if part.get("Type") == "ParamExp" and part["Param"]["Value"] in copies)
@@ -437,7 +475,7 @@ def _copies(body: dict) -> dict[str, str]:
     }
     return {
         node["Name"]["Value"]: name
-        for node in _assignments(body)
+        for node in body_calls.assignments(body)
         if id(node) not in prefixed and (name := _copied(node)) is not None
     }
 
@@ -449,47 +487,12 @@ def _reads_unquoted(body: dict) -> bool:
     return any(respelling.reads(part, copies) for word in words for part in word["Parts"])
 
 
-def _program(call: dict, data: bytes) -> list[str]:
-    """The call's words as the shell runs them, from the program on, past builtin, command, and command's options."""
-    return [value for value, _ in _program_words(call, data)]
-
-
 def _runs_unseen(call: dict, copies: dict[str, str], data: bytes) -> bool:
     """Whether the program is known only at run time, and not from the arguments a respelling supplies."""
-    words = _program_words(call, data)
+    words = body_calls.program_words(call, data)
     return words[0][1] and not _names_by_arguments(call, words, copies)
 
 
 def _names_by_arguments(call: dict, words: list[tuple[str, bool]], copies: dict[str, str]) -> bool:
     program = call["Args"][len(call["Args"]) - len(words)]
     return any(respelling.reads(part, copies) for part in nodes(program))
-
-
-def _program_words(call: dict, data: bytes) -> list[tuple[str, bool]]:
-    words = [literal_word(word, data) for word in call["Args"]]
-    while len(words) > 1 and words[0][0] in BUILTIN_PREFIXES:
-        words = words[1:]
-        while len(words) > 1 and words[0][0][:1] == "-":
-            words = words[1:]
-    return words
-
-
-def _calls(body: dict, data: bytes, name: str | None = None) -> list[dict]:
-    calls = (node for node in nodes(body) if node.get("Type") == "CallExpr" and node.get("Args"))
-    return [call for call in calls if name is None or _program(call, data)[0] == name]
-
-
-def _statements(body: dict) -> list[dict]:
-    """The statements of the body that run one call, together with their redirections."""
-    return [
-        node for node in nodes(body) if isinstance(node.get("Cmd"), dict) and node["Cmd"].get("Type") == "CallExpr"
-    ]
-
-
-def _respelled_nodes(statement: dict) -> list[dict]:
-    """The call's assignments, words, and the targets of its redirections other than heredocs."""
-    return [
-        *statement["Cmd"].get("Assigns", []),
-        *statement["Cmd"].get("Args", []),
-        *(redirect["Word"] for redirect in respelling.redirections(statement)),
-    ]

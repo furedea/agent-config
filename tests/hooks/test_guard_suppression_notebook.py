@@ -9,9 +9,16 @@ from tests.runtime import load_script_module
 guard = load_script_module("agents/hooks/guard_suppression.py", "guard_suppression_for_notebook")
 
 
-def notebook(tmp_path: Path, source: str, metadata: dict | None = None) -> Path:
+def notebook(tmp_path: Path, source: str, metadata: dict | None = None, cell_type: str = "code") -> Path:
     path = tmp_path / "analysis.ipynb"
-    cell = {"cell_type": "code", "id": "c1", "metadata": {}, "source": source, "outputs": [], "execution_count": None}
+    cell = {
+        "cell_type": cell_type,
+        "id": "c1",
+        "metadata": {},
+        "source": source,
+        "outputs": [],
+        "execution_count": None,
+    }
     path.write_text(json.dumps({"cells": [cell], "metadata": metadata or {}, "nbformat": 4, "nbformat_minor": 5}))
     return path
 
@@ -46,3 +53,9 @@ def test_a_markdown_cell_that_mentions_a_marker_passes(tmp_path: Path) -> None:
     path = notebook(tmp_path, "x = 1\n")
     values = {"cell_id": "c1", "edit_mode": "insert", "cell_type": "markdown", "new_source": "Add # noqa sparingly."}
     assert decide(path, **values) == "allow"
+
+
+def test_turning_a_markdown_cell_that_mentions_a_marker_into_code_asks(tmp_path: Path) -> None:
+    """The prose of a markdown cell suppresses nothing, so a marker it held is new once the cell becomes code."""
+    path = notebook(tmp_path, "x = 1  # noqa\n", cell_type="markdown")
+    assert decide(path, cell_id="c1", cell_type="code", new_source="x = 1  # noqa\n") == "ask"

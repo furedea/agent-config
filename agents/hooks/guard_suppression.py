@@ -65,8 +65,10 @@ DIRECTIVES = {
     "shellcheck disable": re.compile(r"#\s*shellcheck(?:\s+[\w-]+=\S+)+"),
     "nolint": re.compile(r"//\s*nolint(?::\s*[\w.-]+(?:\s*,\s*[\w.-]+)*)?"),
 }
-# The reason of a Rust attribute, which names no lint.
-ATTRIBUTE_REASON = re.compile(r'\breason\s*=\s*"(?:[^"\\]|\\.)*"')
+# The reason item of a Rust attribute, a plain or raw string, which names no lint. It goes with the comma that joins it
+# to the list: the one before it, or else the one after it.
+_REASON = r'\breason\s*=\s*(?:"(?:[^"\\]|\\.)*"|r(?P<hashes>#*)".*?"(?P=hashes))'
+ATTRIBUTE_REASONS = (re.compile(r",\s*" + _REASON, re.DOTALL), re.compile(_REASON + r"\s*,?", re.DOTALL))
 # Shell suffixes, where a bare word on its own line may end a heredoc around a marker.
 HEREDOC_SUFFIXES = frozenset({".sh", ".bash"})
 # Every other marker is a comment directive, counted only inside a comment; a Rust attribute anywhere but a string
@@ -232,7 +234,10 @@ def _marked_lines(name: str, text: str, suffix: str) -> dict[int, tuple[tuple[bo
 def _directive(name: str, scope: str) -> str:
     """What of a marker's scope names what it suppresses."""
     if name in CODE_MARKERS:
-        return ATTRIBUTE_REASON.sub("reason", scope)
+        # A space beside punctuation separates nothing, so the list reads the same whichever side lost its comma.
+        for reason in ATTRIBUTE_REASONS:
+            scope = reason.sub("", scope)
+        return re.sub(r" ?([,()\[\]=]) ?", r"\1", scope)
     pattern = DIRECTIVES.get(name)
     match = pattern.match(scope) if pattern is not None else None
     return match.group() if match is not None else scope

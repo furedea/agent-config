@@ -44,6 +44,19 @@ UNEXPANDABLE_PATH = re.compile(r"[`*?\[~\\]|\$\(|\$\{[^}]*[^A-Za-z0-9_}]|\$\{?[A
 SHELL_MANAGED = frozenset(
     {"SECONDS", "RANDOM", "SRANDOM", "LINENO", "SHLVL", "_", "OLDPWD", "PPID", "BASHPID", "EPOCHSECONDS"}
     | {"EPOCHREALTIME", "HISTCMD", "BASH_COMMAND", "BASH_SUBSHELL", "COLUMNS", "LINES", "OPTIND", "OPTARG", "REPLY"}
+    # bash resets these at startup whatever the environment holds.
+    | {"OPTERR", "IFS", "PS4", "OSTYPE", "HOSTTYPE", "MACHTYPE", "BASH", "BASH_VERSION", "BASHOPTS", "SHELLOPTS"}
+    | {
+        "UID",
+        "EUID",
+        "GROUPS",
+        "HOSTNAME",
+        "DIRSTACK",
+        "FUNCNAME",
+        "PIPESTATUS",
+        "BASH_ARGV0",
+        "BASH_EXECUTION_STRING",
+    }
 )
 # A word's single-quoted, double-quoted, and bare parts, in order.
 SHELL_PART = re.compile(r"""'[^']*'|"[^"]*"|[^'"]+""")

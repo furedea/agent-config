@@ -6,6 +6,7 @@ positional arguments. A word the guard cannot read the way gh will makes the cal
 
 import re
 from dataclasses import dataclass
+from pathlib import PurePosixPath
 
 import shell_syntax
 import shell_words
@@ -148,3 +149,18 @@ def is_one_substitution(source: str) -> bool:
     # One plain call inside, so no second command, pipe, or list adds output after the first.
     statements = parts[0].get("Stmts", [])
     return len(statements) == 1 and (statements[0].get("Cmd") or {}).get("Type") == "CallExpr"
+
+
+def is_plain_subdirectory(words: tuple[Word, ...]) -> bool:
+    """Whether the last word names a literal relative directory below the working directory, none of it hidden.
+
+    Artifacts an untrusted run produced must not land in .git, a tool's dot directory, or outside the checkout.
+    """
+    if not words or words[-1].dynamic:
+        return False
+    parts = PurePosixPath(words[-1].value).parts
+    return (
+        bool(parts)
+        and not PurePosixPath(words[-1].value).is_absolute()
+        and not any(part.startswith((".", "~")) for part in parts)
+    )

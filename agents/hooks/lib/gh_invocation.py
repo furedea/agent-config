@@ -54,6 +54,7 @@ DOT_SEGMENT = re.compile(r"(?:^|/)(?:\.|%2e){1,2}(?:/|$)", re.IGNORECASE)
 WEB_OPTION = re.compile(r"--web(?:=.*)?|-(?!-)[A-Za-z]*w.*")
 ISSUE_NUMBER = re.compile(r"#?[0-9]+")
 ATTACH_OPTIONS = frozenset({"--attach"})
+DOWNLOAD_DIRS = frozenset({"-D", "--dir"})
 STDIN_PATHS = re.compile(r"/dev/stdin|/dev/fd/0|/proc/self/fd/0")
 # A run-time endpoint that starts with a literal path segment and slash, which no expansion can turn into a URL.
 LITERAL_PATH_START = re.compile(r"[\"']?/?[A-Za-z0-9_.-]+/")
@@ -242,6 +243,8 @@ def _classify_write(words: tuple[Word, ...], spec: CommandSpec, single_call: boo
         _check_read_repositories(words)
         return GhCall((spec.operation,), Effect.READ, reads_working_repository=True)
     effect = Effect.IRREVERSIBLE if scan.flags & spec.irreversible_flags else spec.effect
+    if spec.operation == "run.download" and not gh_options.is_plain_subdirectory(scan.values_of(DOWNLOAD_DIRS)[-1:]):
+        raise UnclassifiableError("a download needs one literal, visible subdirectory of the checkout as -D")
     files = scan.values_of(spec.files)
     if any("#" in word.value for word in scan.values_of(ATTACH_OPTIONS)):
         raise UnclassifiableError("an attachment names alt text after #, so gh sends another file than the word")

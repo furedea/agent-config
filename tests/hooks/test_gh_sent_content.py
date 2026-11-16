@@ -414,3 +414,11 @@ def test_a_run_time_path_the_hook_environment_cannot_predict_asks(path: str, mon
     assert decide(f"gh issue comment 1 -R furedea/r -F {path}") == "ask"
     monkeypatch.setenv("BODY_NAME", "body")
     assert decide('gh issue comment 1 -R furedea/r -F "$BODY_NAME"') == "allow"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+@pytest.mark.parametrize("name", ["OPTERR", "IFS", "OSTYPE", "BASH_VERSION", "PS4"])
+def test_a_body_path_from_a_variable_bash_resets_asks(name: str, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv(name, "safe")
+    Path("safe").write_text("No secrets.\n")
+    assert decide(f'gh issue comment 1 -R furedea/r -F "${name}"') == "ask"

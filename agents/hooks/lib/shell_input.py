@@ -18,9 +18,10 @@ DIRECTORY_CHANGE = re.compile(r"(?<![\w-])(?:cd|pushd|popd|chdir|autocd|setopt|e
 PROGRAM_PREFIXES = frozenset({"builtin", "command", "noglob", "nocorrect", "-", "exec", "time"})
 # Line continuations, quotes, escapes, and underscores, which spell a word or a zsh option without writing it plainly.
 SPELLING = re.compile(r"\\\n|[\\'\"_]")
-# Text eval or trap runs that may read or replace a function's arguments, at any depth of eval, once unquoted.
+# Text eval or trap runs that may read or replace a function's arguments, at any depth of eval, once unquoted;
+# an argument array counts wherever its name appears, as an element like argv[1] loses its brackets.
 ARGUMENT_TEXT = re.compile(
-    r"[$`]|(?<![\w-])(?:shift|set|getopts|zparseopts|argv|BASH_ARG[VC]|read|mapfile|readarray|vared|source|\.)(?![\w-])"
+    r"[$`]|argv|BASH_ARG[VC]|(?<![\w-])(?:shift|set|getopts|zparseopts|read|mapfile|readarray|vared|source|\.)(?![\w-])"
 )
 # Quotes, escapes, braces, and glob characters, which spell a word in code text without writing it plainly.
 CODE_SPELLING = re.compile(r"[\\'\"{},?*\[\]]")

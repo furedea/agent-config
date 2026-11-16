@@ -90,7 +90,8 @@ class Respelling:
                 return (
                     '"' + shlex.quote(" ".join(literal_word(word, self.data)[0] for word in self._plain(words))) + '"'
                 )
-            value = " ".join(self._spelled(word, quoted=quoted) for word in words) or "''"
+            value = " ".join(filter(None, (self._spelled(word, quoted=quoted) for word in words)))
+            value = value or ("''" if quoted else "")
             return f'"{value}"' if quoted else value
         if part.get("Type") == "DblQuoted" and not part.get("Dollar"):
             return '"' + "".join(self._part(item, quoted=True) for item in part.get("Parts", [])) + '"'
@@ -105,7 +106,7 @@ class Respelling:
         return words
 
     def _spelled(self, word: dict, *, quoted: bool) -> str:
-        """The caller's word as the shell hands it over, requoted; unquoted, each field it splits into."""
+        """The caller's word as the shell hands it over, requoted; unquoted, each field it splits into, or none."""
         value, dynamic = literal_word(word, self.data)
         if dynamic or spreads(word, self.data):
             raise UnsupportedSyntaxError(
@@ -115,4 +116,4 @@ class Respelling:
             return shlex.quote(value)
         if not PLAIN_FIELDS.fullmatch(value):
             raise UnsupportedSyntaxError("passing a glob to an unquoted function argument requires explicit review")
-        return " ".join(map(shlex.quote, value.split())) or "''"
+        return " ".join(map(shlex.quote, value.split()))

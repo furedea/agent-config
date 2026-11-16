@@ -111,11 +111,13 @@ def respelled_calls(records: tuple[dict, ...], data: bytes) -> list[str]:
         raise UnsupportedSyntaxError("calling a function after changing IFS requires explicit review", "expansion")
     respelled = []
     # Calls in definitions put before a script were respelled where they were first defined.
-    start = data.find(DEFINITIONS_END.encode()) + len(DEFINITIONS_END) if DEFINITIONS_END.encode() in data else 0
+    script_start = (
+        data.find(DEFINITIONS_END.encode()) + len(DEFINITIONS_END) if DEFINITIONS_END.encode() in data else 0
+    )
     for call in (
         node
         for node in records
-        if node.get("Type") == "CallExpr" and node.get("Args") and node["Pos"]["Offset"] >= start
+        if node.get("Type") == "CallExpr" and node.get("Args") and node["Pos"]["Offset"] >= script_start
     ):
         start = _modifier_count(call, data)
         program = call["Args"][start] if start < len(call["Args"]) else {}

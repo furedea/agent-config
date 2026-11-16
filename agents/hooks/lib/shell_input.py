@@ -19,7 +19,9 @@ PROGRAM_PREFIXES = frozenset({"builtin", "command", "noglob", "nocorrect", "-", 
 # Line continuations, quotes, escapes, and underscores, which spell a word or a zsh option without writing it plainly.
 SPELLING = re.compile(r"\\\n|[\\'\"_]")
 # Text eval or trap runs that may read or replace a function's arguments, at any depth of eval, once unquoted.
-ARGUMENT_TEXT = re.compile(r"[$`]|(?<![\w-])(?:shift|set|getopts|read|mapfile|readarray|vared|source|\.)(?![\w-])")
+ARGUMENT_TEXT = re.compile(
+    r"[$`]|(?<![\w-])(?:shift|set|getopts|zparseopts|argv|BASH_ARG[VC]|read|mapfile|readarray|vared|source|\.)(?![\w-])"
+)
 # Quotes, escapes, braces, and glob characters, which spell a word in code text without writing it plainly.
 CODE_SPELLING = re.compile(r"[\\'\"{},?*\[\]]")
 # An input redirection, with the descriptor it replaces; only descriptor 0 is the shell's script.

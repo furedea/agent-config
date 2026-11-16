@@ -96,12 +96,17 @@ jobs:
       - name: Build locked jev-lint
         run: echo "$(nix build .#jev-lint --no-link --print-out-paths)/bin" >> "$GITHUB_PATH"
 
+      # The adr-check tests run the packaged command, with its dependencies, from the flake.
+      - name: Build locked adr-check
+        run: echo "$(nix build .#adr-check --no-link --print-out-paths)/bin" >> "$GITHUB_PATH"
+
       # The provider integration tests render with the locked agent-harness CLI.
       - name: Run pytest
         env:
           CODEX_BIN: codex
           REQUIRE_AST_GREP: "1"
           REQUIRE_JEV_LINT: "1"
+          REQUIRE_ADR_CHECK: "1"
           REQUIRE_CODEX_EXECPOLICY: "1"
         run: uv run pytest --cov
 
@@ -251,6 +256,38 @@ jobs:
       - name: Build the agent source
         run: nix build .#default
 
+  adr-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    # `nix run` needs no dev shell.
+    defaults:
+      run:
+        shell: bash
+    steps:
+      # The base commit of a pull request must be in the history for `--base`.
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Nix
+        uses: furedea/reusable-workflows/.github/actions/nix-setup@2ae953294b9a805d0705657adc1d9d4f1bc1f646 # v1.3.0
+        with:
+          save: false
+
+      - name: Check the ADRs
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [ -n "$BASE_SHA" ]; then
+            nix run .#adr-check -- --base "$BASE_SHA" docs/adr
+          else
+            nix run .#adr-check -- docs/adr
+          fi
+
   audit:
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -316,6 +353,7 @@ jobs:
       - execpolicy
       - shell-lint
       - nix-build
+      - adr-check
       - audit
       - gha-lint
       - dependency-review

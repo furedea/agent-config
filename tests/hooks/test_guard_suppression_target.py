@@ -72,3 +72,25 @@ def test_keeping_what_every_suppression_names_passes(
     target = tmp_path / name
     target.write_text(before)
     assert decide_edit(target, old, new) == "allow"
+
+
+@pytest.mark.parametrize(
+    "name,before,old,new",
+    [
+        ("user.go", "f() //nolint:errcheck // clsoe file\n", "clsoe", "close"),
+        ("app.py", "x = 1  # noqa: E501 long url, clsoe\n", "clsoe", "close"),
+        ("app.ts", "// eslint-disable-next-line no-console -- clsoe\nfoo()\n", "clsoe", "close"),
+        ("app.ts", "// biome-ignore lint/style: clsoe\nfoo()\n", "clsoe", "close"),
+        ("app.ts", "// @ts-expect-error clsoe\nfoo()\n", "clsoe", "close"),
+        ("lib.rs", '#[allow(dead_code, reason = "clsoe")]\nfn a() {}\n', "clsoe", "close"),
+        ("run.sh", "# shellcheck disable=SC2086 # clsoe\necho $x\n", "clsoe", "close"),
+        ("app.py", "x = f()  # type: ignore[attr-defined]  clsoe\n", "clsoe", "close"),
+    ],
+    ids=["nolint", "noqa", "eslint", "biome", "ts-expect-error", "allow", "shellcheck", "type ignore"],
+)
+def test_fixing_the_reason_beside_a_suppression_passes(
+    tmp_path: Path, name: str, before: str, old: str, new: str
+) -> None:
+    target = tmp_path / name
+    target.write_text(before)
+    assert decide_edit(target, old, new) == "allow"

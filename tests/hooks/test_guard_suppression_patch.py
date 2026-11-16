@@ -241,3 +241,22 @@ def test_an_inexact_hunk_that_adds_the_word_inside_a_quote_asks(tmp_path: Path) 
     target.write_text("/*\nnote\n*/\nfoo()\n")
     patch = f'*** Begin Patch\n*** Update File: {target}\n@@\n-note  \n+"ast-grep-ignore: rule"\n*** End Patch'
     assert decide("apply_patch", {"input": patch}) == "ask"
+
+
+def test_a_context_line_that_starts_with_stars_does_not_end_the_section(tmp_path: Path) -> None:
+    """The applier ends a section only at a line that itself starts with `***`; a context line starts with a space."""
+    target = tmp_path / "app.py"
+    target.write_text('"""\n*** Notes\n"""\nx = 1\n')
+    patch = (
+        f'*** Begin Patch\n*** Update File: {target}\n@@\n """\n *** Notes\n """\n-x = 1\n+x = 1  # noqa\n'
+        "*** End Patch"
+    )
+    assert decide("apply_patch", {"input": patch}) == "ask"
+
+
+def test_a_hunk_that_cannot_be_placed_counts_a_marker_its_lines_read_as_a_string(tmp_path: Path) -> None:
+    """Parsed alone the lines are one string; placed, their first quotes close one, so the marker is a comment."""
+    target = tmp_path / "app.py"
+    target.write_text('a = """\ndoc\n"""\nb = """\ndoc\n"""\n')
+    patch = f'*** Begin Patch\n*** Update File: {target}\n@@\n-doc\n+"""  # noqa: E501\n+x = """\n*** End Patch'
+    assert decide("apply_patch", {"input": patch}) == "ask"

@@ -297,3 +297,15 @@ def test_a_first_line_string_that_holds_the_word_is_no_file_suppression(tmp_path
     target.write_text("x = 1\n")
     content = 'MARKER = "ast-grep-ignore"\n\nx = 1\n'
     assert decide("Write", {"file_path": str(target), "content": content}) == "allow"
+
+
+def test_a_relative_path_is_read_in_the_payloads_directory(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Read elsewhere, the file looks empty and the edit's fragments hold no marker, so nothing would ask."""
+    work, elsewhere = tmp_path / "work", tmp_path / "elsewhere"
+    work.mkdir()
+    elsewhere.mkdir()
+    (work / "app.py").write_text('s = """\n# noqa\n"""\n')
+    monkeypatch.chdir(elsewhere)
+    edits = [{"old_string": 's = """\n', "new_string": ""}, {"old_string": '\n"""\n', "new_string": "\n"}]
+    payload = {"tool_name": "MultiEdit", "cwd": str(work), "tool_input": {"file_path": "app.py", "edits": edits}}
+    assert guard.decide(payload).decision == "ask"

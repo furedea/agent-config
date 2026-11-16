@@ -49,9 +49,25 @@ MARKERS = {
 }
 # The lint hook also scans YAML and Nix, so a project's own ast-grep rules can be suppressed there.
 MARKER_SUFFIXES = {"ast-grep-ignore": CODE_SUFFIXES | {".yml", ".yaml", ".nix"}}
-# ast-grep honors its word anywhere in a comment, and a fragment of a file lacks the context that decides what is a
-# comment, so every mark of a fragment counts for this marker.
-COUNTED_ANYWHERE_IN_FRAGMENTS = frozenset({"ast-grep-ignore"})
+# The part of a marker's scope that names what it suppresses; the rest, such as a reason, may change without asking.
+# A marker without one here, or whose scope this does not match, is compared by its whole scope: ast-grep reads every
+# word after its marker as a rule id.
+DIRECTIVES = {
+    "noqa": re.compile(r"#\s*(?:ruff:\s*)?noqa(?::\s*[A-Z]+[0-9]+(?:\s*,?\s*[A-Z]+[0-9]+)*)?"),
+    "type: ignore": re.compile(r"#\s*type:\s*ignore(?:\[[^\]]*\])?"),
+    "pyright: ignore": re.compile(r"#\s*pyright:\s*ignore(?:\[[^\]]*\])?"),
+    "pylint: disable": re.compile(r"#\s*pylint:\s*disable\s*=\s*[\w-]+(?:\s*,\s*[\w-]+)*"),
+    # ESLint and oxlint take the text after two or more dashes as the description.
+    "lint-disable comment": re.compile(r"(?:oxlint|eslint)-disable.*?(?=\s-{2,}(?:\s|$)|$)"),
+    "biome-ignore": re.compile(r"biome-ignore[^:]*"),
+    "@ts-ignore": re.compile(r"@ts-(?:ignore|expect-error|nocheck)\b"),
+    "shellcheck disable": re.compile(r"#\s*shellcheck(?:\s+[\w-]+=\S+)+"),
+    "nolint": re.compile(r"//\s*nolint(?::\s*[\w.-]+(?:\s*,\s*[\w.-]+)*)?"),
+}
+# The reason of a Rust attribute, which names no lint.
+ATTRIBUTE_REASON = re.compile(r'\breason\s*=\s*"(?:[^"\\]|\\.)*"')
+# Shell suffixes, where a bare word on its own line may end a heredoc around a marker.
+HEREDOC_SUFFIXES = frozenset({".sh", ".bash"})
 # Every other marker is a comment directive, counted only inside a comment; a Rust attribute anywhere but a string
 # or comment.
 CODE_MARKERS = frozenset({"allow or expect attribute"})
@@ -88,7 +104,9 @@ def decide(payload: dict) -> Verdict:
     Handles Write, Edit, MultiEdit and apply_patch payloads; non-code files are never inspected.
     """
     comment_nodes.start_budget()
-    added = [f"{name} in {change.path}" for change in _changes(payload) for name in _new_markers(change)]
+    # The provider runs the tool in the payload's directory, so a relative path names a file there.
+    with hook_input.payload_directory(payload):
+        added = [f"{name} in {change.path}" for change in _changes(payload) for name in _new_markers(change)]
     # A scan cut short leaves the comments unknown, and the fallback without them cannot see every new scope.
     if comment_nodes.budget_ran_out():
         added.append(OUT_OF_TIME)
@@ -156,7 +174,8 @@ def _has_new_scope(name: str, pattern: re.Pattern[str], change: _Change) -> bool
     added, removed = (_marked_lines(name, text, suffix) for text in (change.added, change.removed))
     if added is None or removed is None:
         return _may_add_unparsed(pattern, change)
-    every_mark = not change.whole and name in COUNTED_ANYWHERE_IN_FRAGMENTS
+    # A fragment lacks the context that decides what is a comment or string in the file, so every mark of it counts.
+    every_mark = not change.whole
     added_marks, removed_marks = (
         Counter(mark for marks in found.values() for mark in marks if every_mark or _counts(name, mark[0]))
         for found in (added, removed)
@@ -177,6 +196,8 @@ def _may_add_unparsed(pattern: re.Pattern[str], change: _Change) -> bool:
     before, after = _lines(change.removed), _lines(change.added)
     opcodes = difflib.SequenceMatcher(a=before, b=after, autojunk=False).get_opcodes()
     changed = [line for tag, i1, i2, j1, j2 in opcodes if tag != "equal" for line in (*before[i1:i2], *after[j1:j2])]
+    if Path(change.path).suffix.lower() in HEREDOC_SUFFIXES and "<<" in change.added + change.removed:
+        return bool(changed)
     return any(DELIMITER.search(line) for line in changed)
 
 
@@ -197,12 +218,22 @@ def _marked_lines(name: str, text: str, suffix: str) -> dict[int, tuple[tuple[bo
         return None
     marked: dict[int, list[tuple[bool, str]]] = {}
     for mark in marker_scope.Layout.of(text, spans, attribute=name in CODE_MARKERS).marks(starts):
-        marked.setdefault(mark.line, []).append((mark.in_node, mark.scope))
+        marked.setdefault(mark.line, []).append((mark.in_node, _directive(name, mark.scope)))
     return {number: tuple(marks) for number, marks in marked.items()}
 
 
+def _directive(name: str, scope: str) -> str:
+    """What of a marker's scope names what it suppresses."""
+    if name in CODE_MARKERS:
+        return ATTRIBUTE_REASON.sub("reason", scope)
+    pattern = DIRECTIVES.get(name)
+    match = pattern.match(scope) if pattern is not None else None
+    return match.group() if match is not None else scope
+
+
 def _marker_lines(pattern: re.Pattern[str], text: str) -> list[str]:
-    return [line.strip() for line in _lines(text) if pattern.search(line)]
+    """The marker lines with their indentation, which in YAML or a block may decide whether the line is a comment."""
+    return [line.rstrip() for line in _lines(text) if pattern.search(line)]
 
 
 def _changes(payload: dict) -> list[_Change]:
@@ -262,6 +293,9 @@ def _patch_changes(patch: str) -> list[_Change]:
     files = _PatchFiles()
     current: _Hunks | None = None
     for line in _lines(patch):
+        if current is not None and current.holds(line):
+            current.lines.append(line)
+            continue
         # The applier reads a header with the spaces around it trimmed.
         header = line.strip()
         if match := PATCH_FILE.match(header):
@@ -316,6 +350,14 @@ class _Hunks:
     lines: list[str] = field(default_factory=list)
     destination: str = ""
     repeated: bool = False
+
+    def holds(self, line: str) -> bool:
+        """Whether the applier reads `line` as part of this section rather than as a header.
+
+        An added file takes only `+` lines; an updated one takes any line that does not itself start with `***`, so a
+        context line such as ` *** Notes` stays in the section.
+        """
+        return line.startswith("+") if self.added else not line.startswith("***")
 
     def changes(self, path: str) -> list[_Change]:
         existing = _existing_text(path)

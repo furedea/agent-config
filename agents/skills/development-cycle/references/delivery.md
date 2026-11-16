@@ -116,7 +116,8 @@ mechanism is in the
     Correctness defects within the scope are still fixed.
 4. Do not change the work for a finding that repeats on the same grounds, is a matter of taste, or
     is refuted with evidence. Answer it in its thread, resolve the thread (`codex-review` fails
-    while one is open), and record it in the PR body with the reason.
+    while one is open), and record it in the PR body with the reason. Do not resolve a repeated
+    P0 or P1 finding; it goes to step 5.
 5. Stop and report the open findings instead of looping when a P0 or P1 finding repeats, when an
     area keeps failing, or after the third re-review that still raises new findings.
 

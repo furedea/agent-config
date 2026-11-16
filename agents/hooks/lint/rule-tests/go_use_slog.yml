@@ -30,7 +30,35 @@ valid:
     func write(log Logger) {
         log.Printf("start")
     }
+  - |
+    import "log"
+
+    func (log *Logger) write() {
+        log.Printf("start")
+    }
+  - |
+    import "log"
+
+    func build() (log Logger) {
+        log.Printf("start")
+        return
+    }
+  - |
+    import "log"
+
+    func build() {
+        run := func(log Logger) {
+            log.Printf("start")
+        }
+        run(nil)
+    }
 invalid:
+  - |
+    import "log"
+
+    func (s *Server) write(other Logger) {
+        log.Printf("start")
+    }
   - |
     import "log"
 

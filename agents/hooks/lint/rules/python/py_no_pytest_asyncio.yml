@@ -3,6 +3,7 @@ language: python
 severity: error
 message: "pytest-asyncio is not the async test runner of this project, so its marker and fixtures are not run by anyio."
 note: "Replace `@pytest.mark.asyncio` with `@pytest.mark.anyio`, and drop `import pytest_asyncio`."
+# Limits: Only the name `pytest` is followed; a marker reached through an alias of `pytest` or `mark` needs binding analysis and is not found.
 rule:
   any:
     - pattern: pytest.mark.asyncio

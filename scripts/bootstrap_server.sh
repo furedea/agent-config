@@ -103,6 +103,9 @@ readonly RUFF_SHA256="${RUFF_SHA256:-d1d6ec9ce1ce0c01e23532a157a677077ba1f82f7cd
 # renovate: datasource=github-release-attachments depName=dprint/dprint
 readonly DPRINT_VERSION="${DPRINT_VERSION:-0.64.1}"
 readonly DPRINT_SHA256="${DPRINT_SHA256:-aad2ee102014c563112dcdad65e131dbcfe123355ef948ae91d806e833cdbf40}"
+# renovate: datasource=github-release-attachments depName=ast-grep/ast-grep
+readonly AST_GREP_VERSION="${AST_GREP_VERSION:-0.42.1}"
+readonly AST_GREP_SHA256="${AST_GREP_SHA256:-5de8b87cba67fc8dc3e239d54b6484802ad745a7ae3de76be4fe89661dc52657}"
 # renovate: datasource=github-release-attachments depName=koalaman/shellcheck
 readonly SHELLCHECK_TAG="${SHELLCHECK_TAG:-v0.11.0}"
 readonly SHELLCHECK_SHA256="${SHELLCHECK_SHA256:-8c3be12b05d5c177a04c29e3c78ce89ac86f1595681cab149b65b97c4e227198}"
@@ -126,6 +129,7 @@ readonly RIPGREP_URL="${RIPGREP_URL:-https://github.com/BurntSushi/ripgrep/relea
 readonly JQ_URL="${JQ_URL:-https://github.com/jqlang/jq/releases/download/jq-${JQ_VERSION}/jq-linux-amd64}"
 readonly RUFF_URL="${RUFF_URL:-https://github.com/astral-sh/ruff/releases/download/${RUFF_VERSION}/ruff-x86_64-unknown-linux-musl.tar.gz}"
 readonly DPRINT_URL="${DPRINT_URL:-https://github.com/dprint/dprint/releases/download/${DPRINT_VERSION}/dprint-x86_64-unknown-linux-musl.zip}"
+readonly AST_GREP_URL="${AST_GREP_URL:-https://github.com/ast-grep/ast-grep/releases/download/${AST_GREP_VERSION}/app-x86_64-unknown-linux-gnu.zip}"
 readonly SHELLCHECK_URL="${SHELLCHECK_URL:-https://github.com/koalaman/shellcheck/releases/download/v${SHELLCHECK_VERSION}/shellcheck-v${SHELLCHECK_VERSION}.linux.x86_64.tar.xz}"
 
 WORK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/bootstrap_server.XXXXXX")"
@@ -148,7 +152,8 @@ function main() {
   install_uv
   local _python
   _python="$(install_python)"
-  install_dprint "$_python"
+  install_zip_tool dprint "$DPRINT_URL" "$DPRINT_SHA256" "$_python"
+  install_zip_tool ast-grep "$AST_GREP_URL" "$AST_GREP_SHA256" "$_python"
   render_harness
   pin_python_shebangs "$_python"
   apply_claude_settings_override
@@ -243,19 +248,20 @@ function extract_archive() {
   printf '%s\n' "$_directory"
 }
 
-# dprint ships a zip archive, which tar cannot read; Python's zipfile module can.
-function install_dprint() {
-  local _python="$1"
-  if [[ -x "$BIN_DIR/dprint" ]]; then
-    printf 'keep %s\n' "$BIN_DIR/dprint"
+# dprint and ast-grep ship a zip archive with the binary at its root, which tar cannot read; Python's
+# zipfile module can. ast-grep rules run in the Stop hook, so a server without it would skip them.
+function install_zip_tool() {
+  local _name="$1" _url="$2" _sha256="$3" _python="$4"
+  if [[ -x "$BIN_DIR/$_name" ]]; then
+    printf 'keep %s\n' "$BIN_DIR/$_name"
     return 0
   fi
-  local _download="$WORK_DIR/dprint.download" _directory
-  download_verified "$DPRINT_URL" "$DPRINT_SHA256" "$_download"
+  local _download="$WORK_DIR/$_name.download" _directory
+  download_verified "$_url" "$_sha256" "$_download"
   _directory="$(mktemp -d "$WORK_DIR/extract.XXXXXX")"
   "$_python" -m zipfile -e "$_download" "$_directory"
-  install -m 0755 "$_directory/dprint" "$BIN_DIR/dprint"
-  printf 'install %s\n' "$BIN_DIR/dprint"
+  install -m 0755 "$_directory/$_name" "$BIN_DIR/$_name"
+  printf 'install %s\n' "$BIN_DIR/$_name"
 }
 
 # bats-core is plain Bash; its installer lays out bin/ and libexec/ under one prefix.

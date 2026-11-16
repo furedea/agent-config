@@ -3,7 +3,7 @@ language: bash
 severity: error
 message: "A constant whose name is not SCREAMING_SNAKE_CASE reads as an ordinary variable."
 note: "Rename it, e.g. `readonly max_retry=3` to `readonly MAX_RETRY=3`."
-# Scope: Only `readonly` declarations at script level are checked: inside a function, `local -r` and `readonly` name a local value.
+# Scope: Inside a function, `readonly` is not checked, because it may only lock a name that `local` already declared and telling the two apart needs scope analysis. Likewise `local -r` and a `declare -r` without `-g` inside a function name a local value. A script-level `declare -r` and a `declare -gr` anywhere are checked.
 rule:
   any:
     - all:
@@ -17,12 +17,24 @@ rule:
         - regex: ^[^A-Z]|[^A-Z0-9_]
   inside:
     kind: declaration_command
-    all:
-      - regex: ^readonly\b
-      # `readonly -f` names a function, not a constant.
-      - not:
-          regex: ^readonly(\s+-[a-zA-Z]+)*\s+-[a-zA-Z]*f\b
-      - not:
-          inside:
-            kind: function_definition
-            stopBy: end
+    any:
+      - all:
+          - regex: ^readonly\b
+          # `readonly -f` names a function, not a constant.
+          - not:
+              regex: ^readonly(\s+-[a-zA-Z]+)*\s+-[a-zA-Z]*f[a-zA-Z]*\b
+          - not:
+              inside:
+                kind: function_definition
+                stopBy: end
+      - all:
+          - regex: ^(declare|typeset)(\s+-[a-zA-Z]+)*\s+-[a-zA-Z]*r
+          - not:
+              regex: ^(declare|typeset)(\s+-[a-zA-Z]+)*\s+-[a-zA-Z]*f[a-zA-Z]*\b
+          # `-g` makes the variable global even inside a function.
+          - any:
+              - regex: ^(declare|typeset)(\s+-[a-zA-Z]+)*\s+-[a-zA-Z]*g
+              - not:
+                  inside:
+                    kind: function_definition
+                    stopBy: end

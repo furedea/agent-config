@@ -3,6 +3,7 @@ language: rust
 severity: error
 message: "Following symlinks while walking a source tree can loop forever or leave the tree."
 note: "Remove `.follow_links(true)` (the default is `false`). If following links is required, keep it and add a reviewed `// ast-grep-ignore: rs_no_follow_links` comment that states the reason."
+# Limits: The walker constructors are matched by their written names, so a constructor imported under another name (`use walkdir::WalkDir as DirWalker;`) is not found.
 rule:
   all:
     - pattern: $WALK.follow_links(true)

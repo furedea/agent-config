@@ -3,6 +3,7 @@ language: python
 severity: error
 message: "A model that inherits pydantic's `BaseModel` directly skips the shared frozen, strict configuration."
 note: "Change `class Money(BaseModel)` to `class Money(FrozenBaseModel)`; only `class FrozenBaseModel(pydantic.BaseModel)` may inherit `BaseModel`."
+# Limits: `pydantic.v1` is found by its plain forms; a `BaseModel` renamed on import from `pydantic.v1` is not followed.
 rule:
   kind: class_definition
   all:
@@ -16,7 +17,7 @@ rule:
             kind: argument_list
             has:
               kind: attribute
-              regex: ^pydantic\.BaseModel$
+              regex: ^pydantic(\.v1)?\.BaseModel$
         - all:
             - inside:
                 kind: module
@@ -34,7 +35,7 @@ rule:
                 stopBy: end
                 has:
                   kind: import_from_statement
-                  regex: '(?s)^from\s+pydantic\s+import\b.*\bBaseModel\s*(,|\)|$)'
+                  regex: '(?s)^from\s+pydantic(\.v1)?\s+import\b.*\bBaseModel\s*(,|\)|$)'
             - has:
                 field: superclasses
                 kind: argument_list

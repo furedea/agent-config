@@ -9,8 +9,34 @@ valid:
     readonly SCRIPT_DIR
   - |
     build() {
+      local -r local_value=1
+    }
+  - |
+    build() {
       readonly local_value=1
     }
+  - |
+    build() {
+      local result
+      result=$(date)
+      readonly result
+    }
+  - |
+    build() {
+      declare -gr GLOBAL_VALUE=1
+    }
+  - |
+    build() {
+      declare -r local_value=1
+    }
+  - |
+    declare -r MAX_RETRY=3
+  - |
+    declare -rf parse_args
+  - |
+    declare -fr parse_args
+  - |
+    readonly -fr parse_args
   - |
     parse_args() { :; }
     readonly -f parse_args
@@ -21,6 +47,16 @@ valid:
     input=a
     readonly OUT=$input OUT2="${input}"
 invalid:
+  - |
+    build() {
+      declare -gr bad_name=1
+    }
+  - |
+    declare -r max_retry=3
+  - |
+    typeset -r max_retry=3
+  - |
+    declare -ar target_dirs=(a b)
   - |
     readonly max_retry=3
   - |

@@ -8,8 +8,11 @@ rule:
   kind: field_declaration
   has:
     field: type
-    kind: qualified_type
-    regex: ^context\.Context$
+    any:
+      - kind: qualified_type
+        regex: ^context\.Context$
+      - kind: pointer_type
+        regex: ^\*context\.Context$
   all:
     - inside:
           kind: source_file

@@ -56,6 +56,8 @@ class Judgement:
     seconds: float = 0.0
     usd: float = 0.0
     failed_reviews: int = 0
+    failure_reason: str = ""
+    resume: Resume | None = None
 
     @property
     def judged(self) -> int:
@@ -77,4 +79,15 @@ class Judgement:
             self.seconds + other.seconds,
             self.usd + other.usd,
             self.failed_reviews + other.failed_reviews,
+            other.failure_reason or self.failure_reason,
+            other.resume or self.resume,
         )
+
+
+@dataclass(frozen=True, slots=True)
+class Resume:
+    """Where a run that a later review cut short continues: the reviews done, the cap they spent, and their result."""
+
+    completed: int
+    spent: int
+    judgement: Judgement

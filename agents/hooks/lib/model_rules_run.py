@@ -16,7 +16,7 @@ from pathlib import Path
 
 import model_rules_programs
 from model_rules_credentials import Credentials
-from model_rules_outcome import Finding, Judgement, Plan, Prevented
+from model_rules_outcome import Finding, Judgement, Plan, Prevented, Resume
 from model_rules_programs import Programs
 from session_store import LockTimeoutError, StateError, file_lock, private_directory
 
@@ -161,25 +161,65 @@ class Review:
         )
 
 
+@dataclass(frozen=True, slots=True)
+class Reviews:
+    """The reviews of one Stop in order, and the part of them that an earlier run cut short already completed.
+
+    The reviews share one cap of SUBJECT_CAP subjects. With a `resume`, the reviews it completed are not judged
+    again: their result and the cap they spent are carried on.
+    """
+
+    reviews: tuple[Review, ...]
+    resume: Resume | None = None
+
+    def judge(self, credentials: Credentials, deadline: Deadline) -> Judgement | Prevented:
+        """Judge each review in turn; a later review that fails is reported with where to resume from."""
+        progress = self._start()
+        for position in range(self.resume.completed if self.resume else 0, len(self.reviews)):
+            review = self.reviews[position]
+            plan = review.plan(deadline, progress.cap)
+            if isinstance(plan, Prevented):
+                return self._cut_short(position, plan, progress)
+            outcome = review.judge(plan, credentials, deadline) if plan.judged else _unjudged(plan)
+            if isinstance(outcome, Prevented):
+                return self._cut_short(position, outcome, progress)
+            progress = progress.after(plan, outcome)
+        return progress.combined
+
+    def _start(self) -> _Progress:
+        if self.resume is None:
+            return _Progress(Judgement(()), SUBJECT_CAP)
+        return _Progress(self.resume.judgement, max(0, SUBJECT_CAP - self.resume.spent))
+
+    def _cut_short(self, position: int, prevented: Prevented, progress: _Progress) -> Judgement | Prevented:
+        """The first review failing prevents the run; a later one keeps the earlier findings and is retried alone."""
+        if position == 0:
+            return prevented
+        failure = Judgement(
+            (),
+            skipped_files=len(self.reviews[position].paths) or 1,
+            failed_reviews=1,
+            failure_reason=prevented.reason,
+            resume=Resume(position, SUBJECT_CAP - progress.cap, progress.combined),
+        )
+        return progress.combined.combined(failure)
+
+
+@dataclass(frozen=True, slots=True)
+class _Progress:
+    """The result so far of the reviews of one run and what is left of the subject cap."""
+
+    combined: Judgement
+    cap: int
+
+    def after(self, plan: Plan, outcome: Judgement) -> _Progress:
+        """The progress once a review that cost `plan.cost` subjects has produced `outcome`."""
+        return _Progress(self.combined.combined(outcome), max(0, self.cap - plan.cost))
+
+
 def review_all(reviews: tuple[Review, ...], credentials: Credentials, deadline: Deadline) -> Judgement | Prevented:
-    """Judge each review in turn, sharing one cap of SUBJECT_CAP subjects among them."""
-    combined = Judgement(())
-    cap = SUBJECT_CAP
-    for position, review in enumerate(reviews):
-        plan = review.plan(deadline, cap)
-        if isinstance(plan, Prevented):
-            return _failed_review(plan, position, combined)
-        outcome = review.judge(plan, credentials, deadline) if plan.judged else _unjudged(plan)
-        if isinstance(outcome, Prevented):
-            return _failed_review(outcome, position, combined)
-        cap = max(0, cap - plan.cost)
-        combined = combined.combined(outcome)
-    return combined
-
-
-def _failed_review(prevented: Prevented, position: int, combined: Judgement) -> Judgement | Prevented:
-    """The first review failing prevents the run; a later one keeps the earlier findings and is retried next Stop."""
-    return prevented if position == 0 else combined.combined(Judgement((), skipped_files=1, failed_reviews=1))
+    """Judge every review of a Stop from the start."""
+    return Reviews(reviews).judge(credentials, deadline)
 
 
 def cache_path(state_directory: Path) -> Path:

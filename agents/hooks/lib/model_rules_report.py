@@ -12,9 +12,7 @@ def describe_line(judgement: Judgement) -> str:
     parts = [
         _counted(len(judgement.findings), "finding"),
         _subjects(judgement),
-        "incomplete: a review failed and is retried next Stop"
-        if judgement.failed_reviews
-        else ("advisory" if judgement.findings else "passed"),
+        _incomplete(judgement) if judgement.failed_reviews else ("advisory" if judgement.findings else "passed"),
         f"${judgement.usd:.4f}",
         f"{judgement.seconds:.1f}s",
     ]
@@ -49,6 +47,11 @@ def _line(parts: list[str]) -> str:
 
 def _counted(count: int, noun: str) -> str:
     return f"{count} {noun}" if count == 1 else f"{count} {noun}s"
+
+
+def _incomplete(judgement: Judgement) -> str:
+    reason = f" ({judgement.failure_reason})" if judgement.failure_reason else ""
+    return f"incomplete: a review failed{reason} and is retried next Stop"
 
 
 def _subjects(judgement: Judgement) -> str:

@@ -30,7 +30,25 @@ valid:
 
     class FrozenBaseModel(pd.BaseModel):
         pass
+  - |
+    from pydantic.v1 import Field
+
+
+    class Money(FrozenBaseModel):
+        amount: int = Field(0)
 invalid:
+  - |
+    from pydantic.v1 import BaseModel
+
+
+    class Money(BaseModel):
+        amount: int
+  - |
+    import pydantic.v1
+
+
+    class Money(pydantic.v1.BaseModel):
+        amount: int
   - |
     from pydantic import BaseModel, Field
 

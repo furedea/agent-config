@@ -14,10 +14,11 @@ from pathlib import Path
 import model_rules_credentials
 import model_rules_programs
 import model_rules_report
+import model_rules_resume
 import model_rules_run
 import trusted_owners
 from model_rules_files import Selection, committed_paths, select
-from model_rules_outcome import Judgement, Prevented
+from model_rules_outcome import Judgement, Prevented, Resume
 from model_rules_programs import Programs
 from session_snapshot import capture, head_commit
 from session_store import SessionRecord, state_directory
@@ -61,42 +62,83 @@ def advise(record: SessionRecord, *, stop_hook_active: bool, budget_seconds: flo
 
 
 def _advise(record: SessionRecord, stop_hook_active: bool, deadline: model_rules_run.Deadline) -> Advice:
-    inputs = _inputs(record)
+    stop = _Stop(record, _inputs(record), stop_hook_active, deadline)
     receipt = record.results().get(RECEIPT_KEY)
-    if isinstance(receipt, dict) and receipt.get("input") == inputs and isinstance(receipt.get("findings"), int):
-        advice = _answer_from(receipt, stop_hook_active)
+    if not (
+        isinstance(receipt, dict) and receipt.get("input") == stop.inputs and isinstance(receipt.get("findings"), int)
+    ):
+        return stop.judged()
+    resume = model_rules_resume.load(receipt.get("resume"))
+    if resume is None:
+        advice = stop.answered_from(receipt)
         if advice.blocking:
             _save(record, {**receipt, "outcome": SHOWN})
         return advice
-    started = time.monotonic()
-    outcome = _judge(record, deadline)
-    if isinstance(outcome, Prevented):
-        return _skipped_advice(outcome)
-    outcome = replace(outcome, seconds=time.monotonic() - started)
-    message = model_rules_report.describe_line(outcome)
-    details = model_rules_report.describe_details(outcome)
-    blocking = bool(outcome.findings) and not stop_hook_active
-    state = CLEAN if not outcome.findings else SHOWN if blocking else UNSHOWN
-    if not outcome.failed_reviews:
-        # A review that failed is not a result to reuse: the next Stop on the same inputs runs it again.
-        _save(record, _receipt(inputs, outcome, state))
-    return Advice(message, blocking, details if blocking else "")
+    return replace(stop, shown=_shown(receipt)).judged(resume)
 
 
-def _receipt(inputs: str, outcome: Judgement, state: str) -> dict:
-    """What a later Stop on the same inputs reuses, and the measurements that let the timing be studied."""
-    return {
-        "input": inputs,
-        "outcome": state,
-        "findings": len(outcome.findings),
-        "details": model_rules_report.describe_details(outcome),
-        "subjects": outcome.subjects,
-        "judged": outcome.judged,
-        "requests": outcome.requests,
-        "cached": outcome.cached,
-        "seconds": round(outcome.seconds, 3),
-        "usd": outcome.usd,
-    }
+@dataclass(frozen=True, slots=True)
+class _Stop:
+    """One Stop being advised: the session, the fingerprint of its inputs, and how many findings were shown before."""
+
+    record: SessionRecord
+    inputs: str
+    stop_hook_active: bool
+    deadline: model_rules_run.Deadline
+    shown: int = 0
+
+    def judged(self, resume: Resume | None = None) -> Advice:
+        """Run the reviews, or only those a failed run left, and save what a later Stop on the same inputs reuses.
+
+        A finding blocks once: those shown before a later review failed are not shown again, and a review that
+        failed is retried alone at the next Stop.
+        """
+        started = time.monotonic()
+        outcome = _judge(self.record, self.deadline, resume) if resume else _judge(self.record, self.deadline)
+        if isinstance(outcome, Prevented):
+            return _skipped_advice(outcome)
+        outcome = replace(outcome, seconds=time.monotonic() - started)
+        blocking = len(outcome.findings) > self.shown and not self.stop_hook_active
+        seen = len(outcome.findings) if blocking else self.shown
+        if not outcome.failed_reviews or outcome.resume:
+            _save(self.record, self._receipt(outcome, seen))
+        message = model_rules_report.describe_line(outcome)
+        unseen = replace(outcome, findings=outcome.findings[self.shown :])
+        return Advice(message, blocking, model_rules_report.describe_details(unseen) if blocking else "")
+
+    def answered_from(self, receipt: dict) -> Advice:
+        """The advice a complete receipt for the same inputs gives; findings not shown yet block, once."""
+        return _answer_from(receipt, self.stop_hook_active)
+
+    def _receipt(self, outcome: Judgement, seen: int) -> dict:
+        """What a later Stop on the same inputs reuses, and the measurements that let the timing be studied.
+
+        A run that a later review cut short also holds the `resume` from which only that review is retried.
+        """
+        state = CLEAN if not outcome.findings else SHOWN if seen == len(outcome.findings) else UNSHOWN
+        resume = {"resume": model_rules_resume.dump(outcome.resume)} if outcome.resume else {}
+        return {
+            **resume,
+            "input": self.inputs,
+            "outcome": state,
+            "shown": seen,
+            "findings": len(outcome.findings),
+            "details": model_rules_report.describe_details(replace(outcome, findings=outcome.findings[seen:])),
+            "subjects": outcome.subjects,
+            "judged": outcome.judged,
+            "requests": outcome.requests,
+            "cached": outcome.cached,
+            "seconds": round(outcome.seconds, 3),
+            "usd": outcome.usd,
+        }
+
+
+def _shown(receipt: dict) -> int:
+    """How many of a receipt's findings the agent has been shown."""
+    shown = receipt.get("shown")
+    if isinstance(shown, int) and not isinstance(shown, bool):
+        return shown
+    return receipt["findings"] if receipt.get("outcome") == SHOWN else 0
 
 
 def _answer_from(receipt: dict, stop_hook_active: bool) -> Advice:
@@ -124,7 +166,9 @@ def _preconditions(record: SessionRecord) -> Prevented | None:
     return _repository_gate(record.root)
 
 
-def _judge(record: SessionRecord, deadline: model_rules_run.Deadline) -> Judgement | Prevented:
+def _judge(
+    record: SessionRecord, deadline: model_rules_run.Deadline, resume: Resume | None = None
+) -> Judgement | Prevented:
     if (stop := _preconditions(record)) is not None:
         return stop
     programs = model_rules_programs.locate()
@@ -138,7 +182,7 @@ def _judge(record: SessionRecord, deadline: model_rules_run.Deadline) -> Judgeme
     credentials = model_rules_credentials.load()
     if isinstance(credentials, Prevented):
         return credentials
-    outcome = model_rules_run.review_all(reviews, credentials, deadline)
+    outcome = model_rules_run.Reviews(reviews, resume).judge(credentials, deadline)
     return outcome if isinstance(outcome, Prevented) else outcome.combined(withheld)
 
 

@@ -3,11 +3,29 @@ language: rust
 severity: error
 message: "A generated mock couples tests to call sequences instead of behavior."
 note: "Write a small fake struct that implements the trait, and pass it in instead of `#[automock]`."
+# Limits: A mocking crate that is not the first name of a grouped import (`use {std::fmt, mockall::automock};`) is not found by its import, but the attribute that uses it still is.
 rule:
   any:
     - kind: use_declaration
-      regex: ^use (mockall|mockall_double|unimock|faux)\b
+      regex: ^(pub(\([^)]*\))?\s+)?use\s+(::)?\{*\s*(mockall|mockall_double|unimock|faux|automock)\b
     - kind: attribute_item
-      regex: ^#\[(cfg_attr\([^\]]*?,\s*)?(automock|(mockall|mockall_double|unimock|faux)::[a-z_]+)\b
+      regex: ^#\[(automock|(mockall|mockall_double|unimock|faux|automock)::[a-z_]+)\b
+    # `cfg_attr` arguments are flat tokens: a mock attribute is an identifier right after a comma.
+    - kind: attribute_item
+      has:
+        kind: attribute
+        all:
+          - has:
+              kind: identifier
+              regex: ^cfg_attr$
+          - has:
+              field: arguments
+              kind: token_tree
+              has:
+                kind: identifier
+                regex: ^(automock|mockall|mockall_double|unimock|faux)$
+                follows:
+                  regex: ^,$
+                  stopBy: neighbor
     - kind: macro_invocation
       regex: ^mockall::mock!

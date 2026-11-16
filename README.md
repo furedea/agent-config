@@ -39,7 +39,7 @@ The script finds the repository from its own location, so any clone location wor
 for updates.
 
 The script downloads pinned x86_64 Linux release binaries (`agent-harness`, `shfmt`, `rg`, `jq`,
-`ruff`, `dprint`, `shellcheck`, `bats`, and `uv`) into `~/.local/bin`, installs Python 3.15.2 through
+`ruff`, `dprint`, `ast-grep`, `shellcheck`, `bats`, and `uv`) into `~/.local/bin`, installs Python 3.15.2 through
 uv, renders `agents/` into the home directory with the same `agent-harness` CLI, pins the hook
 shebangs to that interpreter, keeps settings that Claude Code wrote at runtime, and writes
 `~/.config/agent-config/agent_env.sh` for the login shell to source. It exits before installing

@@ -34,6 +34,8 @@ ASSIGNING_PROGRAMS = frozenset(
     | {"fc", "r", "history"}
     # enable, disable, zmodload, and autoload load, swap, or define builtins and functions, gh's name included.
     | {"enable", "disable", "zmodload", "autoload"}
+    # zsh's emulate -c and sched run code given as an argument.
+    | {"emulate", "sched"}
 )
 # Syntax that assigns: a declaration, a loop variable, arithmetic, a ${name:=value} default, or a function,
 # which can stand in for a command of the same name.

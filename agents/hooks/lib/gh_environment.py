@@ -198,6 +198,9 @@ def _is_trusted_helper(value: str) -> bool:
     words = value.split()
     if not words:
         return True
+    # `gh auth setup-git` writes its helper as a `!` snippet that is exactly the locked gh and its arguments.
+    if value.startswith("!") and words[1:] == ["auth", "git-credential"] and Path(words[0][1:]).name == PROGRAM:
+        return words[0][1:].startswith("/") and is_system_program(words[0][1:])
     if not SAFE_HELPER.fullmatch(value):
         return False
     program = words[0]

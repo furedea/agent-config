@@ -1,5 +1,7 @@
 """gh's own configuration, the guard's rg, and inherited shell functions keep gh calls where the guard judged."""
 
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -112,3 +114,16 @@ def test_a_pager_must_be_a_locked_program(
 ) -> None:
     monkeypatch.setenv(name, pager)
     assert decide("gh pr list -R furedea/agent-config") == expected
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_the_helper_gh_auth_setup_git_writes_keeps_a_clone_allowed() -> None:
+    gh = shutil.which("gh")
+    assert gh is not None
+    command = "gh repo clone furedea/agent-config"
+    subprocess.run(["git", "config", "credential.https://github.com.helper", f"!{gh} auth git-credential"], check=True)
+    assert decide(command) == "allow"
+    subprocess.run(
+        ["git", "config", "credential.https://github.com.helper", f"!{gh} auth git-credential; x"], check=True
+    )
+    assert decide(command) == "ask"

@@ -63,9 +63,14 @@ def diagnostics(payload: dict, kind: str | None = None) -> Report:
     if not isinstance(payload, dict):
         raise TypeError("cannot compute diagnostics: hook payload must be an object")
     targets = lint_engine.supported_targets(target_paths(payload), EXTENSIONS, kind)
-    paths = [target.path for target in targets]
     lint = Report(advice=lint_engine.diagnostics(targets, check_file))
-    return lint + static_rule_scan.diagnostics(paths) + Report(advice=adr_check_scan.diagnostics(paths))
+    # A deleted ADR leaves no target, but references to it elsewhere in its directory now break.
+    adr_paths = target_paths(payload) if kind in (None, "md") else []
+    return (
+        lint
+        + static_rule_scan.diagnostics(target.path for target in targets)
+        + Report(advice=adr_check_scan.diagnostics(adr_paths))
+    )
 
 
 def emit(

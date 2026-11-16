@@ -125,3 +125,17 @@ def test_two_edits_in_one_directory_run_the_command_once(executable: StubWriter,
 def test_missing_command_is_silent(adr_file: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("PATH", "/nonexistent")
     assert lint_format.adr_check_scan.diagnostics([adr_file]) == ()
+
+
+def test_deleting_an_adr_still_checks_its_directory(
+    executable: StubWriter,
+    adr_file: Path,
+    calls: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    install(executable, "0002_b.md: ADR-0001, which does not exist", 1)
+    adr_file.unlink()
+    _, output = run_hook(adr_file, capsys, monkeypatch)
+    assert "which does not exist" in context_of(output)
+    assert json.loads(calls.read_text())[0] == str(adr_file.parent)

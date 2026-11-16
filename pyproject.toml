@@ -17,6 +17,8 @@ markers = [
 
 [tool.deptry]
 ignore_notebooks = true
+# tools/adr-check is built by Nix with its own dependencies (nix/adr_check.nix); uv never installs them.
+extend_exclude = ["tools"]
 # Standalone hooks import these adjacent repository modules after trusted path setup.
 known_first_party = [
   "adr_check_scan",

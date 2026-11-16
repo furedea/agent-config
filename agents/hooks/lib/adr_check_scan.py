@@ -14,7 +14,7 @@ OUTPUT_LINES = 24
 
 
 def diagnostics(paths: Iterable[Path]) -> tuple[str, ...]:
-    """Describe the findings of each edited ADR's directory once; stay silent without the command.
+    """Describe the findings of each edited or deleted ADR's directory once; stay silent without the command.
 
     A finding can sit in a file other than the edited one (a reference that no longer resolves), so the whole
     directory is checked. Findings are advice: a failed run is reported as a message, never raised.
@@ -26,8 +26,8 @@ def diagnostics(paths: Iterable[Path]) -> tuple[str, ...]:
 
 
 def is_adr_file(path: Path) -> bool:
-    """Whether `path` is an existing Markdown file directly inside a `docs/adr` directory."""
-    return path.suffix == ".md" and path.is_file() and path.parent.parts[-2:] == ADR_DIRECTORY
+    """Whether `path` names a Markdown file directly inside an existing `docs/adr` directory, even a deleted one."""
+    return path.suffix == ".md" and path.parent.is_dir() and path.parent.parts[-2:] == ADR_DIRECTORY
 
 
 def check(directory: Path) -> str:

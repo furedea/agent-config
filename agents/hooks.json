@@ -493,6 +493,11 @@
               "command": "\"$HOME/.devin/hooks/hook_adapter.py\" content write",
               "timeout": 30,
               "type": "command"
+            },
+            {
+              "command": "\"$HOME/.devin/hooks/hook_adapter.py\" content suppression",
+              "timeout": 30,
+              "type": "command"
             }
           ]
         },
@@ -516,6 +521,11 @@
             },
             {
               "command": "\"$HOME/.devin/hooks/hook_adapter.py\" content apply-patch",
+              "timeout": 30,
+              "type": "command"
+            },
+            {
+              "command": "\"$HOME/.devin/hooks/hook_adapter.py\" content suppression",
               "timeout": 30,
               "type": "command"
             }
@@ -677,6 +687,11 @@
               "command": "\"$HOME/.hermes/hooks/hook_adapter.py\" content write",
               "timeout": 30,
               "type": "command"
+            },
+            {
+              "command": "\"$HOME/.hermes/hooks/hook_adapter.py\" content suppression",
+              "timeout": 30,
+              "type": "command"
             }
           ]
         }
@@ -833,6 +848,11 @@
               "command": "\"$HOME/.pi/hooks/hook_adapter.py\" content write",
               "timeout": 30,
               "type": "command"
+            },
+            {
+              "command": "\"$HOME/.pi/hooks/hook_adapter.py\" content suppression",
+              "timeout": 30,
+              "type": "command"
             }
           ]
         },
@@ -856,6 +876,11 @@
             },
             {
               "command": "\"$HOME/.pi/hooks/hook_adapter.py\" content apply-patch",
+              "timeout": 30,
+              "type": "command"
+            },
+            {
+              "command": "\"$HOME/.pi/hooks/hook_adapter.py\" content suppression",
               "timeout": 30,
               "type": "command"
             }
@@ -997,6 +1022,11 @@
               "command": "\"$HOME/.dsh/hooks/hook_adapter.py\" content write",
               "timeout": 30,
               "type": "command"
+            },
+            {
+              "command": "\"$HOME/.dsh/hooks/hook_adapter.py\" content suppression",
+              "timeout": 30,
+              "type": "command"
             }
           ]
         },
@@ -1015,6 +1045,11 @@
             },
             {
               "command": "\"$HOME/.dsh/hooks/hook_adapter.py\" content apply-patch",
+              "timeout": 30,
+              "type": "command"
+            },
+            {
+              "command": "\"$HOME/.dsh/hooks/hook_adapter.py\" content suppression",
               "timeout": 30,
               "type": "command"
             }

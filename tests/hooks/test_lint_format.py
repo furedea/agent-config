@@ -357,13 +357,25 @@ def test_provider_diagnostics_are_bounded_without_losing_truncation_notice(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     messages = tuple(f"diagnostic {index}: {'x' * 2000}" for index in range(20))
-    lint_format.emit(messages)
+    lint_format.emit(lint_format.Report(advice=messages))
     output = capsys.readouterr().out
     row = json.loads(output)
     context = row["hookSpecificOutput"]["additionalContext"]
     assert len(context.encode()) <= lint_format.NOTIFICATION_LIMIT_BYTES
     assert "[diagnostics truncated]" in context
     assert "diagnostic 0" in context
+
+
+def test_a_block_stays_within_the_notification_limit_with_its_instruction(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    errors = tuple(f"error {index}: {'e' * 2000}" for index in range(20))
+    advice = tuple(f"advice {index}: {'a' * 2000}" for index in range(20))
+    lint_format.emit(lint_format.Report(advice=advice, errors=errors))
+    reason = json.loads(capsys.readouterr().out)["reason"]
+    assert len(reason.encode()) <= lint_format.NOTIFICATION_LIMIT_BYTES
+    assert reason.count(lint_format.FIX_INSTRUCTION) == 1
+    assert reason.startswith("error 0")
 
 
 def test_missing_file_is_not_treated_as_a_successful_check(
@@ -400,7 +412,7 @@ def test_dispatcher_selects_files_from_a_codex_patch_and_deduplicates(tmp_path: 
         },
     }
 
-    assert lint_format.diagnostics(payload) == ()
+    assert lint_format.diagnostics(payload) == lint_format.Report()
     assert check.call_args_list == [mocker.call("py", first), mocker.call("sh", second)]
 
 
@@ -411,7 +423,7 @@ def test_dispatcher_uses_only_the_file_tool_path(tmp_path: Path, mocker: MockerF
 
     assert (
         lint_format.diagnostics({"tool_name": "Write", "tool_input": {"file_path": str(path), "content": "secret"}})
-        == ()
+        == lint_format.Report()
     )
     check.assert_called_once_with("py", path)
 
@@ -421,7 +433,9 @@ def test_dispatcher_skips_unsupported_files(tmp_path: Path, mocker: MockerFixtur
     path.touch()
     check = mocker.patch.object(lint_format, "check_file", return_value=())
 
-    assert lint_format.diagnostics({"tool_name": "Write", "tool_input": {"file_path": str(path)}}) == ()
+    assert (
+        lint_format.diagnostics({"tool_name": "Write", "tool_input": {"file_path": str(path)}}) == lint_format.Report()
+    )
     check.assert_not_called()
 
 

@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import sys
 import textwrap
+from collections.abc import Callable
 from pathlib import Path
 
 import pytest
@@ -115,3 +116,22 @@ def agent_harness() -> CliRunner:
         return result
 
     return run
+
+
+TRUSTED_OWNER = "trusted-owner"
+
+
+@pytest.fixture
+def checkout_of(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Callable[..., Path]:
+    """Make a directory a git checkout whose origin belongs to an owner; only TRUSTED_OWNER is trusted."""
+    owners = tmp_path / "trusted_owners.json"
+    owners.write_text(json.dumps({"owners": [TRUSTED_OWNER], "exclude_forks": False}))
+    monkeypatch.setenv("AGENT_TRUSTED_OWNERS", str(owners))
+
+    def checkout(directory: Path, owner: str = TRUSTED_OWNER) -> Path:
+        subprocess.run(["git", "init", "--quiet", str(directory)], check=True)
+        origin = f"https://github.com/{owner}/work.git"
+        subprocess.run(["git", "-C", str(directory), "remote", "add", "origin", origin], check=True)
+        return directory
+
+    return checkout

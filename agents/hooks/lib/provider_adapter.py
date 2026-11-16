@@ -63,6 +63,11 @@ def system_message_output(message: str) -> dict:
     return {"systemMessage": message}
 
 
+def blocking_system_message_output(message: str) -> dict:
+    """Encode a blocking finding for providers that read a top-level systemMessage, so they show it either way."""
+    return {**lint_format.block(message), "systemMessage": message}
+
+
 def no_cwd() -> str:
     """Stand in for a working directory when the provider payload carries none, so the process directory is kept."""
     return ""
@@ -83,6 +88,7 @@ class Profile:
     compaction_events: Mapping[str, str] = field(default_factory=dict)
     formatter: Formatter = system_message
     lint_output: Callable[[str], dict] = lint_format.context
+    lint_block: Callable[[str], dict] = lint_format.block
     content_modes: tuple[str, ...] = CONTENT_MODES
     cwd_fallback: Callable[[], str] = os.getcwd
     manifest_env: str = ""
@@ -186,7 +192,7 @@ class Adapter:
         """Report shared quality diagnostics using the PostToolUse JSON contract."""
         context = self.normalized(payload)
         if not views_only(context) and not failed(context):
-            lint_format.emit(lint_format.diagnostics(context), self.profile.lint_output)
+            lint_format.emit(lint_format.diagnostics(context), self.profile.lint_output, self.profile.lint_block)
         return 0
 
     def _harness(self, payload: dict) -> int:
@@ -224,6 +230,9 @@ class Adapter:
     def _content(self, mode: str, payload: dict) -> int:
         context = self.normalized(payload)
         if mode == "suppression":
+            # A view changes nothing, and read as an edit that does not apply it would ask.
+            if views_only(context):
+                return 0
             return hook_decision.emit(guard_suppression.decide(context).hardened())
         if mode != "apply-patch":
             return guard_file.check(mode, context, _shared_directory())

@@ -22,6 +22,12 @@ PROCESS_OUTPUT_LIMIT_BYTES = process_runner.PROCESS_OUTPUT_LIMIT_BYTES
 STEP_TIMEOUT_SECONDS = process_runner.STEP_TIMEOUT_SECONDS
 NOTIFICATION_LIMIT_BYTES = 16 * 1024
 MAX_DIAGNOSTICS = 16
+TRUNCATION_MARKER = "\n[diagnostics truncated]"
+FIX_INSTRUCTION = (
+    "Fix the code as shown. Do not move or split the code to avoid the rule; if a real exception is needed, "
+    "add a suppression comment, which is reviewed."
+)
+Report = static_rule_scan.Report
 
 
 project_root = formatter_policy.project_root
@@ -43,34 +49,59 @@ def context(message: str) -> dict[str, object]:
     return {"hookSpecificOutput": {"hookEventName": "PostToolUse", "additionalContext": message}}
 
 
-def diagnostics(payload: dict, kind: str | None = None) -> tuple[str, ...]:
+def block(message: str) -> dict[str, object]:
+    """Encode the provider-compatible PostToolUse decision that makes the agent fix the findings first."""
+    return {"decision": "block", "reason": message}
+
+
+def diagnostics(payload: dict, kind: str | None = None) -> Report:
     """Normalize a provider payload, run the shared lint engine, then report ast-grep rule findings.
 
-    The rules scan the files after formatting, so their line numbers match what the agent now sees.
+    Linter diagnostics are advice. The rules scan the files after formatting, so their line numbers match what
+    the agent now sees.
     """
     if not isinstance(payload, dict):
         raise TypeError("hook payload must be an object")
     targets = lint_engine.supported_targets(target_paths(payload), EXTENSIONS, kind)
-    return lint_engine.diagnostics(targets, check_file) + static_rule_scan.diagnostics(
-        target.path for target in targets
-    )
+    lint = Report(advice=lint_engine.diagnostics(targets, check_file))
+    return lint + static_rule_scan.diagnostics(target.path for target in targets)
 
 
-def emit(messages: tuple[str, ...], encode: Callable[[str], dict[str, object]] = context) -> None:
-    """Write one structured notification for all diagnostics, or remain silent."""
-    if messages:
-        selected = list(messages[:MAX_DIAGNOSTICS])
-        if len(messages) > MAX_DIAGNOSTICS:
-            selected.append(f"[diagnostics truncated: {len(messages) - MAX_DIAGNOSTICS} more]")
-        message = "\n\n".join(selected)
-        marker = "\n[diagnostics truncated]"
-        encoded = message.encode()
-        if len(encoded) > NOTIFICATION_LIMIT_BYTES:
-            budget = NOTIFICATION_LIMIT_BYTES - len(marker.encode())
-            head = budget // 2
-            tail = budget - head
-            message = encoded[:head].decode(errors="ignore") + marker + encoded[-tail:].decode(errors="ignore")
-        print(json.dumps(encode(message), ensure_ascii=False))
+def emit(
+    report: Report,
+    encode: Callable[[str], dict[str, object]] = context,
+    encode_block: Callable[[str], dict[str, object]] = block,
+) -> None:
+    """Write one structured notification for all diagnostics, a block when any is an error, or remain silent.
+
+    A block lists the errors, then the fix instruction once, then any advice, all within one size limit; the
+    advice gets what the errors and the instruction leave, so truncation never drops the instruction.
+    """
+    if report.errors:
+        instruction = f"\n\n{FIX_INSTRUCTION}"
+        reason = bounded(report.errors, NOTIFICATION_LIMIT_BYTES - len(instruction.encode())) + instruction
+        remaining = NOTIFICATION_LIMIT_BYTES - len(reason.encode()) - len(b"\n\n")
+        if report.advice and remaining > len(TRUNCATION_MARKER.encode()):
+            reason += f"\n\n{bounded(report.advice, remaining)}"
+        print(json.dumps(encode_block(reason), ensure_ascii=False))
+    elif report.advice:
+        print(json.dumps(encode(bounded(report.advice)), ensure_ascii=False))
+
+
+def bounded(messages: tuple[str, ...], limit_bytes: int = NOTIFICATION_LIMIT_BYTES) -> str:
+    """Join diagnostics within the count and byte limits, keeping a notice of what was cut."""
+    selected = list(messages[:MAX_DIAGNOSTICS])
+    if len(messages) > MAX_DIAGNOSTICS:
+        selected.append(f"[diagnostics truncated: {len(messages) - MAX_DIAGNOSTICS} more]")
+    message = "\n\n".join(selected)
+    marker = TRUNCATION_MARKER
+    encoded = message.encode()
+    if len(encoded) <= limit_bytes:
+        return message
+    budget = limit_bytes - len(marker.encode())
+    head = budget // 2
+    tail = budget - head
+    return encoded[:head].decode(errors="ignore") + marker + encoded[-tail:].decode(errors="ignore")
 
 
 def main(arguments: list[str]) -> int:

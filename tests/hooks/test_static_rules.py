@@ -1,8 +1,9 @@
-"""ast-grep rules from the project's own sgconfig.yml report findings after formatting and never block."""
+"""ast-grep rules report findings after formatting; a finding of severity error blocks like a linter error."""
 
 import io
 import json
 import shutil
+from collections.abc import Callable
 from pathlib import Path
 
 import pytest
@@ -10,12 +11,24 @@ from tests.runtime import StubWriter, load_script_module
 
 lint_format = load_script_module("agents/hooks/lint_format.py", "lint_format_for_static_rules")
 hook_adapter = load_script_module("agents/codex/hooks/hook_adapter.py", "codex_hook_adapter_for_static_rules")
+dsh_adapter = load_script_module("agents/dsh/hooks/hook_adapter.py", "dsh_hook_adapter_for_static_rules")
 FINDING = {
     "ruleId": "no-print",
-    "severity": "error",
+    "severity": "warning",
     "message": "Do not call print in library code.",
     "range": {"start": {"line": 3, "column": 0}},
 }
+ERROR_FINDING = {
+    **FINDING,
+    "ruleId": "no-eval",
+    "severity": "error",
+    "message": "Do not call eval.",
+    "note": "Parse literals with ast.literal_eval.",
+}
+FIX_INSTRUCTION = (
+    "Fix the code as shown. Do not move or split the code to avoid the rule; if a real exception is needed, "
+    "add a suppression comment, which is reviewed."
+)
 RECORD_CALLS = """
     import json, os, sys
     from pathlib import Path
@@ -54,10 +67,9 @@ def hook(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) ->
 
 
 @pytest.fixture
-def lint_directory(tmp_path: Path) -> Path:
-    """The project root that owns the ast-grep rules, with the edited file below it."""
-    directory = tmp_path / "work"
-    directory.mkdir()
+def lint_directory(tmp_path: Path, checkout_of: Callable[[Path], Path]) -> Path:
+    """The project root that owns the ast-grep rules, a checkout of a trusted owner, with the edited file below it."""
+    directory = checkout_of(tmp_path / "work")
     (directory / "sgconfig.yml").write_text("ruleDirs:\n  - rules\n")
     return directory
 
@@ -140,7 +152,7 @@ def test_the_scanner_sees_the_file_after_formatting(
 
 @pytest.mark.parametrize("status", [0, 1])
 @pytest.mark.usefixtures("lint_directory")
-def test_findings_are_never_blocking_whatever_the_scanner_exit_code(
+def test_findings_below_error_never_block_whatever_the_scanner_exit_code(
     hook: Hook, executable: StubWriter, source: Path, status: int
 ) -> None:
     install_scanner(executable, [FINDING], status)
@@ -148,6 +160,50 @@ def test_findings_are_never_blocking_whatever_the_scanner_exit_code(
     assert exit_status == 0
     assert "Static rule no-print" in context_of(output)
     assert "decision" not in json.loads(output)
+
+
+@pytest.mark.usefixtures("lint_directory")
+def test_an_error_finding_blocks_with_the_findings_as_the_reason(
+    hook: Hook, executable: StubWriter, source: Path
+) -> None:
+    install_scanner(executable, [FINDING, ERROR_FINDING])
+    status, output = hook.run(source)
+    assert status == 0
+    row = json.loads(output)
+    assert row["decision"] == "block"
+    error = f"Static rule no-eval · {source}:4\nDo not call eval.\nFix: Parse literals with ast.literal_eval."
+    assert row["reason"].startswith(f"{error}\n\n{FIX_INSTRUCTION}")
+    assert row["reason"].count(FIX_INSTRUCTION) == 1
+    assert "Static rule no-print" in row["reason"]
+
+
+@pytest.mark.usefixtures("lint_directory")
+def test_the_fix_instruction_follows_all_errors_once(hook: Hook, executable: StubWriter, source: Path) -> None:
+    install_scanner(executable, [ERROR_FINDING, {**ERROR_FINDING, "ruleId": "no-exec"}])
+    reason = json.loads(hook.run(source)[1])["reason"]
+    assert reason.count(FIX_INSTRUCTION) == 1
+    assert reason.index("Static rule no-exec") < reason.index(FIX_INSTRUCTION)
+
+
+@pytest.mark.parametrize("status", [2, 8])
+@pytest.mark.usefixtures("lint_directory")
+def test_error_findings_of_a_scan_that_ended_abnormally_are_only_advice(
+    hook: Hook, executable: StubWriter, source: Path, status: int
+) -> None:
+    install_scanner(executable, [ERROR_FINDING], status)
+    _, output = hook.run(source)
+    assert "decision" not in json.loads(output)
+    assert "Static rule no-eval" in context_of(output)
+    assert "Static rules failed" in context_of(output)
+
+
+@pytest.mark.usefixtures("lint_directory")
+def test_an_error_finding_is_kept_when_other_diagnostics_fill_the_notification(
+    hook: Hook, executable: StubWriter, source: Path
+) -> None:
+    install_scanner(executable, [FINDING] * lint_format.MAX_DIAGNOSTICS + [ERROR_FINDING])
+    _, output = hook.run(source)
+    assert "Static rule no-eval" in json.loads(output)["reason"]
 
 
 @pytest.mark.usefixtures("lint_directory")
@@ -275,11 +331,25 @@ def test_output_cut_at_the_limit_is_reported_instead_of_dropping_findings_silent
     hook: Hook, executable: StubWriter, source: Path
 ) -> None:
     executable(
-        "ast-grep", 'import json, sys\nprint(json.dumps({"ruleId": "big", "text": "x" * 100000}))\nsys.exit(1)\n'
+        "ast-grep", 'import json, sys\nprint(json.dumps({"ruleId": "big", "text": "x" * 100000}))\nsys.exit(0)\n'
     )
     status, output = hook.run(source)
     assert status == 0
     assert "Static rule output truncated" in context_of(output)
+
+
+@pytest.mark.usefixtures("lint_directory")
+def test_a_cut_output_from_a_scan_that_found_errors_still_blocks(
+    hook: Hook, executable: StubWriter, source: Path
+) -> None:
+    """ast-grep exits 1 only when it found a finding of severity error, even if the cut dropped that record."""
+    executable(
+        "ast-grep", 'import json, sys\nprint(json.dumps({"ruleId": "big", "text": "x" * 100000}))\nsys.exit(1)\n'
+    )
+    _, output = hook.run(source)
+    row = json.loads(output)
+    assert row["decision"] == "block"
+    assert "Static rule errors truncated" in row["reason"]
 
 
 @pytest.mark.usefixtures("lint_directory")
@@ -305,20 +375,71 @@ def test_provider_adapters_report_static_findings_with_the_lint_diagnostics(
     assert "Static rule no-print" in capsys.readouterr().out
 
 
+@pytest.mark.usefixtures("hook", "lint_directory")
+def test_provider_adapters_block_on_an_error_finding(
+    executable: StubWriter,
+    source: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    install_scanner(executable, [ERROR_FINDING])
+    monkeypatch.chdir(source.parent)
+    monkeypatch.setattr(hook_adapter.provider_adapter.lint_format, "check_file", lambda *_: ())
+    assert hook_adapter.ADAPTER.lint({"tool_name": "Write", "tool_input": {"file_path": str(source)}}) == 0
+    assert json.loads(capsys.readouterr().out)["decision"] == "block"
+
+
+@pytest.mark.usefixtures("hook", "lint_directory")
+def test_a_provider_that_reads_a_system_message_still_sees_a_blocking_finding(
+    executable: StubWriter,
+    source: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """dsh reads a top-level systemMessage after an edit, so a block carries the reason there too."""
+    install_scanner(executable, [ERROR_FINDING])
+    monkeypatch.chdir(source.parent)
+    monkeypatch.setattr(dsh_adapter.provider_adapter.lint_format, "check_file", lambda *_: ())
+    assert dsh_adapter.ADAPTER.lint({"tool_name": "write", "tool_input": {"file_path": str(source)}}) == 0
+    output = json.loads(capsys.readouterr().out)
+    assert output["decision"] == "block"
+    assert output["systemMessage"] == output["reason"]
+    assert output["reason"].endswith(FIX_INSTRUCTION)
+
+
 @pytest.mark.integration
 @pytest.mark.skipif(shutil.which("ast-grep") is None, reason="ast-grep is provided by the dev shell")
 class TestRealAstGrep:
     def test_a_rule_from_the_rules_directory_is_reported(self, hook: Hook, lint_directory: Path, source: Path) -> None:
-        (lint_directory / "sgconfig.yml").write_text("ruleDirs:\n  - rules/python\n")
-        rules = lint_directory / "rules/python"
-        rules.mkdir(parents=True)
-        (rules / "no-print.yml").write_text(
-            "id: no-print\nlanguage: python\nseverity: error\nmessage: Do not call print in library code.\n"
-            "rule:\n  pattern: print($$$ARGS)\n"
-        )
+        write_rule(lint_directory, "warning")
         status, output = hook.run(source)
         assert status == 0
-        assert context_of(output) == f"Static rule no-print · {source}:1\nDo not call print in library code."
+        assert (
+            context_of(output)
+            == f"Static rule no-print · {source}:1\nDo not call print in library code.\nFix: Log with logging.info."
+        )
+
+    def test_an_error_rule_blocks_the_edit(self, hook: Hook, lint_directory: Path, source: Path) -> None:
+        write_rule(lint_directory, "error")
+        status, output = hook.run(source)
+        assert status == 0
+        row = json.loads(output)
+        assert row["decision"] == "block"
+        assert (
+            f"Static rule no-print · {source}:1\nDo not call print in library code.\nFix: Log with logging.info."
+            in row["reason"]
+        )
+
+    def test_a_clean_file_is_not_blocked(self, hook: Hook, lint_directory: Path, source: Path) -> None:
+        write_rule(lint_directory, "error")
+        source.write_text("value = 1\n")
+        assert hook.run(source) == (0, "")
+
+    def test_a_file_outside_the_rule_languages_is_not_blocked(self, hook: Hook, lint_directory: Path) -> None:
+        write_rule(lint_directory, "error")
+        document = lint_directory / "notes.md"
+        document.write_text("print('x')\n")
+        assert hook.run(document) == (0, "")
 
     def test_a_broken_scanner_config_is_reported_not_silent(
         self, hook: Hook, lint_directory: Path, source: Path
@@ -330,14 +451,19 @@ class TestRealAstGrep:
 
 
 def test_each_configuration_matches_globs_against_its_own_base_directory(
-    hook: Hook, executable: StubWriter, tmp_path: Path, scanner_calls: Path, shared_config: Path
+    hook: Hook,
+    executable: StubWriter,
+    tmp_path: Path,
+    scanner_calls: Path,
+    shared_config: Path,
+    checkout_of: Callable[..., Path],
 ) -> None:
     deploy_shared_rules(shared_config)
     project = tmp_path / "repo" / "packages" / "app"
     source = project / "src" / "source.py"
     source.parent.mkdir(parents=True)
     source.write_text("print('x')\n")
-    (tmp_path / "repo" / ".git").mkdir()
+    checkout_of(tmp_path / "repo")
     (project / "sgconfig.yml").write_text("ruleDirs:\n  - rules\n")
     install_scanner(executable, [], status=0)
 
@@ -348,3 +474,13 @@ def test_each_configuration_matches_globs_against_its_own_base_directory(
         str(shared_config): "packages/app/src/source.py",
         str(project / "sgconfig.yml"): "src/source.py",
     }
+
+
+def write_rule(lint_directory: Path, severity: str) -> None:
+    (lint_directory / "sgconfig.yml").write_text("ruleDirs:\n  - rules/python\n")
+    rules = lint_directory / "rules/python"
+    rules.mkdir(parents=True)
+    (rules / "no-print.yml").write_text(
+        f"id: no-print\nlanguage: python\nseverity: {severity}\nmessage: Do not call print in library code.\n"
+        "note: Log with logging.info.\nrule:\n  pattern: print($$$ARGS)\n"
+    )

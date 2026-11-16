@@ -29,6 +29,7 @@ ADAPTER = provider_adapter.Adapter(
             "web_search": "WebSearch",
         },
         lint_output=provider_adapter.system_message_output,
+        lint_block=provider_adapter.blocking_system_message_output,
         manifest_env="AGENT_HARNESS_DSH_MANIFEST",
         manifest_default=".dsh/hooks.json",
     )

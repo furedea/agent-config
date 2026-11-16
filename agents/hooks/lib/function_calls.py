@@ -25,8 +25,9 @@ SHELL_HOOKS = re.compile(
 # Parameters holding a function's arguments: zsh's argv, bash's BASH_ARGV and BASH_ARGC under extdebug, and $_,
 # the last word of the call.
 ARGUMENT_ARRAYS = frozenset({"argv", "BASH_ARGV", "BASH_ARGC", "_"})
-# An argument read through a zsh expansion flag, as $^@, $=1, or ${~1}, which the parser shows as other text.
-ZSH_FLAGGED_ARGUMENT = re.compile(r"\$\{?[=~^]+(?:[0-9@*#]|argv)")
+# A zsh expansion or parameter flag, as $^@, $=1, ${~id}, or ${(s: :)1}, which the parser shows as other text and
+# which may read the arguments or a copy of them.
+ZSH_FLAGGED_ARGUMENT = re.compile(r"\$\{?[=~^]|\$\{\(")
 # zsh precommand modifiers, which run the function named after them; builtin and command skip functions.
 FUNCTION_MODIFIERS = frozenset({"noglob", "nocorrect", "-"})
 # Builtins that assign a parameter named by an operand or an option, which may hold or replace the arguments.

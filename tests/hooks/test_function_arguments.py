@@ -151,6 +151,8 @@ def test_denials_see_through_builtin_prefixes_and_eval_option_ends(command: str)
         'f(){ find . "$^@"; }; f -delete',
         "f(){ find . $=1; }; f -delete",
         "f(){ find . ${~1}; }; f -delete",
+        "f(){ id=$1; find . $=id; }; f -delete",
+        "f(){ find . ${(s: :)1}; }; f -delete",
         'id=-delete; f(){ if false; then id=$1; fi; find . "$id"; }; f safe',
         'id=-delete; f(){ find . "$id"; id=$1; }; f safe',
         """set -E; trap 'x=-delete1; find . "${x%$#}"' ERR; f(){ false; }; f a""",

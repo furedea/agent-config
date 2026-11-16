@@ -1,10 +1,16 @@
 """Walk a function body: the calls it makes, the programs they run, and the assignments in it."""
 
+import re
+from pathlib import Path
+
 import respelling
+import shell_input
 from shell_words import literal_word, nodes
 
 # Words before a builtin that still run it, as in builtin shift, command -p shift, or zsh's noglob shift.
 BUILTIN_PREFIXES = frozenset({"builtin", "command", "noglob", "nocorrect", "-"})
+# A program name that runs a shell, which may read its script's data from its input.
+SHELL_NAME = re.compile(r"\w*sh|fish|pwsh")
 
 
 def program_words(call: dict, data: bytes) -> list[tuple[str, bool]]:
@@ -49,3 +55,10 @@ def respelled_nodes(statement: dict) -> list[dict]:
         *statement["Cmd"].get("Args", []),
         *(redirect["Word"] for redirect in respelling.redirections(statement)),
     ]
+
+
+def runs_shell(call: dict, data: bytes) -> bool:
+    """Whether the call runs a shell, past prefixes, wrappers, options, and assignments."""
+    words = [value for value, _ in program_words(call, data)]
+    index = shell_input.program_index(words)
+    return index < len(words) and SHELL_NAME.fullmatch(Path(words[index]).name) is not None

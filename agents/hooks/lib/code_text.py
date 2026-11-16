@@ -76,11 +76,18 @@ def defines_code(record: dict) -> bool:
     if IMPORTED_FUNCTION in value:
         return True
     # A quoted declaration word, such as 'BASH_CMDS[git]=./x', is parsed with its name inside the value.
-    if record.get("Naked") and (CODE_ELEMENT.search(value) or value.split("=")[0] in CODE_PARAMETERS):
+    leading = re.match(r"[A-Za-z_]\w*", value)
+    if record.get("Naked") and (CODE_ELEMENT.search(value) or (leading and leading.group() in CODE_PARAMETERS)):
         return True
     if not isinstance(name, dict):
         return False
     return name.get("Value") in CODE_PARAMETERS or value in CODE_PARAMETERS or bool(CODE_ELEMENT.search(value))
+
+
+def source_option(argument: dict) -> bool:
+    """Whether a declaration word is an option, its leading text starting with - or +."""
+    parts = (argument.get("Value") or {}).get("Parts", [])
+    return bool(parts) and parts[0].get("Type") == "Lit" and parts[0].get("Value", "")[:1] in {"-", "+"}
 
 
 def _references_unseen(declaration: dict) -> bool:
@@ -98,7 +105,12 @@ def _references_unseen(declaration: dict) -> bool:
         for argument in arguments
         for part in nodes(argument)
     )
-    return "n" in options and expanding
+    computed_option = any(
+        argument.get("Naked") and any(part.get("Type") in {"ParamExp", "CmdSubst"} for part in nodes(argument))
+        for argument in arguments
+        if source_option(argument)
+    )
+    return ("n" in options or computed_option) and expanding
 
 
 def names_code_parameter(arguments: tuple[str, ...], dynamic: tuple[bool, ...]) -> bool:

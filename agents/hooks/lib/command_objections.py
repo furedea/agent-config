@@ -144,7 +144,13 @@ def governed_objection(candidate: shell_syntax.Command, policy: Policy, preview:
     quoted option, or a word that may split into several, such as an unquoted expansion.
     """
     prefixes, rules = policy.prefixes, policy.rules
-    if candidate.program_is_dynamic or candidate.arguments[0] not in command_policy.governed_programs(rules):
+    # The gh policy table judges gh, and a project rule listing gh forms only adds to what it allows.
+    judged_by_table = policy.gh is not None and gh_command_line.is_gh(candidate)
+    if (
+        candidate.program_is_dynamic
+        or judged_by_table
+        or candidate.arguments[0] not in command_policy.governed_programs(rules)
+    ):
         return hook_decision.ALLOW
     if candidate.arguments[0] == "herdr" and herdr_grammar.has_global_option(candidate.arguments):
         return hook_decision.ask(

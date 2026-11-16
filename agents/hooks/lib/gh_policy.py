@@ -60,6 +60,8 @@ class GhRules:
     catalog: Catalog
     trusted: trusted_owners.TrustedOwners
     secret_patterns: Path
+    # A trusted project's listing rule covers the call: the table's classification and grants do not apply.
+    listed: bool = False
 
 
 def load(path: Path, trusted: Path, secret_patterns: Path) -> GhRules:
@@ -71,29 +73,32 @@ def verdict(candidate: shell_syntax.Command, line: CommandLine, rules: GhRules) 
     """Allow a gh call a grant covers and that sends no secret; ask for every other one."""
     preview = shell_syntax.command_preview(candidate.raw)
     call = _judged_call(candidate, line, rules)
+    if isinstance(call, Unclassified) and rules.listed:
+        problem = _secret_problem(f"{line.source}\n{line.arguments}", rules)
+        return _ask(problem, preview) if problem else hook_decision.ALLOW
+    if isinstance(call, Unclassified):
+        return _ask(f"cannot classify this gh call: {call.reason}", preview)
     if isinstance(call, str):
         return _ask(call, preview)
     if problem := _ungranted(call, line, rules):
         return _ask(f"'{call.label}' {problem}", preview, call.label)
-    text = "\n".join([_sent_text(call, line), line.arguments])
-    match = secret_content.first_match(text, rules.secret_patterns)
-    if match is None:
-        return hook_decision.ALLOW
-    return _ask(f"{match.message} ({match.name}) in what this gh call sends to GitHub", preview, call.label)
+    if problem := _secret_problem("\n".join([_sent_text(call, line), line.arguments]), rules):
+        return _ask(problem, preview, call.label)
+    return hook_decision.ALLOW
 
 
 def listed_verdict(candidate: shell_syntax.Command, line: CommandLine, rules: GhRules) -> Verdict:
-    """A form a trusted project lists skips the table, never the environment check or the scan of its words."""
-    preview = shell_syntax.command_preview(candidate.raw)
-    if problem := gh_environment.environment_problem(line):
-        return _ask(problem, preview)
-    match = secret_content.first_match(f"{line.source}\n{line.arguments}", rules.secret_patterns)
-    if match is None:
-        return hook_decision.ALLOW
-    return _ask(f"{match.message} ({match.name}) in what this gh call sends to GitHub", preview)
+    """A form a trusted project lists skips only the table's classification and grants; every other check stays."""
+    return verdict(candidate, line, replace(rules, listed=True))
 
 
-def _judged_call(candidate: shell_syntax.Command, line: CommandLine, rules: GhRules) -> GhCall | str:
+def _secret_problem(text: str, rules: GhRules) -> str:
+    """Which secret pattern matches what a call sends, or an empty string."""
+    match = secret_content.first_match(text, rules.secret_patterns)
+    return f"{match.message} ({match.name}) in what this gh call sends to GitHub" if match else ""
+
+
+def _judged_call(candidate: shell_syntax.Command, line: CommandLine, rules: GhRules) -> GhCall | Unclassified | str:
     """The classified call with its standard input resolved, or why the guard cannot judge it."""
     if problem := gh_environment.environment_problem(line):
         return problem
@@ -103,7 +108,7 @@ def _judged_call(candidate: shell_syntax.Command, line: CommandLine, rules: GhRu
         return "the line sets variables or an environment that may change where gh goes"
     call = gh_invocation.classify(candidate, rules.catalog, single_call=line.single_call)
     if isinstance(call, Unclassified):
-        return f"cannot classify this gh call: {call.reason}"
+        return call
     stdin = _with_stdin(call, candidate)
     if isinstance(stdin, str):
         return f"this gh call {stdin or 'reads its body from a pipe or terminal'}"
@@ -176,7 +181,8 @@ def _ungranted(call: GhCall, line: CommandLine, rules: GhRules) -> str:
     if call.reads_working_repository and (line.changes_directory or not _remotes_on_github()):
         return "reads a repository whose host the working directory's remotes may not keep on github.com"
     target = _target(call, line, rules.trusted)
-    if not all(rules.catalog.grant(target, operation, call.effect) for operation in call.operations):
+    granted = rules.listed or all(rules.catalog.grant(target, operation, call.effect) for operation in call.operations)
+    if not granted:
         return IRREVERSIBLE_REASON if call.effect is Effect.IRREVERSIBLE else TARGET_REASONS[target]
     if "repo.clone" in call.operations and gh_environment.clone_may_run_code():
         return "clones with a hook template, hooks path, filter, or credential helper that may run code"

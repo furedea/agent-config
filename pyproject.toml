@@ -33,6 +33,7 @@ known_first_party = [
   "explicit_targets",
   "fish_script",
   "function_calls",
+  "respelling",
   "foreign_shell_policy",
   "powershell_options",
   "primary_workspaces",

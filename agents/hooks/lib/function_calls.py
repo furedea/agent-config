@@ -1,10 +1,9 @@
 """Respell function body calls with the words of each call, so a caller cannot hand a body a denied option."""
 
 import re
-import shlex
 from collections import Counter
-from dataclasses import dataclass
 
+import respelling
 import shell_input
 import variable_changes
 from code_text import ASSIGNING_BUILTINS, CODE_BODY, NAME_OPTION
@@ -12,10 +11,6 @@ from shell_words import PARAMETER_MODIFIERS, UnsupportedSyntaxError, literal_wor
 from shell_wrappers import WRAPPERS
 from variable_changes import ARITHMETIC, ARITHMETIC_TEST, UNSEEN_ASSIGNERS
 
-# $1, ${12}, $@, and $*, which take the words a function is called with.
-POSITIONAL = re.compile(r"[1-9][0-9]*|[@*]")
-# A caller's word that an unquoted expansion splits and globs no differently from its plain text.
-PLAIN_FIELDS = re.compile(r"[A-Za-z0-9_./:=@%+,\s-]*")
 # Builtins and wrappers whose meaning the hook relies on; a function of that name would change it.
 RELIED_NAMES = frozenset(
     "echo printf print cd pushd popd shift set getopts builtin command eval trap alias hash source . exec noglob "
@@ -30,8 +25,6 @@ SHELL_HOOKS = re.compile(
 # Parameters holding a function's arguments: zsh's argv, bash's BASH_ARGV and BASH_ARGC under extdebug, and $_,
 # the last word of the call.
 ARGUMENT_ARRAYS = frozenset({"argv", "BASH_ARGV", "BASH_ARGC", "_"})
-# The count of a function's arguments: $# and zsh's ARGC.
-ARGUMENT_COUNTS = frozenset({"#", "ARGC"})
 # zsh precommand modifiers, which run the function named after them; builtin and command skip functions.
 FUNCTION_MODIFIERS = frozenset({"noglob", "nocorrect", "-"})
 # Builtins that assign a parameter named by an operand or an option, which may hold or replace the arguments.
@@ -105,7 +98,12 @@ def respelled_calls(records: tuple[dict, ...], data: bytes) -> list[str]:
     for call in (node for node in records if node.get("Type") == "CallExpr" and node.get("Args")):
         start = _modifier_count(call, data)
         program = call["Args"][start] if start < len(call["Args"]) else {}
-        if bodies and program and spreads(program, data) and not any(_reads(part, {}) for part in nodes(program)):
+        if (
+            bodies
+            and program
+            and spreads(program, data)
+            and not any(respelling.reads(part, {}) for part in nodes(program))
+        ):
             raise UnsupportedSyntaxError(
                 "calling a program whose name may expand requires explicit review", "expansion"
             )
@@ -126,7 +124,7 @@ def _modifier_count(call: dict, data: bytes) -> int:
 
 def _body_respellings(body: dict, words: list[dict], data: bytes) -> list[str]:
     """Each statement of one body that reads its arguments, respelled with one call's words, once per shift."""
-    reading = any(_reads(part, _copies(body)) for part in nodes(body))
+    reading = any(respelling.reads(part, _copies(body)) for part in nodes(body))
     if (words or reading) and _calls(body, data, "source") + _calls(body, data, "."):
         raise UnsupportedSyntaxError(
             "calling a function that sources a file and passes or reads arguments requires explicit review",
@@ -139,18 +137,23 @@ def _body_respellings(body: dict, words: list[dict], data: bytes) -> list[str]:
             "calling a function that runs its argument as a builtin changing arguments requires explicit review",
             "expansion",
         )
-    shifts = range(len(words) + 1) if _calls(body, data, "shift") else range(1)
+    shift_calls = _calls(body, data, "shift")
+    if copies and len(shift_calls) > 1:
+        raise UnsupportedSyntaxError("a function reading its arguments this way requires explicit review", "expansion")
+    first = min((call["Pos"]["Offset"] for call in shift_calls), default=len(data))
+    early = frozenset(node["Name"]["Value"] for node in _assignments(body) if node["Pos"]["Offset"] < first)
+    shifts = range(len(words) + 1) if shift_calls else range(1)
     return [
-        _Respelling(words[shift:], data, copies).statement(statement)
+        respelling.Respelling(words[shift:], data, copies, words, early & copies.keys()).statement(statement)
         for statement in _statements(body)
-        if any(_reads(part, copies) for part in nodes(_respelled_nodes(statement)))
+        if any(respelling.reads(part, copies) for part in nodes(_respelled_nodes(statement)))
         for shift in shifts
     ]
 
 
 def _reads_any(body: dict) -> bool:
     copies = _copies(body)
-    return any(_reads(part, copies) for part in nodes(body))
+    return any(respelling.reads(part, copies) for part in nodes(body))
 
 
 def _named_as_word(name: str, records: tuple[dict, ...], data: bytes) -> bool:
@@ -202,24 +205,31 @@ def _followed(body: dict, records: tuple[dict, ...], data: bytes) -> dict:
         for node in nodes(body)
         if "Type" not in node
         and isinstance(node.get("Name"), dict)
-        and any(_reads(part, copies) for key, value in node.items() if key != "Name" for part in nodes(value))
+        and any(
+            respelling.reads(part, copies) for key, value in node.items() if key != "Name" for part in nodes(value)
+        )
     ]
     unfollowed = (
         any(
             part.get("Type") == "ParamExp"
             and any(map(part.get, PARAMETER_MODIFIERS))
-            and any(_reads(inner, copies) or _counts_arguments(inner) for inner in nodes(part))
+            and any(respelling.reads(inner, copies) or respelling.counts_arguments(inner) for inner in nodes(part))
             for part in nodes(body)
         )
         or any(part.get("Param", {}).get("Value") in ARGUMENT_ARRAYS for part in nodes(body))
-        or any(_reads(part, copies) for context in _arithmetic(body, data) for part in nodes(context))
-        or any(_reads(part, copies) for node in nodes(body) if node.get("Type") == "CmdSubst" for part in nodes(node))
+        or any(respelling.reads(part, copies) for context in _arithmetic(body, data) for part in nodes(context))
+        or any(
+            respelling.reads(part, copies)
+            for node in nodes(body)
+            if node.get("Type") == "CmdSubst"
+            for part in nodes(node)
+        )
         or any(
             "Type" not in node and isinstance(node.get("Name"), dict) and node["Name"].get("Value") in ARGUMENT_ARRAYS
             for node in nodes(body)
         )
         or (
-            any(_reads(part, copies) for part in nodes(body))
+            any(respelling.reads(part, copies) for part in nodes(body))
             and any(_assigns_parameter(statement, data) for statement in _statements(body))
         )
         or any(part.get("Type") == "ParamExp" and part.get("Excl") for part in nodes(body))
@@ -309,7 +319,7 @@ def _arithmetic(body: dict, data: bytes) -> list[object]:
 
 def _iterates_arguments(loop: dict, copies: dict[str, str]) -> bool:
     """Whether a for loop walks the arguments: implicitly, or over an expansion of them or of a copy."""
-    return not loop.get("InPos") or any(_reads(part, copies) for part in nodes(loop.get("Items")))
+    return not loop.get("InPos") or any(respelling.reads(part, copies) for part in nodes(loop.get("Items")))
 
 
 def _reassigns(words: list[str]) -> bool:
@@ -337,7 +347,7 @@ def _reassigned(copies: dict[str, str], records: tuple[dict, ...], data: bytes) 
     )
     named: set[str] = set()
     for words in (_program(call, data) for call in records if call.get("Type") == "CallExpr" and call.get("Args")):
-        if words[0] in ASSIGNING_BUILTINS | {"unset", "let"}:
+        if words[0] in ASSIGNING_BUILTINS | {"unset", "let", "eval", "trap"}:
             named.update(name for word in words[1:] for name in re.findall(r"[A-Za-z_]\w*", word))
     for record in (record for record in records if record.get("Type") in ARITHMETIC):
         named.update(name for part in nodes(record) for name in re.findall(r"[A-Za-z_]\w*", part.get("Value", "")))
@@ -355,7 +365,7 @@ def _copied(assignment: dict) -> str | None:
     parts = assignment["Value"].get("Parts", [])
     if len(parts) == 1 and parts[0].get("Type") == "DblQuoted":
         parts = parts[0].get("Parts", [])
-    return parts[0]["Param"]["Value"] if len(parts) == 1 and _is_positional(parts[0]) else None
+    return parts[0]["Param"]["Value"] if len(parts) == 1 and respelling.is_positional(parts[0]) else None
 
 
 def _copies(body: dict) -> dict[str, str]:
@@ -366,7 +376,7 @@ def _reads_unquoted(body: dict) -> bool:
     """Whether the body expands an argument outside double quotes, where IFS splits it."""
     copies = _copies(body)
     words = (node for node in nodes(body) if "Type" not in node and isinstance(node.get("Parts"), list))
-    return any(_reads(part, copies) for word in words for part in word["Parts"])
+    return any(respelling.reads(part, copies) for word in words for part in word["Parts"])
 
 
 def _program(call: dict, data: bytes) -> list[str]:
@@ -382,7 +392,7 @@ def _runs_unseen(call: dict, copies: dict[str, str], data: bytes) -> bool:
 
 def _names_by_arguments(call: dict, words: list[tuple[str, bool]], copies: dict[str, str]) -> bool:
     program = call["Args"][len(call["Args"]) - len(words)]
-    return any(_reads(part, copies) for part in nodes(program))
+    return any(respelling.reads(part, copies) for part in nodes(program))
 
 
 def _program_words(call: dict, data: bytes) -> list[tuple[str, bool]]:
@@ -411,87 +421,5 @@ def _respelled_nodes(statement: dict) -> list[dict]:
     return [
         *statement["Cmd"].get("Assigns", []),
         *statement["Cmd"].get("Args", []),
-        *(redirect["Word"] for redirect in _redirections(statement)),
+        *(redirect["Word"] for redirect in respelling.redirections(statement)),
     ]
-
-
-def _redirections(statement: dict) -> list[dict]:
-    return [redirect for redirect in statement.get("Redirs", []) if redirect.get("Word") and "Hdoc" not in redirect]
-
-
-def _counts_arguments(part: dict) -> bool:
-    return part.get("Type") == "ParamExp" and part.get("Param", {}).get("Value") in ARGUMENT_COUNTS
-
-
-def _reads(part: dict, copies: dict[str, str]) -> bool:
-    """Whether a part expands a positional parameter, their count, or a plain copy of one."""
-    return (
-        _is_positional(part)
-        or _counts_arguments(part)
-        or (part.get("Type") == "ParamExp" and part["Param"]["Value"] in copies)
-    )
-
-
-def _is_positional(part: dict) -> bool:
-    return part.get("Type") == "ParamExp" and POSITIONAL.fullmatch(part.get("Param", {}).get("Value", "")) is not None
-
-
-@dataclass(frozen=True, slots=True)
-class _Respelling:
-    """A call's words, standing in for each positional parameter or plain copy of one.
-
-    Inside quotes, the quotes close around the words.
-    """
-
-    words: list[dict]
-    data: bytes
-    copies: dict[str, str]
-
-    def statement(self, statement: dict) -> str:
-        """The statement's assignments, call, and redirections, each word respelled."""
-        assigns = [self._assignment(assign) for assign in statement["Cmd"].get("Assigns", [])]
-        words = assigns + [self.word(word) for word in statement["Cmd"].get("Args", [])]
-        redirects = [
-            self.data[redirect["Pos"]["Offset"] : redirect["Word"]["Pos"]["Offset"]].decode()
-            + self.word(redirect["Word"])
-            for redirect in _redirections(statement)
-        ]
-        return " ".join(words + redirects)
-
-    def _assignment(self, assign: dict) -> str:
-        """A prefix assignment such as X=$1, which a child sees, respelled; any other form as written."""
-        if not isinstance(assign.get("Value"), dict) or assign.get("Array") or assign.get("Index"):
-            return source_text(assign, self.data)
-        return self.data[assign["Pos"]["Offset"] : assign["Value"]["Pos"]["Offset"]].decode() + self.word(
-            assign["Value"]
-        )
-
-    def word(self, word: dict) -> str:
-        return "".join(self._part(part, quoted=False) for part in word.get("Parts", []))
-
-    def _part(self, part: dict, *, quoted: bool) -> str:
-        if _counts_arguments(part):
-            if any(spreads(word, self.data) for word in self.words):
-                raise UnsupportedSyntaxError("counting function arguments that may split requires explicit review")
-            return str(len(self.words))
-        if _reads(part, self.copies):
-            name = self.copies.get(part["Param"]["Value"], part["Param"]["Value"])
-            words = self.words if name in {"@", "*"} else self.words[int(name) - 1 : int(name)]
-            value = " ".join(self._spelled(word, quoted=quoted) for word in words) or "''"
-            return f'"{value}"' if quoted else value
-        if part.get("Type") == "DblQuoted" and not part.get("Dollar"):
-            return '"' + "".join(self._part(item, quoted=True) for item in part.get("Parts", [])) + '"'
-        return source_text(part, self.data)
-
-    def _spelled(self, word: dict, *, quoted: bool) -> str:
-        """The caller's word as the shell hands it over, requoted; unquoted, each field it splits into."""
-        value, dynamic = literal_word(word, self.data)
-        if dynamic or spreads(word, self.data):
-            raise UnsupportedSyntaxError(
-                "passing a function an argument known only at run time requires explicit review"
-            )
-        if quoted:
-            return shlex.quote(value)
-        if not PLAIN_FIELDS.fullmatch(value):
-            raise UnsupportedSyntaxError("passing a glob to an unquoted function argument requires explicit review")
-        return " ".join(map(shlex.quote, value.split())) or "''"

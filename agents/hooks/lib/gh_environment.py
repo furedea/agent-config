@@ -42,6 +42,9 @@ BOOLEAN_FSMONITOR = re.compile(r"core\.fsmonitor (?:true|false|yes|no|on|off|1|0
 EMPTY_UNIX_SOCKET = re.compile(r"""\s*http_unix_socket:\s*(?:""|'')?\s*(?:#.*)?""")
 KNOWN_PAGERS = frozenset({"less", "more", "cat"})
 PAGER_FLAGS = re.compile(r"-[A-Za-z]+")
+# less runs these as input filters or reads key bindings from them, and +cmd in LESS runs a command.
+LESS_PROGRAM_VARIABLES = ("LESSOPEN", "LESSCLOSE", "LESSKEY", "LESSKEYIN", "LESSKEY_SYSTEM", "LESSKEYIN_SYSTEM")
+LESS_FLAGS = re.compile(r"-?[A-Za-z]*")
 CREDENTIAL_HELPERS = r"^credential\..*helper$"
 SAFE_HELPER = re.compile(r"[A-Za-z0-9_./ -]+")
 # The GIT_SSH_COMMAND the sandbox runtime sets: ssh through the proxy command the runtime itself provides.
@@ -61,7 +64,8 @@ def environment_problem(line: CommandLine) -> str:
     for name in (PROGRAM, "git", "ssh"):
         if problem := _stand_in_problem(name, line):
             return problem
-    if os.environ.get("GH_FORCE_TTY") or not all(_is_locked_pager(name) for name in ("GH_PAGER", "PAGER")):
+    pagers = [os.environ.get("GH_PAGER", ""), os.environ.get("PAGER", ""), _gh_config_value("pager")]
+    if os.environ.get("GH_FORCE_TTY") or not all(pager is not None and _is_locked_pager(pager) for pager in pagers):
         return "the environment forces a terminal or names a pager program gh may start"
     if not is_system_program("rg"):
         return "PATH finds an rg this account could replace, so the secret scan cannot be trusted"
@@ -74,17 +78,27 @@ def environment_problem(line: CommandLine) -> str:
     return ""
 
 
-def _is_locked_pager(name: str) -> bool:
-    """Whether a pager variable is unset or runs a locked known pager with short flags only, such as `less -R`.
+def _is_locked_pager(value: str) -> bool:
+    """Whether a pager setting is empty or runs a locked known pager with short flags only, such as `less -R`.
 
-    Any other argument could be a script for an interpreter such as /bin/sh.
+    Any other argument could be a script for an interpreter such as /bin/sh. less also reads options and
+    input filters from its environment, so it passes only while those hold nothing that runs a command.
     """
-    words = os.environ.get(name, "").split()
+    words = value.split()
     if not words:
         return True
     program, *options = words
     known = Path(program).name in KNOWN_PAGERS and all(PAGER_FLAGS.fullmatch(option) for option in options)
+    if Path(program).name == "less" and not _is_plain_less_environment():
+        return False
     return known and is_system_program(program)
+
+
+def _is_plain_less_environment() -> bool:
+    """Whether LESS holds only flags and no less variable names an input filter or key file."""
+    if any(os.environ.get(name) for name in LESS_PROGRAM_VARIABLES):
+        return False
+    return bool(LESS_FLAGS.fullmatch(os.environ.get("LESS", "")))
 
 
 def _override_problem() -> str:
@@ -127,19 +141,19 @@ def _gh_config_problem() -> str:
         if any("http_unix_socket" in line and not EMPTY_UNIX_SOCKET.fullmatch(line) for line in lines):
             return "gh's configuration may send its requests through a Unix socket"
     # YAML escapes or anchors can spell the key in a way no line matches, so ask gh how it reads it.
-    if _configured_socket() != "":
+    if _gh_config_value("http_unix_socket") != "":
         return "gh's configuration sends its requests through a Unix socket, or cannot be read"
     return ""
 
 
-def _configured_socket() -> str | None:
-    """The http_unix_socket gh reads for github.com, falling back to its global value; None when gh cannot say."""
+def _gh_config_value(key: str) -> str | None:
+    """The value gh reads for a key for github.com, falling back to its global one; None when gh cannot say."""
     found = shutil.which(PROGRAM)
     if found is None:
         return ""
     try:
         result = subprocess.run(
-            [found, "config", "get", "http_unix_socket", "--host", GITHUB_HOST],
+            [found, "config", "get", key, "--host", GITHUB_HOST],
             capture_output=True,
             text=True,
             timeout=REMOTE_LOOKUP_TIMEOUT_SECONDS,
@@ -200,7 +214,9 @@ def _is_trusted_helper(value: str) -> bool:
         return True
     # `gh auth setup-git` writes its helper as a `!` snippet that is exactly the locked gh and its arguments.
     if value.startswith("!") and words[1:] == ["auth", "git-credential"] and Path(words[0][1:]).name == PROGRAM:
-        return words[0][1:].startswith("/") and is_system_program(words[0][1:])
+        gh = words[0][1:]
+        plain = bool(SAFE_HELPER.fullmatch(value[1:])) and ".." not in Path(gh).parts
+        return plain and gh.startswith("/") and is_system_program(gh)
     if not SAFE_HELPER.fullmatch(value):
         return False
     program = words[0]

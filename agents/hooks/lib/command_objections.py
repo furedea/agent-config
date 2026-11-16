@@ -195,7 +195,9 @@ def gh_objection(command: str, commands: tuple[shell_syntax.Command, ...], polic
     line = gh_command_line.command_line(command, commands)
     for candidate in candidates:
         verdict = gh_policy.verdict(candidate, line, policy.gh)
-        if verdict.decision != "allow" and not is_listed(candidate, policy.listing_rules):
+        if verdict.decision != "allow" and is_listed(candidate, policy.listing_rules):
+            verdict = gh_policy.listed_verdict(candidate, line, policy.gh)
+        if verdict.decision != "allow":
             return verdict
     return hook_decision.ALLOW
 

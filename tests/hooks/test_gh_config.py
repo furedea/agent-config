@@ -127,3 +127,45 @@ def test_the_helper_gh_auth_setup_git_writes_keeps_a_clone_allowed() -> None:
         ["git", "config", "credential.https://github.com.helper", f"!{gh} auth git-credential; x"], check=True
     )
     assert decide(command) == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+@pytest.mark.parametrize(
+    ("name", "value", "expected"),
+    [
+        ("LESS", "+!/tmp/evil", "ask"),
+        ("LESSOPEN", "|/tmp/evil %s", "ask"),
+        ("LESS", "-R", "allow"),
+        ("LESS", "FRX", "allow"),
+    ],
+)
+def test_less_runs_only_with_a_plain_environment(
+    monkeypatch: pytest.MonkeyPatch, name: str, value: str, expected: str
+) -> None:
+    monkeypatch.setenv("GH_PAGER", "less")
+    monkeypatch.setenv(name, value)
+    assert decide("gh pr list -R furedea/agent-config") == expected
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+@pytest.mark.parametrize(("pager", "expected"), [("/tmp/evil", "ask"), ("cat", "allow")])
+def test_the_pager_in_the_gh_config_must_be_a_locked_program(
+    tmp_path_factory: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch, pager: str, expected: str
+) -> None:
+    directory = tmp_path_factory.mktemp("gh")
+    (directory / "config.yml").write_text(f"pager: {pager}\n")
+    monkeypatch.setattr(gh_environment, "in_agent_roots", lambda _path: False)
+    monkeypatch.setenv("GH_CONFIG_DIR", str(directory))
+    assert decide("gh pr list -R furedea/agent-config") == expected
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_listed_form_keeps_the_secret_scan_and_the_environment_check(
+    monkeypatch: pytest.MonkeyPatch, secret_samples: dict[str, str]
+) -> None:
+    # Stand in for a trusted project's rule that lists every gh form.
+    monkeypatch.setattr(sys.modules["command_objections"], "is_listed", lambda _candidate, _rules: True)
+    assert decide("gh label delete bug -R furedea/agent-config") == "allow"
+    assert decide(f"gh pr comment 1 -R furedea/agent-config -b {secret_samples['github_token']}") == "ask"
+    monkeypatch.setenv("GH_HOST", "evil.example")
+    assert decide("gh label delete bug -R furedea/agent-config") == "ask"

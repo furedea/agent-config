@@ -82,6 +82,17 @@ def verdict(candidate: shell_syntax.Command, line: CommandLine, rules: GhRules) 
     return _ask(f"{match.message} ({match.name}) in what this gh call sends to GitHub", preview, call.label)
 
 
+def listed_verdict(candidate: shell_syntax.Command, line: CommandLine, rules: GhRules) -> Verdict:
+    """A form a trusted project lists skips the table, never the environment check or the scan of its words."""
+    preview = shell_syntax.command_preview(candidate.raw)
+    if problem := gh_environment.environment_problem(line):
+        return _ask(problem, preview)
+    match = secret_content.first_match(f"{line.source}\n{line.arguments}", rules.secret_patterns)
+    if match is None:
+        return hook_decision.ALLOW
+    return _ask(f"{match.message} ({match.name}) in what this gh call sends to GitHub", preview)
+
+
 def _judged_call(candidate: shell_syntax.Command, line: CommandLine, rules: GhRules) -> GhCall | str:
     """The classified call with its standard input resolved, or why the guard cannot judge it."""
     if problem := gh_environment.environment_problem(line):

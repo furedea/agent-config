@@ -35,7 +35,9 @@ def test_an_escaped_backslash_does_not_escape_the_dollar_sign() -> None:
         pytest.param('gh pr comment 1 --repo furedea/r --body-file "$J"', id="a quoted variable"),
     ],
 )
-def test_forms_that_pass_a_literal_or_quoted_word_still_allow(command: str) -> None:
+def test_forms_that_pass_a_literal_or_quoted_word_still_allow(command: str, monkeypatch: pytest.MonkeyPatch) -> None:
+    # A quoted "$J" is expanded from the hook's environment, so it must name a body file the guard can scan.
+    monkeypatch.setenv("J", "notes.txt")
     assert guard.decide("allowed", {"tool_input": {"command": command}}).decision == "allow"
 
 

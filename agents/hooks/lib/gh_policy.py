@@ -186,11 +186,7 @@ def _ungranted(call: GhCall, line: CommandLine, rules: GhRules) -> str:
         return IRREVERSIBLE_REASON if call.effect is Effect.IRREVERSIBLE else TARGET_REASONS[target]
     if "repo.clone" in call.operations and gh_environment.clone_may_run_code():
         return "clones with a hook template, hooks path, filter, or credential helper that may run code"
-    if problem := _file_problem(call, line):
-        return problem
-    if call.unscanned_files and (call.effect is Effect.READ or target is not TargetClass.TRUSTED):
-        return "sends input the guard cannot read to a target outside the trusted owners"
-    return ""
+    return _file_problem(call, line)
 
 
 def _file_problem(call: GhCall, line: CommandLine) -> str:
@@ -199,9 +195,19 @@ def _file_problem(call: GhCall, line: CommandLine) -> str:
         return "sends a file another command on the line may write after the guard reads it"
     if problem := _run_time_path_problem(call.unscanned_files):
         return problem
-    paths = [Path(name) for name in call.files]
+    # Every sent file is scanned before it leaves, a trusted target included: a run-time path the hook's
+    # environment does not expand to a readable file cannot be.
+    if call.unscanned_files:
+        return "sends a file named at run time that the guard cannot expand to a readable file"
+    return _scan_problem([Path(name) for name in call.files])
+
+
+def _scan_problem(paths: list[Path]) -> str:
+    """Why the scan cannot read sent files as gh will: missing, unreadable, not regular, or too large."""
     if any(not path.exists() for path in paths):
         return "sends a file that does not exist yet, so the guard cannot scan what gh will read"
+    if any(not os.access(path, os.R_OK) for path in paths):
+        return "sends a file the guard cannot read to scan"
     if any(_is_irregular(path) for path in paths):
         return "sends a FIFO, device, or other file that is not a regular file"
     if any(_exceeds_scan(path) for path in paths):

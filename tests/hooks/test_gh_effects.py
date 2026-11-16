@@ -121,6 +121,7 @@ def reason(command: str) -> str:
         pytest.param("gh api repos/furedea/r/pulls -f title=x -f head=b -f base=main", id="a REST pull request"),
     ],
 )
+@pytest.mark.usefixtures("logged_body_files")
 def test_reversible_writes_to_a_trusted_owner_are_allowed(command: str) -> None:
     assert decide(command) == "allow"
 
@@ -292,7 +293,7 @@ def test_reads_and_local_changes_are_allowed_in_any_form(command: str) -> None:
         ),
         pytest.param(
             "gh api graphql -f query='mutation{" + RESOLVE + "}' -F b=@$UNSET_BODY_DIR/x",
-            "outside the trusted owners",
+            "cannot expand",
             id="a run-time file sent to a node target",
         ),
         pytest.param('gh issue create -R furedea/r -t x -b y --label "$GH_TOKEN"', "parameter", id="a label"),

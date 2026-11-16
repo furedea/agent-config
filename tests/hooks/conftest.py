@@ -195,3 +195,18 @@ def sent_files(isolated_project: Path) -> Path:
     for name, text in {"notes.txt": "Fixed.\n", "body.json": "{}\n", "body.md": "Fixed.\n", "$=J": "Fixed.\n"}.items():
         (isolated_project / name).write_text(text)
     return isolated_project
+
+
+@pytest.fixture
+def logged_body_files(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """The run-time body files the logged gh forms name, present so the guard can expand and scan them."""
+    root = tmp_path / "run"
+    for name in ("TMPDIR", "S", "D"):
+        monkeypatch.setenv(name, str(root))
+    monkeypatch.setenv("f", str(root / "comment"))
+    for name in ("body.md", "issue_all_msg.md", "plan74.md", "pr/body.md", "briefs/issue_clippy.md"):
+        (root / name).parent.mkdir(parents=True, exist_ok=True)
+        (root / name).write_text("Fixed.\n")
+    for name in ("plan242.md", "pr.md", "comment", "comment.new"):
+        (root / name).write_text("Fixed.\n")
+    return root

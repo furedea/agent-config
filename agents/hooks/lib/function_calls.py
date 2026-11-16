@@ -260,7 +260,7 @@ def _followed(body: dict, records: tuple[dict, ...], data: bytes) -> dict:
         or any(
             respelling.reads(part, copies)
             for node in nodes(body)
-            if node.get("Type") == "CmdSubst"
+            if node.get("Type") in {"CmdSubst", "ProcSubst"}
             for part in nodes(node)
         )
         or any(
@@ -289,11 +289,14 @@ def _followed(body: dict, records: tuple[dict, ...], data: bytes) -> dict:
         )
         or ZSH_FLAGGED_ARGUMENT.search(source_text(body, data)) is not None
         or _feeds_a_shell(body, copies, data)
-        or _modified_in_zsh(body, copies)
+        or respelling.modified_in_zsh(body, copies)
         or any(
             respelling.reads(part, copies)
             for node in nodes(body)
-            if isinstance(node.get("Cmd"), dict) and node["Cmd"].get("Type") != "CallExpr"
+            if node.get("Redirs")
+            and not (
+                isinstance(node.get("Cmd"), dict) and node["Cmd"].get("Type") == "CallExpr" and node["Cmd"].get("Args")
+            )
             for redirect in node.get("Redirs", [])
             for part in nodes(redirect)
         )
@@ -409,19 +412,9 @@ def _copied(assignment: dict) -> str | None:
     return parts[0]["Param"]["Value"] if len(parts) == 1 and respelling.is_positional(parts[0]) else None
 
 
-def _modified_in_zsh(body: dict, copies: dict[str, str]) -> bool:
-    """Whether an argument read is followed by a zsh modifier or subscript, as $1:l or $1[2,-1], changing its value."""
-    words = (node for node in nodes(body) if isinstance(node.get("Parts"), list))
-    return any(
-        respelling.reads(part, copies) and after.get("Type") == "Lit" and after.get("Value", "")[:1] in {":", "["}
-        for word in words
-        for part, after in zip(word["Parts"], word["Parts"][1:], strict=False)
-    )
-
-
 def _feeds_a_shell(body: dict, copies: dict[str, str], data: bytes) -> bool:
     """Whether the arguments flow into a shell's input, by a pipe or a redirection, where its script reads them."""
-    shells = [call for call in body_calls.calls(body, data) if body_calls.runs_shell(call, data)]
+    shells = [call for call in body_calls.calls(body, data) if body_calls.may_run_shell(call, data)]
     if not shells:
         return False
     pipes = (node for node in nodes(body) if node.get("Type") == "BinaryCmd" and shell_input.is_pipe(node, data))

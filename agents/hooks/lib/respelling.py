@@ -4,7 +4,7 @@ import re
 import shlex
 from dataclasses import dataclass
 
-from shell_words import UnsupportedSyntaxError, literal_word, source_text, spreads
+from shell_words import UnsupportedSyntaxError, literal_word, nodes, source_text, spreads
 
 # $1, ${12}, $@, and $*, which take the words a function is called with.
 POSITIONAL = re.compile(r"[1-9][0-9]*|[@*]")
@@ -36,6 +36,16 @@ def reads(part: dict, copies: dict[str, str]) -> bool:
 def is_positional(part: dict) -> bool:
     """Whether a part expands a positional parameter."""
     return part.get("Type") == "ParamExp" and POSITIONAL.fullmatch(part.get("Param", {}).get("Value", "")) is not None
+
+
+def modified_in_zsh(body: dict, copies: dict[str, str]) -> bool:
+    """Whether an argument read is followed by a zsh modifier or subscript, as $1:l or $1[2,-1], changing its value."""
+    words = (node for node in nodes(body) if isinstance(node.get("Parts"), list))
+    return any(
+        reads(part, copies) and after.get("Type") == "Lit" and after.get("Value", "")[:1] in {":", "["}
+        for word in words
+        for part, after in zip(word["Parts"], word["Parts"][1:], strict=False)
+    )
 
 
 @dataclass(frozen=True, slots=True)

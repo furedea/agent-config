@@ -76,7 +76,8 @@ def defines_code(record: dict) -> bool:
     if IMPORTED_FUNCTION in value:
         return True
     # A quoted declaration word, such as 'BASH_CMDS[git]=./x', is parsed with its name inside the value.
-    leading = re.match(r"[A-Za-z_]\w*", value)
+    # Escapes and line continuations vanish when the shell reads the name.
+    leading = re.match(r"[A-Za-z_]\w*", re.sub(r"\\\n|\\", "", value))
     if record.get("Naked") and (CODE_ELEMENT.search(value) or (leading and leading.group() in CODE_PARAMETERS)):
         return True
     if not isinstance(name, dict):
@@ -105,10 +106,10 @@ def _references_unseen(declaration: dict) -> bool:
         for argument in arguments
         for part in nodes(argument)
     )
+    # A word built at run time may be any option, -n among them.
     computed_option = any(
         argument.get("Naked") and any(part.get("Type") in {"ParamExp", "CmdSubst"} for part in nodes(argument))
         for argument in arguments
-        if source_option(argument)
     )
     return ("n" in options or computed_option) and expanding
 

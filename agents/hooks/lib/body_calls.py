@@ -57,8 +57,11 @@ def respelled_nodes(statement: dict) -> list[dict]:
     ]
 
 
-def runs_shell(call: dict, data: bytes) -> bool:
-    """Whether the call runs a shell, past prefixes, wrappers, options, and assignments."""
-    words = [value for value, _ in program_words(call, data)]
-    index = shell_input.program_index(words)
-    return index < len(words) and SHELL_NAME.fullmatch(Path(words[index]).name) is not None
+def may_run_shell(call: dict, data: bytes) -> bool:
+    """Whether the call may run a shell: a word names one, or the program is known only at run time."""
+    words = program_words(call, data)
+    index = shell_input.program_index([value for value, _ in words])
+    if index < len(words) and words[index][1]:
+        return True
+    # A wrapper's option operand may sit where the program seems to be, so any word naming a shell counts.
+    return any(SHELL_NAME.fullmatch(Path(value).name) for value, _ in words)

@@ -447,3 +447,10 @@ def test_a_credential_helper_reset_keeps_a_clone_allowed() -> None:
 @pytest.mark.usefixtures("furedea_checkout")
 def test_a_run_download_is_allowed_only_from_a_trusted_owner(command: str, expected: str) -> None:
     assert decide(command) == expected
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_run_download_into_an_existing_directory_asks() -> None:
+    Path("scripts").mkdir()
+    assert decide("gh run download 123 -D scripts") == "ask"
+    assert decide("gh run download 123 -D scripts/new") == "allow"

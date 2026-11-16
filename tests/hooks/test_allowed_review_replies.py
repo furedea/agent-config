@@ -4,7 +4,7 @@ import pytest
 from tests.runtime import load_script_module
 
 guard = load_script_module("agents/hooks/guard_command.py", "guard_command")
-pytestmark = pytest.mark.usefixtures("isolated_project")
+pytestmark = pytest.mark.usefixtures("isolated_project", "sent_files")
 
 REPLY = "gh api repos/furedea/agent-config/pulls/12/comments/345/replies"
 

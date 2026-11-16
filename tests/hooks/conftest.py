@@ -187,3 +187,11 @@ def furedea_checkout(isolated_project: Path) -> Path:
 def secret_samples() -> dict[str, str]:
     """Public synthetic secrets, one per scanned pattern."""
     return json.loads(Path(__file__).with_name("secret_content_samples.json").read_text())
+
+
+@pytest.fixture
+def sent_files(isolated_project: Path) -> Path:
+    """The body files the guard tests send, present so the guard can scan them as gh will read them."""
+    for name, text in {"notes.txt": "Fixed.\n", "body.json": "{}\n", "body.md": "Fixed.\n", "$=J": "Fixed.\n"}.items():
+        (isolated_project / name).write_text(text)
+    return isolated_project

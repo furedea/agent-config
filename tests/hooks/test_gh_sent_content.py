@@ -278,6 +278,8 @@ def test_a_quoted_tilde_names_a_directory_called_tilde(
     Path("~").mkdir()
     Path("~/body.md").write_text(f"config = {secret_samples['aws_key']}\n")
     assert decide("gh issue comment 1 -R furedea/r -F '~/body.md'") == "ask"
+    Path("~nosuchuser0123").mkdir()
+    Path("~nosuchuser0123/x").write_text("No secrets.\n")
     assert decide("gh issue comment 1 -R furedea/r -F '~nosuchuser0123/x'") == "allow"
 
 
@@ -360,4 +362,12 @@ def test_a_cat_under_a_writable_ancestor_is_not_trusted(tmp_path: Path, monkeypa
 
 def test_a_quoted_heredoc_whose_body_ends_a_line_with_a_backslash_stays_allowed() -> None:
     command = "gh issue comment 1 -R furedea/r -F - <<'EOF'\nrun a \\\nb\nEOF"
+    assert guard.decide("allowed", {"tool_input": {"command": command}}).decision == "allow"
+
+
+@pytest.mark.usefixtures("isolated_project")
+def test_a_body_file_missing_when_the_guard_reads_it_asks() -> None:
+    command = "gh issue comment 1 -R furedea/r -F body.md"
+    assert guard.decide("allowed", {"tool_input": {"command": command}}).decision == "ask"
+    Path("body.md").write_text("Fixed.\n")
     assert guard.decide("allowed", {"tool_input": {"command": command}}).decision == "allow"

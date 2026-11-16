@@ -183,6 +183,8 @@ def _file_problem(call: GhCall, line: CommandLine) -> str:
     if problem := _run_time_path_problem(call.unscanned_files):
         return problem
     paths = [Path(name) for name in call.files]
+    if any(not path.exists() for path in paths):
+        return "sends a file that does not exist yet, so the guard cannot scan what gh will read"
     if any(_is_irregular(path) for path in paths):
         return "sends a FIFO, device, or other file that is not a regular file"
     if any(_exceeds_scan(path) for path in paths):

@@ -487,5 +487,6 @@ def test_a_rest_issue_without_a_linking_field_stays_allowed() -> None:
     assert decide("gh api repos/furedea/r/issues -f title=x -f body=y") == "allow"
 
 
+@pytest.mark.usefixtures("sent_files")
 def test_an_attachment_without_alt_text_stays_allowed() -> None:
     assert decide("gh issue comment 1 -R furedea/r -b ok --attach notes.txt") == "allow"

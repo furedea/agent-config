@@ -94,3 +94,25 @@ def test_fixing_the_reason_beside_a_suppression_passes(
     target = tmp_path / name
     target.write_text(before)
     assert decide_edit(target, old, new) == "allow"
+
+
+@pytest.mark.parametrize(
+    "before,old,new",
+    [
+        ("#[allow(dead_code)]\nfn a() {}\n", "dead_code)", 'dead_code, reason = "kept for the plugin API")'),
+        ('#[allow(dead_code, reason = "kept")]\nfn a() {}\n', ', reason = "kept"', ""),
+        ('#[allow(reason = "kept", dead_code)]\nfn a() {}\n', 'reason = "kept", ', ""),
+        ('#[expect(unused, reason = "kept", dead_code)]\nfn a() {}\n', ' reason = "kept",', ""),
+    ],
+    ids=["reason added", "reason removed from the end", "reason removed from the start", "reason removed between"],
+)
+def test_adding_or_removing_an_attributes_reason_passes(tmp_path: Path, before: str, old: str, new: str) -> None:
+    target = tmp_path / "lib.rs"
+    target.write_text(before)
+    assert decide_edit(target, old, new) == "allow"
+
+
+def test_a_lint_added_with_a_reason_still_asks(tmp_path: Path) -> None:
+    target = tmp_path / "lib.rs"
+    target.write_text("#[allow(dead_code)]\nfn a() {}\n")
+    assert decide_edit(target, "dead_code)", 'dead_code, unused, reason = "kept")') == "ask"

@@ -29,8 +29,8 @@ class CellEdit:
 def code_cell_edit(path: str, values: dict) -> CellEdit | None:
     """The code cell a NotebookEdit writes, or None for a markdown cell or a deletion, which add no code.
 
-    An inserted cell had no source, and a cell the notebook does not hold is read as empty. A language the hooks do
-    not know gets its own name as suffix, which no hook inspects.
+    An inserted cell had no code, and neither had a cell the notebook does not hold or one that was not code, whose
+    prose suppressed nothing. A language the hooks do not know gets its own name as suffix, which no hook inspects.
     """
     notebook = _notebook(path)
     cells = [cell for cell in _as_list(notebook.get("cells")) if isinstance(cell, dict)]
@@ -39,9 +39,10 @@ def code_cell_edit(path: str, values: dict) -> CellEdit | None:
     cell_type = values.get("cell_type") or ("code" if inserted else cell.get("cell_type", "code"))
     if cell_type != "code" or values.get("edit_mode") == "delete":
         return None
+    was_code = not inserted and cell.get("cell_type", "code") == "code"
     after = values.get("new_source")
     return CellEdit(
-        "" if inserted else _source(cell), after if isinstance(after, str) else "", _language_suffix(notebook)
+        _source(cell) if was_code else "", after if isinstance(after, str) else "", _language_suffix(notebook)
     )
 
 

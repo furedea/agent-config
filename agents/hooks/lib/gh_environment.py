@@ -80,6 +80,9 @@ def _override_problem() -> str:
     """
     if any(os.environ.get(name) for name in STARTUP_FILE_VARIABLES):
         return "the environment names a startup file the shell sources first, which may redefine gh or git"
+    # bash runs an inherited function by name, or as command_not_found_handle for any missing program.
+    if any(key.startswith("BASH_FUNC_") for key in os.environ):
+        return "the environment carries shell functions bash may run on this line"
     ssh_command = os.environ.get("GIT_SSH_COMMAND", "ssh")
     if any(os.environ.get(name) for name in GIT_OVERRIDE_VARIABLES) or ssh_command not in {"ssh", SANDBOX_SSH_COMMAND}:
         return "the environment tells git to run another program than the checked ssh"

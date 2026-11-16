@@ -485,10 +485,12 @@
     "tests/hooks/test_guard_bypasses.py",
     "tests/hooks/test_gh_sent_content.py",
     "tests/hooks/test_gh_environment.py",
-    "tests/hooks/test_gh_targets.py"
+    "tests/hooks/test_gh_targets.py",
+    "tests/hooks/test_gh_config.py"
   ],
   "agents/hooks/lib/gh_environment.py": [
     "tests/hooks/test_gh_targets.py",
+    "tests/hooks/test_gh_config.py",
     "tests/hooks/test_gh_environment.py",
     "tests/hooks/test_gh_effects.py"
   ],

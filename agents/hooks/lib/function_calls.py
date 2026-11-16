@@ -21,7 +21,7 @@ RELIED_NAMES = frozenset(
 KEYWORD_NAMES = frozenset("declare local export typeset readonly nameref integer float let time coproc".split())
 # Functions bash or zsh call on their own, with words that never follow the function's name.
 SHELL_HOOKS = re.compile(
-    r"command_not_found_handler?|precmd|preexec|chpwd|periodic|zshexit|zshaddhistory|TRAP[A-Z0-9]+"
+    r"command_not_found_handler?|precmd|preexec|chpwd|periodic|zshexit|zshaddhistory|zsh_directory_name|TRAP[A-Z0-9]+"
 )
 # Parameters holding a function's arguments: zsh's argv, bash's BASH_ARGV and BASH_ARGC under extdebug, and $_,
 # the last word of the call.
@@ -290,6 +290,13 @@ def _followed(body: dict, records: tuple[dict, ...], data: bytes) -> dict:
         or ZSH_FLAGGED_ARGUMENT.search(source_text(body, data)) is not None
         or _feeds_a_shell(body, copies, data)
         or _modified_in_zsh(body, copies)
+        or any(
+            respelling.reads(part, copies)
+            for node in nodes(body)
+            if isinstance(node.get("Cmd"), dict) and node["Cmd"].get("Type") != "CallExpr"
+            for redirect in node.get("Redirs", [])
+            for part in nodes(redirect)
+        )
         or not _attributed(body, data).isdisjoint(copies)
         or _leaks(body, records, data)
     )

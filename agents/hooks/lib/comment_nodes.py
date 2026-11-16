@@ -41,11 +41,12 @@ RUST_INERT_KINDS = ("string_literal", "raw_string_literal", "char_literal", "lin
 class _Budget:
     """The deadline the scans of one decision share, and whether a scan ran into it."""
 
-    deadline: float = 0.0
+    # No deadline until a decision starts one; a single scan still stops after BUDGET_SECONDS.
+    deadline: float = float("inf")
     ran_out: bool = False
 
 
-_BUDGET = _Budget(time.monotonic() + BUDGET_SECONDS)
+_BUDGET = _Budget()
 # Only found spans are kept: a scan cut short by the budget is unknown for this decision, not for the next.
 _SPANS: dict[tuple[str, str, tuple[str, ...]], list[tuple[int, int]]] = {}
 
@@ -91,7 +92,7 @@ def _scan(text: str, language: str, kinds: tuple[str, ...]) -> list[tuple[int, i
     if key in _SPANS:
         return _SPANS[key]
     try:
-        spans = _scanned_spans(text, _rule(language, kinds), _BUDGET.deadline - time.monotonic())
+        spans = _scanned_spans(text, _rule(language, kinds), min(_BUDGET.deadline - time.monotonic(), BUDGET_SECONDS))
     except subprocess.TimeoutExpired:
         _BUDGET.ran_out = True
         return None

@@ -36,3 +36,11 @@ def test_text_that_cannot_be_encoded_is_unknown() -> None:
 @pytest.mark.parametrize("suffix", [".js", ".ts", ".tsx"])
 def test_an_html_like_comment_in_javascript_is_a_comment(suffix: str) -> None:
     assert comment_nodes.comment_spans("<!-- note\nfoo()\n", suffix) == [(0, 9)]
+
+
+def test_a_scan_long_after_import_without_a_started_budget_still_runs(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Only a decision sets a deadline; a module imported long before a direct scan must not have run out already."""
+    fresh = load_script_module("agents/hooks/lib/comment_nodes.py", "comment_nodes_imported_long_ago")
+    later = fresh.time.monotonic() + 3600
+    monkeypatch.setattr(fresh.time, "monotonic", lambda: later)
+    assert fresh.comment_spans("y = 2  # long after import\n", ".py") == [(7, 26)]

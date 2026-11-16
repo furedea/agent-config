@@ -2,9 +2,9 @@
 """Hand any new lint or type-check suppression in code to the user.
 
 The numeric AGENTS.md rules are enforced by lint, and a real exception gets a per-site suppression
-with a reason. Whether an exception is real is the user's judgment, so an edit that adds more
-suppression markers to a code file than it removes asks; moving or deleting one does not. An ast-grep
-marker is compared by its text, so changing the rules it names asks too.
+with a reason. Whether an exception is real is the user's judgment, so an edit that adds a
+suppression marker to a code file, or changes the rules or lints one names, asks; moving or deleting
+one does not.
 """
 
 import difflib
@@ -13,7 +13,6 @@ import os
 import re
 import sys
 from collections import Counter
-from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -49,10 +48,9 @@ MARKERS = {
 }
 # The lint hook also scans YAML and Nix, so a project's own ast-grep rules can be suppressed there.
 MARKER_SUFFIXES = {"ast-grep-ignore": CODE_SUFFIXES | {".yml", ".yaml", ".nix"}}
-# An ast-grep marker that names no rule suppresses every rule, and the word only counts in a comment, so a marker is
-# compared by its comment's text: changing the named rules, or turning a string that holds the word into a comment,
-# asks.
-COMPARED_BY_TEXT = frozenset({"ast-grep-ignore"})
+# ast-grep honors its word anywhere in a comment, and a fragment of a file lacks the context that decides what is a
+# comment, so every mark of a fragment counts for this marker.
+COUNTED_ANYWHERE_IN_FRAGMENTS = frozenset({"ast-grep-ignore"})
 # Every other marker is a comment directive, counted only inside a comment; a Rust attribute anywhere but a string
 # or comment.
 CODE_MARKERS = frozenset({"allow or expect attribute"})
@@ -61,6 +59,7 @@ DELIMITER = re.compile(r"[\"'`]|/\*|\*/|<!--|--!?>|\[\[|\]\]|<<|[|>][-+]?\s*$")
 # An ast-grep marker on the first line followed by a blank line suppresses its rules for the whole file.
 FILE_SCOPE = "ast-grep-ignore for the whole file"
 UNPLACED = "a suppression in a file the guard could not rebuild"
+OUT_OF_TIME = "comments the guard could not parse in time"
 MOVED_IN = "a suppression that takes effect where the file moves"
 PATCH_FILE = re.compile(r"^\*\*\* (Add|Update) File: (.+)$")
 PATCH_MOVE = re.compile(r"^\*\*\* Move to: (.+)$")
@@ -83,14 +82,18 @@ class _Change:
 
 
 def decide(payload: dict) -> Verdict:
-    """Ask when the edit adds more suppression markers to a code file than it removes, otherwise allow.
+    """Ask when the edit adds a suppression marker to a code file or changes what one names, otherwise allow.
 
     Handles Write, Edit, MultiEdit and apply_patch payloads; non-code files are never inspected.
     """
-    added = [(change.path, name) for change in _changes(payload) for name in _new_markers(change)]
+    comment_nodes.start_budget()
+    added = [f"{name} in {change.path}" for change in _changes(payload) for name in _new_markers(change)]
+    # A scan cut short leaves the comments unknown, and the fallback without them cannot see every new scope.
+    if comment_nodes.budget_ran_out():
+        added.append(OUT_OF_TIME)
     if not added:
         return hook_decision.ALLOW
-    listed = ", ".join(f"{name} in {path}" for path, name in added)
+    listed = ", ".join(added)
     return hook_decision.ask(
         f"Needs review: this edit adds a lint or type-check suppression ({listed}). "
         "Only the user decides whether an exception is warranted; state the reason.",
@@ -128,10 +131,9 @@ def _file_marker(text: str, suffix: str) -> str | None:
     """
     # A final newline ends the last line; it does not start an empty one.
     lines = _lines(text.removesuffix("\n"))
-    pattern = MARKERS["ast-grep-ignore"]
-    if len(lines) < 2 or lines[1].strip() or not pattern.search(lines[0]):
+    if len(lines) < 2 or lines[1].strip() or not MARKERS["ast-grep-ignore"].search(lines[0]):
         return None
-    marks = _marked_lines(pattern, text, _span_reader("ast-grep-ignore", suffix))
+    marks = _marked_lines("ast-grep-ignore", text, suffix)
     if marks is not None and not any(in_comment for in_comment, _ in marks.get(0, ())):
         return None
     return lines[0].strip()
@@ -143,37 +145,22 @@ def _lines(text: str) -> list[str]:
 
 
 def _adds(name: str, pattern: re.Pattern[str], change: _Change) -> bool:
-    """Count markers in comments (attributes for a Rust attribute), or for markers compared by text, find a new one.
+    """Whether a marker that counts (in a comment, or for a Rust attribute in code) has a scope the edit did not have.
 
-    Without the scanner, comments cannot be told from strings: a marker line whose text is new asks, and so does a
-    change to a line that may open or close a string or comment in text that holds a marker.
+    A marker is compared by the text of its scope, so naming other or fewer rules asks like a new marker. Without the
+    scanner, comments cannot be told from strings: a marker line whose text is new asks, and so does a change to a
+    line that may open or close a string or comment in text that holds a marker.
     """
     suffix = Path(change.path).suffix.lower()
-    added, removed = (
-        _marked_lines(pattern, text, _span_reader(name, suffix)) for text in (change.added, change.removed)
-    )
+    added, removed = (_marked_lines(name, text, suffix) for text in (change.added, change.removed))
     if added is None or removed is None:
         return _may_add_unparsed(pattern, change)
-    added_marks, removed_marks = ([mark for marks in found.values() for mark in marks] for found in (added, removed))
-    if name in COMPARED_BY_TEXT:
-        # In a whole file, a word outside a comment suppresses nothing, and one that moves into a comment shows up as a
-        # new comment mark. A fragment lacks the context that decides this, so every mark of it counts.
-        added_marks, removed_marks = (
-            [mark for mark in marks if mark[0] or not change.whole] for marks in (added_marks, removed_marks)
-        )
-        return bool(Counter(added_marks) - Counter(removed_marks))
-    return sum(_counts(name, in_node) for in_node, _ in added_marks) > sum(
-        _counts(name, in_node) for in_node, _ in removed_marks
+    every_mark = not change.whole and name in COUNTED_ANYWHERE_IN_FRAGMENTS
+    added_marks, removed_marks = (
+        Counter(mark for marks in found.values() for mark in marks if every_mark or _counts(name, mark[0]))
+        for found in (added, removed)
     )
-
-
-def _span_reader(name: str, suffix: str) -> Callable[[str], list[tuple[int, int]] | None]:
-    """How to find the nodes that decide whether a marker counts.
-
-    These are the inert strings and comments for the attribute marker, and the comments for every other marker.
-    """
-    find = comment_nodes.inert_spans if name in CODE_MARKERS else comment_nodes.comment_spans
-    return lambda text: find(text, suffix)
+    return bool(added_marks - removed_marks)
 
 
 def _counts(name: str, in_node: bool) -> bool:
@@ -192,39 +179,49 @@ def _may_add_unparsed(pattern: re.Pattern[str], change: _Change) -> bool:
     return any(DELIMITER.search(line) for line in changed)
 
 
-def _marked_lines(
-    pattern: re.Pattern[str], text: str, read_spans: Callable[[str], list[tuple[int, int]] | None]
-) -> dict[int, tuple[tuple[bool, str], ...]] | None:
-    """By line number, each marker on the line as whether it is in a comment and its text.
+def _marked_lines(name: str, text: str, suffix: str) -> dict[int, tuple[tuple[bool, str], ...]] | None:
+    """By line number, each marker on the line as whether it is in a node that decides it counts, and its scope.
 
-    The text is the comment from its start on that line, or else the whole line. The language's parser finds the
-    comments, so a block comment, raw string or block scalar around the line counts. None means the comments cannot
-    be known.
+    The nodes are the inert strings and comments for the attribute marker, and the comments for every other marker;
+    the language's parser finds them, so a block comment, raw string or block scalar around the line counts. The scope
+    is the text from the marker to the end of its node, or else to the end of its attribute or line, with runs of
+    space folded, so the rules it names on later lines count too. None means the nodes cannot be known.
     """
+    pattern = MARKERS[name]
     if not pattern.search(text):
         return {}
-    spans = read_spans(text)
+    find = comment_nodes.inert_spans if name in CODE_MARKERS else comment_nodes.comment_spans
+    spans = find(text, suffix)
     if spans is None:
         return None
-    marked = {}
-    offset = 0
-    for number, line in enumerate(text.split("\n")):
-        starts = [_comment_start(spans, offset + match.start()) for match in pattern.finditer(line)]
-        if starts:
-            marked[number] = tuple(
-                (True, line[max(start - offset, 0) :].strip()) if start is not None else (False, line.strip())
-                for start in starts
-            )
-        offset += len(line) + 1
-    return marked
+    marked: dict[int, list[tuple[bool, str]]] = {}
+    line_starts = [0, *(match.end() for match in re.finditer("\n", text))]
+    for match in pattern.finditer(text):
+        end = _node_end(spans, match.start())
+        scope = text[match.start() : end] if end is not None else _code_scope(name, text, match.start())
+        number = sum(start <= match.start() for start in line_starts) - 1
+        marked.setdefault(number, []).append((end is not None, " ".join(scope.split())))
+    return {number: tuple(marks) for number, marks in marked.items()}
+
+
+def _code_scope(name: str, text: str, start: int) -> str:
+    """A Rust attribute through its closing bracket, which may sit lines below; any other marker to its line's end."""
+    if name not in CODE_MARKERS:
+        return text[start:].split("\n", 1)[0]
+    depth = 0
+    for position in range(start, len(text)):
+        depth += {"[": 1, "]": -1}.get(text[position], 0)
+        if depth == 0 and text[position] == "]":
+            return text[start : position + 1]
+    return text[start:]
 
 
 def _marker_lines(pattern: re.Pattern[str], text: str) -> list[str]:
     return [line.strip() for line in _lines(text) if pattern.search(line)]
 
 
-def _comment_start(spans: list[tuple[int, int]], position: int) -> int | None:
-    return next((start for start, end in spans if start <= position < end), None)
+def _node_end(spans: list[tuple[int, int]], position: int) -> int | None:
+    return next((end for start, end in spans if start <= position < end), None)
 
 
 def _changes(payload: dict) -> list[_Change]:
@@ -397,7 +394,7 @@ def _becomes_comment(text: str, source: str, destination: str) -> set[int]:
     for name, pattern in MARKERS.items():
         if destination not in MARKER_SUFFIXES.get(name, CODE_SUFFIXES):
             continue
-        before, after = (_marked_lines(pattern, text, _span_reader(name, suffix)) for suffix in (source, destination))
+        before, after = (_marked_lines(name, text, suffix) for suffix in (source, destination))
         if before is None or after is None:
             lines |= {number for number, line in enumerate(_lines(text)) if pattern.search(line)}
             continue

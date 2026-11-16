@@ -163,18 +163,18 @@ def test_input_the_guard_cannot_read_before_it_leaves_asks(command: str, fragmen
         pytest.param("gh issue list -R other/r --search 'TOKEN'", id="a search"),
     ],
 )
-def test_a_secret_in_what_a_read_sends_asks(secret_samples: dict[str, str], command: str) -> None:
-    assert decide(command.replace("TOKEN", secret_samples["github_token"])) == "ask"
+def test_a_secret_in_what_a_read_sends_asks(scan_samples: dict[str, str], command: str) -> None:
+    assert decide(command.replace("TOKEN", scan_samples["github_token"])) == "ask"
 
 
 @pytest.mark.usefixtures("furedea_checkout")
 @pytest.mark.parametrize("sample", ["github_token", "aws_key", "rsa_header"])
-def test_a_secret_in_an_inline_body_asks(secret_samples: dict[str, str], sample: str) -> None:
-    command = f"gh issue comment 1 -b 'token: {secret_samples[sample]}'"
+def test_a_secret_in_an_inline_body_asks(scan_samples: dict[str, str], sample: str) -> None:
+    command = f"gh issue comment 1 -b 'token: {scan_samples[sample]}'"
     verdict = guard.decide("allowed", {"tool_input": {"command": command}})
     assert verdict.decision == "ask"
     assert "in what this gh call sends" in verdict.reason
-    assert secret_samples[sample] not in verdict.detail
+    assert scan_samples[sample] not in verdict.detail
 
 
 @pytest.mark.usefixtures("furedea_checkout")
@@ -199,17 +199,17 @@ def test_a_secret_in_an_inline_body_asks(secret_samples: dict[str, str], sample:
     ],
 )
 def test_a_secret_in_a_literal_file_the_call_sends_asks(
-    secret_samples: dict[str, str], command: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    scan_samples: dict[str, str], command: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
     for path in (Path("body.md"), tmp_path / "body.md"):
-        path.write_text(f"config = {secret_samples['aws_key']}\n")
+        path.write_text(f"config = {scan_samples['aws_key']}\n")
     assert decide(command) == "ask"
 
 
 @pytest.mark.usefixtures("furedea_checkout")
-def test_a_secret_in_a_heredoc_body_asks(secret_samples: dict[str, str]) -> None:
-    command = f"gh issue comment 1 --body-file - <<'EOF'\n{secret_samples['github_token']}\nEOF"
+def test_a_secret_in_a_heredoc_body_asks(scan_samples: dict[str, str]) -> None:
+    command = f"gh issue comment 1 --body-file - <<'EOF'\n{scan_samples['github_token']}\nEOF"
     assert decide(command) == "ask"
 
 
@@ -228,10 +228,10 @@ def test_a_fifo_the_call_sends_asks_without_being_opened() -> None:
 
 @pytest.mark.usefixtures("furedea_checkout")
 def test_a_run_time_path_the_environment_expands_is_scanned(
-    secret_samples: dict[str, str], tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    scan_samples: dict[str, str], tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setenv("BODY_DIR", str(tmp_path))
-    (tmp_path / "body.md").write_text(f"config = {secret_samples['aws_key']}\n")
+    (tmp_path / "body.md").write_text(f"config = {scan_samples['aws_key']}\n")
     assert decide('gh pr comment 1 -R furedea/r --body-file "$BODY_DIR/body.md"') == "ask"
     assert decide('gh api repos/furedea/r/issues/1/comments -F body=@"$BODY_DIR/body.md"') == "ask"
     (tmp_path / "clean.md").write_text("No secrets.\n")
@@ -245,8 +245,8 @@ def test_a_run_time_path_expanding_to_a_device_asks(monkeypatch: pytest.MonkeyPa
 
 
 @pytest.mark.usefixtures("furedea_checkout")
-def test_an_unset_parameter_expands_to_nothing_before_the_scan(secret_samples: dict[str, str]) -> None:
-    Path(".env.md").write_text(f"config = {secret_samples['aws_key']}\n")
+def test_an_unset_parameter_expands_to_nothing_before_the_scan(scan_samples: dict[str, str]) -> None:
+    Path(".env.md").write_text(f"config = {scan_samples['aws_key']}\n")
     assert decide('gh issue comment 1 -R furedea/r -F "${UNSET_PREFIX}.env.md"') == "ask"
     assert decide('gh issue comment 1 -R furedea/r -F "$UNSET_PREFIX$PWD/.env.md"') == "ask"
 
@@ -260,23 +260,23 @@ def test_a_file_larger_than_the_scan_reads_asks() -> None:
 @pytest.mark.usefixtures("furedea_checkout")
 @pytest.mark.parametrize("path", ['"$BODY_DIR:h/body.md"', '"$BODY_DIR"/../body.md\\x', '~"$BODY_DIR"/body.md'])
 def test_a_run_time_path_the_shell_may_expand_differently_asks(
-    secret_samples: dict[str, str], tmp_path: Path, monkeypatch: pytest.MonkeyPatch, path: str
+    scan_samples: dict[str, str], tmp_path: Path, monkeypatch: pytest.MonkeyPatch, path: str
 ) -> None:
     monkeypatch.setenv("BODY_DIR", str(tmp_path))
-    (tmp_path / "body.md").write_text(f"config = {secret_samples['aws_key']}\n")
+    (tmp_path / "body.md").write_text(f"config = {scan_samples['aws_key']}\n")
     assert decide(f"gh pr comment 1 -R furedea/r --body-file {path}") == "ask"
 
 
 @pytest.mark.usefixtures("furedea_checkout")
 def test_a_quoted_tilde_names_a_directory_called_tilde(
-    secret_samples: dict[str, str], tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    scan_samples: dict[str, str], tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     home = tmp_path / "home"
     home.mkdir()
     monkeypatch.setenv("HOME", str(home))
     (home / "body.md").write_text("No secrets.\n")
     Path("~").mkdir()
-    Path("~/body.md").write_text(f"config = {secret_samples['aws_key']}\n")
+    Path("~/body.md").write_text(f"config = {scan_samples['aws_key']}\n")
     assert decide("gh issue comment 1 -R furedea/r -F '~/body.md'") == "ask"
     Path("~nosuchuser0123").mkdir()
     Path("~nosuchuser0123/x").write_text("No secrets.\n")
@@ -285,9 +285,9 @@ def test_a_quoted_tilde_names_a_directory_called_tilde(
 
 @pytest.mark.usefixtures("furedea_checkout")
 def test_a_parameter_a_read_sends_is_scanned_as_expanded(
-    secret_samples: dict[str, str], monkeypatch: pytest.MonkeyPatch
+    scan_samples: dict[str, str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setenv("SEARCH_TEXT", secret_samples["github_token"])
+    monkeypatch.setenv("SEARCH_TEXT", scan_samples["github_token"])
     assert decide('gh issue list -R furedea/r --search "$SEARCH_TEXT"') == "ask"
     assert decide('cd . && gh issue list -R furedea/r --search "$SEARCH_TEXT"') == "ask"
     assert decide('gh issue list -R furedea/r --search "$SEARCH_TEXT"; true') == "ask"
@@ -297,7 +297,7 @@ def test_a_parameter_a_read_sends_is_scanned_as_expanded(
 
 @pytest.mark.usefixtures("furedea_checkout")
 def test_a_single_quoted_part_of_a_run_time_path_is_not_expanded(
-    secret_samples: dict[str, str], tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    scan_samples: dict[str, str], tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     clean = tmp_path / "clean"
     clean.mkdir()
@@ -305,19 +305,19 @@ def test_a_single_quoted_part_of_a_run_time_path_is_not_expanded(
     monkeypatch.setenv("BODY_DIR", str(clean))
     monkeypatch.setenv("NAME", "body.md")
     Path("$BODY_DIR").mkdir()
-    Path("$BODY_DIR/body.md").write_text(f"config = {secret_samples['aws_key']}\n")
+    Path("$BODY_DIR/body.md").write_text(f"config = {scan_samples['aws_key']}\n")
     assert decide("gh issue comment 1 -R furedea/r -F '$BODY_DIR'/\"$NAME\"") == "ask"
 
 
 @pytest.mark.usefixtures("furedea_checkout")
-def test_a_secret_split_across_quotes_is_scanned_as_the_shell_joins_it(secret_samples: dict[str, str]) -> None:
-    token = secret_samples["github_token"]
+def test_a_secret_split_across_quotes_is_scanned_as_the_shell_joins_it(scan_samples: dict[str, str]) -> None:
+    token = scan_samples["github_token"]
     assert decide(f"gh issue comment 1 -R furedea/r -b '{token[:2]}''{token[2:]}'") == "ask"
 
 
 @pytest.mark.usefixtures("furedea_checkout")
-def test_a_secret_split_by_quotes_inside_a_substitution_is_scanned(secret_samples: dict[str, str]) -> None:
-    token = secret_samples["github_token"]
+def test_a_secret_split_by_quotes_inside_a_substitution_is_scanned(scan_samples: dict[str, str]) -> None:
+    token = scan_samples["github_token"]
     assert decide(f"gh issue comment 1 -R furedea/r -b \"$(printf '{token[:2]}''{token[2:]}')\"") == "ask"
 
 

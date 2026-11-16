@@ -78,7 +78,7 @@ repository is not a failure.
     parent. Do not poll: one blocking command, or one bounded wait for the run to appear, is fine;
     repeated manual checks across turns are not.
 3. When the runs have finished, confirm the `all-green` row of `gh pr checks <n>`; where the
-    repository has no `all-green`, confirm that every listed check passed. Do not use `--required`:
+    repository has none, confirm the checks it requires. Do not use `--required`:
     it does not see a ruleset's required check.
 4. On failure, identify the failing check with `gh pr checks <n>` and read its log with
     `gh run view <run-id> --log-failed`.

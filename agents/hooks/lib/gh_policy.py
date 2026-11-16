@@ -26,6 +26,7 @@ from gh_command_line import (
     input_redirects,
 )
 from gh_invocation import GhCall, Unclassified
+from gh_options import SHELL_MANAGED
 from gh_repository import Repository
 from hook_decision import Verdict
 
@@ -40,24 +41,6 @@ RUN_TIME_FILE = re.compile(r'^<\s*"[^"`]*\$[^"`]*"$')
 # A run-time path the guard would expand differently from the shell: a glob, substitution, tilde,
 # escape, parameter operator or subscript, or a zsh modifier such as `$f:h`.
 UNEXPANDABLE_PATH = re.compile(r"[`*?\[~\\]|\$\(|\$\{[^}]*[^A-Za-z0-9_}]|\$\{?[A-Za-z_][A-Za-z0-9_]*\}?:")
-# Parameters the shell sets or changes itself, even when the hook's environment holds them.
-SHELL_MANAGED = frozenset(
-    {"SECONDS", "RANDOM", "SRANDOM", "LINENO", "SHLVL", "_", "OLDPWD", "PPID", "BASHPID", "EPOCHSECONDS"}
-    | {"EPOCHREALTIME", "HISTCMD", "BASH_COMMAND", "BASH_SUBSHELL", "COLUMNS", "LINES", "OPTIND", "OPTARG", "REPLY"}
-    # bash resets these at startup whatever the environment holds.
-    | {"OPTERR", "IFS", "PS4", "OSTYPE", "HOSTTYPE", "MACHTYPE", "BASH", "BASH_VERSION", "BASHOPTS", "SHELLOPTS"}
-    | {
-        "UID",
-        "EUID",
-        "GROUPS",
-        "HOSTNAME",
-        "DIRSTACK",
-        "FUNCNAME",
-        "PIPESTATUS",
-        "BASH_ARGV0",
-        "BASH_EXECUTION_STRING",
-    }
-)
 # A word's single-quoted, double-quoted, and bare parts, in order.
 SHELL_PART = re.compile(r"""'[^']*'|"[^"]*"|[^'"]+""")
 # A plain parameter in a run-time path; one the environment lacks expands to nothing, as in the shell.
@@ -161,7 +144,9 @@ def _expanded_path(source: str) -> str | None:
     if UNEXPANDABLE_PATH.search(source) or not _is_predictable(source):
         return None
     expanded = shell_expanded(source)
-    return expanded if expanded and Path(expanded).exists() else None
+    # A device, process file, or standard input stays unscanned, where the path checks refuse it.
+    usable = expanded and Path(expanded).exists() and not _names_special_input(expanded)
+    return expanded if usable else None
 
 
 def shell_expanded(source: str) -> str:

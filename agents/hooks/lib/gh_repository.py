@@ -5,9 +5,11 @@ import re
 from dataclasses import dataclass
 from urllib.parse import urlsplit
 
-from gh_options import Word
+from gh_options import UnclassifiableError, Word
 
 GITHUB_HOST = "github.com"
+# A run-time repository that starts with a literal owner and slash, which gh cannot read as a host.
+OWNER_PREFIX = re.compile(r"[\"']?[A-Za-z0-9-]+/")
 PLAIN_PARAMETER = re.compile(r"\$(?:([A-Za-z_][A-Za-z0-9_]*)|\{([A-Za-z_][A-Za-z0-9_]*)\})")
 SAFE_SCHEMES = frozenset({"https", "ssh"})
 REPOSITORY_OPTIONS = frozenset({"-R", "--repo"})
@@ -71,3 +73,14 @@ def is_unsafe_once_expanded(word: Word) -> bool:
     parts = re.findall(r"""'[^']*'|"[^"]*"|[^'"]+""", word.source)
     value = "".join(part[1:-1] if part.startswith("'") else expand(part) for part in parts)
     return value.startswith("-") or ((is_url(value) or value.count("/") >= 2) and repository(value) is None)
+
+
+def check_repository_arguments(words: tuple[Word, ...]) -> None:
+    """Refuse a repository argument gh would read as HOST/OWNER/REPO, or as a URL, on another host than github.com."""
+    for word in words:
+        if word.dynamic and not OWNER_PREFIX.match(word.source):
+            raise UnclassifiableError("a repository argument is known only at run time")
+        if word.dynamic or word.value.startswith("-"):
+            continue
+        if ("/" in word.value or ":" in word.value) and repository(word.value) is None:
+            raise UnclassifiableError("a repository argument names another host than github.com")

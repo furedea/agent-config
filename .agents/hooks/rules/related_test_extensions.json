@@ -473,7 +473,8 @@
     "tests/hooks/test_allowed_review_replies.py",
     "tests/hooks/test_quote_normalization.py",
     "tests/hooks/test_zsh_expansion_flags.py",
-    "tests/hooks/test_gh_sent_content.py"
+    "tests/hooks/test_gh_sent_content.py",
+    "tests/hooks/test_gh_round_fixes.py"
   ],
   "agents/hooks/lib/gh_policy.py": [
     "tests/hooks/test_gh_effects.py",
@@ -486,13 +487,15 @@
     "tests/hooks/test_gh_sent_content.py",
     "tests/hooks/test_gh_environment.py",
     "tests/hooks/test_gh_targets.py",
-    "tests/hooks/test_gh_config.py"
+    "tests/hooks/test_gh_config.py",
+    "tests/hooks/test_gh_round_fixes.py"
   ],
   "agents/hooks/lib/gh_environment.py": [
     "tests/hooks/test_gh_targets.py",
     "tests/hooks/test_gh_config.py",
     "tests/hooks/test_gh_environment.py",
-    "tests/hooks/test_gh_effects.py"
+    "tests/hooks/test_gh_effects.py",
+    "tests/hooks/test_gh_round_fixes.py"
   ],
   "agents/hooks/lib/graphql_document.py": [
     "tests/hooks/test_graphql_document.py",
@@ -511,7 +514,8 @@
     "tests/hooks/test_allowed_review_replies.py",
     "tests/hooks/test_quote_normalization.py",
     "tests/hooks/test_zsh_expansion_flags.py",
-    "tests/hooks/test_gh_sent_content.py"
+    "tests/hooks/test_gh_sent_content.py",
+    "tests/hooks/test_gh_round_fixes.py"
   ],
   "agents/hooks/lib/gh_repository.py": [
     "tests/hooks/test_gh_effects.py",
@@ -521,7 +525,8 @@
     "tests/hooks/test_quote_normalization.py",
     "tests/hooks/test_zsh_expansion_flags.py",
     "tests/hooks/test_gh_sent_content.py",
-    "tests/hooks/test_gh_targets.py"
+    "tests/hooks/test_gh_targets.py",
+    "tests/hooks/test_gh_round_fixes.py"
   ],
   "agents/hooks/lib/gh_command_line.py": [
     "tests/hooks/test_gh_effects.py",

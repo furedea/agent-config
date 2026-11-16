@@ -26,8 +26,10 @@ from gh_options import (
 )
 from gh_repository import (
     GITHUB_HOST,
+    OWNER_PREFIX,
     REPOSITORY_OPTIONS,
     Repository,
+    check_repository_arguments,
     is_unsafe_once_expanded,
     is_url,
     repository,
@@ -58,7 +60,6 @@ DOWNLOAD_DIRS = frozenset({"-D", "--dir"})
 STDIN_PATHS = re.compile(r"/dev/stdin|/dev/fd/0|/proc/self/fd/0")
 # A run-time endpoint that starts with a literal path segment and slash, which no expansion can turn into a URL.
 LITERAL_PATH_START = re.compile(r"[\"']?/?[A-Za-z0-9_.-]+/")
-OWNER_PREFIX = re.compile(r"[\"']?[A-Za-z0-9-]+/")
 REPOSITORY_PATH = re.compile(r"repos/(?P<owner>[^/]+)/(?P<name>[^/]+)")
 
 
@@ -159,7 +160,7 @@ def _classify_words(words: tuple[Word, ...], catalog: Catalog, single_call: bool
     if spec.effect is Effect.READ:
         _check_read_repositories(words[2:])
         if spec.operation == "repo.view":
-            _check_repository_arguments(words[2:])
+            check_repository_arguments(words[2:])
         return GhCall((spec.operation,), spec.effect, reads_working_repository=True)
     if spec.effect is Effect.LOCAL:
         return _classify_local(words[2:], spec)
@@ -190,17 +191,6 @@ def _check_read_repositories(words: tuple[Word, ...]) -> None:
             raise UnclassifiableError("a read names another host than github.com")
 
 
-def _check_repository_arguments(words: tuple[Word, ...]) -> None:
-    """Refuse a repository argument gh would read as HOST/OWNER/REPO, or as a URL, on another host than github.com."""
-    for word in words:
-        if word.dynamic and not OWNER_PREFIX.match(word.source):
-            raise UnclassifiableError("a repository argument is known only at run time")
-        if word.dynamic or word.value.startswith("-"):
-            continue
-        if ("/" in word.value or ":" in word.value) and repository(word.value) is None:
-            raise UnclassifiableError("a repository argument names another host than github.com")
-
-
 def _classify_local(words: tuple[Word, ...], spec: CommandSpec) -> GhCall:
     """A change to the local checkout, whose every option must be listed; `--` would pass options to git."""
     if any(word.value == "--" for word in words):
@@ -210,7 +200,9 @@ def _classify_local(words: tuple[Word, ...], spec: CommandSpec) -> GhCall:
     _check_read_repositories(words)
     scan = gh_options.scan(words, OptionTable(spec.value_options, spec.flags))
     if spec.operation == "repo.clone":
-        _check_repository_arguments(scan.positionals[:1])
+        check_repository_arguments(scan.positionals[:1])
+        for destination in scan.positionals[1:]:
+            gh_options.require_new_subdirectory((destination,), "a clone destination")
     return GhCall((spec.operation,), spec.effect, reads_working_repository=True)
 
 
@@ -243,10 +235,10 @@ def _classify_write(words: tuple[Word, ...], spec: CommandSpec, single_call: boo
         _check_read_repositories(words)
         return GhCall((spec.operation,), Effect.READ, reads_working_repository=True)
     effect = Effect.IRREVERSIBLE if scan.flags & spec.irreversible_flags else spec.effect
-    if spec.operation == "run.download" and not (
-        single_call and gh_options.is_new_subdirectory(scan.values_of(DOWNLOAD_DIRS)[-1:])
-    ):
-        raise UnclassifiableError("a download needs one literal, visible subdirectory of the checkout as -D")
+    if spec.operation == "run.download":
+        gh_options.require_new_subdirectory(
+            scan.values_of(DOWNLOAD_DIRS)[-1:] if single_call else (), "a download's -D"
+        )
     files = scan.values_of(spec.files)
     if any("#" in word.value for word in scan.values_of(ATTACH_OPTIONS)):
         raise UnclassifiableError("an attachment names alt text after #, so gh sends another file than the word")

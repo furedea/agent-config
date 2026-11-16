@@ -17,6 +17,25 @@ import shell_words
 # literal text keeps the word from vanishing when a parameter is empty, so it stays one word.
 PARAMETER = r"\$(?:[A-Za-z_][A-Za-z0-9_]*(?![A-Za-z0-9_\[])|\{[A-Za-z_][A-Za-z0-9_]*\})"
 PLAIN_PARAMETER_WORD = re.compile(rf"""(?:[A-Za-z0-9_./:@=,+%#-]|{PARAMETER}|'[^']*'|"(?:[^"$`\\!]|{PARAMETER})*")+""")
+NAMED_PARAMETER = re.compile(r"\$(?:([A-Za-z_][A-Za-z0-9_]*)|\{([A-Za-z_][A-Za-z0-9_]*)\})")
+# Parameters the shell sets or changes itself, even when the hook's environment holds them.
+SHELL_MANAGED = frozenset(
+    {"SECONDS", "RANDOM", "SRANDOM", "LINENO", "SHLVL", "_", "OLDPWD", "PPID", "BASHPID", "EPOCHSECONDS"}
+    | {"EPOCHREALTIME", "HISTCMD", "BASH_COMMAND", "BASH_SUBSHELL", "COLUMNS", "LINES", "OPTIND", "OPTARG", "REPLY"}
+    # bash resets these at startup whatever the environment holds.
+    | {"OPTERR", "IFS", "PS4", "OSTYPE", "HOSTTYPE", "MACHTYPE", "BASH", "BASH_VERSION", "BASHOPTS", "SHELLOPTS"}
+    | {
+        "UID",
+        "EUID",
+        "GROUPS",
+        "HOSTNAME",
+        "DIRSTACK",
+        "FUNCNAME",
+        "PIPESTATUS",
+        "BASH_ARGV0",
+        "BASH_EXECUTION_STRING",
+    }
+)
 # A run-time word starting with one of these cannot start with a dash.
 LITERAL_START = re.compile(r"[\"']?[A-Za-z0-9_./:@=,+%#]")
 
@@ -64,8 +83,22 @@ class OptionScan:
 
 
 def stays_one_word(source: str) -> bool:
-    """Whether an unquoted word whose expansions are plain parameters beside literal text stays one word."""
-    return bool(PLAIN_PARAMETER_WORD.fullmatch(source)) and bool(re.sub(PARAMETER, "", source).strip("\"'"))
+    """Whether a word whose expansions are plain parameters beside literal text stays one word.
+
+    An unquoted parameter splits on whatever its value holds, so each one must be quoted, or hold in the
+    hook's environment no blank or glob character, and not be one the shell sets itself.
+    """
+    if not PLAIN_PARAMETER_WORD.fullmatch(source) or not re.sub(PARAMETER, "", source).strip("\"'"):
+        return False
+    unquoted = re.sub(r'"[^"]*"' + "|'[^']*'", "", source)
+    return all(_is_whole_value(match[1] or match[2]) for match in NAMED_PARAMETER.finditer(unquoted))
+
+
+def _is_whole_value(name: str) -> bool:
+    """Whether a parameter expands without splitting: unset (nothing on a lone call assigns it) or blank-free."""
+    if name in SHELL_MANAGED:
+        return False
+    return not re.search(r"[\s*?\[\]]", os.environ.get(name, ""))
 
 
 def scan(words: tuple[Word, ...], table: OptionTable) -> OptionScan:
@@ -150,6 +183,12 @@ def is_one_substitution(source: str) -> bool:
     # One plain call inside, so no second command, pipe, or list adds output after the first.
     statements = parts[0].get("Stmts", [])
     return len(statements) == 1 and (statements[0].get("Cmd") or {}).get("Type") == "CallExpr"
+
+
+def require_new_subdirectory(words: tuple[Word, ...], what: str) -> None:
+    """Refuse unless the last word names a new, visible subdirectory of the checkout; no word asks too."""
+    if not is_new_subdirectory(words):
+        raise UnclassifiableError(f"{what} must be a new, literal, visible subdirectory of the checkout")
 
 
 def is_new_subdirectory(words: tuple[Word, ...]) -> bool:

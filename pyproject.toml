@@ -58,6 +58,7 @@ known_first_party = [
   "model_rules_programs",
   "model_rules_report",
   "model_rules_run",
+  "notebook_cells",
   "patch_input",
   "provider_adapter",
   "removal_paths",

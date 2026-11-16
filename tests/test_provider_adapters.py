@@ -215,3 +215,14 @@ def test_every_pre_edit_content_guard_is_paired_with_the_suppression_guard() -> 
         and not any(hook["command"].endswith(" content suppression") for hook in group["hooks"])
     ]
     assert unpaired == []
+
+
+@pytest.mark.usefixtures("harness")
+def test_viewing_a_file_with_a_suppression_passes_the_suppression_guard(run_cli: CliRunner, tmp_path: Path) -> None:
+    """A view changes nothing; read as an edit that does not apply, it would ask, and dsh would deny the read."""
+    target = tmp_path / "app.py"
+    target.write_text("x = 1  # noqa: E501\n")
+    values = {"command": "view", "path": str(target), "view_range": [1, 1]}
+    payload = {"session_id": "adapter-session", "tool_name": "str_replace_editor", "tool_input": values}
+    result = run_cli(script("dsh"), "content", "suppression", payload=payload)
+    assert result.returncode == 0, result.stderr

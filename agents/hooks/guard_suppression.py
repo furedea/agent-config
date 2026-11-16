@@ -25,6 +25,7 @@ import comment_nodes
 import hook_decision
 import hook_input
 import marker_scope
+import notebook_cells
 import patch_input
 from hook_decision import Verdict
 
@@ -88,6 +89,7 @@ class _Change:
 
     `whole` means the two texts are the whole file after and before the edit. `unplaced` means the edit changes a
     file that holds a marker without the guard seeing the whole result, so the marker may come to count anywhere.
+    `cell_suffix` is the suffix of a notebook cell's language, which decides the markers in place of the path's.
     """
 
     path: str
@@ -96,6 +98,11 @@ class _Change:
     whole: bool = False
     unplaced: bool = False
     moved_in: bool = False
+    cell_suffix: str = ""
+
+    def suffix(self) -> str:
+        """The lowercase suffix whose language decides which markers count and how its text parses."""
+        return self.cell_suffix or Path(self.path).suffix.lower()
 
 
 def decide(payload: dict) -> Verdict:
@@ -121,7 +128,7 @@ def decide(payload: dict) -> Verdict:
 
 
 def _new_markers(change: _Change) -> list[str]:
-    suffix = Path(change.path).suffix.lower()
+    suffix = change.suffix()
     found = [
         name
         for name, pattern in MARKERS.items()
@@ -138,7 +145,7 @@ def _new_markers(change: _Change) -> list[str]:
 
 def _widens_file_scope(change: _Change) -> bool:
     """Whether the edit may give a first-line ast-grep marker the whole file, or change the one that has it."""
-    suffix = Path(change.path).suffix.lower()
+    suffix = change.suffix()
     after = _file_marker(change.added, suffix) if change.whole else None
     return after is not None and after != _file_marker(change.removed, suffix)
 
@@ -170,7 +177,7 @@ def _has_new_scope(name: str, pattern: re.Pattern[str], change: _Change) -> bool
     scanner, comments cannot be told from strings: a marker line whose text is new asks, and so does a change to a
     line that may open or close a string or comment in text that holds a marker.
     """
-    suffix = Path(change.path).suffix.lower()
+    suffix = change.suffix()
     added, removed = (_marked_lines(name, text, suffix) for text in (change.added, change.removed))
     if added is None or removed is None:
         return _may_add_unparsed(pattern, change)
@@ -196,7 +203,7 @@ def _may_add_unparsed(pattern: re.Pattern[str], change: _Change) -> bool:
     before, after = _lines(change.removed), _lines(change.added)
     opcodes = difflib.SequenceMatcher(a=before, b=after, autojunk=False).get_opcodes()
     changed = [line for tag, i1, i2, j1, j2 in opcodes if tag != "equal" for line in (*before[i1:i2], *after[j1:j2])]
-    if Path(change.path).suffix.lower() in HEREDOC_SUFFIXES and "<<" in change.added + change.removed:
+    if change.suffix() in HEREDOC_SUFFIXES and "<<" in change.added + change.removed:
         return bool(changed)
     return any(DELIMITER.search(line) for line in changed)
 
@@ -242,6 +249,8 @@ def _changes(payload: dict) -> list[_Change]:
     if tool == "apply_patch" or "patch" in values:
         return _patch_changes(hook_input.patch_body(values, tool or None))
     path = hook_input.file_path(values)
+    if tool == "NotebookEdit":
+        return _cell_changes(path, values)
     written = _field(values, "content", "file_text")
     if tool == "Write" or written:
         return [_Change(path, written, _existing_text(path), whole=True)]
@@ -249,6 +258,13 @@ def _changes(payload: dict) -> list[_Change]:
         return [_change_after_insert(path, values)]
     edits = values.get("edits") or [] if tool == "MultiEdit" else [values]
     return [_edit_change(path, edits)]
+
+
+def _cell_changes(path: str, values: dict) -> list[_Change]:
+    edit = notebook_cells.code_cell_edit(path, values)
+    if edit is None:
+        return []
+    return [_Change(path, edit.after, edit.before, whole=True, cell_suffix=edit.suffix)]
 
 
 def _change_after_insert(path: str, values: dict) -> _Change:
@@ -368,10 +384,8 @@ class _Hunks:
         # Judge what arrives: the patched text when the guard could rebuild it, else the file as it stands.
         moved = source.added if source.whole else existing
         moved_in = bool(_newly_honored(moved, Path(path).suffix.lower(), Path(self.destination).suffix.lower()))
-        destination = _Change(
-            self.destination, source.added, source.removed, source.whole, source.unplaced, moved_in=moved_in
-        )
-        return [source, destination]
+        # Only the destination exists after the move, so only its suffix decides which markers count.
+        return [_Change(self.destination, source.added, source.removed, source.whole, source.unplaced, moved_in)]
 
     def _source(self, path: str, existing: str) -> _Change:
         """The whole file before and after when every hunk matches it exactly, else the changed lines.

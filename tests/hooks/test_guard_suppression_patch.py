@@ -260,3 +260,14 @@ def test_a_hunk_that_cannot_be_placed_counts_a_marker_its_lines_read_as_a_string
     target.write_text('a = """\ndoc\n"""\nb = """\ndoc\n"""\n')
     patch = f'*** Begin Patch\n*** Update File: {target}\n@@\n-doc\n+"""  # noqa: E501\n+x = """\n*** End Patch'
     assert decide("apply_patch", {"input": patch}) == "ask"
+
+
+def test_moving_code_into_a_document_that_mentions_a_marker_passes(tmp_path: Path) -> None:
+    """After the move only the document exists, so only its own suffix decides what counts."""
+    source = tmp_path / "app.py"
+    source.write_text("x = 1\n")
+    patch = (
+        f"*** Begin Patch\n*** Update File: {source}\n*** Move to: {tmp_path / 'notes.md'}\n"
+        "@@\n x = 1\n+Write # noqa only with a reason.\n*** End Patch"
+    )
+    assert decide("apply_patch", {"input": patch}) == "allow"

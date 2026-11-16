@@ -230,6 +230,9 @@ class Adapter:
     def _content(self, mode: str, payload: dict) -> int:
         context = self.normalized(payload)
         if mode == "suppression":
+            # A view changes nothing, and read as an edit that does not apply it would ask.
+            if views_only(context):
+                return 0
             return hook_decision.emit(guard_suppression.decide(context).hardened())
         if mode != "apply-patch":
             return guard_file.check(mode, context, _shared_directory())

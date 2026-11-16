@@ -9,7 +9,7 @@ import variable_changes
 from code_text import ASSIGNING_BUILTINS, CODE_BODY, NAME_OPTION
 from shell_words import PARAMETER_MODIFIERS, UnsupportedSyntaxError, literal_word, nodes, source_text, spreads
 from shell_wrappers import WRAPPERS
-from variable_changes import ARITHMETIC, ARITHMETIC_TEST, UNSEEN_ASSIGNERS
+from variable_changes import ARITHMETIC, UNSEEN_ASSIGNERS
 
 # Builtins and wrappers whose meaning the hook relies on; a function of that name would change it.
 RELIED_NAMES = frozenset(
@@ -25,6 +25,8 @@ SHELL_HOOKS = re.compile(
 # Parameters holding a function's arguments: zsh's argv, bash's BASH_ARGV and BASH_ARGC under extdebug, and $_,
 # the last word of the call.
 ARGUMENT_ARRAYS = frozenset({"argv", "BASH_ARGV", "BASH_ARGC", "_"})
+# An argument read through a zsh expansion flag, as $^@, $=1, or ${~1}, which the parser shows as other text.
+ZSH_FLAGGED_ARGUMENT = re.compile(r"\$\{?[=~^]+(?:[0-9@*#]|argv)")
 # zsh precommand modifiers, which run the function named after them; builtin and command skip functions.
 FUNCTION_MODIFIERS = frozenset({"noglob", "nocorrect", "-"})
 # Builtins that assign a parameter named by an operand or an option, which may hold or replace the arguments.
@@ -245,7 +247,11 @@ def _followed(body: dict, records: tuple[dict, ...], data: bytes) -> dict:
             for part in nodes(body)
         )
         or any(part.get("Param", {}).get("Value") in ARGUMENT_ARRAYS for part in nodes(body))
-        or any(respelling.reads(part, copies) for context in _arithmetic(body, data) for part in nodes(context))
+        or any(
+            respelling.reads(part, copies)
+            for context in variable_changes.arithmetic(body, data)
+            for part in nodes(context)
+        )
         or any(
             respelling.reads(part, copies)
             for node in nodes(body)
@@ -270,6 +276,13 @@ def _followed(body: dict, records: tuple[dict, ...], data: bytes) -> dict:
         )
         or _reassigned(copies, records, data)
         or _unsettled_copy(body, copies)
+        or any(
+            respelling.reads(part, copies)
+            for node in nodes(body)
+            if isinstance(node.get("Hdoc"), dict)
+            for part in nodes(node)
+        )
+        or ZSH_FLAGGED_ARGUMENT.search(source_text(body, data)) is not None
         or not _attributed(body, data).isdisjoint(copies)
         or _leaks(body, records, data)
     )
@@ -332,18 +345,6 @@ def _attributed(body: dict, data: bytes) -> set[str]:
 def _option_like(word: dict | None, data: bytes) -> bool:
     value, dynamic = literal_word(word, data) if word else ("", False)
     return dynamic or value[:1] in {"-", "+"}
-
-
-def _arithmetic(body: dict, data: bytes) -> list[object]:
-    """The arithmetic in the body, which evaluates an argument's text as code.
-
-    That is $(( )), (( )), let, an index or a slice, and a [[ ]] test comparing numbers.
-    """
-    found: list[object] = [node for node in nodes(body) if node.get("Type") in ARITHMETIC]
-    tests = (node for node in nodes(body) if node.get("Type") == "TestClause")
-    found += [test for test in tests if ARITHMETIC_TEST.search(source_text(test, data))]
-    found += [node.get(key) for node in nodes(body) if node.get("Type") == "ParamExp" for key in ("Index", "Slice")]
-    return [item for item in found if item]
 
 
 def _iterates_arguments(loop: dict, copies: dict[str, str]) -> bool:

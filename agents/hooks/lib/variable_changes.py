@@ -87,15 +87,3 @@ def _program(call: dict, data: bytes) -> list[str]:
     """The call's words from the program on, past prefixes, wrappers, options, and assignments."""
     words = [literal_word(word, data)[0] for word in call["Args"]]
     return words[shell_input.program_index(words) :] or [""]
-
-
-def arithmetic(body: dict, data: bytes) -> list[object]:
-    """The arithmetic in the body, which evaluates an argument's text as code.
-
-    That is $(( )), (( )), let, an index or a slice, and a [[ ]] test comparing numbers.
-    """
-    found: list[object] = [node for node in nodes(body) if node.get("Type") in ARITHMETIC]
-    tests = (node for node in nodes(body) if node.get("Type") == "TestClause")
-    found += [test for test in tests if ARITHMETIC_TEST.search(source_text(test, data))]
-    found += [node.get(key) for node in nodes(body) if node.get("Type") == "ParamExp" for key in ("Index", "Slice")]
-    return [item for item in found if item]

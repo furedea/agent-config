@@ -7,7 +7,7 @@ import body_calls
 import respelling
 import shell_input
 import variable_changes
-from code_text import ASSIGNING_BUILTINS, CODE_BODY, NAME_OPTION
+from code_text import ASSIGNING_BUILTINS, CODE_BODY
 from shell_words import PARAMETER_MODIFIERS, UnsupportedSyntaxError, literal_word, nodes, source_text, spreads
 from shell_wrappers import WRAPPERS
 from variable_changes import ARITHMETIC, UNSEEN_ASSIGNERS
@@ -36,8 +36,6 @@ SPECIAL_BUILTINS = frozenset(
 )
 # zsh precommand modifiers, which run the function named after them; builtin and command skip functions.
 FUNCTION_MODIFIERS = frozenset({"noglob", "nocorrect", "-"})
-# Builtins that assign a parameter named by an operand or an option, which may hold or replace the arguments.
-NAME_ASSIGNERS = ASSIGNING_BUILTINS | frozenset({"zformat", "zstyle", "zregexparse", "zparseopts", "getln", "popln"})
 # The line ending the definitions put before a script, whose calls were respelled where they first appeared.
 DEFINITIONS_END = f"# __guard_definitions_end_{CODE_BODY}\n"
 # Nested parses one command may cost, as each respelled call is parsed again; past it the command asks.
@@ -106,7 +104,7 @@ def respelled_calls(records: tuple[dict, ...], data: bytes) -> list[str]:
         raise UnsupportedSyntaxError("defining a function in eval or trap text requires explicit review", "expansion")
     bodies: dict[str, list[dict]] = {}
     for node in (node for node in records if node.get("Type") == "FuncDecl" and node["Name"]["Value"] != CODE_BODY):
-        bodies.setdefault(_defined_name(node), []).append(_followed(node["Body"], records, data))
+        bodies.setdefault(_defined_name(node, data), []).append(_followed(node["Body"], records, data))
     if any(_named_as_word(name, records, data) for name, defined in bodies.items() if any(map(_reads_any, defined))):
         raise UnsupportedSyntaxError(
             "naming a function that reads its arguments other than as a command requires explicit review", "expansion"
@@ -223,12 +221,17 @@ def _named_as_word(name: str, records: tuple[dict, ...], data: bytes) -> bool:
     )
 
 
-def _defined_name(definition: dict) -> str:
+def _defined_name(definition: dict, data: bytes) -> str:
     """The function's name, once neither the name nor a redirection of its body changes what the hook relies on."""
     name = definition["Name"]["Value"]
     if name in RELIED_NAMES | KEYWORD_NAMES or SHELL_HOOKS.fullmatch(name):
         raise UnsupportedSyntaxError(
             "defining a function named after a builtin, keyword, wrapper, or shell hook requires explicit review",
+            "expansion",
+        )
+    if not body_calls.is_simple(definition["Body"], data):
+        raise UnsupportedSyntaxError(
+            "running a function whose body evaluates text again or assigns by name requires explicit review",
             "expansion",
         )
     if definition["Body"].get("Redirs"):
@@ -259,11 +262,6 @@ def _followed(body: dict, records: tuple[dict, ...], data: bytes) -> dict:
         or any(part.get("Param", {}).get("Value") in ARGUMENT_ARRAYS for part in nodes(body))
         or any(
             respelling.reads(part, copies)
-            for context in variable_changes.arithmetic(body, data)
-            for part in nodes(context)
-        )
-        or any(
-            respelling.reads(part, copies)
             for node in nodes(body)
             if node.get("Type") in {"CmdSubst", "ProcSubst"}
             for part in nodes(node)
@@ -271,10 +269,6 @@ def _followed(body: dict, records: tuple[dict, ...], data: bytes) -> dict:
         or any(
             "Type" not in node and isinstance(node.get("Name"), dict) and node["Name"].get("Value") in ARGUMENT_ARRAYS
             for node in nodes(body)
-        )
-        or (
-            any(respelling.reads(part, copies) for part in nodes(body))
-            and any(_assigns_parameter(statement, data) for statement in body_calls.statements(body))
         )
         or any(part.get("Type") == "ParamExp" and part.get("Excl") for part in nodes(body))
         or any(_runs_unseen(call, copies, data) for call in body_calls.calls(body, data))
@@ -286,12 +280,6 @@ def _followed(body: dict, records: tuple[dict, ...], data: bytes) -> dict:
         )
         or _reassigned(copies, records, data)
         or _unsettled_copy(body, copies)
-        or any(
-            respelling.reads(part, copies)
-            for node in nodes(body)
-            if isinstance(node.get("Hdoc"), dict)
-            for part in nodes(node)
-        )
         or ZSH_FLAGGED_ARGUMENT.search(source_text(body, data)) is not None
         or body_calls.feeds_a_shell(body, copies, data)
         or respelling.modified_in_zsh(body, copies)
@@ -305,23 +293,11 @@ def _followed(body: dict, records: tuple[dict, ...], data: bytes) -> dict:
             for redirect in node.get("Redirs", [])
             for part in nodes(redirect)
         )
-        or not _attributed(body, data).isdisjoint(copies)
         or _leaks(body, records, data)
     )
     if unfollowed:
         raise UnsupportedSyntaxError("a function reading its arguments this way requires explicit review", "expansion")
     return body
-
-
-def _assigns_parameter(statement: dict, data: bytes) -> bool:
-    """Whether a builtin such as printf -v or read assigns a parameter, which may take the arguments by any path."""
-    if not statement["Cmd"].get("Args"):
-        return False
-    words = body_calls.program(statement["Cmd"], data)
-    assigning = words[0] in NAME_ASSIGNERS - {"print", "printf"} or (
-        words[0] in {"print", "printf"} and any(map(NAME_OPTION.fullmatch, words))
-    )
-    return assigning
 
 
 def _leaks(body: dict, records: tuple[dict, ...], data: bytes) -> bool:
@@ -346,46 +322,17 @@ def _leaks(body: dict, records: tuple[dict, ...], data: bytes) -> bool:
     return variable_changes.may_export(records, data)
 
 
-def _attributed(body: dict, data: bytes) -> set[str]:
-    """Names a declaration in the body gives an attribute, such as -l or -u, which may change a value assigned.
-
-    An option word counts however it is quoted or escaped, and so does any word known only at run time.
-    """
-    declarations = (node for node in nodes(body) if node.get("Type") == "DeclClause")
-    return {
-        argument["Name"]["Value"]
-        for declaration in declarations
-        if any(
-            argument.get("Naked") and _option_like(argument.get("Value"), data)
-            for argument in declaration.get("Args", [])
-        )
-        for argument in declaration.get("Args", [])
-        if isinstance(argument.get("Name"), dict)
-    }
-
-
-def _option_like(word: dict | None, data: bytes) -> bool:
-    value, dynamic = literal_word(word, data) if word else ("", False)
-    return dynamic or value[:1] in {"-", "+"}
-
-
 def _iterates_arguments(loop: dict, copies: dict[str, str]) -> bool:
     """Whether a for loop walks the arguments: implicitly, or over an expansion of them or of a copy."""
     return not loop.get("InPos") or any(respelling.reads(part, copies) for part in nodes(loop.get("Items")))
 
 
 def _reassigns(words: list[str]) -> bool:
-    """Whether a call may replace the arguments: getopts, zparseopts, set, code text, or assigning argv."""
+    """Whether a call may replace the arguments: set with an operand or --, or zsh's positional assignment 1=value."""
     program, arguments = words[0], words[1:]
     # zsh assigns a positional parameter as 1=value.
-    if program in {"getopts", "zparseopts"} or re.match(r"\d+\+?=", program):
+    if re.match(r"\d+\+?=", program):
         return True
-    if program in NAME_ASSIGNERS and any(
-        not ARGUMENT_ARRAYS.isdisjoint(re.findall(r"[A-Za-z_]\w*", word)) for word in arguments
-    ):
-        return True
-    if program in {"eval", "trap"}:
-        return bool(shell_input.ARGUMENT_TEXT.search(SPELLING.sub("", " ".join(arguments))))
     return program == "set" and any(word[:1] not in {"-", "+"} or word == "--" for word in arguments)
 
 

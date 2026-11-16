@@ -39,9 +39,6 @@ pytestmark = pytest.mark.usefixtures("isolated_project")
         pytest.param('t(){ uv run --frozen pytest -q "$@"; }; t tests/a.py', id="functions that run local tools"),
         pytest.param("f(){ herdr pane list; }; f", id="functions that run a listed herdr form"),
         pytest.param("f(){ find . -name x; }; f", id="functions that run a program a forbidden rule names"),
-        pytest.param(
-            "f(){ . ./script.sh; }; f", id="functions that source a local script, as bash script.sh runs one"
-        ),
         pytest.param("pnpm test $(touch /tmp/scratch)", id="substitutions of local commands"),
         pytest.param("uv run --frozen ty server", id="unlisted subcommands of approved tools"),
         pytest.param("pnpm install --frozen-lockfile --prefer-offline", id="unlisted flags of approved tools"),

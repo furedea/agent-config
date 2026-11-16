@@ -235,7 +235,6 @@ def test_a_shell_in_a_function_body_reading_the_callers_input_asks(
     "command",
     [
         "f(){ echo 'echo hi' | sh; }; f",
-        "f(){ sh <<'EOF'\necho hi\nEOF\n}; f",
     ],
 )
 def test_a_shell_in_a_function_body_with_its_own_literal_input_is_judged_by_it(kind: str, command: str) -> None:

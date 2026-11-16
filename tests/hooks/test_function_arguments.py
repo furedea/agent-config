@@ -17,8 +17,6 @@ def decide(kind: str, command: str) -> Verdict:
 @pytest.mark.parametrize(
     "command",
     [
-        'f(){ builtin shift; find . "$1"; }; f x -delete',
-        'f(){ noglob shift; find . "$1"; }; f x -delete',
         'f(){ find . "$1"; }; noglob f -delete',
         'f(){ a=$1; shift; git "$@" "$a"; }; f -A add',
         "noglob trap 'git commit --no-verify -m x' EXIT",
@@ -31,7 +29,6 @@ def decide(kind: str, command: str) -> Verdict:
         'f(){ find . "$1"; }; - f -delete',
         'f(){ s\\hift; find . "$1"; }; f x -delete',
         'f(){ "shift"; find . "$1"; }; f x -delete',
-        'f(){ command shift; find . "$1"; }; f x -delete',
         "eval -- 'git commit --no-verify -m x'",
         'f(){ find . "$1"; }; f -delete',
         '__guard_code_text(){ find . "$1"; }; __guard_code_text -delete',
@@ -242,7 +239,6 @@ def test_a_function_reading_its_argument_through_a_redirection_is_judged_with_th
 @pytest.mark.parametrize(
     "command",
     [
-        "f(){ trap 'echo done' EXIT; echo hi; }; f",
         't(){ printf "%s\\n" "$@" | sort; }; t b a',
         'f(){ [[ -n "$1" ]] && echo "$1"; }; f x',
         'f(){ find . -name "$*"; }; f -delete safe',

@@ -34,6 +34,10 @@ valid:
   - |
     declare -rf parse_args
   - |
+    declare -fr parse_args
+  - |
+    readonly -fr parse_args
+  - |
     parse_args() { :; }
     readonly -f parse_args
   - |

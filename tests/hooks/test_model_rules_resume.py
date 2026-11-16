@@ -236,3 +236,14 @@ def test_a_retry_that_finds_more_shows_only_the_findings_not_shown_before(monkey
 
     assert "b.py:2" in advice.details
     assert "a.py:1" not in advice.details
+
+
+def test_a_receipt_that_withholds_findings_keeps_only_the_unshown_ones(monkeypatch: pytest.MonkeyPatch) -> None:
+    stops = Stops(monkeypatch, partial((FINDING,)), Judgement((FINDING, LATER), 6))
+
+    assert stops.stop().blocking
+    assert not stops.stop(active=True).blocking
+    receipt = stops.saved[model_rules_gate.RECEIPT_KEY]
+
+    assert "b.py:2" in receipt["details"]
+    assert "a.py:1" not in receipt["details"]

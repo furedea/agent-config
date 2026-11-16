@@ -123,7 +123,7 @@ class _Stop:
             "outcome": state,
             "shown": seen,
             "findings": len(outcome.findings),
-            "details": model_rules_report.describe_details(outcome),
+            "details": model_rules_report.describe_details(replace(outcome, findings=outcome.findings[seen:])),
             "subjects": outcome.subjects,
             "judged": outcome.judged,
             "requests": outcome.requests,

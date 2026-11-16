@@ -180,3 +180,11 @@ def test_a_project_rule_governing_gh_does_not_replace_the_table(monkeypatch: pyt
     governed = command_policy.governed_programs
     monkeypatch.setattr(command_policy, "governed_programs", lambda rules: {*governed(rules), "gh"})
     assert decide("gh pr view 1 -R furedea/agent-config") == "allow"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_listed_form_the_table_cannot_classify_asks_for_run_time_values(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(sys.modules["command_objections"], "is_listed", lambda _candidate, _rules: True)
+    monkeypatch.setenv("SOME_TOKEN", "x")
+    assert decide('gh label create bug -R furedea/agent-config -d "$SOME_TOKEN"') == "ask"
+    assert decide("gh label create bug -R furedea/agent-config -d 'a label'") == "allow"

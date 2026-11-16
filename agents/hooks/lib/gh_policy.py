@@ -74,8 +74,7 @@ def verdict(candidate: shell_syntax.Command, line: CommandLine, rules: GhRules) 
     preview = shell_syntax.command_preview(candidate.raw)
     call = _judged_call(candidate, line, rules)
     if isinstance(call, Unclassified) and rules.listed:
-        problem = _secret_problem(f"{line.source}\n{line.arguments}", rules)
-        return _ask(problem, preview) if problem else hook_decision.ALLOW
+        return _listed_unclassified_verdict(candidate, line, rules)
     if isinstance(call, Unclassified):
         return _ask(f"cannot classify this gh call: {call.reason}", preview)
     if isinstance(call, str):
@@ -85,6 +84,19 @@ def verdict(candidate: shell_syntax.Command, line: CommandLine, rules: GhRules) 
     if problem := _secret_problem("\n".join([_sent_text(call, line), line.arguments]), rules):
         return _ask(problem, preview, call.label)
     return hook_decision.ALLOW
+
+
+def _listed_unclassified_verdict(candidate: shell_syntax.Command, line: CommandLine, rules: GhRules) -> Verdict:
+    """A listed form the table cannot classify passes only with literal words and no secret among them.
+
+    Without a classification the guard cannot tell which word is a body or a file, so a value known only
+    at run time asks rather than leave unscanned.
+    """
+    preview = shell_syntax.command_preview(candidate.raw)
+    if any(candidate.dynamic):
+        return _ask("a listed gh form the table cannot classify takes a value known only at run time", preview)
+    problem = _secret_problem(f"{line.source}\n{line.arguments}", rules)
+    return _ask(problem, preview) if problem else hook_decision.ALLOW
 
 
 def listed_verdict(candidate: shell_syntax.Command, line: CommandLine, rules: GhRules) -> Verdict:
@@ -128,7 +140,9 @@ def _with_expanded_paths(call: GhCall) -> GhCall:
 
 def _expanded_path(source: str) -> str | None:
     """The file a run-time path names after quote removal and plain parameter expansion, when it exists."""
-    if UNEXPANDABLE_PATH.search(source):
+    if UNEXPANDABLE_PATH.search(source) or any(
+        name not in os.environ and name != "PWD" for name in _expanded_names(source)
+    ):
         return None
     expanded = shell_expanded(source)
     return expanded if expanded and Path(expanded).exists() else None
@@ -154,7 +168,16 @@ def _run_time_path_problem(sources: tuple[str, ...]) -> str:
         return "sends a file whose path the guard cannot expand as the shell does"
     if any(_names_special_input(shell_expanded(source)) for source in sources):
         return "sends standard input or a device through a path named at run time"
+    # The shell sets SECONDS, RANDOM, and other parameters the hook never sees, so only exported ones count.
+    if any(name not in os.environ and name != "PWD" for source in sources for name in _expanded_names(source)):
+        return "sends a file whose path the guard cannot expand: a parameter the hook's environment does not hold"
     return ""
+
+
+def _expanded_names(source: str) -> list[str]:
+    """The plain parameters a run-time path expands outside single quotes."""
+    parts = [part for part in SHELL_PART.findall(source) if not part.startswith("'")]
+    return [match[1] or match[2] for part in parts for match in PLAIN_PARAMETER.finditer(part)]
 
 
 def _names_special_input(path: str) -> bool:

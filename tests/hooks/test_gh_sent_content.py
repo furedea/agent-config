@@ -388,3 +388,13 @@ def test_a_run_time_body_path_the_guard_cannot_read_asks_even_for_a_trusted_owne
     assert decide('gh pr comment 1 -R furedea/r --body-file "${BODY_DIR%/}/clean.md"') == "ask"
     assert decide('gh pr comment 1 -R furedea/r --body-file "$BODY_DIR/locked.md"') == "ask"
     assert decide('gh api repos/furedea/r/issues/1/comments -F body=@"$BODY_DIR/missing.md"') == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+@pytest.mark.parametrize("path", ['"body$SECONDS"', '"body$RANDOM"', '"body$$"', '"$NO_SUCH_BODY_VAR/body"'])
+def test_a_run_time_path_the_hook_environment_cannot_predict_asks(path: str, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("NO_SUCH_BODY_VAR", raising=False)
+    Path("body").write_text("No secrets.\n")
+    assert decide(f"gh issue comment 1 -R furedea/r -F {path}") == "ask"
+    monkeypatch.setenv("BODY_NAME", "body")
+    assert decide('gh issue comment 1 -R furedea/r -F "$BODY_NAME"') == "allow"

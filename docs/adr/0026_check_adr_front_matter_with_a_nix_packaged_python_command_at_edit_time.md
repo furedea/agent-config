@@ -28,13 +28,15 @@ static, at the agent's edit, as ADR-0021 requires of static checks) and still gi
 YAML parsing and a reference graph are what bash handles worst.
 
 * `adr-check` (`tools/adr-check/`, built by `nix/adr_check.nix` as `packages.<system>.adr-check`) validates each front
-  matter against `tools/adr-check/adrcheck/front_matter.schema.json`, the single machine-readable definition of the
+  matter against `tools/adr-check/src/adrcheck/front_matter.schema.json`, the single machine-readable definition of the
   shape in ADR-0025, then checks across files: duplicate IDs, unresolved unprefixed references, and supersession
   that is not recorded on both sides. With `--base <commit>` it also fails when an ADR accepted at that commit is
   removed, renumbered, or has its body changed; front-matter changes stay allowed.
 * The input is the fixed shape only. A file that does not match is a violation and is never interpreted: prose metadata
   lines and the formats of other repositories are not parsed, and IDs with a repository prefix are not resolved.
-* The PyPI dependencies (`jsonschema`, `ruamel.yaml`) exist only in the Nix package. The hooks stay
+* The command is a Python project with its own `tools/adr-check/pyproject.toml`, the one place that declares its
+  name, version, dependencies (`jsonschema`, `ruamel.yaml`), and entry point; `nix/adr_check.nix` builds it from that
+  file, and it is a uv workspace member so that ty, ruff, and the tests see the same dependencies. The hooks stay
   standard-library-only and call the command; `lint_format.py` runs it, without `--base`, on the directory of an
   edited or deleted `docs/adr/*.md` and returns the findings as context without blocking, as ADR-0021 specifies for
   static rules. The protection of accepted bodies needs a base commit, so only CI enforces it. CI

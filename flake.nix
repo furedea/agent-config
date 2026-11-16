@@ -58,7 +58,7 @@
 
           # The edit hook and CI run this ADR checker; `nix run .#adr-check -- docs/adr` runs it by hand. It runs on the
           # stable channel's Python, whose dependency builds are in the binary cache, unlike unstable's 3.15.
-          adr-check = pkgs.callPackage ./nix/adr_check.nix { python = pkgs.python3; };
+          adr-check = pkgs.callPackage ./nix/adr_check.nix { };
         }
       );
 

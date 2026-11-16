@@ -17,7 +17,6 @@ from tests.runtime import REPO_ROOT, CliRunner, StubWriter
 def pytest_runtest_setup(item: pytest.Item) -> None:
     """Skip tests that need a Nix-built command without it; REQUIRE_<NAME>=1 (CI) makes its absence a failure."""
     require_command(item, "needs_jev_lint", "jev-lint", "REQUIRE_JEV_LINT")
-    require_command(item, "needs_adr_check", "adr-check", "REQUIRE_ADR_CHECK")
 
 
 def require_command(item: pytest.Item, marker: str, command: str, requirement: str) -> None:

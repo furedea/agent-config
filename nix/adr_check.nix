@@ -1,42 +1,25 @@
-# adr-check: the Python program under tools/adr-check with its PyPI dependencies taken from the pinned inputs.
+# adr-check: the Python application under tools/adr-check, built from its own pyproject.toml.
 # The hooks and CI run this command, so neither needs `jsonschema` or a YAML library of its own.
-{
-  lib,
-  stdenvNoCC,
-  makeWrapper,
-  python,
-}:
+{ python3Packages }:
 let
-  interpreter = python.withPackages (
-    packages: with packages; [
-      jsonschema
-      ruamel-yaml
-    ]
-  );
+  inherit (builtins.fromTOML (builtins.readFile ../tools/adr-check/pyproject.toml)) project;
 in
-stdenvNoCC.mkDerivation {
-  pname = "adr-check";
-  version = "0.1.0";
+python3Packages.buildPythonApplication {
+  pname = project.name;
+  inherit (project) version;
+  pyproject = true;
   src = ../tools/adr-check;
 
-  nativeBuildInputs = [ makeWrapper ];
+  build-system = [ python3Packages.hatchling ];
+  dependencies = with python3Packages; [
+    jsonschema
+    ruamel-yaml
+  ];
 
-  dontBuild = true;
-  installPhase = ''
-    runHook preInstall
-
-    mkdir -p $out/lib/adr-check $out/bin
-    cp -R adrcheck $out/lib/adr-check/
-    # -P keeps the working directory off sys.path, so a project cannot shadow the package.
-    makeWrapper ${lib.getExe interpreter} $out/bin/adr-check \
-      --add-flags "-P -B -m adrcheck" \
-      --set PYTHONPATH $out/lib/adr-check
-
-    runHook postInstall
-  '';
+  pythonImportsCheck = [ "adrcheck" ];
 
   meta = {
-    description = "Check MADR ADRs against the front-matter shape of ADR-0025";
+    inherit (project) description;
     mainProgram = "adr-check";
   };
 }

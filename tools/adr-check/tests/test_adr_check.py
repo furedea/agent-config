@@ -5,10 +5,7 @@ import textwrap
 from pathlib import Path
 
 import pytest
-
 from tests.runtime import REPO_ROOT
-
-pytestmark = pytest.mark.needs_adr_check
 
 BODY = "\n# Title\n\n## Context and Problem Statement\n\nText.\n"
 

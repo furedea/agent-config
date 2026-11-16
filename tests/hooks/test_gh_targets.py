@@ -349,6 +349,7 @@ def test_a_clone_with_a_hook_template_asks(monkeypatch: pytest.MonkeyPatch) -> N
         "filter.pwn.process",
         "core.fsmonitor",
         "core.alternateRefsCommand",
+        "core.askPass",
     ],
 )
 def test_a_clone_under_a_configured_template_or_hooks_path_asks(key: str) -> None:

@@ -32,7 +32,7 @@ TRANSPORT_SETTINGS = (
 )
 # git settings that give a new clone hooks, or a filter program its checkout runs.
 CHECKOUT_SETTINGS = (
-    r"^(init\.templatedir|core\.(hookspath|fsmonitor|alternaterefscommand)|filter\..*\.(smudge|process))$"
+    r"^(init\.templatedir|core\.(hookspath|fsmonitor|alternaterefscommand|askpass)|filter\..*\.(smudge|process))$"
 )
 # core.fsmonitor as a boolean selects git's built-in daemon; any other value is a program git runs.
 # The filter settings `git lfs install` writes; any other filter command may be a shell running anything.

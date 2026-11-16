@@ -15,11 +15,16 @@ from tests.runtime import REPO_ROOT, CliRunner, StubWriter
 
 
 def pytest_runtest_setup(item: pytest.Item) -> None:
-    """Skip jev-lint tests without the linter; REQUIRE_JEV_LINT=1 (CI) makes its absence a failure."""
-    if item.get_closest_marker("needs_jev_lint") is None or shutil.which("jev-lint") is not None:
+    """Skip tests that need a Nix-built command without it; REQUIRE_<NAME>=1 (CI) makes its absence a failure."""
+    require_command(item, "needs_jev_lint", "jev-lint", "REQUIRE_JEV_LINT")
+    require_command(item, "needs_adr_check", "adr-check", "REQUIRE_ADR_CHECK")
+
+
+def require_command(item: pytest.Item, marker: str, command: str, requirement: str) -> None:
+    if item.get_closest_marker(marker) is None or shutil.which(command) is not None:
         return
-    reason = "jev-lint is provided by `nix build .#jev-lint`"
-    if os.environ.get("REQUIRE_JEV_LINT") == "1":
+    reason = f"{command} is provided by `nix build .#{command}`"
+    if os.environ.get(requirement) == "1":
         pytest.fail(reason)
     pytest.skip(reason)
 

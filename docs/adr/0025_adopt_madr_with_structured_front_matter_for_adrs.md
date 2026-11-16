@@ -1,6 +1,8 @@
 ---
 status: accepted
 date: 2026-11-15
+amended:
+  - "2026-11-16: the front-matter and accepted-body checks are the adr-check command, see ADR-0026"
 related: [ADR-0021, ADR-0023]
 ---
 

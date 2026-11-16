@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/furedea/agent-config/tools/adr-check/front_matter.schema.json",
+  "title": "ADR front matter",
+  "description": "The front-matter shape of ADR-0025. The ID comes from the file name, so it is not a key.",
+  "$defs": {
+    "adr-id": {
+      "description": "ADR-NNNN in this repository, or <repository>/ADR-NNNN in another one.",
+      "type": "string",
+      "pattern": "^([A-Za-z0-9._-]+/)?ADR-[0-9]{4}$"
+    },
+    "adr-id-list": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/adr-id" }
+    },
+    "name-list": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["status", "date"],
+  "properties": {
+    "status": { "enum": ["proposed", "accepted", "rejected", "deprecated", "superseded"] },
+    "date": { "type": "string", "format": "date", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+    "supersedes": { "$ref": "#/$defs/adr-id-list" },
+    "superseded-by": { "$ref": "#/$defs/adr-id-list" },
+    "partly-superseded-by": { "$ref": "#/$defs/adr-id-list" },
+    "related": { "$ref": "#/$defs/adr-id-list" },
+    "amended": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}: .+$" }
+    },
+    "decision-makers": { "$ref": "#/$defs/name-list" },
+    "consulted": { "$ref": "#/$defs/name-list" },
+    "informed": { "$ref": "#/$defs/name-list" }
+  },
+  "if": { "properties": { "status": { "const": "superseded" } }, "required": ["status"] },
+  "then": { "required": ["superseded-by"] },
+  "else": { "not": { "required": ["superseded-by"] } }
+}

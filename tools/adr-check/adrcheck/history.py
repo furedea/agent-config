@@ -14,17 +14,20 @@ class BaseUnreadableError(Exception):
     """git could not give the ADRs at the base commit."""
 
 
-def check(directory: Path, base: str, current: Mapping[str, Document]) -> tuple[Finding, ...]:
-    """Findings for each ADR accepted at `base` that `current` (documents by ID number) removed or rewrote."""
+def check(directory: Path, base: str, current: Mapping[str, Document | None]) -> tuple[Finding, ...]:
+    """Findings for each ADR accepted at `base` that `current` removed or rewrote.
+
+    `current` maps each ID number present now to its document, or to None when the file cannot be read as one; the
+    file is still there, and the parse failure is reported elsewhere.
+    """
     findings = []
     for file_name, text in _files_at(directory, base).items():
         accepted = _accepted_at_base(file_name, text)
         if accepted is None:
             continue
-        now = current.get(accepted.number)
-        if now is None:
+        if accepted.number not in current:
             findings.append(Finding(file_name, f"accepted at {base} but removed or renumbered"))
-        elif now.body != accepted.body:
+        elif (now := current[accepted.number]) is not None and now.body != accepted.body:
             findings.append(Finding(file_name, f"accepted at {base} but its body changed; record changes in amended"))
     return tuple(findings)
 

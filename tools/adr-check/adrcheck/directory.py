@@ -27,7 +27,7 @@ def check(directory: Path, base: str | None = None) -> tuple[Finding, ...]:
     findings += _duplicate_numbers(files)
     findings += references.check(_existing_ids(files), shapes)
     if base is not None:
-        findings += history.check(directory, base, {document.number: document for document in documents.values()})
+        findings += history.check(directory, base, _documents_by_number(files, documents))
     return tuple(findings)
 
 
@@ -43,6 +43,10 @@ def _duplicate_numbers(files: list[Path]) -> list[Finding]:
         if len(names) > 1
         for name in names
     ]
+
+
+def _documents_by_number(files: list[Path], documents: dict[str, Document]) -> dict[str, Document | None]:
+    return {number: documents.get(path.name) for path in files if (number := adr_number(path.name))}
 
 
 def _existing_ids(files: list[Path]) -> frozenset[str]:

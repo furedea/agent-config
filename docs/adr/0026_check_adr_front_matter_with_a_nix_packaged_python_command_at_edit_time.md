@@ -35,14 +35,15 @@ YAML parsing and a reference graph are what bash handles worst.
 * The input is the fixed shape only. A file that does not match is a violation and is never interpreted: prose metadata
   lines and the formats of other repositories are not parsed, and IDs with a repository prefix are not resolved.
 * The PyPI dependencies (`jsonschema`, `ruamel.yaml`) exist only in the Nix package. The hooks stay
-  standard-library-only and call the command; `lint_format.py` runs it on the directory of an edited
-  `docs/adr/*.md` and returns the findings as context without blocking, as ADR-0021 specifies for static rules. CI
+  standard-library-only and call the command; `lint_format.py` runs it, without `--base`, on the directory of an
+  edited or deleted `docs/adr/*.md` and returns the findings as context without blocking, as ADR-0021 specifies for
+  static rules. The protection of accepted bodies needs a base commit, so only CI enforces it. CI
   runs `nix run github:furedea/agent-config/<sha>#adr-check -- --base <base> docs/adr`.
 
 ### Consequences
 
-* Good, because the agent learns of a violation in the turn that causes it, and CI and the hook cannot disagree
-  about the shape.
+* Good, because the agent learns of a shape or reference violation in the turn that causes it, and CI and the hook
+  cannot disagree about the shape.
 * Good, because a change to the shape is a change to one schema file, with a test.
 * Bad, because the command exists only where Nix provides it; the hook stays silent without it, so a machine without
   the package gets the CI verdict only.

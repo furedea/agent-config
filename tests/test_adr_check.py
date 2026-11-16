@@ -226,3 +226,11 @@ def test_base_without_the_directory_has_nothing_to_protect(repository: Repositor
     base = repository.git("rev-parse", "HEAD")
     repository.commit({"0001_a.md": accepted()})
     assert repository.check_since(base).returncode == 0
+
+
+def test_unreadable_front_matter_of_an_accepted_adr_is_not_reported_as_removed(repository: Repository) -> None:
+    base = repository.commit({"0001_a.md": accepted()})
+    repository.commit({"0001_a.md": adr("status: [accepted\ndate: 2026-01-01")})
+    result = repository.check_since(base)
+    assert "not valid YAML" in result.stdout
+    assert "removed or renumbered" not in result.stdout

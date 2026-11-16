@@ -35,6 +35,8 @@ class Layout:
     def marks(self, starts: list[int]) -> list[Mark]:
         """The marker at each offset in `starts`, in order, with its scope's runs of space folded.
 
+        A line break stays, since it ends a line comment: the words after it are code again.
+
         The scope runs from the marker to the end of its node, or else to the end of its attribute or line, so the
         rules it names on later lines count too.
         """
@@ -44,7 +46,7 @@ class Layout:
             Mark(
                 self.line(start),
                 node_end is not None,
-                " ".join(self.text[start : min(node_end or self.code_end(start), end)].split()),
+                _folded(self.text[start : min(node_end or self.code_end(start), end)]),
             )
             for start, node_end, end in zip(starts, node_ends, following, strict=True)
         ]
@@ -81,6 +83,11 @@ def _next_alike(starts: list[int], node_ends: list[int | None], length: int) -> 
         result.append(following[node_end is not None])
         following[node_end is not None] = start
     return result[::-1]
+
+
+def _folded(scope: str) -> str:
+    """The scope with each run of spaces and tabs as one space and each run of line breaks as one, unindented."""
+    return re.sub(r" ?\n[\n ]*", "\n", re.sub(r"[^\S\n]+", " ", scope)).strip()
 
 
 def _span_end(spans: list[tuple[int, int]], position: int) -> int | None:

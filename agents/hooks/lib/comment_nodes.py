@@ -88,19 +88,26 @@ def inert_spans(text: str, suffix: str) -> list[tuple[int, int]] | None:
 def _scan(text: str, language: str, kinds: tuple[str, ...]) -> list[tuple[int, int]] | None:
     """Scan once per text and node kinds, since every marker kind asks about the same text."""
     key = (text, language, kinds)
-    if key not in _SPANS:
-        spans = _scan_within_budget(text, language, kinds)
-        if spans is None:
-            return None
-        _SPANS[key] = spans
-    return _SPANS[key]
-
-
-def _scan_within_budget(text: str, language: str, kinds: tuple[str, ...]) -> list[tuple[int, int]] | None:
-    remaining = _BUDGET.deadline - time.monotonic()
-    if remaining <= 0:
+    if key in _SPANS:
+        return _SPANS[key]
+    try:
+        spans = _scanned_spans(text, _rule(language, kinds), _BUDGET.deadline - time.monotonic())
+    except subprocess.TimeoutExpired:
         _BUDGET.ran_out = True
         return None
+    if spans is not None:
+        _SPANS[key] = spans
+    return spans
+
+
+def _scanned_spans(text: str, rule: str, seconds: float) -> list[tuple[int, int]] | None:
+    """The spans the scanner finds for `rule` within `seconds`, or None when it fails.
+
+    Raises:
+        subprocess.TimeoutExpired: The scan did not finish within `seconds`, or none were left.
+    """
+    if seconds <= 0:
+        raise subprocess.TimeoutExpired(SCANNER, seconds)
     try:
         encoded = text.encode()
         # An empty config of its own in a fresh private directory, so ast-grep looks for no sgconfig.yml.
@@ -115,22 +122,20 @@ def _scan_within_budget(text: str, language: str, kinds: tuple[str, ...]) -> lis
                     str(config),
                     "--stdin",
                     "--inline-rules",
-                    _rule(language, kinds),
+                    rule,
                     "--json=stream",
                 ),
                 # ast-grep would apply the suppressions in the text to this scan too and hide the comments below them.
                 input=text.replace(SUPPRESSION, STAND_IN).encode(),
                 capture_output=True,
-                timeout=remaining,
+                timeout=seconds,
                 check=False,
                 cwd=directory,
             )
         records = [json.loads(line) for line in result.stdout.decode().splitlines() if line.strip()]
         offsets = [record["range"]["byteOffset"] for record in records]
-        spans = [(_characters(encoded, offset["start"]), _characters(encoded, offset["end"])) for offset in offsets]
-    except subprocess.TimeoutExpired:
-        _BUDGET.ran_out = True
-        return None
+        characters = _characters(encoded, {value for offset in offsets for value in (offset["start"], offset["end"])})
+        spans = [(characters[offset["start"]], characters[offset["end"]]) for offset in offsets]
     except OSError, ValueError, KeyError, TypeError:
         return None
     return spans if result.returncode == 0 else None
@@ -141,5 +146,11 @@ def _rule(language: str, kinds: tuple[str, ...]) -> str:
     return f"id: node\nlanguage: {language}\nrule:\n  any:{matchers}\n"
 
 
-def _characters(encoded: bytes, offset: int) -> int:
-    return len(encoded[:offset].decode(errors="replace"))
+def _characters(encoded: bytes, offsets: set[int]) -> dict[int, int]:
+    """The character offset of each byte offset, decoding each stretch of the text once."""
+    characters: dict[int, int] = {}
+    previous = count = 0
+    for offset in sorted(offsets):
+        count += len(encoded[previous:offset].decode(errors="replace"))
+        characters[offset], previous = count, offset
+    return characters

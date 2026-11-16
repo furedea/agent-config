@@ -7,6 +7,7 @@ suppression marker to a code file, or changes the rules or lints one names, asks
 one does not.
 """
 
+import bisect
 import difflib
 import json
 import os
@@ -106,7 +107,7 @@ def _new_markers(change: _Change) -> list[str]:
     found = [
         name
         for name, pattern in MARKERS.items()
-        if suffix in MARKER_SUFFIXES.get(name, CODE_SUFFIXES) and _adds(name, pattern, change)
+        if suffix in MARKER_SUFFIXES.get(name, CODE_SUFFIXES) and _has_new_scope(name, pattern, change)
     ]
     if suffix in MARKER_SUFFIXES["ast-grep-ignore"] and _widens_file_scope(change):
         found.append(FILE_SCOPE)
@@ -144,7 +145,7 @@ def _lines(text: str) -> list[str]:
     return [line.removesuffix("\r") for line in text.split("\n")]
 
 
-def _adds(name: str, pattern: re.Pattern[str], change: _Change) -> bool:
+def _has_new_scope(name: str, pattern: re.Pattern[str], change: _Change) -> bool:
     """Whether a marker that counts (in a comment, or for a Rust attribute in code) has a scope the edit did not have.
 
     A marker is compared by the text of its scope, so naming other or fewer rules asks like a new marker. Without the
@@ -187,41 +188,73 @@ def _marked_lines(name: str, text: str, suffix: str) -> dict[int, tuple[tuple[bo
     is the text from the marker to the end of its node, or else to the end of its attribute or line, with runs of
     space folded, so the rules it names on later lines count too. None means the nodes cannot be known.
     """
-    pattern = MARKERS[name]
-    if not pattern.search(text):
+    starts = [match.start() for match in MARKERS[name].finditer(text)]
+    if not starts:
         return {}
     find = comment_nodes.inert_spans if name in CODE_MARKERS else comment_nodes.comment_spans
     spans = find(text, suffix)
     if spans is None:
         return None
+    layout = _Layout.of(text, spans, closing=name in CODE_MARKERS)
     marked: dict[int, list[tuple[bool, str]]] = {}
-    line_starts = [0, *(match.end() for match in re.finditer("\n", text))]
-    for match in pattern.finditer(text):
-        end = _node_end(spans, match.start())
-        scope = text[match.start() : end] if end is not None else _code_scope(name, text, match.start())
-        number = sum(start <= match.start() for start in line_starts) - 1
-        marked.setdefault(number, []).append((end is not None, " ".join(scope.split())))
+    # Each scope stops at the next marker, which takes up the text from there, so the work grows with the text alone.
+    for start, following in zip(starts, [*starts[1:], len(text)], strict=True):
+        node_end = layout.node_end(start)
+        end = min(node_end if node_end is not None else layout.code_end(start), following)
+        marked.setdefault(layout.line(start), []).append((node_end is not None, " ".join(text[start:end].split())))
     return {number: tuple(marks) for number, marks in marked.items()}
 
 
-def _code_scope(name: str, text: str, start: int) -> str:
-    """A Rust attribute through its closing bracket, which may sit lines below; any other marker to its line's end."""
-    if name not in CODE_MARKERS:
-        return text[start:].split("\n", 1)[0]
-    depth = 0
-    for position in range(start, len(text)):
-        depth += {"[": 1, "]": -1}.get(text[position], 0)
-        if depth == 0 and text[position] == "]":
-            return text[start : position + 1]
-    return text[start:]
+@dataclass(frozen=True, slots=True)
+class _Layout:
+    """Where the lines, deciding nodes and brackets of a text start and end, for lookups by offset."""
+
+    line_starts: list[int]
+    spans: list[tuple[int, int]]
+    closings: dict[int, int]
+
+    @classmethod
+    def of(cls, text: str, spans: list[tuple[int, int]], *, closing: bool) -> _Layout:
+        """Index `text` once; `closing` also matches its square brackets, for attributes that span lines."""
+        # The last entry starts a line past the text, so every line has an end.
+        line_starts = [0, *(match.end() for match in re.finditer("\n", text)), len(text) + 1]
+        return cls(line_starts, sorted(spans), _closing_brackets(text) if closing else {})
+
+    def line(self, position: int) -> int:
+        """The number of the line that holds `position`."""
+        return bisect.bisect_right(self.line_starts, position) - 1
+
+    def node_end(self, position: int) -> int | None:
+        """Where the node that holds `position` ends, or None outside every node."""
+        index = bisect.bisect_right(self.spans, (position, float("inf"))) - 1
+        return self.spans[index][1] if index >= 0 and position < self.spans[index][1] else None
+
+    def code_end(self, position: int) -> int:
+        """Past the bracket that closes an attribute at `position`, else the end of its line."""
+        if position in self.closings:
+            return self.closings[position] + 1
+        return self.line_starts[self.line(position) + 1] - 1
+
+
+def _closing_brackets(text: str) -> dict[int, int]:
+    """For the `#` or `#!` that opens each attribute, the offset of the `]` that closes it."""
+    pairs: list[tuple[int, int]] = []
+    opened: list[int] = []
+    for position, character in enumerate(text):
+        if character == "[":
+            opened.append(position)
+        elif character == "]" and opened:
+            pairs.append((opened.pop(), position))
+    return {
+        start - len(prefix): end
+        for start, end in pairs
+        for prefix in ("#!", "#")
+        if text[start - len(prefix) : start] == prefix
+    }
 
 
 def _marker_lines(pattern: re.Pattern[str], text: str) -> list[str]:
     return [line.strip() for line in _lines(text) if pattern.search(line)]
-
-
-def _node_end(spans: list[tuple[int, int]], position: int) -> int | None:
-    return next((end for start, end in spans if start <= position < end), None)
 
 
 def _changes(payload: dict) -> list[_Change]:
@@ -234,12 +267,12 @@ def _changes(payload: dict) -> list[_Change]:
     if tool == "Write" or written:
         return [_Change(path, written, _existing_text(path), whole=True)]
     if values.get("command") == "insert":
-        return [_insert_change(path, values)]
+        return [_change_after_insert(path, values)]
     edits = values.get("edits") or [] if tool == "MultiEdit" else [values]
     return [_edit_change(path, edits)]
 
 
-def _insert_change(path: str, values: dict) -> _Change:
+def _change_after_insert(path: str, values: dict) -> _Change:
     """An editor `insert` puts `new_str` after line `insert_line` (0 for the top); judge the whole file after it."""
     before = _existing_text(path)
     line = values.get("insert_line")

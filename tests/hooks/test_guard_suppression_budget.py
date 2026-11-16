@@ -51,3 +51,21 @@ def test_a_scan_out_of_budget_is_unknown_and_the_next_decision_scans_again() -> 
     comment_nodes.start_budget()
     assert comment_nodes.comment_spans("x = 1  # a\n", ".py") == [(7, 10)]
     assert not comment_nodes.budget_ran_out()
+
+
+@pytest.mark.parametrize(
+    "name,text",
+    [
+        ("app.py", "x = 1  # noqa: E501\n" * 20000),
+        ("app.ts", "/*\n" + "eslint-disable no-console\n" * 20000 + "*/\n"),
+        ("lib.rs", "#[allow(dead_code,\n" * 5000),
+    ],
+    ids=["many line comments", "many markers in one block comment", "many unclosed attributes"],
+)
+def test_a_file_with_many_markers_is_judged_well_within_the_hook_timeout(name: str, text: str) -> None:
+    """The work after the scans grows with the file, not with markers times lines, so it cannot time the hook out."""
+    values = {"file_path": f"/nonexistent/{name}", "content": text}
+    started = time.monotonic()
+    verdict = guard.decide({"tool_name": "Write", "tool_input": values})
+    assert time.monotonic() - started < 5
+    assert verdict.decision == "ask"

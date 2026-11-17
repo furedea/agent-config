@@ -27,31 +27,6 @@ def reason(command: str) -> str:
     "command",
     [
         pytest.param(
-            "gh pr create --repo furedea/agent-config --head feat/migrate-rust-style-rules --base main "
-            '--title "feat(lint): migrate rust-style prose rules to checks" --body-file $TMPDIR/pr/body.md 2>&1',
-            id="logged PR creation with a body file under TMPDIR",
-        ),
-        pytest.param(
-            "gh pr edit 193 --repo furedea/agent-config --body-file $TMPDIR/pr/body.md 2>&1", id="logged PR edit"
-        ),
-        pytest.param("gh pr edit 188 --body-file $TMPDIR/body.md", id="logged PR edit in the working repository"),
-        pytest.param(
-            'gh issue create --title "test: lint test targets with clippy in CI" '
-            "--body-file $S/briefs/issue_clippy.md",
-            id="logged issue creation with a body file under a harness variable",
-        ),
-        pytest.param("gh issue comment 242 --body-file $S/plan242.md", id="logged plan comment"),
-        pytest.param(
-            'gh issue edit 242 --title "fix: follow-ups from #235 (Pi srt anchoring, UNC project roots)" '
-            '--body-file "$f" >/dev/null',
-            id="logged issue edit, with its lone body file variable quoted",
-        ),
-        pytest.param(
-            "gh issue create --repo furedea/agent-harness --title "
-            '"test: report the failing element in collapsed all() assertions" --body-file $TMPDIR/issue_all_msg.md',
-            id="logged issue creation in another furedea repository",
-        ),
-        pytest.param(
             f'gh api {REPLIES}/4571531779/replies -f body="Fixed in bf5c61f: the rule now skips \\`get_mut\\`, '
             '\\`get_unchecked\\` and \\`get_unchecked_mut\\`, and functions inside a trait." --jq .html_url',
             id="logged reply with escaped backticks",
@@ -73,16 +48,6 @@ def reason(command: str) -> str:
             id="logged reply in Japanese with an option inside the body",
         ),
         pytest.param(
-            "gh api -X PATCH repos/furedea/skills-human-intervention/issues/comments/6845899920 "
-            '-F body=@"$f.new" -q .html_url',
-            id="logged comment edit from a quoted run-time file",
-        ),
-        pytest.param(
-            "gh api -X POST repos/furedea/agent-config/issues/74/comments -F body=@$TMPDIR/plan74.md "
-            "--jq '\"\\(.id) \\(.html_url)\"'",
-            id="logged plan comment through the REST API",
-        ),
-        pytest.param(
             f"gh api graphql -f query='mutation{{a:{RESOLVE} b:{RESOLVE.replace('Y9LM', 'Y9Ma')}}}'"
             " --jq '.data|length'",
             id="logged batch of thread resolutions",
@@ -92,7 +57,6 @@ def reason(command: str) -> str:
             '"PRRT_x"}) { thread { isResolved } } }\'',
             id="logged spaced resolution beside an unresolution",
         ),
-        pytest.param('gh pr create --head topic -t x --body-file "$D/pr.md"', id="a quoted run-time body file"),
         pytest.param(
             "gh pr create --head topic --title 'fix: x' "
             "--body \"$(cat <<'EOF'\nUse `git add -A` never.\n$HOME stays.\nEOF\n)\"",
@@ -121,7 +85,6 @@ def reason(command: str) -> str:
         pytest.param("gh api repos/furedea/r/pulls -f title=x -f head=b -f base=main", id="a REST pull request"),
     ],
 )
-@pytest.mark.usefixtures("logged_body_files")
 def test_reversible_writes_to_a_trusted_owner_are_allowed(command: str) -> None:
     assert decide(command) == "allow"
 
@@ -293,7 +256,7 @@ def test_reads_and_local_changes_are_allowed_in_any_form(command: str) -> None:
         ),
         pytest.param(
             "gh api graphql -f query='mutation{" + RESOLVE + "}' -F b=@$UNSET_BODY_DIR/x",
-            "cannot expand",
+            "named at run time",
             id="a run-time file sent to a node target",
         ),
         pytest.param('gh issue create -R furedea/r -t x -b y --label "$GH_TOKEN"', "parameter", id="a label"),

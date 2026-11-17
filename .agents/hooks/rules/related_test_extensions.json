@@ -488,7 +488,8 @@
     "tests/hooks/test_gh_environment.py",
     "tests/hooks/test_gh_targets.py",
     "tests/hooks/test_gh_config.py",
-    "tests/hooks/test_gh_round_fixes.py"
+    "tests/hooks/test_gh_round_fixes.py",
+    "tests/hooks/test_gh_run_time_body_files.py"
   ],
   "agents/hooks/lib/gh_environment.py": [
     "tests/hooks/test_gh_targets.py",

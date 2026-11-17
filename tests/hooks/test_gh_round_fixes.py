@@ -50,8 +50,8 @@ def test_an_unquoted_parameter_beside_text_splits_on_its_value(monkeypatch: pyte
     Path("secret.md 1").write_text("x\n")
     monkeypatch.setenv("X", "secret.md ")
     assert decide("gh issue comment -R furedea/agent-config -F ${X}1") == "ask"
-    monkeypatch.setenv("X", "secret")
-    assert decide("gh issue comment 1 -R furedea/agent-config -F ${X}.md") == "allow"
+    monkeypatch.setenv("R", "agent-config")
+    assert decide("gh pr list --repo furedea/$R") == "allow"
     monkeypatch.setenv("R", "x --web")
     assert decide("gh pr list --repo furedea/$R") == "ask"
 

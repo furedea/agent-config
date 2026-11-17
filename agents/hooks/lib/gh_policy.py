@@ -26,7 +26,6 @@ from gh_command_line import (
     input_redirects,
 )
 from gh_invocation import GhCall, Unclassified
-from gh_options import SHELL_MANAGED
 from gh_repository import Repository
 from hook_decision import Verdict
 
@@ -38,12 +37,7 @@ GITHUB_HOST = "github.com"
 INPUT_FILE = re.compile(r"^<\s*((?:~/)?[^\s$`'\"\\*?\[<>&(~][^\s$`'\"\\*?\[<>&(]*)$")
 # A file named by a quoted parameter, which stays one path and is read like a body file named at run time.
 RUN_TIME_FILE = re.compile(r'^<\s*"[^"`]*\$[^"`]*"$')
-# A run-time path the guard would expand differently from the shell: a glob, substitution, tilde,
-# escape, parameter operator or subscript, or a zsh modifier such as `$f:h`.
-UNEXPANDABLE_PATH = re.compile(r"[`*?\[~\\]|\$\(|\$\{[^}]*[^A-Za-z0-9_}]|\$\{?[A-Za-z_][A-Za-z0-9_]*\}?:")
-# A word's single-quoted, double-quoted, and bare parts, in order.
-SHELL_PART = re.compile(r"""'[^']*'|"[^"]*"|[^'"]+""")
-# A plain parameter in a run-time path; one the environment lacks expands to nothing, as in the shell.
+# A plain parameter in the line's text; one the environment lacks expands to nothing, as in the shell.
 PLAIN_PARAMETER = re.compile(r"\$(?:([A-Za-z_][A-Za-z0-9_]*)|\{([A-Za-z_][A-Za-z0-9_]*)\})")
 IRREVERSIBLE_REASON = "cannot be taken back or promotes work (class D)"
 TARGET_REASONS = {
@@ -125,82 +119,11 @@ def _judged_call(candidate: shell_syntax.Command, line: CommandLine, rules: GhRu
     stdin = _with_stdin(call, candidate)
     if isinstance(stdin, str):
         return f"this gh call {stdin or 'reads its body from a pipe or terminal'}"
-    return _with_expanded_paths(stdin) if line.single_call else stdin
-
-
-def _with_expanded_paths(call: GhCall) -> GhCall:
-    """Scan each run-time path the harness environment expands to a readable file; the rest stay unscanned.
-
-    On a line that is one call nothing assigns a variable, so the hook's environment gives the shell's.
-    """
-    expanded = {source: _expanded_path(source) for source in call.unscanned_files}
-    readable = tuple(path for path in expanded.values() if path is not None)
-    unscanned = tuple(source for source, path in expanded.items() if path is None)
-    return replace(call, files=(*call.files, *readable), unscanned_files=unscanned)
-
-
-def _expanded_path(source: str) -> str | None:
-    """The file a run-time path names after quote removal and plain parameter expansion, when it exists."""
-    if UNEXPANDABLE_PATH.search(source) or not _is_predictable(source):
-        return None
-    expanded = shell_expanded(source)
-    # A device, process file, or standard input stays unscanned, where the path checks refuse it.
-    usable = expanded and Path(expanded).exists() and not _names_special_input(expanded)
-    return expanded if usable else None
-
-
-def shell_expanded(source: str) -> str:
-    """A word's text as the shell builds it: single-quoted parts kept, plain parameters elsewhere expanded."""
-    return "".join(
-        part[1:-1] if part.startswith("'") else _expand_parameters(part.strip('"'))
-        for part in SHELL_PART.findall(source)
-    )
+    return stdin
 
 
 def _expand_parameters(text: str) -> str:
     return PLAIN_PARAMETER.sub(lambda match: _shell_value(match[1] or match[2]), text)
-
-
-def _run_time_path_problem(sources: tuple[str, ...]) -> str:
-    """Why a sent path known only at run time cannot be left unscanned, or an empty string."""
-    if any(re.search(r"\$\(|`", source) for source in sources):
-        return "sends a file whose path a command computes"
-    if any(UNEXPANDABLE_PATH.search(source) for source in sources):
-        return "sends a file whose path the guard cannot expand as the shell does"
-    if any(_names_special_input(shell_expanded(source)) for source in sources):
-        return "sends standard input or a device through a path named at run time"
-    if not all(_is_predictable(source) for source in sources):
-        return "sends a file whose path the guard cannot expand: a parameter the hook's environment does not hold"
-    return ""
-
-
-def _is_predictable(source: str) -> bool:
-    """Whether every parameter a run-time path expands holds in the shell what it holds in the hook.
-
-    The shell sets SECONDS, RANDOM, SHLVL, `_`, positional and special parameters itself, so only an
-    exported parameter it leaves alone counts, and PWD, which the hook's directory gives.
-    """
-    unquoted = "".join(part for part in SHELL_PART.findall(source) if not part.startswith("'"))
-    # Any `$` left once plain parameters are removed is a positional, special, or zsh-flagged expansion.
-    if "$" in PLAIN_PARAMETER.sub("", unquoted):
-        return False
-    return all(name == "PWD" or (name in os.environ and name not in SHELL_MANAGED) for name in _expanded_names(source))
-
-
-def _expanded_names(source: str) -> list[str]:
-    """The plain parameters a run-time path expands outside single quotes."""
-    parts = [part for part in SHELL_PART.findall(source) if not part.startswith("'")]
-    return [match[1] or match[2] for part in parts for match in PLAIN_PARAMETER.finditer(part)]
-
-
-def _names_special_input(path: str) -> bool:
-    """Whether an expanded path is gh's standard input marker or a device or process file."""
-    if not path:
-        return False
-    try:
-        return gh_invocation.sent_path(path) == "-"
-    except gh_options.UnclassifiableError:
-        return True
 
 
 def _shell_value(name: str) -> str:
@@ -229,12 +152,10 @@ def _file_problem(call: GhCall, line: CommandLine) -> str:
     """Why the files a call sends cannot be scanned as they will be sent, or an empty string."""
     if (call.files or call.unscanned_files) and not line.single_call:
         return "sends a file another command on the line may write after the guard reads it"
-    if problem := _run_time_path_problem(call.unscanned_files):
-        return problem
-    # Every sent file is scanned before it leaves, a trusted target included: a run-time path the hook's
-    # environment does not expand to a readable file cannot be.
+    # The hook may not share the sandboxed shell's environment, so expanding a path here could scan another
+    # file than gh sends. A path named at run time asks until the GitHub Gateway (#181) judges the request.
     if call.unscanned_files:
-        return "sends a file named at run time that the guard cannot expand to a readable file"
+        return "sends a file named at run time, which the guard cannot scan as gh will read it"
     return _scan_problem([Path(name) for name in call.files])
 
 

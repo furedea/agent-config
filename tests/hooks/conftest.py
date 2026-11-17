@@ -199,7 +199,7 @@ def sent_files(isolated_project: Path) -> Path:
 
 @pytest.fixture
 def logged_body_files(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    """The run-time body files the logged gh forms name, present so the guard can expand and scan them."""
+    """The run-time body files the logged gh forms name, present and clean so only the run-time path makes them ask."""
     root = tmp_path / "run"
     for name in ("TMPDIR", "S", "D"):
         monkeypatch.setenv(name, str(root))

@@ -54,3 +54,8 @@ def test_an_unquoted_parameter_beside_text_splits_on_its_value(monkeypatch: pyte
     assert decide("gh issue comment 1 -R furedea/agent-config -F ${X}.md") == "allow"
     monkeypatch.setenv("R", "x --web")
     assert decide("gh pr list --repo furedea/$R") == "ask"
+
+
+def test_a_clone_destination_beside_another_command_asks() -> None:
+    assert decide("true; gh repo clone furedea/agent-config fresh") == "ask"
+    assert decide("true; gh repo clone furedea/agent-config") == "allow"

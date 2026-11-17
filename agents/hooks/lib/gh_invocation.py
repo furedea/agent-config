@@ -163,7 +163,7 @@ def _classify_words(words: tuple[Word, ...], catalog: Catalog, single_call: bool
             check_repository_arguments(words[2:])
         return GhCall((spec.operation,), spec.effect, reads_working_repository=True)
     if spec.effect is Effect.LOCAL:
-        return _classify_local(words[2:], spec)
+        return _classify_local(words[2:], spec, single_call)
     return _classify_write(words[2:], spec, single_call)
 
 
@@ -191,7 +191,7 @@ def _check_read_repositories(words: tuple[Word, ...]) -> None:
             raise UnclassifiableError("a read names another host than github.com")
 
 
-def _classify_local(words: tuple[Word, ...], spec: CommandSpec) -> GhCall:
+def _classify_local(words: tuple[Word, ...], spec: CommandSpec, single_call: bool) -> GhCall:
     """A change to the local checkout, whose every option must be listed; `--` would pass options to git."""
     if any(word.value == "--" for word in words):
         raise UnclassifiableError("arguments after -- reach another program")
@@ -201,8 +201,9 @@ def _classify_local(words: tuple[Word, ...], spec: CommandSpec) -> GhCall:
     scan = gh_options.scan(words, OptionTable(spec.value_options, spec.flags))
     if spec.operation == "repo.clone":
         check_repository_arguments(scan.positionals[:1])
+        # Another command on the line could plant a link at the destination after the hook checked it.
         for destination in scan.positionals[1:]:
-            gh_options.require_new_subdirectory((destination,), "a clone destination")
+            gh_options.require_new_subdirectory((destination,) if single_call else (), "a clone destination")
     return GhCall((spec.operation,), spec.effect, reads_working_repository=True)
 
 

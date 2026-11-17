@@ -1,0 +1,20 @@
+fixtures/bad_option_same_as_chosen.md:
+  - { line: 1, label: bad, window: 1, why: "options that differ from the chosen one only in name" }
+fixtures/bad_padding_around_chosen.md:
+  - { line: 1, label: bad, window: 1, why: "placeholder options (do something else, another approach)" }
+fixtures/bad_rejected_without_reason.md:
+  - { line: 1, label: bad, window: 1, why: "four rejected options, none with a reason" }
+fixtures/bad_straw_man_options.md:
+  - { line: 1, label: bad, window: 1, why: "options nobody would pick (a text file, losing jobs, a new broker)" }
+fixtures/clean_do_nothing_with_cost.md:
+  - { line: 1, label: clean, window: 1, why: "do nothing is real: the cost of staying put is stated" }
+fixtures/clean_no_rejected_option.md:
+  - { line: 1, label: clean, window: 1, why: "no rejected option, nothing to pad" }
+fixtures/clean_options_with_reasons.md:
+  - { line: 1, label: clean, window: 1, why: "each rejected option has a reason" }
+fixtures/clean_real_madr_with_reasons.md:
+  - { line: 1, label: clean, window: 1, why: "real ADR-0025: the chosen option carries a justification" }
+fixtures/clean_real_y_statement.md:
+  - { line: 1, label: clean, window: 1, why: "real ADR-0013: states the force and the reason in one sentence" }
+fixtures/clean_real_y_statement_audit_evidence.md:
+  - { line: 1, label: clean, window: 1, why: "real ADR-0006: names the audit evidence behind the choice" }

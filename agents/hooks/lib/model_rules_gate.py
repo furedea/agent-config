@@ -32,6 +32,8 @@ RECEIPT_KEY = "model_rules"
 # because `stop_hook_active` kept them from blocking, which block once at the next Stop on the same inputs.
 CLEAN, SHOWN, UNSHOWN = "clean", "findings", "findings-unshown"
 BUDGET_SECONDS = 90.0
+# Rules named like this judge ADRs (docs/adr/), not every file of their language.
+ADR_RULE_PREFIX = "adr-"
 
 
 @dataclass(frozen=True, slots=True)
@@ -201,9 +203,9 @@ class _Changes:
         """
         committed = Selection()
         if record.head is not None and head_commit(record.root) != record.head:
-            committed = select(record.root, committed_paths(record.root, record.head))
+            committed = select(record.root, committed_paths(record.root, record.head), record.head)
         changed = record.baseline.changed_paths(capture(record.root))
-        return cls(committed, select(record.root, changed))
+        return cls(committed, select(record.root, changed, "HEAD"))
 
     @property
     def withheld(self) -> frozenset[str]:
@@ -214,7 +216,8 @@ class _Changes:
         """For each tier of rules, the commits made since the session started, then the changes not committed yet.
 
         `jev-lint review` judges `base...HEAD` or, without a base, the working tree against HEAD; neither covers both.
-        The tuned tier comes first so that it takes the subject cap before the untuned rules do.
+        The tuned tier comes first so that it takes the subject cap before the untuned rules do. The ADR rules come
+        last and see only the ADRs whose body is new or changed, so they never judge other Markdown.
         """
         cache = model_rules_run.cache_path(state_directory())
         reviews = []
@@ -227,6 +230,15 @@ class _Changes:
                 reviews.append(
                     model_rules_run.Review(record.root, None, rules, cache, programs, self.uncommitted.sendable)
                 )
+        adr_folders = adr_rules(RULES_DIRECTORY)
+        if adr_folders and self.committed.adrs:
+            reviews.append(
+                model_rules_run.Review(record.root, record.head, adr_folders, cache, programs, self.committed.adrs)
+            )
+        if adr_folders and self.uncommitted.adrs:
+            reviews.append(
+                model_rules_run.Review(record.root, None, adr_folders, cache, programs, self.uncommitted.adrs)
+            )
         return tuple(reviews)
 
 
@@ -234,14 +246,23 @@ def rule_tiers(directory: Path) -> tuple[tuple[Path, ...], ...]:
     """The rules to review with, in the order they claim the subject cap: rules with an eval baseline, then the rest.
 
     A file that does not fit the cap is skipped whole, so rules that were never fitted must not displace the tuned
-    ones. When every rule is of one kind there is one tier: the whole directory.
+    ones. The ADR rules are not part of any tier: `adr_rules` reviews them apart. When every other rule is of one
+    kind there is one tier: the whole directory, or its non-ADR folders when ADR rules sit beside them.
     """
-    folders = sorted(path.parent for path in directory.glob("*/*/rule.yml"))
+    adr_folders = set(adr_rules(directory))
+    folders = sorted(path.parent for path in directory.glob("*/*/rule.yml") if path.parent not in adr_folders)
     tuned = tuple(folder for folder in folders if (folder / "baseline.json").is_file())
     untuned = tuple(folder for folder in folders if folder not in tuned)
-    if not tuned or not untuned:
-        return ((directory,),)
-    return (tuned, untuned)
+    if tuned and untuned:
+        return (tuned, untuned)
+    if adr_folders:
+        return (tuple(folders),) if folders else ()
+    return ((directory,),)
+
+
+def adr_rules(directory: Path) -> tuple[Path, ...]:
+    """The rule folders that judge ADRs, which must only ever be given ADR files."""
+    return tuple(sorted(path.parent for path in directory.glob(f"*/{ADR_RULE_PREFIX}*/rule.yml")))
 
 
 def _repository_gate(root: Path) -> Prevented | None:

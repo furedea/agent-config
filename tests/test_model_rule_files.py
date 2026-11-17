@@ -254,3 +254,13 @@ def test_uncommitted_and_untracked_changes_are_not_selected_by_the_review_of_com
     (repository / "untracked.py").write_text(PYTHON_SOURCE)
 
     assert subjects_by_rule(plan(repository, base)) == {}
+
+
+def test_a_changed_adr_is_one_subject_of_each_adr_rule(repository: Path) -> None:
+    adr = repository / "docs/adr/0001_use_x.md"
+    adr.parent.mkdir(parents=True)
+    adr.write_text("---\nstatus: accepted\ndate: 2026-11-01\n---\n\n# Use X\n\nChosen option: X, because Y.\n")
+
+    counts = subjects_by_rule(plan(repository))
+
+    assert counts == {"adr-states-why": 1, "adr-options-are-real-alternatives": 1}

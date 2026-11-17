@@ -1,0 +1,18 @@
+fixtures/bad_chosen_option_without_reason.md:
+  - { line: 1, label: bad, window: 1, why: "chosen option with no justification" }
+fixtures/bad_describes_implementation_only.md:
+  - { line: 1, label: bad, window: 1, why: "describes how it works, never why" }
+fixtures/bad_reason_restates_the_choice.md:
+  - { line: 1, label: bad, window: 1, why: "the stated reason restates the choice" }
+fixtures/bad_we_decided_without_reason.md:
+  - { line: 1, label: bad, window: 1, why: "a decision sentence with no reason for the choice" }
+fixtures/clean_no_options_reason_in_sentence.md:
+  - { line: 1, label: clean, window: 1, why: "no options section; the reason is in the decision sentence" }
+fixtures/clean_real_madr_with_reasons.md:
+  - { line: 1, label: clean, window: 1, why: "real ADR-0025: the chosen option carries a justification" }
+fixtures/clean_real_y_statement.md:
+  - { line: 1, label: clean, window: 1, why: "real ADR-0013: states the force and the reason in one sentence" }
+fixtures/clean_real_y_statement_audit_evidence.md:
+  - { line: 1, label: clean, window: 1, why: "real ADR-0006: names the audit evidence behind the choice" }
+fixtures/clean_short_specific_reason.md:
+  - { line: 1, label: clean, window: 1, why: "a short record whose reason is one specific sentence" }

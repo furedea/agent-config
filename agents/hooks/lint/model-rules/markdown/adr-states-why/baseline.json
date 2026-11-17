@@ -1,0 +1,271 @@
+{
+  "schema": "jev-lint-eval-1",
+  "recorded": "2026-11-17T14:09:12.233Z",
+  "model": "jev-1.14.0",
+  "suite": "markdown/adr-states-why",
+  "rules": [
+    {
+      "id": "adr-states-why",
+      "draft": "99a5cba892fc",
+      "at": 0.5
+    }
+  ],
+  "cutoffs": {},
+  "passes": [
+    [
+      {
+        "rule": "adr-states-why",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-states-why/fixtures/clean_real_y_statement.md",
+        "line": 1,
+        "endLine": 19,
+        "kind": "noul",
+        "value": 0.02,
+        "confidence": null
+      },
+      {
+        "rule": "adr-states-why",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-states-why/fixtures/bad_we_decided_without_reason.md",
+        "line": 1,
+        "endLine": 9,
+        "kind": "noul",
+        "value": 0.91,
+        "confidence": null
+      },
+      {
+        "rule": "adr-states-why",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-states-why/fixtures/clean_real_y_statement_audit_evidence.md",
+        "line": 1,
+        "endLine": 21,
+        "kind": "noul",
+        "value": 0.03,
+        "confidence": null
+      },
+      {
+        "rule": "adr-states-why",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-states-why/fixtures/bad_describes_implementation_only.md",
+        "line": 1,
+        "endLine": 21,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "adr-states-why",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-states-why/fixtures/clean_real_madr_with_reasons.md",
+        "line": 1,
+        "endLine": 59,
+        "kind": "noul",
+        "value": 0.02,
+        "confidence": null
+      },
+      {
+        "rule": "adr-states-why",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-states-why/fixtures/clean_short_specific_reason.md",
+        "line": 1,
+        "endLine": 27,
+        "kind": "noul",
+        "value": 0.02,
+        "confidence": null
+      },
+      {
+        "rule": "adr-states-why",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-states-why/fixtures/bad_reason_restates_the_choice.md",
+        "line": 1,
+        "endLine": 25,
+        "kind": "noul",
+        "value": 0.99,
+        "confidence": null
+      },
+      {
+        "rule": "adr-states-why",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-states-why/fixtures/bad_chosen_option_without_reason.md",
+        "line": 1,
+        "endLine": 24,
+        "kind": "noul",
+        "value": 0.99,
+        "confidence": null
+      },
+      {
+        "rule": "adr-states-why",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-states-why/fixtures/clean_no_options_reason_in_sentence.md",
+        "line": 1,
+        "endLine": 20,
+        "kind": "noul",
+        "value": 0.02,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "adr-states-why",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-states-why/fixtures/clean_short_specific_reason.md",
+        "line": 1,
+        "endLine": 27,
+        "kind": "noul",
+        "value": 0.02,
+        "confidence": null
+      },
+      {
+        "rule": "adr-states-why",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-states-why/fixtures/bad_chosen_option_without_reason.md",
+        "line": 1,
+        "endLine": 24,
+        "kind": "noul",
+        "value": 0.99,
+        "confidence": null
+      },
+      {
+        "rule": "adr-states-why",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-states-why/fixtures/clean_real_y_statement_audit_evidence.md",
+        "line": 1,
+        "endLine": 21,
+        "kind": "noul",
+        "value": 0.03,
+        "confidence": null
+      },
+      {
+        "rule": "adr-states-why",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-states-why/fixtures/clean_no_options_reason_in_sentence.md",
+        "line": 1,
+        "endLine": 20,
+        "kind": "noul",
+        "value": 0.02,
+        "confidence": null
+      },
+      {
+        "rule": "adr-states-why",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-states-why/fixtures/bad_reason_restates_the_choice.md",
+        "line": 1,
+        "endLine": 25,
+        "kind": "noul",
+        "value": 0.99,
+        "confidence": null
+      },
+      {
+        "rule": "adr-states-why",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-states-why/fixtures/clean_real_madr_with_reasons.md",
+        "line": 1,
+        "endLine": 59,
+        "kind": "noul",
+        "value": 0.02,
+        "confidence": null
+      },
+      {
+        "rule": "adr-states-why",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-states-why/fixtures/clean_real_y_statement.md",
+        "line": 1,
+        "endLine": 19,
+        "kind": "noul",
+        "value": 0.02,
+        "confidence": null
+      },
+      {
+        "rule": "adr-states-why",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-states-why/fixtures/bad_we_decided_without_reason.md",
+        "line": 1,
+        "endLine": 9,
+        "kind": "noul",
+        "value": 0.93,
+        "confidence": null
+      },
+      {
+        "rule": "adr-states-why",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-states-why/fixtures/bad_describes_implementation_only.md",
+        "line": 1,
+        "endLine": 21,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "adr-states-why",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-states-why/fixtures/bad_reason_restates_the_choice.md",
+        "line": 1,
+        "endLine": 25,
+        "kind": "noul",
+        "value": 0.99,
+        "confidence": null
+      },
+      {
+        "rule": "adr-states-why",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-states-why/fixtures/clean_no_options_reason_in_sentence.md",
+        "line": 1,
+        "endLine": 20,
+        "kind": "noul",
+        "value": 0.02,
+        "confidence": null
+      },
+      {
+        "rule": "adr-states-why",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-states-why/fixtures/clean_real_y_statement_audit_evidence.md",
+        "line": 1,
+        "endLine": 21,
+        "kind": "noul",
+        "value": 0.03,
+        "confidence": null
+      },
+      {
+        "rule": "adr-states-why",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-states-why/fixtures/clean_real_madr_with_reasons.md",
+        "line": 1,
+        "endLine": 59,
+        "kind": "noul",
+        "value": 0.02,
+        "confidence": null
+      },
+      {
+        "rule": "adr-states-why",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-states-why/fixtures/bad_describes_implementation_only.md",
+        "line": 1,
+        "endLine": 21,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "adr-states-why",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-states-why/fixtures/clean_real_y_statement.md",
+        "line": 1,
+        "endLine": 19,
+        "kind": "noul",
+        "value": 0.02,
+        "confidence": null
+      },
+      {
+        "rule": "adr-states-why",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-states-why/fixtures/clean_short_specific_reason.md",
+        "line": 1,
+        "endLine": 27,
+        "kind": "noul",
+        "value": 0.02,
+        "confidence": null
+      },
+      {
+        "rule": "adr-states-why",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-states-why/fixtures/bad_we_decided_without_reason.md",
+        "line": 1,
+        "endLine": 9,
+        "kind": "noul",
+        "value": 0.9,
+        "confidence": null
+      },
+      {
+        "rule": "adr-states-why",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-states-why/fixtures/bad_chosen_option_without_reason.md",
+        "line": 1,
+        "endLine": 24,
+        "kind": "noul",
+        "value": 0.99,
+        "confidence": null
+      }
+    ]
+  ],
+  "spent": {
+    "calls": 27,
+    "inputTokens": 26445,
+    "usd": 0.0011106900000000001,
+    "ms": 695
+  }
+}

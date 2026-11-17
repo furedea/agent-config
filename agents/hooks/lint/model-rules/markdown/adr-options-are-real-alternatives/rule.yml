@@ -1,8 +1,10 @@
 # agents/skills/adr Writing Rules, "List under Considered Options only the alternatives that were actually
 # considered; never add padding options" (#227, #169 A7). Advisory; sent only the ADRs under docs/adr/ that are new or
 # whose body changed. "Actually considered" cannot be verified from a document, so the rule judges whether each
-# rejected option has a plausible reason and is a real alternative to the problem. The cutoff stays at the 0.5
-# starting value until it is fitted on this folder's fixtures with `jev-lint eval --accept` (ADR-0021).
+# rejected option has a plausible reason and is a real alternative to the problem. The cutoff stays 0.5: on this
+# folder's fixtures (4 bad, 6 clean) the highest clean case scored 0.13 and the lowest bad one 0.94 (jev-lint's fitted
+# midpoint is 0.55). Ten cases are not a calibration, so the rule stays advisory and the `adr` skill keeps its prose
+# (ADR-0021).
 id: adr-options-are-real-alternatives
 language: Text
 subject: block
@@ -10,6 +12,11 @@ extensions: [md]
 kind: noul
 state: bare
 threshold: 0.5
+# Every clean case answers far below the cutoff and every bad case far above it; no fixture sits near the boundary, so
+# this corpus cannot see the rule drift. Boundary cases need ADRs a reader would argue over; none exist yet.
+inconclusive: >-
+  Blind: the fixtures are clearly clean or clearly defective (margins of 0.37 or more), and no boundary fixture exists
+  yet; ten cases are too few to find one.
 axis: file
 severity: warning
 ask: >-

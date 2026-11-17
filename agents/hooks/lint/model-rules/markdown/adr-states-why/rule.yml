@@ -1,7 +1,8 @@
 # agents/skills/adr Writing Rules, "Record Why, not What or How" and "Make the Chosen option sentence carry the
 # justification" (#227, #169 A7). Advisory; the Stop hook sends this rule only the ADRs under docs/adr/ that are new or
-# whose body changed (model_rules_files.select). The cutoff stays at the 0.5 starting value until it is fitted on
-# this folder's fixtures with `jev-lint eval --accept` (ADR-0021); until then there is no baseline.json.
+# whose body changed (model_rules_files.select). The cutoff stays 0.5: on this folder's fixtures (4 bad, 5 clean) the
+# highest clean case scored 0.03 and the lowest bad one 0.91, so 0.5 sits inside a wide gap (jev-lint's fitted midpoint
+# is 0.47). Nine cases are not a calibration, so the rule stays advisory and the `adr` skill keeps its prose (ADR-0021).
 id: adr-states-why
 language: Text
 subject: block
@@ -9,6 +10,11 @@ extensions: [md]
 kind: noul
 state: bare
 threshold: 0.5
+# Every clean case answers far below the cutoff and every bad case far above it; no fixture sits near the boundary, so
+# this corpus cannot see the rule drift. Boundary cases need ADRs a reader would argue over; none exist yet.
+inconclusive: >-
+  Blind: the fixtures are clearly clean or clearly defective (margins of 0.37 or more), and no boundary fixture exists
+  yet; ten cases are too few to find one.
 axis: file
 severity: warning
 ask: >-

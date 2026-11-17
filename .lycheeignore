@@ -1,0 +1,2 @@
+# ADR-0002 links to docs/agent_verification.md, which does not exist; ADR bodies stay unchanged (ADR-0025).
+agent_verification\.md$

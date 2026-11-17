@@ -12,7 +12,7 @@ from tests.runtime import REPO_ROOT
 sys.path.insert(0, str(REPO_ROOT / "agents/hooks/lib"))
 import model_rules_files
 import model_rules_gate
-from model_rules_files import Selection
+from model_rules_files import ReviewedSpan, Selection
 
 ADR = "docs/adr/0001_use_x.md"
 FRONT_MATTER = "---\nstatus: proposed\ndate: 2026-11-01\n---\n"
@@ -43,7 +43,7 @@ def root(git_project: Path) -> Path:
 
 
 def adrs(root: Path, *paths: str) -> tuple[str, ...]:
-    return model_rules_files.select(root, paths, "HEAD").adrs
+    return model_rules_files.select(root, paths, ReviewedSpan("HEAD")).adrs
 
 
 def test_a_new_adr_is_selected(root: Path) -> None:
@@ -82,8 +82,27 @@ def test_a_body_change_is_measured_against_the_given_revision(root: Path) -> Non
     write(root, ADR, FRONT_MATTER + BODY + "\nMore.\n")
     commit_all(root)
 
-    assert model_rules_files.select(root, [ADR], base).adrs == (ADR,)
-    assert model_rules_files.select(root, [ADR], "HEAD").adrs == ()
+    assert model_rules_files.select(root, [ADR], ReviewedSpan(base)).adrs == (ADR,)
+    assert model_rules_files.select(root, [ADR], ReviewedSpan("HEAD")).adrs == ()
+
+
+def test_a_committed_front_matter_change_is_not_a_body_change_even_with_an_uncommitted_body_edit(root: Path) -> None:
+    base = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
+    write(root, ADR, "---\nstatus: accepted\ndate: 2026-11-02\n---\n" + BODY)
+    commit_all(root)
+    write(root, ADR, "---\nstatus: accepted\ndate: 2026-11-02\n---\n" + BODY + "\nMore.\n")
+
+    assert model_rules_files.select(root, [ADR], ReviewedSpan(base, "HEAD")).adrs == ()
+    assert model_rules_files.select(root, [ADR], ReviewedSpan("HEAD")).adrs == (ADR,)
+
+
+def test_a_committed_body_change_counts_although_the_working_tree_reverted_it(root: Path) -> None:
+    base = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
+    write(root, ADR, FRONT_MATTER + BODY + "\nMore.\n")
+    commit_all(root)
+    write(root, ADR, FRONT_MATTER + BODY)
+
+    assert model_rules_files.select(root, [ADR], ReviewedSpan(base, "HEAD")).adrs == (ADR,)
 
 
 def test_an_adr_without_front_matter_counts_whole_text_as_body(root: Path) -> None:
@@ -98,7 +117,7 @@ def test_an_adr_stays_among_the_sendable_files_and_a_symlinked_adr_is_withheld(r
     write(root, ADR, FRONT_MATTER + BODY + "\nMore.\n")
     (root / "docs/adr/0005_link.md").symlink_to("0001_use_x.md")
 
-    selection = model_rules_files.select(root, [ADR, "docs/adr/0005_link.md"], "HEAD")
+    selection = model_rules_files.select(root, [ADR, "docs/adr/0005_link.md"], ReviewedSpan("HEAD"))
 
     assert selection.sendable == (ADR,)
     assert selection.adrs == (ADR,)

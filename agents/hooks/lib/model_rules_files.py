@@ -39,11 +39,20 @@ class Selection:
     adrs: tuple[str, ...] = ()
 
 
-def select(root: Path, paths: Iterable[str], since: str) -> Selection:
+@dataclass(frozen=True, slots=True)
+class ReviewedSpan:
+    """The change one review judges: from the revision `since` to the revision `until`, or to the working tree."""
+
+    since: str
+    until: str | None = None
+
+
+def select(root: Path, paths: Iterable[str], span: ReviewedSpan) -> Selection:
     """Split changed `paths` of the repository at `root` into the sendable and the withheld.
 
     A path that no longer exists, is not a file (a nested repository), reads like an option, or is a rule fixture has
-    nothing to send and is left out without being counted. `since` is the revision an ADR's body is compared with.
+    nothing to send and is left out without being counted. An ADR's body is compared across `span`, the change the
+    review judges.
     """
     real_root = root.resolve()
     sendable: list[str] = []
@@ -54,7 +63,7 @@ def select(root: Path, paths: Iterable[str], since: str) -> Selection:
             sendable.append(path)
         elif verdict is False:
             withheld.add(path)
-    adrs = tuple(path for path in sendable if _is_changed_adr(root, path, since))
+    adrs = tuple(path for path in sendable if _is_changed_adr(root, path, span))
     return Selection(tuple(sendable), frozenset(withheld), adrs)
 
 
@@ -103,16 +112,22 @@ def _verdict(real_root: Path, candidate: Path, path: str) -> bool | None:
         return False
 
 
-def _is_changed_adr(root: Path, path: str, since: str) -> bool:
-    """Whether `path` is an ADR that is new at `since` or whose body differs from the one there."""
+def _is_changed_adr(root: Path, path: str, span: ReviewedSpan) -> bool:
+    """Whether `path` is an ADR that is new at `span.since` or whose body differs from the one there."""
     if not PurePosixPath(path).full_match(_ADR_PATTERN):
         return False
-    try:
-        current = (root / path).read_text()
-    except OSError, UnicodeDecodeError:
+    current = _text_in_tree(root, path) if span.until is None else _text_at(root, span.until, path)
+    if current is None:
         return False
-    earlier = _text_at(root, since, path)
+    earlier = _text_at(root, span.since, path)
     return earlier is None or _body(earlier) != _body(current)
+
+
+def _text_in_tree(root: Path, path: str) -> str | None:
+    try:
+        return (root / path).read_text()
+    except OSError, UnicodeDecodeError:
+        return None
 
 
 def _text_at(root: Path, revision: str, path: str) -> str | None:

@@ -17,7 +17,7 @@ import model_rules_report
 import model_rules_resume
 import model_rules_run
 import trusted_owners
-from model_rules_files import Selection, committed_paths, select
+from model_rules_files import ReviewedSpan, Selection, committed_paths, select
 from model_rules_outcome import Judgement, Prevented, Resume
 from model_rules_programs import Programs
 from session_snapshot import capture, head_commit
@@ -203,9 +203,11 @@ class _Changes:
         """
         committed = Selection()
         if record.head is not None and head_commit(record.root) != record.head:
-            committed = select(record.root, committed_paths(record.root, record.head), record.head)
+            committed = select(
+                record.root, committed_paths(record.root, record.head), ReviewedSpan(record.head, "HEAD")
+            )
         changed = record.baseline.changed_paths(capture(record.root))
-        return cls(committed, select(record.root, changed, "HEAD"))
+        return cls(committed, select(record.root, changed, ReviewedSpan("HEAD")))
 
     @property
     def withheld(self) -> frozenset[str]:

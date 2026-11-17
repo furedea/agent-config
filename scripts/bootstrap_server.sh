@@ -98,8 +98,8 @@ readonly JQ_TAG="${JQ_TAG:-jq-1.8.1}"
 readonly JQ_SHA256="${JQ_SHA256:-020468de7539ce70ef1bceaf7cde2e8c4f2ca6c3afb84642aabc5c97d9fc2a0d}"
 readonly JQ_VERSION="${JQ_VERSION:-${JQ_TAG#jq-}}"
 # renovate: datasource=github-release-attachments depName=astral-sh/ruff
-readonly RUFF_VERSION="${RUFF_VERSION:-0.17.4}"
-readonly RUFF_SHA256="${RUFF_SHA256:-d1d6ec9ce1ce0c01e23532a157a677077ba1f82f7cd2cde6f0bd75e65f85df93}"
+readonly RUFF_VERSION="${RUFF_VERSION:-0.17.5}"
+readonly RUFF_SHA256="${RUFF_SHA256:-dc94b7e225b8910fb6f55298ada32d00e356dbd195a5ffb647847f388cb54f84}"
 # renovate: datasource=github-release-attachments depName=dprint/dprint
 readonly DPRINT_VERSION="${DPRINT_VERSION:-0.64.1}"
 readonly DPRINT_SHA256="${DPRINT_SHA256:-aad2ee102014c563112dcdad65e131dbcfe123355ef948ae91d806e833cdbf40}"

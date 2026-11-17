@@ -17,6 +17,8 @@ SIMPLE_NODES = frozenset(
     "Block CallExpr BinaryCmd IfClause WhileClause ForClause WordIter CaseClause Subshell TestClause DeclClause Lit "
     "SglQuoted DblQuoted ParamExp CmdSubst ProcSubst UnaryTest BinaryTest ParenTest Word".split()
 )
+# A test of whether a name is set, or is a nameref, which evaluates the name's subscript as code.
+NAME_TEST = re.compile(r"(?<!\S)-[vR](?!\S)")
 # Programs that evaluate text again, assign or remove a parameter by name, or change what a name runs.
 REEVALUATING = (
     frozenset(
@@ -103,14 +105,16 @@ def feeds_a_shell(body: dict, copies: dict[str, str], data: bytes) -> bool:
 def is_simple(body: dict, data: bytes) -> bool:
     """Whether a body holds only what the hook can judge word by word with each caller's words.
 
-    That excludes a heredoc, a nested definition, arithmetic and subscripts, an append, a declaration other than a
-    plain local, and every builtin that evaluates text again or assigns by name.
+    That excludes a heredoc, a nested definition, arithmetic and subscripts, a test of a name with -v or -R, an
+    append, a declaration other than a plain local, and every builtin that evaluates text again or assigns by name.
     """
     for node in nodes(body):
         kind = node.get("Type")
         if kind is not None and kind not in SIMPLE_NODES:
             return False
-        if kind == "TestClause" and ARITHMETIC_TEST.search(source_text(node, data)):
+        if kind == "TestClause" and (
+            ARITHMETIC_TEST.search(source_text(node, data)) or NAME_TEST.search(source_text(node, data))
+        ):
             return False
         if kind == "ParamExp" and (node.get("Index") or node.get("Slice")):
             return False
@@ -138,4 +142,6 @@ def _plain_name(argument: dict, data: bytes) -> bool:
 
 def _reevaluates(call: dict, data: bytes) -> bool:
     words = [literal_word(word, data)[0] for word in call["Args"]]
+    if words[0] in {"test", "["} and not {"-v", "-R"}.isdisjoint(words[1:]):
+        return True
     return words[0] in REEVALUATING or (words[0] in {"print", "printf"} and any(map(NAME_OPTION.fullmatch, words)))

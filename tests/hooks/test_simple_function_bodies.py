@@ -60,6 +60,10 @@ def test_a_body_using_what_evaluates_text_again_asks(command: str) -> None:
     "command",
     [
         "declare -a a; f(){ unset \"$1\"; }; f 'a[$(find . -delete)0]'",
+        "declare -a a; f(){ [[ -v \"$1\" ]]; }; f 'a[$(find . -delete)0]'",
+        "declare -a a; f(){ [[ -R \"$1\" ]]; }; f 'a[$(find . -delete)0]'",
+        "declare -a a; f(){ test -v \"$1\"; }; f 'a[$(find . -delete)0]'",
+        "declare -a a; f(){ [ -v \"$1\" ]; }; f 'a[$(find . -delete)0]'",
         "f(){ cat <<EOF\nx\nEOF\n}; eval 'f; git commit --no-verify -m x'",
     ],
 )

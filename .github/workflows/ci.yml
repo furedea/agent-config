@@ -23,7 +23,7 @@ env:
 
 jobs:
   nix-lint:
-    uses: furedea/reusable-workflows/.github/workflows/nix-lint.yml@ca7c5f2973a899e209bc60767f434aecbc186bc9 # v1.1.0
+    uses: furedea/reusable-workflows/.github/workflows/nix-lint.yml@5e16a8d7d92a84a4392de97e3ccc1ccac9c8579b # v1.6.0
     permissions:
       contents: read
 
@@ -39,7 +39,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up Nix
-        uses: furedea/reusable-workflows/.github/actions/nix-setup@2ae953294b9a805d0705657adc1d9d4f1bc1f646 # v1.3.0
+        uses: furedea/reusable-workflows/.github/actions/nix-setup@5e16a8d7d92a84a4392de97e3ccc1ccac9c8579b # v1.6.0
         with:
           save: false
 
@@ -61,7 +61,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up Nix
-        uses: furedea/reusable-workflows/.github/actions/nix-setup@2ae953294b9a805d0705657adc1d9d4f1bc1f646 # v1.3.0
+        uses: furedea/reusable-workflows/.github/actions/nix-setup@5e16a8d7d92a84a4392de97e3ccc1ccac9c8579b # v1.6.0
         with:
           save: false
 
@@ -80,7 +80,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up Nix
-        uses: furedea/reusable-workflows/.github/actions/nix-setup@2ae953294b9a805d0705657adc1d9d4f1bc1f646 # v1.3.0
+        uses: furedea/reusable-workflows/.github/actions/nix-setup@5e16a8d7d92a84a4392de97e3ccc1ccac9c8579b # v1.6.0
         with:
           save: false
 
@@ -118,7 +118,7 @@ jobs:
 
       # One job saves the shared devShell closure (nix-setup saves on push by default); the others only restore it.
       - name: Set up Nix
-        uses: furedea/reusable-workflows/.github/actions/nix-setup@2ae953294b9a805d0705657adc1d9d4f1bc1f646 # v1.3.0
+        uses: furedea/reusable-workflows/.github/actions/nix-setup@5e16a8d7d92a84a4392de97e3ccc1ccac9c8579b # v1.6.0
 
       - name: Run bats
         run: bats --print-output-on-failure tests/bootstrap_server.bats
@@ -135,7 +135,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up Nix
-        uses: furedea/reusable-workflows/.github/actions/nix-setup@2ae953294b9a805d0705657adc1d9d4f1bc1f646 # v1.3.0
+        uses: furedea/reusable-workflows/.github/actions/nix-setup@5e16a8d7d92a84a4392de97e3ccc1ccac9c8579b # v1.6.0
         with:
           save: false
 
@@ -161,7 +161,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up Nix
-        uses: furedea/reusable-workflows/.github/actions/nix-setup@2ae953294b9a805d0705657adc1d9d4f1bc1f646 # v1.3.0
+        uses: furedea/reusable-workflows/.github/actions/nix-setup@5e16a8d7d92a84a4392de97e3ccc1ccac9c8579b # v1.6.0
         with:
           save: false
 
@@ -218,7 +218,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up Nix
-        uses: furedea/reusable-workflows/.github/actions/nix-setup@2ae953294b9a805d0705657adc1d9d4f1bc1f646 # v1.3.0
+        uses: furedea/reusable-workflows/.github/actions/nix-setup@5e16a8d7d92a84a4392de97e3ccc1ccac9c8579b # v1.6.0
         with:
           save: false
 
@@ -244,7 +244,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up Nix
-        uses: furedea/reusable-workflows/.github/actions/nix-setup@2ae953294b9a805d0705657adc1d9d4f1bc1f646 # v1.3.0
+        uses: furedea/reusable-workflows/.github/actions/nix-setup@5e16a8d7d92a84a4392de97e3ccc1ccac9c8579b # v1.6.0
         with:
           save: false
 
@@ -263,7 +263,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up Nix
-        uses: furedea/reusable-workflows/.github/actions/nix-setup@2ae953294b9a805d0705657adc1d9d4f1bc1f646 # v1.3.0
+        uses: furedea/reusable-workflows/.github/actions/nix-setup@5e16a8d7d92a84a4392de97e3ccc1ccac9c8579b # v1.6.0
         with:
           save: false
 
@@ -274,18 +274,18 @@ jobs:
         run: uv run --group audit vulture
 
   gha-lint:
-    uses: furedea/reusable-workflows/.github/workflows/gha-lint.yml@ca7c5f2973a899e209bc60767f434aecbc186bc9 # v1.1.0
+    uses: furedea/reusable-workflows/.github/workflows/gha-lint.yml@5e16a8d7d92a84a4392de97e3ccc1ccac9c8579b # v1.6.0
     permissions:
       actions: read
       contents: read
 
   dependency-review:
-    uses: furedea/reusable-workflows/.github/workflows/dependency-review.yml@ca7c5f2973a899e209bc60767f434aecbc186bc9 # v1.1.0
+    uses: furedea/reusable-workflows/.github/workflows/dependency-review.yml@5e16a8d7d92a84a4392de97e3ccc1ccac9c8579b # v1.6.0
     permissions:
       contents: read
 
   nix-check:
-    uses: furedea/reusable-workflows/.github/workflows/nix-check.yml@ca7c5f2973a899e209bc60767f434aecbc186bc9 # v1.1.0
+    uses: furedea/reusable-workflows/.github/workflows/nix-check.yml@5e16a8d7d92a84a4392de97e3ccc1ccac9c8579b # v1.6.0
     permissions:
       contents: read
 
@@ -303,7 +303,7 @@ jobs:
       pull-requests: read
 
   claude-review:
-    uses: furedea/reusable-workflows/.github/workflows/claude-review.yml@ca7c5f2973a899e209bc60767f434aecbc186bc9 # v1.1.0
+    uses: furedea/reusable-workflows/.github/workflows/claude-review.yml@5e16a8d7d92a84a4392de97e3ccc1ccac9c8579b # v1.6.0
     permissions:
       contents: read
       pull-requests: write
@@ -311,7 +311,7 @@ jobs:
       claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
 
   codex-review:
-    uses: furedea/reusable-workflows/.github/workflows/codex-review.yml@ca7c5f2973a899e209bc60767f434aecbc186bc9 # v1.1.0
+    uses: furedea/reusable-workflows/.github/workflows/codex-review.yml@5e16a8d7d92a84a4392de97e3ccc1ccac9c8579b # v1.6.0
     permissions: {}
     secrets:
       codex_review_token: ${{ secrets.CODEX_REVIEW_TOKEN }}

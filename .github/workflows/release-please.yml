@@ -15,7 +15,7 @@ concurrency:
 # CHANGELOG.md. release-pr publishes the release itself; there are no artifacts for release-publish to attach.
 jobs:
   release-pr:
-    uses: furedea/reusable-workflows/.github/workflows/release-pr.yml@2ae953294b9a805d0705657adc1d9d4f1bc1f646 # v1.3.0
+    uses: furedea/reusable-workflows/.github/workflows/release-pr.yml@5e16a8d7d92a84a4392de97e3ccc1ccac9c8579b # v1.6.0
     permissions: {}
     with:
       app-client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}

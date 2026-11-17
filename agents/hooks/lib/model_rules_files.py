@@ -113,7 +113,6 @@ def _verdict(real_root: Path, candidate: Path, path: str) -> bool | None:
 
 
 def _is_changed_adr(root: Path, path: str, span: ReviewedSpan) -> bool:
-    """Whether `path` is an ADR that is new at `span.since` or whose body differs from the one there."""
     if not PurePosixPath(path).full_match(_ADR_PATTERN):
         return False
     current = _text_in_tree(root, path) if span.until is None else _text_at(root, span.until, path)
@@ -131,7 +130,6 @@ def _text_in_tree(root: Path, path: str) -> str | None:
 
 
 def _text_at(root: Path, revision: str, path: str) -> str | None:
-    """The file at `revision`, or None when it did not exist there or cannot be read."""
     try:
         output = subprocess.check_output(
             ["git", "-c", "core.fsmonitor=false", "-C", str(root), "show", f"{revision}:{path}"],

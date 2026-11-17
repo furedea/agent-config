@@ -251,38 +251,6 @@ jobs:
       - name: Build the agent source
         run: nix build .#default
 
-  adr-check:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: read
-    # `nix run` needs no dev shell.
-    defaults:
-      run:
-        shell: bash
-    steps:
-      # The base commit of a pull request must be in the history for `--base`.
-      - name: Checkout repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-
-      - name: Set up Nix
-        uses: furedea/reusable-workflows/.github/actions/nix-setup@2ae953294b9a805d0705657adc1d9d4f1bc1f646 # v1.3.0
-        with:
-          save: false
-
-      - name: Check the ADRs
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        run: |
-          if [ -n "$BASE_SHA" ]; then
-            nix run .#adr-check -- --base "$BASE_SHA" docs/adr
-          else
-            nix run .#adr-check -- docs/adr
-          fi
-
   audit:
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -321,6 +289,19 @@ jobs:
     permissions:
       contents: read
 
+  adr-lint:
+    uses: furedea/reusable-workflows/.github/workflows/adr-lint.yml@5e16a8d7d92a84a4392de97e3ccc1ccac9c8579b # v1.6.0
+    permissions:
+      contents: read
+    with:
+      madr-from: 27
+
+  ast-grep:
+    uses: furedea/reusable-workflows/.github/workflows/ast-grep.yml@5e16a8d7d92a84a4392de97e3ccc1ccac9c8579b # v1.6.0
+    permissions:
+      contents: read
+      pull-requests: read
+
   claude-review:
     uses: furedea/reusable-workflows/.github/workflows/claude-review.yml@ca7c5f2973a899e209bc60767f434aecbc186bc9 # v1.1.0
     permissions:
@@ -348,11 +329,12 @@ jobs:
       - execpolicy
       - shell-lint
       - nix-build
-      - adr-check
       - audit
       - gha-lint
       - dependency-review
       - nix-check
+      - adr-lint
+      - ast-grep
       - claude-review
       - codex-review
     runs-on: ubuntu-latest

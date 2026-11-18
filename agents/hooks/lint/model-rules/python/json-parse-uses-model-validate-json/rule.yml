@@ -1,12 +1,18 @@
 # agents/skills/python-style/references/models.md: parse JSON with `Model.model_validate_json(...)`; a strict model
 # rejects a dict built by `json.loads` for datetime, UUID and similar fields. Every `model_validate(...)` call is sent so
-# the model can follow where the argument came from. Advisory and unfitted (ADR-0021).
+# the model can follow where the argument came from. Advisory (ADR-0021).
 id: json-parse-uses-model-validate-json
 language: Python
 kind: noul
 subject: node
 state: located
-threshold: 0.5
+# Cutoff 0.62: jev-lint's fitted midpoint on this folder's fixtures (3 violations, 5 conforming cases, 3 passes,
+# means), where the loudest conforming case scored 0.25 and the quietest violation 0.94 (baseline.json, 2026-11-18).
+threshold: 0.62
+inconclusive: >-
+  Blind: the conforming cases score at most 0.25 and the violations at least 0.94, both a quarter of the scale or more
+  from the cutoff, so this corpus cannot see the rule drift. The hard conforming cases written for it still answered
+  far below the cutoff; a boundary case needs real code that reviewers argue over, and none has been found yet.
 axis: file
 severity: warning
 # Matched on the callee, so a call that only wraps `model_validate(...)` is not a subject of its own (#196).

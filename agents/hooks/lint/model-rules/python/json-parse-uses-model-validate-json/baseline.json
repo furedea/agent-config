@@ -1,0 +1,244 @@
+{
+  "schema": "jev-lint-eval-1",
+  "recorded": "2026-11-18T06:21:57.341Z",
+  "model": "jev-1.14.0",
+  "suite": "python/json-parse-uses-model-validate-json",
+  "rules": [
+    {
+      "id": "json-parse-uses-model-validate-json",
+      "draft": "59d2efa23bc3",
+      "at": 0.5
+    }
+  ],
+  "cutoffs": {},
+  "passes": [
+    [
+      {
+        "rule": "json-parse-uses-model-validate-json",
+        "file": "agents/hooks/lint/model-rules/python/json-parse-uses-model-validate-json/fixtures/subjects.py",
+        "line": 13,
+        "endLine": 13,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "json-parse-uses-model-validate-json",
+        "file": "agents/hooks/lint/model-rules/python/json-parse-uses-model-validate-json/fixtures/subjects.py",
+        "line": 18,
+        "endLine": 18,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "json-parse-uses-model-validate-json",
+        "file": "agents/hooks/lint/model-rules/python/json-parse-uses-model-validate-json/fixtures/subjects.py",
+        "line": 23,
+        "endLine": 23,
+        "kind": "noul",
+        "value": 0.94,
+        "confidence": null
+      },
+      {
+        "rule": "json-parse-uses-model-validate-json",
+        "file": "agents/hooks/lint/model-rules/python/json-parse-uses-model-validate-json/fixtures/subjects.py",
+        "line": 28,
+        "endLine": 28,
+        "kind": "noul",
+        "value": 0.08,
+        "confidence": null
+      },
+      {
+        "rule": "json-parse-uses-model-validate-json",
+        "file": "agents/hooks/lint/model-rules/python/json-parse-uses-model-validate-json/fixtures/subjects.py",
+        "line": 32,
+        "endLine": 32,
+        "kind": "noul",
+        "value": 0.03,
+        "confidence": null
+      },
+      {
+        "rule": "json-parse-uses-model-validate-json",
+        "file": "agents/hooks/lint/model-rules/python/json-parse-uses-model-validate-json/fixtures/subjects.py",
+        "line": 36,
+        "endLine": 36,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "json-parse-uses-model-validate-json",
+        "file": "agents/hooks/lint/model-rules/python/json-parse-uses-model-validate-json/fixtures/subjects.py",
+        "line": 42,
+        "endLine": 42,
+        "kind": "noul",
+        "value": 0.27,
+        "confidence": null
+      },
+      {
+        "rule": "json-parse-uses-model-validate-json",
+        "file": "agents/hooks/lint/model-rules/python/json-parse-uses-model-validate-json/fixtures/subjects.py",
+        "line": 46,
+        "endLine": 46,
+        "kind": "noul",
+        "value": 0.08,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "json-parse-uses-model-validate-json",
+        "file": "agents/hooks/lint/model-rules/python/json-parse-uses-model-validate-json/fixtures/subjects.py",
+        "line": 13,
+        "endLine": 13,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "json-parse-uses-model-validate-json",
+        "file": "agents/hooks/lint/model-rules/python/json-parse-uses-model-validate-json/fixtures/subjects.py",
+        "line": 18,
+        "endLine": 18,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "json-parse-uses-model-validate-json",
+        "file": "agents/hooks/lint/model-rules/python/json-parse-uses-model-validate-json/fixtures/subjects.py",
+        "line": 23,
+        "endLine": 23,
+        "kind": "noul",
+        "value": 0.94,
+        "confidence": null
+      },
+      {
+        "rule": "json-parse-uses-model-validate-json",
+        "file": "agents/hooks/lint/model-rules/python/json-parse-uses-model-validate-json/fixtures/subjects.py",
+        "line": 28,
+        "endLine": 28,
+        "kind": "noul",
+        "value": 0.08,
+        "confidence": null
+      },
+      {
+        "rule": "json-parse-uses-model-validate-json",
+        "file": "agents/hooks/lint/model-rules/python/json-parse-uses-model-validate-json/fixtures/subjects.py",
+        "line": 32,
+        "endLine": 32,
+        "kind": "noul",
+        "value": 0.03,
+        "confidence": null
+      },
+      {
+        "rule": "json-parse-uses-model-validate-json",
+        "file": "agents/hooks/lint/model-rules/python/json-parse-uses-model-validate-json/fixtures/subjects.py",
+        "line": 36,
+        "endLine": 36,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "json-parse-uses-model-validate-json",
+        "file": "agents/hooks/lint/model-rules/python/json-parse-uses-model-validate-json/fixtures/subjects.py",
+        "line": 42,
+        "endLine": 42,
+        "kind": "noul",
+        "value": 0.29,
+        "confidence": null
+      },
+      {
+        "rule": "json-parse-uses-model-validate-json",
+        "file": "agents/hooks/lint/model-rules/python/json-parse-uses-model-validate-json/fixtures/subjects.py",
+        "line": 46,
+        "endLine": 46,
+        "kind": "noul",
+        "value": 0.08,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "json-parse-uses-model-validate-json",
+        "file": "agents/hooks/lint/model-rules/python/json-parse-uses-model-validate-json/fixtures/subjects.py",
+        "line": 13,
+        "endLine": 13,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "json-parse-uses-model-validate-json",
+        "file": "agents/hooks/lint/model-rules/python/json-parse-uses-model-validate-json/fixtures/subjects.py",
+        "line": 18,
+        "endLine": 18,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "json-parse-uses-model-validate-json",
+        "file": "agents/hooks/lint/model-rules/python/json-parse-uses-model-validate-json/fixtures/subjects.py",
+        "line": 23,
+        "endLine": 23,
+        "kind": "noul",
+        "value": 0.94,
+        "confidence": null
+      },
+      {
+        "rule": "json-parse-uses-model-validate-json",
+        "file": "agents/hooks/lint/model-rules/python/json-parse-uses-model-validate-json/fixtures/subjects.py",
+        "line": 28,
+        "endLine": 28,
+        "kind": "noul",
+        "value": 0.08,
+        "confidence": null
+      },
+      {
+        "rule": "json-parse-uses-model-validate-json",
+        "file": "agents/hooks/lint/model-rules/python/json-parse-uses-model-validate-json/fixtures/subjects.py",
+        "line": 32,
+        "endLine": 32,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "json-parse-uses-model-validate-json",
+        "file": "agents/hooks/lint/model-rules/python/json-parse-uses-model-validate-json/fixtures/subjects.py",
+        "line": 36,
+        "endLine": 36,
+        "kind": "noul",
+        "value": 0.03,
+        "confidence": null
+      },
+      {
+        "rule": "json-parse-uses-model-validate-json",
+        "file": "agents/hooks/lint/model-rules/python/json-parse-uses-model-validate-json/fixtures/subjects.py",
+        "line": 42,
+        "endLine": 42,
+        "kind": "noul",
+        "value": 0.2,
+        "confidence": null
+      },
+      {
+        "rule": "json-parse-uses-model-validate-json",
+        "file": "agents/hooks/lint/model-rules/python/json-parse-uses-model-validate-json/fixtures/subjects.py",
+        "line": 46,
+        "endLine": 46,
+        "kind": "noul",
+        "value": 0.09,
+        "confidence": null
+      }
+    ]
+  ],
+  "spent": {
+    "calls": 3,
+    "inputTokens": 11052,
+    "usd": 0.000464184,
+    "ms": 196
+  }
+}

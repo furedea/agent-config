@@ -30,7 +30,8 @@ ask: >-
 criteria:
   "true": >-
     The class descends from `FrozenBaseModel` and sets `frozen`, `extra`, `strict`, `validate_default` or
-    `revalidate_instances` to anything other than the base value, in class keywords or in `model_config`.
+    `revalidate_instances` to a value that differs from the base value (`frozen=True`, `extra="forbid"`,
+    `strict=True`, `validate_default=True`, `revalidate_instances="always"`), in class keywords or in `model_config`.
   "false": >-
-    The class does not descend from `FrozenBaseModel`, sets only other keys (such as `alias_generator`), or is
-    `FrozenBaseModel` itself.
+    The class does not descend from `FrozenBaseModel`, sets only other keys (such as `alias_generator`), repeats a
+    locked setting with exactly the base value (`strict=True`), or is `FrozenBaseModel` itself.

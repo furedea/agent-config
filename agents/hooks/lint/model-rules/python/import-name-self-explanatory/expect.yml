@@ -4,13 +4,13 @@ note: >-
   conventional numpy and pandas aliases, aliases that resolve a real clash between two `models` modules, and a
   generic name from a long module path.
 fixtures/subjects.py:
-  - { line: 3, label: bad, window: 1, why: "loads from json; json.loads reads better at the call site" }
-  - { line: 4, label: bad, window: 1, why: "run from subprocess hides its origin" }
-  - { line: 5, label: bad, window: 1, why: "generic Config from a short path" }
-  - { line: 6, label: bad, window: 1, why: "requests aliased to r for no clarity gain" }
-  - { line: 7, label: bad, window: 1, why: "load from yaml hides its origin" }
-  - { line: 8, label: clean, window: 1, why: "conventional numpy alias" }
-  - { line: 9, label: clean, window: 1, why: "conventional pandas alias" }
-  - { line: 10, label: clean, window: 1, why: "alias resolves a clash with the users models module" }
-  - { line: 11, label: clean, window: 1, why: "alias resolves a clash with the orders models module" }
-  - { line: 12, label: clean, window: 1, why: "a long module path makes module.name unwieldy" }
+  - { line: 3, label: bad, window: 0, why: "loads from json; json.loads reads better at the call site" }
+  - { line: 4, label: bad, window: 0, why: "run from subprocess hides its origin" }
+  - { line: 5, label: bad, window: 0, why: "generic Config from a short path" }
+  - { line: 6, label: bad, window: 0, why: "requests aliased to r for no clarity gain" }
+  - { line: 7, label: bad, window: 0, why: "load from yaml hides its origin" }
+  - { line: 8, label: clean, window: 0, why: "conventional numpy alias" }
+  - { line: 9, label: clean, window: 0, why: "conventional pandas alias" }
+  - { line: 10, label: clean, window: 0, why: "alias resolves a clash with the users models module" }
+  - { line: 11, label: clean, window: 0, why: "alias resolves a clash with the orders models module" }
+  - { line: 12, label: clean, window: 0, why: "a long module path makes module.name unwieldy" }

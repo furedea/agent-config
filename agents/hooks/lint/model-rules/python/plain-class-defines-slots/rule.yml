@@ -1,11 +1,13 @@
 # agents/skills/python-style/references/models.md: use `__slots__` to restrict attributes when not using `dataclasses` or
-# `pydantic`. Every class that sets attributes in `__init__` is sent. Advisory and unfitted (ADR-0021).
+# `pydantic`. Every class that sets attributes in `__init__` is sent. Advisory (ADR-0021).
 id: plain-class-defines-slots
 language: Python
 kind: noul
 subject: node
 state: located
-threshold: 0.5
+# Cutoff 0.89: jev-lint's fitted midpoint on this folder's fixtures (3 violations, 5 conforming cases, 3 passes,
+# means), where the loudest conforming case scored 0.77 and the quietest violation 0.97 (baseline.json, 2026-11-18).
+threshold: 0.89
 axis: file
 severity: warning
 rule:

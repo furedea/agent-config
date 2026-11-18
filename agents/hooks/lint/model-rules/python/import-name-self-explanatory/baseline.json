@@ -1,0 +1,298 @@
+{
+  "schema": "jev-lint-eval-1",
+  "recorded": "2026-11-18T06:21:57.120Z",
+  "model": "jev-1.14.0",
+  "suite": "python/import-name-self-explanatory",
+  "rules": [
+    {
+      "id": "import-name-self-explanatory",
+      "draft": "184c77387286",
+      "at": 0.5
+    }
+  ],
+  "cutoffs": {},
+  "passes": [
+    [
+      {
+        "rule": "import-name-self-explanatory",
+        "file": "agents/hooks/lint/model-rules/python/import-name-self-explanatory/fixtures/subjects.py",
+        "line": 3,
+        "endLine": 3,
+        "kind": "noul",
+        "value": 0.63,
+        "confidence": null
+      },
+      {
+        "rule": "import-name-self-explanatory",
+        "file": "agents/hooks/lint/model-rules/python/import-name-self-explanatory/fixtures/subjects.py",
+        "line": 4,
+        "endLine": 4,
+        "kind": "noul",
+        "value": 0.79,
+        "confidence": null
+      },
+      {
+        "rule": "import-name-self-explanatory",
+        "file": "agents/hooks/lint/model-rules/python/import-name-self-explanatory/fixtures/subjects.py",
+        "line": 5,
+        "endLine": 5,
+        "kind": "noul",
+        "value": 0.78,
+        "confidence": null
+      },
+      {
+        "rule": "import-name-self-explanatory",
+        "file": "agents/hooks/lint/model-rules/python/import-name-self-explanatory/fixtures/subjects.py",
+        "line": 6,
+        "endLine": 6,
+        "kind": "noul",
+        "value": 0.47,
+        "confidence": null
+      },
+      {
+        "rule": "import-name-self-explanatory",
+        "file": "agents/hooks/lint/model-rules/python/import-name-self-explanatory/fixtures/subjects.py",
+        "line": 7,
+        "endLine": 7,
+        "kind": "noul",
+        "value": 0.87,
+        "confidence": null
+      },
+      {
+        "rule": "import-name-self-explanatory",
+        "file": "agents/hooks/lint/model-rules/python/import-name-self-explanatory/fixtures/subjects.py",
+        "line": 8,
+        "endLine": 8,
+        "kind": "noul",
+        "value": 0.08,
+        "confidence": null
+      },
+      {
+        "rule": "import-name-self-explanatory",
+        "file": "agents/hooks/lint/model-rules/python/import-name-self-explanatory/fixtures/subjects.py",
+        "line": 9,
+        "endLine": 9,
+        "kind": "noul",
+        "value": 0.09,
+        "confidence": null
+      },
+      {
+        "rule": "import-name-self-explanatory",
+        "file": "agents/hooks/lint/model-rules/python/import-name-self-explanatory/fixtures/subjects.py",
+        "line": 10,
+        "endLine": 10,
+        "kind": "noul",
+        "value": 0.43,
+        "confidence": null
+      },
+      {
+        "rule": "import-name-self-explanatory",
+        "file": "agents/hooks/lint/model-rules/python/import-name-self-explanatory/fixtures/subjects.py",
+        "line": 11,
+        "endLine": 11,
+        "kind": "noul",
+        "value": 0.45,
+        "confidence": null
+      },
+      {
+        "rule": "import-name-self-explanatory",
+        "file": "agents/hooks/lint/model-rules/python/import-name-self-explanatory/fixtures/subjects.py",
+        "line": 12,
+        "endLine": 12,
+        "kind": "noul",
+        "value": 0.56,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "import-name-self-explanatory",
+        "file": "agents/hooks/lint/model-rules/python/import-name-self-explanatory/fixtures/subjects.py",
+        "line": 3,
+        "endLine": 3,
+        "kind": "noul",
+        "value": 0.64,
+        "confidence": null
+      },
+      {
+        "rule": "import-name-self-explanatory",
+        "file": "agents/hooks/lint/model-rules/python/import-name-self-explanatory/fixtures/subjects.py",
+        "line": 4,
+        "endLine": 4,
+        "kind": "noul",
+        "value": 0.75,
+        "confidence": null
+      },
+      {
+        "rule": "import-name-self-explanatory",
+        "file": "agents/hooks/lint/model-rules/python/import-name-self-explanatory/fixtures/subjects.py",
+        "line": 5,
+        "endLine": 5,
+        "kind": "noul",
+        "value": 0.74,
+        "confidence": null
+      },
+      {
+        "rule": "import-name-self-explanatory",
+        "file": "agents/hooks/lint/model-rules/python/import-name-self-explanatory/fixtures/subjects.py",
+        "line": 6,
+        "endLine": 6,
+        "kind": "noul",
+        "value": 0.43,
+        "confidence": null
+      },
+      {
+        "rule": "import-name-self-explanatory",
+        "file": "agents/hooks/lint/model-rules/python/import-name-self-explanatory/fixtures/subjects.py",
+        "line": 7,
+        "endLine": 7,
+        "kind": "noul",
+        "value": 0.88,
+        "confidence": null
+      },
+      {
+        "rule": "import-name-self-explanatory",
+        "file": "agents/hooks/lint/model-rules/python/import-name-self-explanatory/fixtures/subjects.py",
+        "line": 8,
+        "endLine": 8,
+        "kind": "noul",
+        "value": 0.07,
+        "confidence": null
+      },
+      {
+        "rule": "import-name-self-explanatory",
+        "file": "agents/hooks/lint/model-rules/python/import-name-self-explanatory/fixtures/subjects.py",
+        "line": 9,
+        "endLine": 9,
+        "kind": "noul",
+        "value": 0.08,
+        "confidence": null
+      },
+      {
+        "rule": "import-name-self-explanatory",
+        "file": "agents/hooks/lint/model-rules/python/import-name-self-explanatory/fixtures/subjects.py",
+        "line": 10,
+        "endLine": 10,
+        "kind": "noul",
+        "value": 0.45,
+        "confidence": null
+      },
+      {
+        "rule": "import-name-self-explanatory",
+        "file": "agents/hooks/lint/model-rules/python/import-name-self-explanatory/fixtures/subjects.py",
+        "line": 11,
+        "endLine": 11,
+        "kind": "noul",
+        "value": 0.43,
+        "confidence": null
+      },
+      {
+        "rule": "import-name-self-explanatory",
+        "file": "agents/hooks/lint/model-rules/python/import-name-self-explanatory/fixtures/subjects.py",
+        "line": 12,
+        "endLine": 12,
+        "kind": "noul",
+        "value": 0.54,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "import-name-self-explanatory",
+        "file": "agents/hooks/lint/model-rules/python/import-name-self-explanatory/fixtures/subjects.py",
+        "line": 3,
+        "endLine": 3,
+        "kind": "noul",
+        "value": 0.63,
+        "confidence": null
+      },
+      {
+        "rule": "import-name-self-explanatory",
+        "file": "agents/hooks/lint/model-rules/python/import-name-self-explanatory/fixtures/subjects.py",
+        "line": 4,
+        "endLine": 4,
+        "kind": "noul",
+        "value": 0.78,
+        "confidence": null
+      },
+      {
+        "rule": "import-name-self-explanatory",
+        "file": "agents/hooks/lint/model-rules/python/import-name-self-explanatory/fixtures/subjects.py",
+        "line": 5,
+        "endLine": 5,
+        "kind": "noul",
+        "value": 0.76,
+        "confidence": null
+      },
+      {
+        "rule": "import-name-self-explanatory",
+        "file": "agents/hooks/lint/model-rules/python/import-name-self-explanatory/fixtures/subjects.py",
+        "line": 6,
+        "endLine": 6,
+        "kind": "noul",
+        "value": 0.48,
+        "confidence": null
+      },
+      {
+        "rule": "import-name-self-explanatory",
+        "file": "agents/hooks/lint/model-rules/python/import-name-self-explanatory/fixtures/subjects.py",
+        "line": 7,
+        "endLine": 7,
+        "kind": "noul",
+        "value": 0.88,
+        "confidence": null
+      },
+      {
+        "rule": "import-name-self-explanatory",
+        "file": "agents/hooks/lint/model-rules/python/import-name-self-explanatory/fixtures/subjects.py",
+        "line": 8,
+        "endLine": 8,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "import-name-self-explanatory",
+        "file": "agents/hooks/lint/model-rules/python/import-name-self-explanatory/fixtures/subjects.py",
+        "line": 9,
+        "endLine": 9,
+        "kind": "noul",
+        "value": 0.09,
+        "confidence": null
+      },
+      {
+        "rule": "import-name-self-explanatory",
+        "file": "agents/hooks/lint/model-rules/python/import-name-self-explanatory/fixtures/subjects.py",
+        "line": 10,
+        "endLine": 10,
+        "kind": "noul",
+        "value": 0.43,
+        "confidence": null
+      },
+      {
+        "rule": "import-name-self-explanatory",
+        "file": "agents/hooks/lint/model-rules/python/import-name-self-explanatory/fixtures/subjects.py",
+        "line": 11,
+        "endLine": 11,
+        "kind": "noul",
+        "value": 0.41,
+        "confidence": null
+      },
+      {
+        "rule": "import-name-self-explanatory",
+        "file": "agents/hooks/lint/model-rules/python/import-name-self-explanatory/fixtures/subjects.py",
+        "line": 12,
+        "endLine": 12,
+        "kind": "noul",
+        "value": 0.5,
+        "confidence": null
+      }
+    ]
+  ],
+  "spent": {
+    "calls": 3,
+    "inputTokens": 11268,
+    "usd": 0.000473256,
+    "ms": 188
+  }
+}

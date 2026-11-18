@@ -1,13 +1,18 @@
 # agents/skills/python-style/references/models.md: `FrozenBaseModel` sets `frozen=True`, `extra="forbid"`, `strict=True`,
 # `validate_default=True` and `revalidate_instances="always"`, in class keywords or `model_config`. The class named
-# `FrozenBaseModel` is sent, so the model can follow a named config constant or a split definition. Advisory and
-# unfitted (ADR-0021).
+# `FrozenBaseModel` is sent, so the model can follow a named config constant or a split definition. Advisory (ADR-0021).
 id: frozen-base-model-sets-all-settings
 language: Python
 kind: noul
 subject: node
 state: located
+# Cutoff 0.5: jev-lint's fitted midpoint on this folder's fixtures (5 violations, 4 conforming cases, 3 passes, means),
+# where the loudest conforming case scored 0.04 and the quietest violation 0.95 (baseline.json, 2026-11-18).
 threshold: 0.5
+inconclusive: >-
+  Blind: the conforming cases score at most 0.04 and the violations at least 0.95, both a quarter of the scale or more
+  from the cutoff, so this corpus cannot see the rule drift. The hard conforming cases written for it still answered
+  far below the cutoff; a boundary case needs real code that reviewers argue over, and none has been found yet.
 axis: file
 severity: warning
 rule:

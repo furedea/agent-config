@@ -1,11 +1,13 @@
 # agents/skills/python-style/references/code_style.md: define semantically meaningful string literals as module-level
-# constants rather than embedding them inline. Advisory and unfitted (ADR-0021).
+# constants rather than embedding them inline. Advisory (ADR-0021).
 id: string-literal-is-named-constant
 language: Python
 kind: noul
 subject: node
 state: local
-threshold: 0.5
+# Cutoff 0.47: jev-lint's fitted midpoint on this folder's fixtures (4 violations, 3 conforming cases, 3 passes,
+# means), where the loudest conforming case scored 0.25 and the quietest violation 0.66 (baseline.json, 2026-11-18).
+threshold: 0.47
 axis: file
 severity: warning
 rule:

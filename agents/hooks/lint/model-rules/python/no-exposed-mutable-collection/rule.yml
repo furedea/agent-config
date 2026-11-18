@@ -5,7 +5,9 @@ id: no-exposed-mutable-collection
 language: Python
 kind: noul
 subject: node
-state: local
+# The whole file: whether the returned field is a mutable collection, and whether its class guards it, is decided in
+# `__init__` and the class header, outside the returning function.
+state: located
 threshold: 0.5
 axis: file
 severity: warning

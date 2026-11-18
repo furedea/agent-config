@@ -1,11 +1,17 @@
 # agents/skills/python-style/references/models.md: "Use Enum/StrEnum for fixed choices instead of raw string literals or
-# dict maps". Advisory and unfitted (ADR-0021); the Stop hook reports findings and never gates on this rule.
+# dict maps". Advisory (ADR-0021); the Stop hook reports findings and never gates on this rule.
 id: fixed-choices-use-enum
 language: Python
 kind: noul
 subject: node
 state: local
+# Cutoff 0.5: jev-lint's fitted midpoint on this folder's fixtures (4 violations, 5 conforming cases, 3 passes, means),
+# where the loudest conforming case scored 0.08 and the quietest violation 0.92 (baseline.json, 2026-11-18).
 threshold: 0.5
+inconclusive: >-
+  Blind: the conforming cases score at most 0.08 and the violations at least 0.92, both a quarter of the scale or more
+  from the cutoff, so this corpus cannot see the rule drift. The hard conforming cases written for it still answered
+  far below the cutoff; a boundary case needs real code that reviewers argue over, and none has been found yet.
 axis: file
 severity: warning
 rule:

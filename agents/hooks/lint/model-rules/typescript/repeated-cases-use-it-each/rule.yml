@@ -11,7 +11,7 @@ rule:
   any:
     - all:
         - kind: call_expression
-        - has: { field: function, regex: '^describe(\.|$)' }
+        - has: { field: function, regex: '^(describe|suite)(\.|$)' }
         - not:
             has: { field: function, kind: member_expression, regex: '\.each$' }
     - all:

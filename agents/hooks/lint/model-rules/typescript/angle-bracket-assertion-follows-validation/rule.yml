@@ -4,7 +4,8 @@ id: angle-bracket-assertion-follows-validation
 language: TypeScript
 kind: noul
 subject: node
-state: local
+# The whole file: the check that justifies the assertion is often in another function of the file (#196).
+state: located
 threshold: 0.5
 axis: file
 severity: warning

@@ -100,6 +100,33 @@ const loadLater = function (path: string): string {
   if (!path) throw new Error("missing");
   return path;
 };
+
+export default () => {
+  throw new Error("no default handler");
+};
+
+const handlers = {
+  open: () => Date(),
+  reject: (id: string) => Promise.reject(new Error(`load item ${id}: missing`)),
+};
+
+const startedAt = () => new Date;
+
+const pick = handlers
+  ? () => {
+      // The first handler wins.
+      return 1;
+    }
+  : undefined;
+
+suite("parse", () => {
+  it("reads one", () => {});
+});
+
+class LoadState {
+  isLoading = false;
+  data?: string;
+}
 """
 
 

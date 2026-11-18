@@ -3,7 +3,8 @@ id: comment-explains-why
 languages: [ TypeScript, Tsx ]
 kind: noul
 subject: node
-state: local
+# The whole file: a comment outside any function is judged against the code next to it (#196).
+state: located
 threshold: 0.5
 axis: file
 severity: warning
@@ -20,13 +21,6 @@ rule:
             - kind: arrow_function
             - kind: function_expression
             - kind: generator_function
-        - inside:
-            any:
-              - kind: variable_declarator
-              - kind: public_field_definition
-              - kind: arguments
-              - kind: pair
-              - kind: return_statement
         - has: { kind: comment, stopBy: { any: [ { kind: generator_function_declaration }, { kind: generator_function }, { kind: function_declaration }, { kind: function_expression }, { kind: arrow_function }, { kind: method_definition } ] } }
     - all:
         - kind: comment

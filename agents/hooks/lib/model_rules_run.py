@@ -346,6 +346,9 @@ def _capped_plan(report: dict, cap: int, paths: tuple[str, ...]) -> Plan:
             chosen.append(file)
             total += count
     skipped = {file for file in per_file if file not in chosen}
+    if not chosen:
+        # No paths would mean the whole diff, so a plan that keeps nothing judges nothing.
+        return Plan((), subjects, 0, len(skipped), subjects)
     return Plan(tuple(chosen), subjects, total, len(skipped), sum(per_file[file] for file in skipped))
 
 

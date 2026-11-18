@@ -196,6 +196,17 @@ def test_subjects_already_cached_do_not_count_against_the_cap(
     assert "a.py" not in launch["argv"]
 
 
+def test_nothing_is_sent_when_no_file_fits_the_cap_even_if_some_subjects_are_cached(
+    record: session_store.SessionRecord, tools: Tools
+) -> None:
+    tools.plan(35, [("notes.txt", 30)], cached=5)
+
+    result = stop(record)
+
+    assert tools.calls("op") == []
+    assert "0/35 subjects" in result["systemMessage"]
+
+
 def test_a_file_whose_subjects_are_all_cached_is_still_judged_when_the_cap_leaves_other_files_out(
     record: session_store.SessionRecord, tools: Tools
 ) -> None:

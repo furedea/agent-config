@@ -25,9 +25,12 @@ REVIEWER = "jev-lint"
 # which is a result to read, not a failed run.
 GATE_SEVERITY = "error"
 FINDINGS_STATUS = 1
-# Measured: the largest merged PR of this repository plans 104 subjects in 10 requests (about 0.0025 USD), and real
-# Stop runs took 3 to 8 seconds whatever the subject count, because requests run concurrently. Twice that fits whole.
-SUBJECT_CAP = 250
+# Measured once (2026-11-18, jev-lint 0.7.0, model jev-1.14.0, fresh cache): #201, the largest merged PR, is 988
+# subjects in 60 requests, all answered, none retried or rate limited; `op run` plus `jev-lint review` took 3.41 s
+# (0.97 s of it asking, concurrency 32) and 0.025 USD. The cap holds twice that whole, and at about 590 input tokens a
+# subject stays within jev-lint's 1.2M-token burst, so it is never paced; even ten times the measured time is far
+# below 70% of BUDGET_SECONDS.
+SUBJECT_CAP = 2000
 PLAN_TIMEOUT_SECONDS = 20.0
 JUDGE_TIMEOUT_SECONDS = 60.0
 LOCK_TIMEOUT_SECONDS = 30.0

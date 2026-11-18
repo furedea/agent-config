@@ -42,11 +42,10 @@ def test_one_kind_of_rule_is_reviewed_through_the_whole_directory(tmp_path: Path
 def test_the_shipped_python_rules_are_tuned_and_claim_the_cap_first() -> None:
     first = model_rules_gate.rule_tiers(REAL_RULES)[0]
 
+    python_rules = {rule.parent for rule in (REAL_RULES / "python").glob("*/rule.yml")}
+
     # Once every language has its baselines, all rules form one tier reviewed through the whole directory.
-    assert first == (REAL_RULES,) or {
-        REAL_RULES / "python/command-query-naming",
-        REAL_RULES / "python/function-single-purpose",
-    } <= set(first)
+    assert first == (REAL_RULES,) or python_rules <= set(first)
 
 
 def test_a_review_names_every_rule_folder_of_its_tier(tmp_path: Path) -> None:

@@ -64,10 +64,12 @@ everywhere under its working directory.
 - Codex cannot reach the network or the Nix daemon; the lane updates dependencies and computes Nix hashes.
 - The agent's GitHub App cannot push workflow files; the user pushes them.
 - Dependencies younger than seven days are not installed (pnpm `minimumReleaseAge`, uv `exclude-newer`).
-    The dotfiles pin these and the fetch sources in the user-level package-manager settings, and no
-    session writes those files: Claude's sandbox `denyWrite` and `Edit` denials, and Codex's guarded
-    profile, cover `~/.config/uv`, `~/.config/pnpm`, `~/Library/Preferences/pnpm`, `~/.config/nix`,
-    `~/.npmrc`, `~/.cargo/config.toml`, `~/.cargo/config`, and the Go `env` file.
+    On the macOS host the dotfiles pin these and the fetch sources in the user-level package-manager
+    settings, and sessions cannot write those files: Claude's sandbox `denyWrite` and `Edit` denials
+    cover `~/.config/uv`, `~/.config/pnpm`, `~/Library/Preferences/pnpm`, `~/.config/nix`, `~/.npmrc`,
+    `~/.cargo/config.toml`, `~/.cargo/config`, and the Go `env` file, and so does Codex's guarded
+    profile where it is the default (`default_permissions = "guarded"`, set by the dotfiles and by the
+    server bootstrap only with an agent GitHub App). Elsewhere a Codex session can still write them.
 
 ## Verification
 
@@ -85,13 +87,13 @@ see [ADR-0003](adr/0003_register_verification_in_native_hooks.md).
     model-rule verdict cache decide what Stop reruns and what is trusted, so only the hooks, which run outside
     the sandbox, write `verification/`, `model-rules/`, `trusted-owners/`, and `audit/` under
     `agent-harness/`. The Claude sandbox keeps `~/.local/state/agent-harness` writable (the editor log lives there),
-    and `agents/claude/settings.json` lists those four directories in `denyWrite`. **That sandbox rule is not in
-    effect yet:** agent-harness replaces `denyWrite` with its own list when it renders the settings
-    ([agent-harness#213](https://github.com/furedea/agent-harness/issues/213)), so until that is fixed a command
-    that names a receipt and writes to it is not stopped. `secret_path_policy.json` already refuses file-tool
+    and `agents/claude/settings.json` lists those four directories in `denyWrite`. The rule takes effect where
+    agent-harness 0.9.12 or later renders the settings, as the dotfiles do; older releases replace
+    `denyWrite` with their own list ([agent-harness#213](https://github.com/furedea/agent-harness/issues/213)),
+    and the server bootstrap still pins one, so there a command that names a receipt and writes to it is not stopped. `secret_path_policy.json` already refuses file-tool
     edits that name the directories, but lets commands and read tools read them,
     because the agent reads the failure logs. Tools that run outside the sandbox
-    (`excludedCommands`) are not contained by the sandbox rule even then. An unreadable or malformed record is never
+    (`excludedCommands`) are not contained by the sandbox rule. An unreadable or malformed record is never
     reused: Stop reports `Verification unresolved`.
 - Ended or inactive records expire after seven days. Failure logs are capped at 1 MiB each and
     100 MiB in total.

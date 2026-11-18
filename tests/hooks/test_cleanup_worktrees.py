@@ -335,13 +335,16 @@ def test_a_primary_stays_open_when_live_state_has_unhashable_values(
     assert not (tmp_path / "herdr_removed.txt").exists()
 
 
+GITIGNORE_PATTERNS = (
+    "*.ignored\n.venv/\nnode_modules/\nresult\nresult-*\n__pycache__/\n.claude/\n"
+    ".hypothesis/\n.astro/\ndist/\ntest-results/\n.pnpm-store/\n.wrangler/\n"
+)
+
+
 def merged_worktree_with_ignored(primary: Path, merged: dict[str, str], *ignored: str) -> Path:
     path = task_worktree(primary, "feat/done")
     merged["feat/done"] = git("rev-parse", "HEAD", cwd=path)
-    (path / ".gitignore").write_text("*.ignored\n.venv/\nnode_modules/\nresult\nresult-*\n__pycache__/\n.claude/\n")
-    (path / ".gitignore").write_text(
-        (path / ".gitignore").read_text() + ".hypothesis/\n.astro/\ndist/\ntest-results/\n.pnpm-store/\n.wrangler/\n"
-    )
+    (path / ".gitignore").write_text(GITIGNORE_PATTERNS)
     git("add", ".gitignore", cwd=path)
     git("commit", "--quiet", "-m", "ignore", cwd=path)
     merged["feat/done"] = git("rev-parse", "HEAD", cwd=path)

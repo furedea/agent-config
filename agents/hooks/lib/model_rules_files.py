@@ -13,6 +13,7 @@ files, which is not done here.
 """
 
 import os
+import re
 import stat
 import subprocess
 from collections.abc import Iterable
@@ -24,6 +25,10 @@ from model_rule_fixtures import is_model_rule_fixture
 # MADR files are `docs/adr/NNNN_words.md`; the index, a template and nested folders are not decisions.
 _ADR_PATTERN = "docs/adr/[0-9]*.md"
 _FRONT_MATTER_FENCE = "---"
+# Reflog subjects of HEAD that mean the session itself created the commit; `commit (merge)` is deliberately absent.
+_OWN_REFLOG_SUBJECT = re.compile(
+    r"commit(?: \((?:amend|initial)\))?:|cherry-pick|revert|rebase \((?:pick|reword|edit|squash|fixup|continue)\)"
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -67,30 +72,65 @@ def select(root: Path, paths: Iterable[str], span: ReviewedSpan) -> Selection:
     return Selection(tuple(sendable), frozenset(withheld), adrs)
 
 
-def committed_paths(root: Path, base: str) -> tuple[str, ...]:
-    """The files the commits since `base` added or changed, with links and replaced types included."""
+def own_committed_paths(root: Path, base: str) -> tuple[str, ...]:
+    """The files the session's own commits since `base` added or changed, with links and replaced types included.
+
+    HEAD's reflog says how each commit came to be. A commit the session made (commit, amend, cherry-pick, revert, or a
+    rebase replaying its own work) counts; one that arrived by fast-forward, pull, checkout or merge belongs to someone
+    else, so its files are left out even though `base..HEAD` contains it. A merge commit is never counted: its diff
+    cannot be split into the session's part and the part it merged in. A commit made in another worktree and brought in
+    here by a fast-forward leaves no entry in this reflog and is not counted either.
+    """
+    reachable = set(_git_lines(root, "rev-list", f"{base}..HEAD"))
+    own = _own_commits(root) & reachable
+    return tuple(sorted({path for commit in own for path in _paths_changed_by(root, commit)}))
+
+
+def uncommitted_paths(root: Path) -> frozenset[str]:
+    """The files whose working tree content differs from HEAD or the index, or that are untracked and not ignored.
+
+    A file a fast-forward or pull brought in differs from the session's baseline yet matches HEAD, so it is not here.
+    """
+    output = _git_output(root, "status", "--porcelain=v1", "-z", "--no-renames", "--untracked-files=all")
+    return frozenset(os.fsdecode(entry[3:]) for entry in output.split(b"\0") if entry)
+
+
+def _own_commits(root: Path) -> set[str]:
+    entries = _git_lines(root, "reflog", "show", "--format=%H%x09%gs", "HEAD", "--")
+    return {
+        commit
+        for commit, _, subject in (entry.partition("\t") for entry in entries)
+        if _OWN_REFLOG_SUBJECT.match(subject)
+    }
+
+
+def _paths_changed_by(root: Path, commit: str) -> list[str]:
+    output = _git_output(
+        root,
+        "diff-tree",
+        "--root",
+        "--no-commit-id",
+        "-r",
+        "--name-only",
+        "-z",
+        "--no-renames",
+        "--diff-filter=AMT",
+        commit,
+    )
+    return [os.fsdecode(name) for name in output.split(b"\0") if name]
+
+
+def _git_lines(root: Path, *arguments: str) -> list[str]:
+    return _git_output(root, *arguments).decode(errors="replace").splitlines()
+
+
+def _git_output(root: Path, *arguments: str) -> bytes:
     try:
-        output = subprocess.check_output(
-            [
-                "git",
-                "-c",
-                "core.fsmonitor=false",
-                "-C",
-                str(root),
-                "diff",
-                "--name-only",
-                "-z",
-                "--no-renames",
-                "--diff-filter=AMT",
-                base,
-                "HEAD",
-                "--",
-            ],
-            stderr=subprocess.DEVNULL,
+        return subprocess.check_output(
+            ["git", "-c", "core.fsmonitor=false", "-C", str(root), *arguments], stderr=subprocess.DEVNULL
         )
     except OSError, subprocess.CalledProcessError:
         raise ValueError("the commits since the session started cannot be listed") from None
-    return tuple(sorted(os.fsdecode(name) for name in output.split(b"\0") if name))
 
 
 def _verdict(real_root: Path, candidate: Path, path: str) -> bool | None:

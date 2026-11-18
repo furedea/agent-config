@@ -17,7 +17,7 @@ import model_rules_report
 import model_rules_resume
 import model_rules_run
 import trusted_owners
-from model_rules_files import ReviewedSpan, Selection, committed_paths, select
+from model_rules_files import ReviewedSpan, Selection, own_committed_paths, select, uncommitted_paths
 from model_rules_outcome import Judgement, Prevented, Resume
 from model_rules_programs import Programs
 from session_snapshot import capture, head_commit
@@ -199,14 +199,16 @@ class _Changes:
     def of(cls, record: SessionRecord) -> _Changes:
         """Select among the commits made since the session started and the files that differ from its baseline.
 
-        Files that were already there when the session started and that it never touched are not sent.
+        Files that were already there when the session started and that it never touched are not sent, nor are files
+        that a fast-forward or pull brought in and that the session has not edited since.
         """
         committed = Selection()
         if record.head is not None and head_commit(record.root) != record.head:
             committed = select(
-                record.root, committed_paths(record.root, record.head), ReviewedSpan(record.head, "HEAD")
+                record.root, own_committed_paths(record.root, record.head), ReviewedSpan(record.head, "HEAD")
             )
-        changed = record.baseline.changed_paths(capture(record.root))
+        dirty = uncommitted_paths(record.root)
+        changed = (path for path in record.baseline.changed_paths(capture(record.root)) if path in dirty)
         return cls(committed, select(record.root, changed, ReviewedSpan("HEAD")))
 
     @property

@@ -16,6 +16,7 @@ import audit_log
 import git_safety
 import hook_decision
 import hook_input
+import secret_content
 import shell_syntax
 from command_policy import regex_matches
 
@@ -235,38 +236,14 @@ def content_text(mode: str, payload: dict) -> str:
         return stream.read(100000).decode(errors="replace")
 
 
-def _content_match(text: str, path: Path) -> tuple[str, str] | None:
-    # Preserve the existing optional scanner contract; path guards are separate.
-    if not text or not path.is_file():
-        return None
-    rules = json.loads(path.read_text())
-    for name in sorted(rules):
-        rule = rules[name]
-        if not rule.get("pattern"):
-            continue
-        result = subprocess.run(
-            ["rg", "--pcre2", "-q", "-e", rule["pattern"], "-"],
-            input=text + "\n",
-            text=True,
-            capture_output=True,
-            check=False,
-        )
-        if result.returncode > 1:
-            raise ValueError(f"invalid sensitive content rule: {name}")
-        if result.returncode == 0:
-            return name, rule.get("message", "Sensitive information detected")
-    return None
-
-
 def _scan_content(mode: str, payload: dict, directory: Path) -> None:
-    match = _content_match(
+    match = secret_content.first_match(
         content_text(mode, payload),
         _policy_path("AGENT_SECRET_CONTENT_PATTERNS", "secret_content_patterns.json", directory),
     )
     if match is None:
         return
-    name, message = match
-    reason = f"{message} ({name})"
+    reason = f"{match.message} ({match.name})"
     values = payload.get("tool_input") or {}
     tool = (
         "UserPromptSubmit" if mode == "prompt" else "Read" if mode == "read" else payload.get("tool_name") or "Write"

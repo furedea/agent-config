@@ -126,6 +126,17 @@ def decide(run_cli: CliRunner, kind: str = "allowed", command: str = COMMAND) ->
     return run_cli("agents/hooks/guard_command.py", kind, payload={"tool_input": {"command": command}})
 
 
+def listed_after_lookup(run_cli: CliRunner, calls: Path) -> bool:
+    """Whether the project rule lists the command once the fork lookup is remembered.
+
+    The fake gh answers the lookup, but the gh policy rightly asks while a replaceable gh is on PATH,
+    so it is removed before the decision that shows the listing.
+    """
+    decide(run_cli)
+    (calls.parent / "bin" / "gh").unlink()
+    return is_listed(decide(run_cli))
+
+
 def is_listed(result: subprocess.CompletedProcess[str]) -> bool:
     return result.returncode == 0 and result.stdout == ""
 
@@ -135,7 +146,7 @@ def test_a_listed_owner_that_is_not_a_fork_keeps_its_project_rules(
 ) -> None:
     origin("https://github.com/furedea/agent-config.git")
     calls = gh("false")
-    assert is_listed(decide(run_cli))
+    assert listed_after_lookup(run_cli, calls)
     assert calls.read_text() == "api repos/furedea/agent-config --jq .fork\n"
 
 
@@ -182,7 +193,7 @@ def test_a_successful_fork_lookup_is_remembered_per_repository(
 ) -> None:
     origin("https://github.com/furedea/agent-config.git")
     calls = gh("false")
-    assert is_listed(decide(run_cli))
+    assert listed_after_lookup(run_cli, calls)
     assert is_listed(decide(run_cli))
     assert len(calls.read_text().splitlines()) == 1
 

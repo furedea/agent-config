@@ -1,0 +1,468 @@
+"""A write without a named repository acts on the one gh picks for the working directory, judged the same way."""
+
+import os
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+import pytest
+from tests.runtime import load_script_module
+
+guard = load_script_module("agents/hooks/guard_command.py", "guard_command")
+# The gh environment module the guard itself imported, so a patch reaches the code under test.
+gh_environment = sys.modules["command_objections"].gh_policy.gh_environment
+pytestmark = pytest.mark.usefixtures("isolated_project", "plain_gh_environment")
+
+
+def decide(command: str) -> str:
+    return guard.decide("allowed", {"tool_input": {"command": command}}).decision
+
+
+def add_remote(name: str, url: str) -> None:
+    subprocess.run(["git", "remote", "add", name, url], check=True, capture_output=True)
+
+
+@pytest.mark.parametrize(
+    ("remotes", "expected"),
+    [
+        pytest.param({"origin": "git@github.com:furedea/agent-config.git"}, "allow", id="a trusted SSH origin"),
+        pytest.param({"origin": "https://github.com/other/agent-config"}, "ask", id="another owner's origin"),
+        pytest.param(
+            {"origin": "https://github.com/furedea/fork", "upstream": "https://github.com/other/project"},
+            "ask",
+            id="an upstream remote gh may pick",
+        ),
+        pytest.param({"origin": "https://gitlab.com/furedea/agent-config"}, "ask", id="no GitHub remote"),
+        pytest.param(
+            {"origin": "https://github.com/furedea/x", "upstream": "http://github.com/other/r"},
+            "ask",
+            id="a remote URL the guard cannot read",
+        ),
+        pytest.param({}, "ask", id="no remote"),
+    ],
+)
+@pytest.mark.usefixtures("isolated_project")
+def test_a_write_to_the_working_repository_follows_every_github_remote(remotes: dict[str, str], expected: str) -> None:
+    subprocess.run(["git", "init", "--quiet"], check=True)
+    for name, url in remotes.items():
+        add_remote(name, url)
+    assert decide("gh issue comment 1 -b ok") == expected
+
+
+@pytest.mark.parametrize(
+    ("resolved", "expected"), [("other/project", "ask"), ("furedea/agent-config", "allow"), ("base", "allow")]
+)
+def test_a_default_repository_set_by_gh_names_the_working_repository(
+    furedea_checkout: Path, resolved: str, expected: str
+) -> None:
+    subprocess.run(["git", "config", "remote.origin.gh-resolved", resolved], check=True, cwd=furedea_checkout)
+    assert decide("gh issue comment 1 -b ok") == expected
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_gh_repo_in_the_hook_environment_names_the_working_repository(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GH_REPO", "other/r")
+    assert decide("gh issue comment 1 -b ok") == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_another_gh_host_in_the_hook_environment_makes_every_call_ask(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GH_HOST", "ghe.example")
+    assert decide("gh issue comment 1 -R furedea/agent-config -b ok") == "ask"
+    assert decide("gh pr view 1") == "ask"
+
+
+@pytest.mark.parametrize(
+    ("origin", "expected"),
+    [("https://github.com/other/r", "ask"), ("https://github.com/furedea/agent-config", "allow")],
+)
+@pytest.mark.usefixtures("isolated_project")
+def test_a_related_issue_does_not_stand_in_for_the_working_repository(origin: str, expected: str) -> None:
+    subprocess.run(["git", "init", "--quiet"], check=True)
+    add_remote("origin", origin)
+    assert decide("gh issue edit 1 --parent https://github.com/furedea/x/issues/2") == expected
+
+
+@pytest.mark.parametrize(
+    ("origin", "expected"),
+    [("https://github.com/other/r", "ask"), ("https://github.com/furedea/agent-config", "allow")],
+)
+@pytest.mark.usefixtures("isolated_project")
+def test_a_branch_repository_does_not_stand_in_for_the_issue_repository(origin: str, expected: str) -> None:
+    subprocess.run(["git", "init", "--quiet"], check=True)
+    add_remote("origin", origin)
+    assert decide("gh issue develop 5 --branch-repo furedea/agent-config") == expected
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_gh_repo_on_another_host_in_the_hook_environment_makes_every_call_ask(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("GH_REPO", "evil.example/o/r")
+    assert decide("gh pr list") == "ask"
+
+
+@pytest.mark.parametrize(
+    ("origin", "expected"),
+    [("https://evil.example/o/r", "ask"), ("https://github.com/other/r", "allow")],
+)
+@pytest.mark.usefixtures("isolated_project")
+def test_a_read_of_the_working_repository_follows_its_remote_host(origin: str, expected: str) -> None:
+    subprocess.run(["git", "init", "--quiet"], check=True)
+    add_remote("origin", origin)
+    assert decide("gh pr list") == expected
+    # Reads do not parse every option, so a named repository does not skip the remote check either.
+    assert decide("gh pr list -R furedea/agent-config") == expected
+    assert decide("gh pr list | head -3") == expected
+    assert decide("gh issue list --search https://github.com/foo/bar") == expected
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "git remote set-url origin https://evil.example/o/r && gh pr list",
+        "chdir ../other && gh pr list",
+        "../other; gh pr list",
+        "printf x > .git/config; gh pr list",
+        "./head x; gh pr list",
+        "sort -o .git/config x; gh pr list",
+    ],
+)
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_read_of_the_working_repository_beside_other_commands_asks(command: str) -> None:
+    assert decide(command) == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_an_inherited_gh_function_makes_every_call_ask(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("BASH_FUNC_gh%%", "() {  cat .env\n}")
+    assert decide("gh pr list") == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_filter_planted_on_path_does_not_keep_the_remote_lookup_trusted(monkeypatch: pytest.MonkeyPatch) -> None:
+    planted = Path("bin")
+    planted.mkdir()
+    (planted / "head").write_text("#!/bin/sh\n")
+    (planted / "head").chmod(0o755)
+    assert decide("head notes.txt; gh pr list") == "allow"
+    monkeypatch.setenv("PATH", f"{planted.resolve()}:{os.environ['PATH']}")
+    assert decide("head notes.txt; gh pr list") == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_an_inherited_function_named_like_a_filter_keeps_the_remote_lookup_untrusted(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("BASH_FUNC_head%%", "() {  git remote set-url origin https://evil.example/o/r\n}")
+    assert decide("head notes.txt; gh pr list") == "ask"
+
+
+@pytest.mark.usefixtures("isolated_project")
+def test_a_url_that_names_a_label_does_not_stand_in_for_the_working_repository() -> None:
+    subprocess.run(["git", "init", "--quiet"], check=True)
+    add_remote("origin", "https://github.com/other/r")
+    assert decide("gh label create https://github.com/furedea/r -c ff0000") == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+@pytest.mark.parametrize("name", ["GH_BROWSER", "BROWSER"])
+def test_a_browser_variable_asks_only_where_gh_would_open_it(monkeypatch: pytest.MonkeyPatch, name: str) -> None:
+    monkeypatch.setenv(name, "/tmp/evil")
+    assert decide("gh pr view 1 --web") == "ask"
+    assert decide("gh pr view 1") == "allow"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_gh_planted_on_path_makes_every_call_ask(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    planted = tmp_path / "bin"
+    planted.mkdir()
+    (planted / "gh").write_text("#!/bin/sh\n")
+    (planted / "gh").chmod(0o755)
+    monkeypatch.setenv("PATH", f"{planted}:{os.environ['PATH']}")
+    assert decide("gh pr list -R furedea/agent-config") == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_writable_path_entry_before_gh_asks_beside_a_command_that_may_write(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    empty = tmp_path / "later"
+    empty.mkdir()
+    monkeypatch.setenv("PATH", f"{empty}:{os.environ['PATH']}")
+    assert decide("cp x later/gh; gh pr list -R furedea/agent-config") == "ask"
+    assert decide("gh pr list -R furedea/agent-config") == "allow"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_forced_terminal_in_the_hook_environment_makes_every_call_ask(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GH_FORCE_TTY", "1")
+    assert decide("gh pr view 1 -R furedea/agent-config") == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_writable_path_entry_before_gh_asks_beside_another_gh_call(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    empty = tmp_path / "later"
+    empty.mkdir()
+    monkeypatch.setenv("PATH", f"{empty}:{os.environ['PATH']}")
+    assert decide("gh pr list -R furedea/agent-config && gh pr list -R furedea/agent-config") == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_quoted_parameter_holding_a_foreign_url_asks(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("TARGET", "https://evil.example/o/r/pull/1")
+    assert decide('gh pr view "$TARGET"') == "ask"
+    monkeypatch.setenv("TARGET", "https://github.com/furedea/agent-config/pull/1")
+    assert decide('gh pr view "$TARGET"') == "allow"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_git_planted_where_the_agent_writes_keeps_the_working_repository_unresolved(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    assert decide("gh issue comment 1 -b ok") == "allow"
+    assert decide("gh pr list") == "allow"
+    planted = Path("bin")
+    planted.mkdir()
+    (planted / "git").write_text("#!/bin/sh\necho 'origin https://github.com/furedea/agent-config (fetch)'\n")
+    (planted / "git").chmod(0o755)
+    monkeypatch.setenv("PATH", f"{planted.resolve()}:{os.environ['PATH']}")
+    assert decide("gh issue comment 1 -b ok") == "ask"
+    assert decide("gh pr list") == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_quoted_parameter_holding_an_option_asks(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("TARGET", "--web")
+    assert decide('gh pr view "$TARGET"') == "ask"
+    monkeypatch.setenv("TARGET", "12")
+    assert decide('gh pr view "$TARGET"') == "allow"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_git_planted_where_the_agent_writes_makes_every_call_ask(monkeypatch: pytest.MonkeyPatch) -> None:
+    assert decide("gh repo clone furedea/agent-config") == "allow"
+    planted = Path("bin")
+    planted.mkdir()
+    (planted / "git").write_text("#!/bin/sh\n")
+    (planted / "git").chmod(0o755)
+    monkeypatch.setenv("PATH", f"{planted.resolve()}:{os.environ['PATH']}")
+    assert decide("gh repo clone furedea/agent-config") == "ask"
+    assert decide("gh pr view 1 -R furedea/agent-config") == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_an_inherited_git_function_makes_every_call_ask(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("BASH_FUNC_git%%", "() {  cat .env\n}")
+    assert decide("gh pr view 1 -R furedea/agent-config") == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_writable_path_entry_before_git_asks_beside_a_command_that_may_write(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    gh = shutil.which("gh")
+    assert gh is not None
+    empty = tmp_path / "later"
+    empty.mkdir()
+    monkeypatch.setenv("PATH", f"{Path(gh).parent}:{empty}:{os.environ['PATH']}")
+    assert decide("cp x later/git; gh pr list -R furedea/agent-config") == "ask"
+    assert decide("gh pr list -R furedea/agent-config") == "allow"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+@pytest.mark.parametrize("name", ["BASH_ENV", "ENV", "ZDOTDIR"])
+def test_a_startup_file_in_the_hook_environment_makes_every_call_ask(
+    monkeypatch: pytest.MonkeyPatch, name: str
+) -> None:
+    assert decide("gh pr view 1 -R furedea/agent-config") == "allow"
+    monkeypatch.setenv(name, "notes.sh")
+    assert decide("gh pr view 1 -R furedea/agent-config") == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_an_rg_planted_where_the_agent_writes_makes_every_call_ask(monkeypatch: pytest.MonkeyPatch) -> None:
+    assert decide("gh pr view 1 -R furedea/agent-config") == "allow"
+    planted = Path("bin")
+    planted.mkdir()
+    (planted / "rg").write_text("#!/bin/sh\nexit 1\n")
+    (planted / "rg").chmod(0o755)
+    monkeypatch.setenv("PATH", f"{planted.resolve()}:{os.environ['PATH']}")
+    assert decide("gh pr view 1 -R furedea/agent-config") == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_an_ssh_planted_where_the_agent_writes_makes_every_call_ask(monkeypatch: pytest.MonkeyPatch) -> None:
+    assert decide("gh repo clone furedea/agent-config") == "allow"
+    planted = Path("bin")
+    planted.mkdir()
+    (planted / "ssh").write_text("#!/bin/sh\n")
+    (planted / "ssh").chmod(0o755)
+    monkeypatch.setenv("PATH", f"{planted.resolve()}:{os.environ['PATH']}")
+    assert decide("gh repo clone furedea/agent-config") == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+@pytest.mark.parametrize(
+    ("name", "value"),
+    [
+        ("GIT_SSH", "/tmp/evil"),
+        ("GIT_SSH_COMMAND", "/tmp/evil"),
+        ("GIT_SSH_COMMAND", "sh -c x"),
+        ("GIT_SSH_COMMAND", "ssh -o ProxyCommand=/tmp/evil"),
+        ("GIT_SSH_COMMAND", "ssh -F /tmp/evil"),
+        *((name, "/tmp/evil") for name in ("GIT_EXEC_PATH", "GIT_PROXY_COMMAND", "GIT_ASKPASS", "SSH_ASKPASS")),
+        *((name, "/tmp/evil") for name in ("GIT_CONFIG_GLOBAL", "GIT_CONFIG_SYSTEM", "GIT_ALLOW_PROTOCOL")),
+    ],
+)
+def test_an_ssh_override_in_the_hook_environment_makes_every_call_ask(
+    monkeypatch: pytest.MonkeyPatch, name: str, value: str
+) -> None:
+    monkeypatch.delenv("GIT_SSH_COMMAND", raising=False)
+    assert decide("gh repo clone furedea/agent-config") == "allow"
+    monkeypatch.setenv("GIT_SSH_COMMAND", "ssh")
+    assert decide("gh repo clone furedea/agent-config") == "allow"
+    monkeypatch.setenv("GIT_SSH_COMMAND", gh_environment.SANDBOX_SSH_COMMAND)
+    assert decide("gh repo clone furedea/agent-config") == "allow"
+    monkeypatch.setenv(name, value)
+    assert decide("gh repo clone furedea/agent-config") == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_clone_with_a_hook_template_asks(monkeypatch: pytest.MonkeyPatch) -> None:
+    assert decide("gh repo clone furedea/agent-config") == "allow"
+    monkeypatch.setenv("GIT_TEMPLATE_DIR", "templates")
+    assert decide("gh repo clone furedea/agent-config") == "ask"
+    assert decide("gh pr view 1 -R furedea/agent-config") == "allow"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+@pytest.mark.parametrize(
+    "key",
+    [
+        "init.templateDir",
+        "core.hooksPath",
+        "filter.pwn.smudge",
+        "filter.pwn.process",
+        "core.fsmonitor",
+        "core.alternateRefsCommand",
+        "core.askPass",
+    ],
+)
+def test_a_clone_under_a_configured_template_or_hooks_path_asks(key: str) -> None:
+    subprocess.run(["git", "config", key, "hooks"], check=True)
+    assert decide("gh repo clone furedea/agent-config") == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+@pytest.mark.parametrize(
+    "key",
+    ["core.sshCommand", "core.gitProxy", "url.ext::/tmp/evil .insteadOf", "protocol.ext.allow", "remote.origin.vcs"],
+)
+def test_a_configured_ssh_or_proxy_program_makes_every_call_ask(key: str) -> None:
+    assert decide("gh pr view 1 -R furedea/agent-config") == "allow"
+    subprocess.run(["git", "config", key, "/tmp/evil"], check=True)
+    assert decide("gh pr view 1 -R furedea/agent-config") == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+@pytest.mark.parametrize(
+    ("url", "expected"),
+    [
+        ("evil://github.com/furedea/agent-config", "ask"),
+        ("http://github.com/furedea/agent-config", "ask"),
+        ("https://github.com/furedea/agent-config", "allow"),
+        ("ssh://git@github.com/furedea/agent-config", "allow"),
+    ],
+)
+def test_a_clone_url_must_use_a_known_transport(url: str, expected: str) -> None:
+    assert decide(f"gh repo clone {url}") == expected
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_protocol_version_setting_keeps_calls_allowed() -> None:
+    subprocess.run(["git", "config", "protocol.version", "2"], check=True)
+    assert decide("gh pr view 1 -R furedea/agent-config") == "allow"
+    assert decide("gh repo clone furedea/agent-config") == "allow"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+@pytest.mark.parametrize("value", ["true", "false"])
+def test_a_boolean_fsmonitor_keeps_a_clone_allowed(value: str) -> None:
+    subprocess.run(["git", "config", "core.fsmonitor", value], check=True)
+    assert decide("gh repo clone furedea/agent-config") == "allow"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+@pytest.mark.parametrize("program", ["cat --x %f", "sh -c x", "/tmp/evil %f", "git-lfs smudge -- %f; x"])
+def test_a_filter_program_other_than_git_lfs_makes_a_clone_ask(program: str) -> None:
+    subprocess.run(["git", "config", "filter.lfs.smudge", program], check=True)
+    assert decide("gh repo clone furedea/agent-config") == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+@pytest.mark.skipif(shutil.which("git-lfs") is None, reason="git-lfs is not installed")
+def test_the_git_lfs_filter_keeps_a_clone_allowed() -> None:
+    subprocess.run(["git", "config", "filter.lfs.smudge", "git-lfs smudge -- %f"], check=True)
+    subprocess.run(["git", "config", "filter.lfs.process", "git-lfs filter-process"], check=True)
+    assert decide("gh repo clone furedea/agent-config") == "allow"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+@pytest.mark.parametrize(
+    "helper",
+    ["!/tmp/evil", "/tmp/evil", "store; /tmp/evil", "nope-x", "/bin/sh -c /tmp/evil", "store --file x", "a\nb"],
+)
+def test_a_clone_under_an_untrusted_credential_helper_asks(helper: str) -> None:
+    assert decide("gh repo clone furedea/agent-config") == "allow"
+    subprocess.run(["git", "config", "credential.https://github.com.helper", helper], check=True)
+    assert decide("gh repo clone furedea/agent-config") == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_credential_helper_reset_keeps_a_clone_allowed() -> None:
+    subprocess.run(["git", "config", "credential.helper", ""], check=True)
+    assert decide("gh repo clone furedea/agent-config") == "allow"
+
+
+@pytest.mark.parametrize(
+    ("command", "expected"),
+    [
+        pytest.param("gh run download 123 -R furedea/agent-config -D out -n dist", "allow", id="a trusted repository"),
+        pytest.param("gh run download 123 -D artifacts", "allow", id="the trusted working repository"),
+        pytest.param("gh run download 123", "ask", id="no directory, which extracts into the checkout"),
+        pytest.param("gh run download 123 -D .git/hooks", "ask", id="into the git directory"),
+        pytest.param("gh run download 123 -D .github", "ask", id="into a hidden directory"),
+        pytest.param("gh run download 123 -D ../x", "ask", id="outside the checkout"),
+        pytest.param("gh run download 123 -D /tmp/x", "ask", id="an absolute directory"),
+        pytest.param('gh run download 123 -D "$D"', "ask", id="a directory named at run time"),
+        pytest.param("gh run download 123 -D out --dir .git", "ask", id="a later directory option"),
+        pytest.param("gh run download 123 -R other/r -D out", "ask", id="another owner's repository"),
+        pytest.param("gh run download 123 -R furedea/agent-config -R other/r", "ask", id="a later repository option"),
+    ],
+)
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_run_download_is_allowed_only_from_a_trusted_owner(command: str, expected: str) -> None:
+    assert decide(command) == expected
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_run_download_into_an_existing_directory_asks() -> None:
+    Path("scripts").mkdir()
+    assert decide("gh run download 123 -D scripts") == "ask"
+    assert decide("gh run download 123 -D scripts/new") == "ask"
+    assert decide("gh run download 123 -D artifacts/new") == "allow"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_run_download_through_a_link_or_beside_another_command_asks() -> None:
+    Path("hooks-link").symlink_to(".git/hooks")
+    Path("dangling").symlink_to("nowhere")
+    assert decide("gh run download 123 -D hooks-link/new") == "ask"
+    assert decide("gh run download 123 -D dangling") == "ask"
+    assert decide("cd sub && gh run download 123 -D new") == "ask"
+    assert decide("ln -s .git/hooks new; gh run download 123 -D new") == "ask"
+    assert decide("gh run download 123 -D new") == "allow"

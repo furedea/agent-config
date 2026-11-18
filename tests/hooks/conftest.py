@@ -162,3 +162,51 @@ def merged(
     heads = Heads()
     state.write_text("[]")
     return heads
+
+
+@pytest.fixture
+def plain_gh_environment(monkeypatch: pytest.MonkeyPatch) -> None:
+    """gh resolves its host and repository from these; the guard tests set them only on purpose."""
+    for name in ("GH_REPO", "GH_HOST"):
+        monkeypatch.delenv(name, raising=False)
+
+
+@pytest.fixture
+def furedea_checkout(isolated_project: Path) -> Path:
+    """A repository whose only remote belongs to a trusted owner."""
+    subprocess.run(["git", "init", "--quiet"], check=True)
+    subprocess.run(
+        ["git", "remote", "add", "origin", "https://github.com/furedea/agent-config.git"],
+        check=True,
+        capture_output=True,
+    )
+    return isolated_project
+
+
+@pytest.fixture
+def scan_samples() -> dict[str, str]:
+    """Public synthetic secrets, one per scanned pattern."""
+    return json.loads(Path(__file__).with_name("secret_content_samples.json").read_text())
+
+
+@pytest.fixture
+def sent_files(isolated_project: Path) -> Path:
+    """The body files the guard tests send, present so the guard can scan them as gh will read them."""
+    for name, text in {"notes.txt": "Fixed.\n", "body.json": "{}\n", "body.md": "Fixed.\n", "$=J": "Fixed.\n"}.items():
+        (isolated_project / name).write_text(text)
+    return isolated_project
+
+
+@pytest.fixture
+def logged_body_files(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """The run-time body files the logged gh forms name, present and clean so only the run-time path makes them ask."""
+    root = tmp_path / "run"
+    for name in ("TMPDIR", "S", "D"):
+        monkeypatch.setenv(name, str(root))
+    monkeypatch.setenv("f", str(root / "comment"))
+    for name in ("body.md", "issue_all_msg.md", "plan74.md", "pr/body.md", "briefs/issue_clippy.md"):
+        (root / name).parent.mkdir(parents=True, exist_ok=True)
+        (root / name).write_text("Fixed.\n")
+    for name in ("plan242.md", "pr.md", "comment", "comment.new"):
+        (root / name).write_text("Fixed.\n")
+    return root

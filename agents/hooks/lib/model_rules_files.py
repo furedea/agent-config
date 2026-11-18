@@ -89,7 +89,8 @@ def own_committed_paths(root: Path, base: str, registered_entries: int | None) -
     commits that came from elsewhere into the session's. A step's path counts only while HEAD still holds the content
     that step left, which is how a discarded commit stops claiming a path that an outside commit later changed.
 
-    Raises ValueError when the reflog cannot tell: it was not counted at registration, or HEAD moved without an entry.
+    Raises ValueError when the reflog cannot tell: it was not counted at registration, or HEAD moved without an entry;
+    `committed_paths` is then the fallback.
     """
     if registered_entries is None:
         raise ValueError("HEAD's reflog was not counted when the session registered")
@@ -109,6 +110,15 @@ def own_committed_paths(root: Path, base: str, registered_entries: int | None) -
     ]
     changed_since_base = set(_paths_changed_between(root, base, "HEAD"))
     return tuple(sorted({path for paths in own for path in paths} & changed_since_base))
+
+
+def committed_paths(root: Path, base: str) -> tuple[str, ...]:
+    """Every file the commits since `base` added or changed, whoever made them, with links and replaced types included.
+
+    The fallback when HEAD's reflog cannot say which commits are the session's: judging too much is better than hiding
+    the session's own edits.
+    """
+    return tuple(sorted(_paths_changed_between(root, base, "HEAD")))
 
 
 def uncommitted_paths(root: Path) -> frozenset[str]:

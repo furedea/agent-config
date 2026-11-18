@@ -275,19 +275,21 @@ def test_files_the_session_committed_in_a_repository_that_had_no_commit_are_stil
     assert "a.txt" in model_rules_gate._Changes.of(record).uncommitted.sendable
 
 
-def test_a_session_whose_reflog_cannot_say_still_has_its_uncommitted_files_judged(
+def test_a_session_whose_reflog_cannot_say_judges_every_commit_since_it_started_and_the_uncommitted_files(
     git_project: Path, tmp_path: Path, executable: StubWriter, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     install_fakes(executable, tmp_path, monkeypatch)
     record = register_session(git_project, tmp_path, monkeypatch)
     baseline = record.directory / "baseline.json"
     baseline.write_text(json.dumps({**json.loads(baseline.read_text()), "reflog_entries": None}))
+    others_work(git_project, "theirs.txt")
+    git(git_project, "merge", "--quiet", "--ff-only", "others")
     commit(git_project, "committed.txt")
     edit(record, "after\n")
 
     changes = model_rules_gate._Changes.of(record)
 
-    assert changes.committed.sendable == ()
+    assert changes.committed.sendable == ("committed.txt", "theirs.txt")
     assert changes.uncommitted.sendable == ("notes.txt",)
 
 

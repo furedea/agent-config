@@ -17,7 +17,7 @@ import model_rules_report
 import model_rules_resume
 import model_rules_run
 import trusted_owners
-from model_rules_files import ReviewedSpan, Selection, own_committed_paths, select, uncommitted_paths
+from model_rules_files import ReviewedSpan, Selection, committed_paths, own_committed_paths, select, uncommitted_paths
 from model_rules_outcome import Judgement, Prevented, Resume
 from model_rules_programs import Programs
 from session_snapshot import capture, head_commit
@@ -201,7 +201,7 @@ class _Changes:
 
         Files that were already there when the session started and that it never touched are not sent, nor are files
         that a fast-forward or pull brought in and that the session has not edited since. When HEAD's reflog cannot say
-        which commits are the session's, the committed side is left out and the uncommitted side is still judged.
+        which commits are the session's, every commit since the session started is judged.
         """
         return cls(_committed_selection(record), _uncommitted_selection(record))
 
@@ -276,13 +276,18 @@ def _repository_gate(root: Path) -> Prevented | None:
 
 
 def _committed_selection(record: SessionRecord) -> Selection:
+    if record.head is None:
+        return Selection()
+    return select(record.root, _session_commits_paths(record, record.head), ReviewedSpan(record.head, "HEAD"))
+
+
+def _session_commits_paths(record: SessionRecord, head: str) -> tuple[str, ...]:
+    if head_commit(record.root) == head:
+        return ()
     try:
-        own = _own_committed(record)
+        return own_committed_paths(record.root, head, record.reflog_entries)
     except ValueError:
-        return Selection()
-    if not own or record.head is None:
-        return Selection()
-    return select(record.root, own, ReviewedSpan(record.head, "HEAD"))
+        return committed_paths(record.root, head)
 
 
 def _uncommitted_selection(record: SessionRecord) -> Selection:
@@ -294,19 +299,13 @@ def _uncommitted_selection(record: SessionRecord) -> Selection:
     return select(record.root, changed, ReviewedSpan("HEAD"))
 
 
-def _own_committed(record: SessionRecord) -> tuple[str, ...]:
-    if record.head is None or head_commit(record.root) == record.head:
-        return ()
-    return own_committed_paths(record.root, record.head, record.reflog_entries)
-
-
 def _inputs(record: SessionRecord) -> str:
     """A fingerprint of everything a review depends on: the files, the base commit, and the rules."""
     digest = hashlib.sha256(capture(record.root).digest.encode())
     digest.update((record.head or "").encode())
     # The same files can be the session's or not depending on how HEAD got there, which the snapshot cannot tell.
     try:
-        digest.update("\0".join(_own_committed(record)).encode())
+        digest.update("\0".join(_session_commits_paths(record, record.head) if record.head else ()).encode())
         digest.update(b"\1" + "\0".join(sorted(uncommitted_paths(record.root))).encode())
     except ValueError:
         digest.update(b"reflog unavailable")

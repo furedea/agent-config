@@ -4,6 +4,9 @@ from model_rules_outcome import Finding, Judgement
 
 MAX_FINDINGS = 10
 INSTRUCTION = "Fix each one, or say why it does not apply."
+# Explaining does not end a block of a promoted rule's finding, so it is not offered for one.
+GATING_INSTRUCTION = "Fix each finding of a promoted rule: it blocks every Stop until fixed."
+MIXED_INSTRUCTION = f"{GATING_INSTRUCTION} Fix each other one, or say why it does not apply."
 GATING_MARK = " (promoted rule: blocks every Stop until fixed)"
 PREFIX = "jev-lint"
 
@@ -26,7 +29,7 @@ def describe_details(judgement: Judgement) -> str:
     """What only a block reason carries: the instruction and one `- rule · file:line` per finding."""
     if not judgement.findings:
         return ""
-    lines = [INSTRUCTION, *(_finding_line(finding) for finding in judgement.findings[:MAX_FINDINGS])]
+    lines = [_instruction(judgement), *(_finding_line(finding) for finding in judgement.findings[:MAX_FINDINGS])]
     if len(judgement.findings) > MAX_FINDINGS:
         lines.append(f"... and {len(judgement.findings) - MAX_FINDINGS} more")
     return "\n".join(lines)
@@ -48,6 +51,12 @@ def _line(parts: list[str]) -> str:
 
 def _counted(count: int, noun: str) -> str:
     return f"{count} {noun}" if count == 1 else f"{count} {noun}s"
+
+
+def _instruction(judgement: Judgement) -> str:
+    if not judgement.gating:
+        return INSTRUCTION
+    return GATING_INSTRUCTION if len(judgement.gating) == len(judgement.findings) else MIXED_INSTRUCTION
 
 
 def _state(judgement: Judgement) -> str:

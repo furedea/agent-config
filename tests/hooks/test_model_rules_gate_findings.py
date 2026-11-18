@@ -137,3 +137,12 @@ def test_the_block_tells_apart_gating_findings_that_block_until_fixed_from_advis
     [advisory_line] = [line for line in reason.splitlines() if "notes.txt:3" in line]
     assert "until fixed" in gating_line
     assert "until fixed" not in advisory_line
+
+
+@pytest.mark.usefixtures("gate_finding")
+def test_a_block_of_only_gating_findings_does_not_offer_explaining_them_away(
+    record: session_store.SessionRecord,
+) -> None:
+    reason = stop(record)["reason"]
+
+    assert "say why" not in reason

@@ -73,7 +73,10 @@ own repositories get model judgement and the shared static rules.
     report it printed is unreadable or holds no error finding. An error finding blocks every Stop, on unchanged
     inputs and while `stop_hook_active` is set too, until a change clears it; the receipt keeps it so that the same
     inputs block again without asking the model. A block shows the error findings, each marked as blocking until
-    fixed, and the advisory findings not shown yet. Model-judged rules are not promoted until their cutoff has been fitted on a larger corpus, as ADR-0020
+    fixed, and the advisory findings not shown yet, and offers explaining a finding away only for the advisory ones.
+    The agent has no way out of a gate's false positive but changing the code: the promotion bar is what keeps it
+    rare, and a promoted rule that turns out wrong is demoted by a reviewed change back to a lower severity, while
+    the user can switch model rules off in the meantime (`AGENT_MODEL_RULES=off`, below). Model-judged rules are not promoted until their cutoff has been fitted on a larger corpus, as ADR-0020
     requires.
 - **Judging time.** Static rules run on the files changed by each edit. Model-judged rules run at Stop, as
     `jev-lint review --json` with all model rules (`-R <rules dir>`) over the changes made in the session, not per

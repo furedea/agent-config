@@ -86,7 +86,8 @@ def own_committed_paths(root: Path, base: str, registered_entries: int | None) -
 
     A commit made in another worktree and brought in here by a fast-forward leaves no entry in this reflog and is not
     counted. A rebase replays the commits it finds between its target and HEAD, so after a fast-forward it can turn
-    commits that came from elsewhere into the session's.
+    commits that came from elsewhere into the session's. A step's path counts only while HEAD still holds the content
+    that step left, which is how a discarded commit stops claiming a path that an outside commit later changed.
 
     Raises ValueError when the reflog cannot tell: it was not counted at registration, or HEAD moved without an entry.
     """
@@ -100,7 +101,9 @@ def own_committed_paths(root: Path, base: str, registered_entries: int | None) -
     if since_registration <= 0:
         raise ValueError("HEAD moved but its reflog has no entry since the session registered")
     own = [
-        _paths_changed_by(root, commit, steps[number + 1][0] if number + 1 < len(steps) else None)
+        _still_in_head(
+            root, commit, _paths_changed_by(root, commit, steps[number + 1][0] if number + 1 < len(steps) else None)
+        )
         for number, (commit, subject) in enumerate(steps[:since_registration])
         if _OWN_REFLOG_SUBJECT.match(subject)
     ]
@@ -117,19 +120,29 @@ def uncommitted_paths(root: Path) -> frozenset[str]:
     return frozenset(os.fsdecode(entry[3:]) for entry in output.split(b"\0") if entry)
 
 
+def _still_in_head(root: Path, commit: str, paths: list[str]) -> list[str]:
+    """The `paths` HEAD still holds as `commit` left them.
+
+    A step that was discarded, and whose path an outside commit then changed, no longer counts.
+    """
+    differing = set(_name_only(root, ["diff", commit, "HEAD", "--"], diff_filter=""))
+    return [path for path in paths if path not in differing]
+
+
 def _paths_changed_by(root: Path, commit: str, previous: str | None) -> list[str]:
     if previous is None:
-        return _name_only(root, ["diff-tree", "--root", "--no-commit-id"], [commit])
-    return _name_only(root, ["diff"], [previous, commit, "--"])
+        return _name_only(root, ["diff-tree", "--root", "--no-commit-id", commit])
+    return _name_only(root, ["diff", previous, commit, "--"])
 
 
 def _paths_changed_between(root: Path, base: str, until: str) -> list[str]:
-    return _name_only(root, ["diff"], [base, until, "--"])
+    return _name_only(root, ["diff", base, until, "--"])
 
 
-def _name_only(root: Path, command: list[str], revisions: list[str]) -> list[str]:
-    options = ["-r", "--name-only", "-z", "--no-renames", "--diff-filter=AMT"]
-    output = _git_output(root, *command, *options, *revisions)
+def _name_only(root: Path, command: list[str], diff_filter: str = "AMT") -> list[str]:
+    """The paths a diff-like `command` names; the options go right after its first word, before any `--`."""
+    options = ["-r", "--name-only", "-z", "--no-renames", *([f"--diff-filter={diff_filter}"] if diff_filter else [])]
+    output = _git_output(root, command[0], *options, *command[1:])
     return [os.fsdecode(name) for name in output.split(b"\0") if name]
 
 

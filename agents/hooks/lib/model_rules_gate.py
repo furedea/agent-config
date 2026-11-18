@@ -200,13 +200,10 @@ class _Changes:
         """Select among the commits made since the session started and the files that differ from its baseline.
 
         Files that were already there when the session started and that it never touched are not sent, nor are files
-        that a fast-forward or pull brought in and that the session has not edited since.
+        that a fast-forward or pull brought in and that the session has not edited since. When HEAD's reflog cannot say
+        which commits are the session's, the committed side is left out and the uncommitted side is still judged.
         """
-        own = _own_committed(record)
-        committed = select(record.root, own, ReviewedSpan(record.head, "HEAD")) if record.head else Selection()
-        dirty = uncommitted_paths(record.root)
-        changed = (path for path in record.baseline.changed_paths(capture(record.root)) if path in dirty)
-        return cls(committed, select(record.root, changed, ReviewedSpan("HEAD")))
+        return cls(_committed_selection(record), _uncommitted_selection(record))
 
     @property
     def withheld(self) -> frozenset[str]:
@@ -276,6 +273,25 @@ def _repository_gate(root: Path) -> Prevented | None:
     if distrust is None:
         return None
     return Prevented(f"not sending code of a repository that is not trusted ({distrust.reason})")
+
+
+def _committed_selection(record: SessionRecord) -> Selection:
+    try:
+        own = _own_committed(record)
+    except ValueError:
+        return Selection()
+    if not own or record.head is None:
+        return Selection()
+    return select(record.root, own, ReviewedSpan(record.head, "HEAD"))
+
+
+def _uncommitted_selection(record: SessionRecord) -> Selection:
+    changed = record.baseline.changed_paths(capture(record.root))
+    if record.head is not None:
+        # Without a starting commit there was nothing to fast-forward over, so every changed file is the session's.
+        dirty = uncommitted_paths(record.root)
+        changed = tuple(path for path in changed if path in dirty)
+    return select(record.root, changed, ReviewedSpan("HEAD"))
 
 
 def _own_committed(record: SessionRecord) -> tuple[str, ...]:

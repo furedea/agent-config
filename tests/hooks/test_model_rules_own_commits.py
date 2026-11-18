@@ -1,5 +1,6 @@
 """Stop model rules judge the commits the session made, not the ones it fast-forwarded or pulled in."""
 
+import json
 import os
 import subprocess
 import sys
@@ -235,3 +236,46 @@ def test_the_same_files_reached_by_cherry_pick_instead_of_fast_forward_are_a_new
     git(git_project, "cherry-pick", "others")
 
     assert model_rules_gate._inputs(record) != fast_forwarded
+
+
+def test_a_discarded_commit_does_not_claim_a_path_that_an_outside_commit_then_changes(
+    git_project: Path, base: str
+) -> None:
+    commit(git_project, "f.txt", "discarded\n")
+    git(git_project, "reset", "--quiet", "--hard", base)
+    others_work(git_project, "f.txt")
+
+    git(git_project, "merge", "--quiet", "--ff-only", "others")
+
+    assert own_paths(git_project, base, 1) == ()
+
+
+def test_files_the_session_committed_in_a_repository_that_had_no_commit_are_still_judged(
+    tmp_path: Path, executable: StubWriter, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    install_fakes(executable, tmp_path, monkeypatch)
+    empty = tmp_path / "empty"
+    empty.mkdir()
+    git(empty, "init", "--quiet", "-b", "main")
+    for key, value in (("user.email", "t@example.invalid"), ("user.name", "T"), ("commit.gpgsign", "false")):
+        git(empty, "config", key, value)
+    record = register_session(empty, tmp_path, monkeypatch)
+    commit(empty, "a.txt")
+
+    assert "a.txt" in model_rules_gate._Changes.of(record).uncommitted.sendable
+
+
+def test_a_session_whose_reflog_cannot_say_still_has_its_uncommitted_files_judged(
+    git_project: Path, tmp_path: Path, executable: StubWriter, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    install_fakes(executable, tmp_path, monkeypatch)
+    record = register_session(git_project, tmp_path, monkeypatch)
+    baseline = record.directory / "baseline.json"
+    baseline.write_text(json.dumps({**json.loads(baseline.read_text()), "reflog_entries": None}))
+    commit(git_project, "committed.txt")
+    edit(record, "after\n")
+
+    changes = model_rules_gate._Changes.of(record)
+
+    assert changes.committed.sendable == ()
+    assert changes.uncommitted.sendable == ("notes.txt",)

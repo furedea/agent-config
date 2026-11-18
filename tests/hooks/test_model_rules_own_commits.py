@@ -250,6 +250,32 @@ def test_a_commit_the_session_made_keeps_its_files_when_an_outside_commit_change
     assert own_paths(git_project, base) == ("f.txt",)
 
 
+@pytest.mark.parametrize(
+    ("subject", "own"),
+    [
+        ("commit: add x", True),
+        ("commit (amend): add x", True),
+        ("commit (cherry-pick): add x", True),
+        ("cherry-pick: add x", True),
+        ("revert: Revert x", True),
+        ("am: add x", True),
+        ("am (continue): add x", True),
+        ("rebase (pick): add x", True),
+        ("rebase (continue): add x", True),
+        ("pull --rebase origin main (pick): add x", True),
+        ("commit (merge): Merge x", False),
+        ("merge others: Fast-forward", False),
+        ("pull: Fast-forward", False),
+        ("checkout: moving from main to side", False),
+        ("rebase (start): checkout origin/main", False),
+        ("rebase (finish): returning to refs/heads/main", False),
+        ("reset: moving to HEAD~1", False),
+    ],
+)
+def test_which_reflog_subjects_are_the_sessions_own_commits(subject: str, own: bool) -> None:
+    assert bool(model_rules_files._OWN_REFLOG_SUBJECT.match(subject)) is own
+
+
 def test_a_failing_git_is_reported_as_a_value_error(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="cannot"):
         own_paths(tmp_path, "HEAD")

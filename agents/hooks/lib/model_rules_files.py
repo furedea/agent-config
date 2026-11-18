@@ -73,23 +73,39 @@ def select(root: Path, paths: Iterable[str], span: ReviewedSpan) -> Selection:
     return Selection(tuple(sendable), frozenset(withheld), adrs)
 
 
-def own_committed_paths(root: Path, base: str, registered_entries: int) -> tuple[str, ...]:
+def own_committed_paths(root: Path, base: str, registered_entries: int | None) -> tuple[str, ...]:
     """The files the session's own commits since `base` added or changed, with links and replaced types included.
 
-    HEAD's reflog says how each commit came to be. A commit the session made (commit, amend, cherry-pick, revert, or a
-    rebase replaying its own work) counts; one that arrived by fast-forward, pull, checkout or merge belongs to someone
-    else, so its files are left out even though `base..HEAD` contains it. A merge commit is never counted: its diff
-    cannot be split into the session's part and the part it merged in. Only entries made after the session
-    registered (`registered_entries` of them existed then) count, so a commit made before the session and brought in
-    by a later fast-forward is not the session's.
+    HEAD's reflog says how each step came to be. A step the session made (commit, amend, cherry-pick, revert, or a
+    rebase replaying commits) counts, and so does only what that step changed from the commit HEAD named before it:
+    an amend counts what it added, not the commit it replaced. A step that arrived by fast-forward, pull, checkout or
+    merge belongs to someone else, so its files are left out even though `base..HEAD` contains them; a merge commit is
+    never counted, as its diff cannot be split into the session's part and the part it merged in. Only steps made
+    after the session registered (`registered_entries` of them existed then) count. A path counts only if its content
+    now differs from `base`, so work that was discarded or undone is not the session's.
+
     A commit made in another worktree and brought in here by a fast-forward leaves no entry in this reflog and is not
-    counted either. A path counts only if its content now differs from `base`, so amending or rebasing a commit that
-    was already there when the session started does not make that commit's other files the session's.
+    counted. A rebase replays the commits it finds between its target and HEAD, so after a fast-forward it can turn
+    commits that came from elsewhere into the session's.
+
+    Raises ValueError when the reflog cannot tell: it was not counted at registration, or HEAD moved without an entry.
     """
-    reachable = set(_git_lines(root, "rev-list", f"{base}..HEAD"))
-    own = _own_commits(root, registered_entries) & reachable
+    if registered_entries is None:
+        raise ValueError("HEAD's reflog was not counted when the session registered")
+    steps = [
+        tuple(line.partition("\t")[::2])
+        for line in _git_lines(root, "reflog", "show", "--format=%H%x09%gs", "HEAD", "--")
+    ]
+    since_registration = len(steps) - registered_entries
+    if since_registration <= 0:
+        raise ValueError("HEAD moved but its reflog has no entry since the session registered")
+    own = [
+        _paths_changed_by(root, commit, steps[number + 1][0] if number + 1 < len(steps) else None)
+        for number, (commit, subject) in enumerate(steps[:since_registration])
+        if _OWN_REFLOG_SUBJECT.match(subject)
+    ]
     changed_since_base = set(_paths_changed_between(root, base, "HEAD"))
-    return tuple(sorted({path for commit in own for path in _paths_changed_by(root, commit)} & changed_since_base))
+    return tuple(sorted({path for paths in own for path in paths} & changed_since_base))
 
 
 def uncommitted_paths(root: Path) -> frozenset[str]:
@@ -101,19 +117,10 @@ def uncommitted_paths(root: Path) -> frozenset[str]:
     return frozenset(os.fsdecode(entry[3:]) for entry in output.split(b"\0") if entry)
 
 
-def _own_commits(root: Path, registered_entries: int) -> set[str]:
-    """The commits that HEAD's reflog entries made since the session registered say the session made."""
-    entries = _git_lines(root, "reflog", "show", "--format=%H%x09%gs", "HEAD", "--")
-    since_registration = entries[: max(0, len(entries) - registered_entries)]
-    return {
-        commit
-        for commit, _, subject in (entry.partition("\t") for entry in since_registration)
-        if _OWN_REFLOG_SUBJECT.match(subject)
-    }
-
-
-def _paths_changed_by(root: Path, commit: str) -> list[str]:
-    return _name_only(root, ["diff-tree", "--root", "--no-commit-id"], [commit])
+def _paths_changed_by(root: Path, commit: str, previous: str | None) -> list[str]:
+    if previous is None:
+        return _name_only(root, ["diff-tree", "--root", "--no-commit-id"], [commit])
+    return _name_only(root, ["diff"], [previous, commit, "--"])
 
 
 def _paths_changed_between(root: Path, base: str, until: str) -> list[str]:

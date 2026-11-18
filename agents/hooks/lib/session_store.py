@@ -56,10 +56,10 @@ class SessionRecord:
         return value if isinstance(value, str) and COMMIT_ID.fullmatch(value) else None
 
     @property
-    def reflog_entries(self) -> int:
-        """How many entries HEAD's reflog held when the session registered; 0 for an older record."""
+    def reflog_entries(self) -> int | None:
+        """How many entries HEAD's reflog held when the session registered; None when it was not counted."""
         value = read_json(self.directory / "baseline.json").get("reflog_entries")
-        return value if isinstance(value, int) and value >= 0 else 0
+        return value if isinstance(value, int) and value >= 0 else None
 
     def results(self) -> dict:
         """Read the saved results; raise StateError when they are unreadable or lack a `checks` mapping."""

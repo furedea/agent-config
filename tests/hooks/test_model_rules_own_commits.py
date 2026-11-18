@@ -39,7 +39,7 @@ def others_work(root: Path, *names: str) -> None:
     git(root, "fetch", "--quiet", str(clone), "main:others")
 
 
-def own_paths(root: Path, base: str, registered_entries: int = 0) -> tuple[str, ...]:
+def own_paths(root: Path, base: str, registered_entries: int | None = 0) -> tuple[str, ...]:
     return model_rules_files.own_committed_paths(root, base, registered_entries)
 
 
@@ -153,6 +153,33 @@ def test_a_commit_made_before_the_session_and_fast_forwarded_in_is_not_the_sessi
     git(git_project, "merge", "--quiet", "--ff-only", "side")
 
     assert own_paths(git_project, base, registered_entries) == ()
+
+
+def test_amending_a_fast_forwarded_tip_counts_only_what_the_amend_added(git_project: Path, base: str) -> None:
+    others_work(git_project, "theirs.txt")
+    git(git_project, "merge", "--quiet", "--ff-only", "others")
+    (git_project / "mine.txt").write_text("x\n")
+    git(git_project, "add", "mine.txt")
+
+    git(git_project, "commit", "--quiet", "--amend", "--no-edit")
+
+    assert own_paths(git_project, base) == ("mine.txt",)
+
+
+def test_an_uncounted_reflog_cannot_tell_which_commits_are_the_sessions(git_project: Path, base: str) -> None:
+    commit(git_project, "mine.txt")
+
+    with pytest.raises(ValueError, match="not counted"):
+        own_paths(git_project, base, None)
+
+
+def test_a_repository_without_a_reflog_cannot_tell_either(git_project: Path, base: str) -> None:
+    git(git_project, "config", "core.logAllRefUpdates", "false")
+    commit(git_project, "mine.txt")
+    registered_entries = len(git(git_project, "reflog", "show", "--format=%H", "HEAD").splitlines())
+
+    with pytest.raises(ValueError, match="no entry"):
+        own_paths(git_project, base, registered_entries)
 
 
 def test_a_failing_git_is_reported_as_a_value_error(tmp_path: Path) -> None:

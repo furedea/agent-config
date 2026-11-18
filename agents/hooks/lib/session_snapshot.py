@@ -72,15 +72,15 @@ def head_commit(root: Path) -> str | None:
     return value if COMMIT_ID.fullmatch(value) else None
 
 
-def reflog_entries(root: Path) -> int:
-    """How many entries HEAD's reflog holds; 0 when it has none or cannot be read."""
+def reflog_entries(root: Path) -> int | None:
+    """How many entries HEAD's reflog holds, or None when git cannot say."""
     try:
         output = subprocess.check_output(
             ["git", "-c", "core.fsmonitor=false", "-C", str(root), "reflog", "show", "--format=%H", "HEAD", "--"],
             stderr=subprocess.DEVNULL,
         )
     except OSError, subprocess.CalledProcessError:
-        return 0
+        return None
     return len(output.splitlines())
 
 

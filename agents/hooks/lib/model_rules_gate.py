@@ -202,13 +202,8 @@ class _Changes:
         Files that were already there when the session started and that it never touched are not sent, nor are files
         that a fast-forward or pull brought in and that the session has not edited since.
         """
-        committed = Selection()
-        if record.head is not None and head_commit(record.root) != record.head:
-            committed = select(
-                record.root,
-                own_committed_paths(record.root, record.head, record.reflog_entries),
-                ReviewedSpan(record.head, "HEAD"),
-            )
+        own = _own_committed(record)
+        committed = select(record.root, own, ReviewedSpan(record.head, "HEAD")) if record.head else Selection()
         dirty = uncommitted_paths(record.root)
         changed = (path for path in record.baseline.changed_paths(capture(record.root)) if path in dirty)
         return cls(committed, select(record.root, changed, ReviewedSpan("HEAD")))
@@ -283,10 +278,21 @@ def _repository_gate(root: Path) -> Prevented | None:
     return Prevented(f"not sending code of a repository that is not trusted ({distrust.reason})")
 
 
+def _own_committed(record: SessionRecord) -> tuple[str, ...]:
+    if record.head is None or head_commit(record.root) == record.head:
+        return ()
+    return own_committed_paths(record.root, record.head, record.reflog_entries)
+
+
 def _inputs(record: SessionRecord) -> str:
     """A fingerprint of everything a review depends on: the files, the base commit, and the rules."""
     digest = hashlib.sha256(capture(record.root).digest.encode())
     digest.update((record.head or "").encode())
+    # The same files can be the session's or not depending on how HEAD got there, which the snapshot cannot tell.
+    try:
+        digest.update("\0".join(_own_committed(record)).encode())
+    except ValueError:
+        digest.update(b"reflog unavailable")
     for path in sorted(RULES_DIRECTORY.rglob("*.yml")):
         digest.update(os.fsencode(path.relative_to(RULES_DIRECTORY)))
         digest.update(path.read_bytes())

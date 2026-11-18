@@ -27,7 +27,7 @@ _ADR_PATTERN = "docs/adr/[0-9]*.md"
 _FRONT_MATTER_FENCE = "---"
 # Reflog subjects of HEAD that mean the session itself created the commit; `commit (merge)` is deliberately absent.
 _OWN_REFLOG_SUBJECT = re.compile(
-    r"commit(?: \((?:amend|initial)\))?:|cherry-pick|revert"
+    r"commit(?: \((?:amend|initial|cherry-pick)\))?:|cherry-pick|revert"
     r"|(?:pull\b[^:(]*)?rebase\b[^:]*\((?:pick|reword|edit|squash|fixup|continue)\)"
 )
 

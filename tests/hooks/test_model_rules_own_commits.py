@@ -12,6 +12,7 @@ from tests.runtime import REPO_ROOT, StubWriter
 
 sys.path.insert(0, str(REPO_ROOT / "agents/hooks/lib"))
 import model_rules_files
+import model_rules_gate
 import session_store
 
 
@@ -132,6 +133,23 @@ def test_a_cherry_pick_is_the_sessions_commit(git_project: Path, base: str) -> N
     assert own_paths(git_project, base) == ("theirs.txt",)
 
 
+def test_a_cherry_pick_finished_by_hand_after_a_conflict_is_the_sessions_commit(git_project: Path) -> None:
+    commit(git_project, "f.txt", "base\n")
+    git(git_project, "switch", "--quiet", "-c", "side")
+    commit(git_project, "f.txt", "side\n")
+    git(git_project, "switch", "--quiet", "main")
+    commit(git_project, "f.txt", "main\n")
+    base = git(git_project, "rev-parse", "HEAD")
+    registered_entries = len(git(git_project, "reflog", "show", "--format=%H", "HEAD").splitlines())
+    subprocess.run(["git", "cherry-pick", "side"], check=False, cwd=git_project, capture_output=True)
+    (git_project / "f.txt").write_text("resolved\n")
+    git(git_project, "add", "f.txt")
+
+    git(git_project, "commit", "--quiet", "-m", "resolved")
+
+    assert own_paths(git_project, base, registered_entries) == ("f.txt",)
+
+
 def test_a_revert_is_the_sessions_commit(git_project: Path) -> None:
     commit(git_project, "f.txt", "a\n")
     commit(git_project, "f.txt", "b\n")
@@ -201,3 +219,19 @@ def test_the_stop_hook_does_not_advise_on_files_it_fast_forwarded_in(
     assert tools.calls("op")
     for call in tools.calls("op"):
         assert "theirs.txt" not in call["argv"]
+
+
+def test_the_same_files_reached_by_cherry_pick_instead_of_fast_forward_are_a_new_review_input(
+    git_project: Path, tmp_path: Path, executable: StubWriter, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    install_fakes(executable, tmp_path, monkeypatch)
+    record = register_session(git_project, tmp_path, monkeypatch)
+    start = git(git_project, "rev-parse", "HEAD")
+    others_work(git_project, "theirs.txt")
+    git(git_project, "merge", "--quiet", "--ff-only", "others")
+    fast_forwarded = model_rules_gate._inputs(record)
+
+    git(git_project, "reset", "--quiet", "--hard", start)
+    git(git_project, "cherry-pick", "others")
+
+    assert model_rules_gate._inputs(record) != fast_forwarded

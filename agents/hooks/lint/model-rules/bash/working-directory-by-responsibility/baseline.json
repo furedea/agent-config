@@ -1,12 +1,12 @@
 {
   "schema": "jev-lint-eval-1",
-  "recorded": "2026-11-18T06:23:47.547Z",
+  "recorded": "2026-11-18T06:27:43.121Z",
   "model": "jev-1.14.0",
   "suite": "bash/working-directory-by-responsibility",
   "rules": [
     {
       "id": "working-directory-by-responsibility",
-      "draft": "d56878f8b707",
+      "draft": "de4199c0a4c3",
       "at": 0.5
     }
   ],
@@ -15,125 +15,6 @@
     [
       {
         "rule": "working-directory-by-responsibility",
-        "file": "agents/hooks/lint/model-rules/bash/working-directory-by-responsibility/fixtures/clean_subshell_for_bundled_files.bash",
-        "line": 5,
-        "endLine": 5,
-        "kind": "noul",
-        "value": 0.15,
-        "confidence": null
-      },
-      {
-        "rule": "working-directory-by-responsibility",
-        "file": "agents/hooks/lint/model-rules/bash/working-directory-by-responsibility/fixtures/clean_subshell_for_bundled_files.bash",
-        "line": 7,
-        "endLine": 7,
-        "kind": "noul",
-        "value": 0.18,
-        "confidence": null
-      },
-      {
-        "rule": "working-directory-by-responsibility",
-        "file": "agents/hooks/lint/model-rules/bash/working-directory-by-responsibility/fixtures/clean_pushd_popd_pair.bash",
-        "line": 5,
-        "endLine": 5,
-        "kind": "noul",
-        "value": 0.1,
-        "confidence": null
-      },
-      {
-        "rule": "working-directory-by-responsibility",
-        "file": "agents/hooks/lint/model-rules/bash/working-directory-by-responsibility/fixtures/clean_pushd_popd_pair.bash",
-        "line": 7,
-        "endLine": 7,
-        "kind": "noul",
-        "value": 0.2,
-        "confidence": null
-      },
-      {
-        "rule": "working-directory-by-responsibility",
-        "file": "agents/hooks/lint/model-rules/bash/working-directory-by-responsibility/fixtures/bad_hook_cds_into_itself.bash",
-        "line": 5,
-        "endLine": 5,
-        "kind": "noul",
-        "value": 0.88,
-        "confidence": null
-      },
-      {
-        "rule": "working-directory-by-responsibility",
-        "file": "agents/hooks/lint/model-rules/bash/working-directory-by-responsibility/fixtures/clean_all_work_in_script_dir.bash",
-        "line": 5,
-        "endLine": 5,
-        "kind": "noul",
-        "value": 0.08,
-        "confidence": null
-      },
-      {
-        "rule": "working-directory-by-responsibility",
-        "file": "agents/hooks/lint/model-rules/bash/working-directory-by-responsibility/fixtures/clean_cd_to_target_project.bash",
-        "line": 7,
-        "endLine": 7,
-        "kind": "noul",
-        "value": 0.02,
-        "confidence": null
-      },
-      {
-        "rule": "working-directory-by-responsibility",
-        "file": "agents/hooks/lint/model-rules/bash/working-directory-by-responsibility/fixtures/bad_pushd_without_popd.bash",
-        "line": 5,
-        "endLine": 5,
-        "kind": "noul",
-        "value": 0.23,
-        "confidence": null
-      },
-      {
-        "rule": "working-directory-by-responsibility",
-        "file": "agents/hooks/lint/model-rules/bash/working-directory-by-responsibility/fixtures/bad_formatter_on_caller_dir.bash",
-        "line": 7,
-        "endLine": 7,
-        "kind": "noul",
-        "value": 0.88,
-        "confidence": null
-      }
-    ],
-    [
-      {
-        "rule": "working-directory-by-responsibility",
-        "file": "agents/hooks/lint/model-rules/bash/working-directory-by-responsibility/fixtures/bad_pushd_without_popd.bash",
-        "line": 5,
-        "endLine": 5,
-        "kind": "noul",
-        "value": 0.22,
-        "confidence": null
-      },
-      {
-        "rule": "working-directory-by-responsibility",
-        "file": "agents/hooks/lint/model-rules/bash/working-directory-by-responsibility/fixtures/bad_hook_cds_into_itself.bash",
-        "line": 5,
-        "endLine": 5,
-        "kind": "noul",
-        "value": 0.9,
-        "confidence": null
-      },
-      {
-        "rule": "working-directory-by-responsibility",
-        "file": "agents/hooks/lint/model-rules/bash/working-directory-by-responsibility/fixtures/clean_pushd_popd_pair.bash",
-        "line": 5,
-        "endLine": 5,
-        "kind": "noul",
-        "value": 0.11,
-        "confidence": null
-      },
-      {
-        "rule": "working-directory-by-responsibility",
-        "file": "agents/hooks/lint/model-rules/bash/working-directory-by-responsibility/fixtures/clean_pushd_popd_pair.bash",
-        "line": 7,
-        "endLine": 7,
-        "kind": "noul",
-        "value": 0.18,
-        "confidence": null
-      },
-      {
-        "rule": "working-directory-by-responsibility",
         "file": "agents/hooks/lint/model-rules/bash/working-directory-by-responsibility/fixtures/bad_formatter_on_caller_dir.bash",
         "line": 7,
         "endLine": 7,
@@ -147,59 +28,12 @@
         "line": 5,
         "endLine": 5,
         "kind": "noul",
-        "value": 0.08,
+        "value": 0.06,
         "confidence": null
       },
       {
         "rule": "working-directory-by-responsibility",
         "file": "agents/hooks/lint/model-rules/bash/working-directory-by-responsibility/fixtures/clean_subshell_for_bundled_files.bash",
-        "line": 5,
-        "endLine": 5,
-        "kind": "noul",
-        "value": 0.14,
-        "confidence": null
-      },
-      {
-        "rule": "working-directory-by-responsibility",
-        "file": "agents/hooks/lint/model-rules/bash/working-directory-by-responsibility/fixtures/clean_subshell_for_bundled_files.bash",
-        "line": 7,
-        "endLine": 7,
-        "kind": "noul",
-        "value": 0.19,
-        "confidence": null
-      },
-      {
-        "rule": "working-directory-by-responsibility",
-        "file": "agents/hooks/lint/model-rules/bash/working-directory-by-responsibility/fixtures/clean_cd_to_target_project.bash",
-        "line": 7,
-        "endLine": 7,
-        "kind": "noul",
-        "value": 0.02,
-        "confidence": null
-      }
-    ],
-    [
-      {
-        "rule": "working-directory-by-responsibility",
-        "file": "agents/hooks/lint/model-rules/bash/working-directory-by-responsibility/fixtures/clean_pushd_popd_pair.bash",
-        "line": 5,
-        "endLine": 5,
-        "kind": "noul",
-        "value": 0.09,
-        "confidence": null
-      },
-      {
-        "rule": "working-directory-by-responsibility",
-        "file": "agents/hooks/lint/model-rules/bash/working-directory-by-responsibility/fixtures/clean_pushd_popd_pair.bash",
-        "line": 7,
-        "endLine": 7,
-        "kind": "noul",
-        "value": 0.17,
-        "confidence": null
-      },
-      {
-        "rule": "working-directory-by-responsibility",
-        "file": "agents/hooks/lint/model-rules/bash/working-directory-by-responsibility/fixtures/clean_all_work_in_script_dir.bash",
         "line": 5,
         "endLine": 5,
         "kind": "noul",
@@ -208,29 +42,11 @@
       },
       {
         "rule": "working-directory-by-responsibility",
-        "file": "agents/hooks/lint/model-rules/bash/working-directory-by-responsibility/fixtures/bad_hook_cds_into_itself.bash",
-        "line": 5,
-        "endLine": 5,
-        "kind": "noul",
-        "value": 0.89,
-        "confidence": null
-      },
-      {
-        "rule": "working-directory-by-responsibility",
-        "file": "agents/hooks/lint/model-rules/bash/working-directory-by-responsibility/fixtures/bad_formatter_on_caller_dir.bash",
+        "file": "agents/hooks/lint/model-rules/bash/working-directory-by-responsibility/fixtures/clean_subshell_for_bundled_files.bash",
         "line": 7,
         "endLine": 7,
         "kind": "noul",
-        "value": 0.88,
-        "confidence": null
-      },
-      {
-        "rule": "working-directory-by-responsibility",
-        "file": "agents/hooks/lint/model-rules/bash/working-directory-by-responsibility/fixtures/bad_pushd_without_popd.bash",
-        "line": 5,
-        "endLine": 5,
-        "kind": "noul",
-        "value": 0.23,
+        "value": 0.09,
         "confidence": null
       },
       {
@@ -244,11 +60,103 @@
       },
       {
         "rule": "working-directory-by-responsibility",
+        "file": "agents/hooks/lint/model-rules/bash/working-directory-by-responsibility/fixtures/bad_pushd_without_popd.bash",
+        "line": 5,
+        "endLine": 5,
+        "kind": "noul",
+        "value": 0.35,
+        "confidence": null
+      },
+      {
+        "rule": "working-directory-by-responsibility",
+        "file": "agents/hooks/lint/model-rules/bash/working-directory-by-responsibility/fixtures/bad_hook_cds_into_itself.bash",
+        "line": 5,
+        "endLine": 5,
+        "kind": "noul",
+        "value": 0.91,
+        "confidence": null
+      },
+      {
+        "rule": "working-directory-by-responsibility",
+        "file": "agents/hooks/lint/model-rules/bash/working-directory-by-responsibility/fixtures/clean_pushd_popd_pair.bash",
+        "line": 5,
+        "endLine": 5,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "working-directory-by-responsibility",
+        "file": "agents/hooks/lint/model-rules/bash/working-directory-by-responsibility/fixtures/clean_pushd_popd_pair.bash",
+        "line": 7,
+        "endLine": 7,
+        "kind": "noul",
+        "value": 0.1,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "working-directory-by-responsibility",
+        "file": "agents/hooks/lint/model-rules/bash/working-directory-by-responsibility/fixtures/clean_all_work_in_script_dir.bash",
+        "line": 5,
+        "endLine": 5,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "working-directory-by-responsibility",
+        "file": "agents/hooks/lint/model-rules/bash/working-directory-by-responsibility/fixtures/clean_pushd_popd_pair.bash",
+        "line": 5,
+        "endLine": 5,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "working-directory-by-responsibility",
+        "file": "agents/hooks/lint/model-rules/bash/working-directory-by-responsibility/fixtures/clean_pushd_popd_pair.bash",
+        "line": 7,
+        "endLine": 7,
+        "kind": "noul",
+        "value": 0.09,
+        "confidence": null
+      },
+      {
+        "rule": "working-directory-by-responsibility",
+        "file": "agents/hooks/lint/model-rules/bash/working-directory-by-responsibility/fixtures/clean_cd_to_target_project.bash",
+        "line": 7,
+        "endLine": 7,
+        "kind": "noul",
+        "value": 0.02,
+        "confidence": null
+      },
+      {
+        "rule": "working-directory-by-responsibility",
+        "file": "agents/hooks/lint/model-rules/bash/working-directory-by-responsibility/fixtures/bad_hook_cds_into_itself.bash",
+        "line": 5,
+        "endLine": 5,
+        "kind": "noul",
+        "value": 0.92,
+        "confidence": null
+      },
+      {
+        "rule": "working-directory-by-responsibility",
+        "file": "agents/hooks/lint/model-rules/bash/working-directory-by-responsibility/fixtures/bad_formatter_on_caller_dir.bash",
+        "line": 7,
+        "endLine": 7,
+        "kind": "noul",
+        "value": 0.9,
+        "confidence": null
+      },
+      {
+        "rule": "working-directory-by-responsibility",
         "file": "agents/hooks/lint/model-rules/bash/working-directory-by-responsibility/fixtures/clean_subshell_for_bundled_files.bash",
         "line": 5,
         "endLine": 5,
         "kind": "noul",
-        "value": 0.19,
+        "value": 0.06,
         "confidence": null
       },
       {
@@ -257,15 +165,107 @@
         "line": 7,
         "endLine": 7,
         "kind": "noul",
-        "value": 0.19,
+        "value": 0.1,
+        "confidence": null
+      },
+      {
+        "rule": "working-directory-by-responsibility",
+        "file": "agents/hooks/lint/model-rules/bash/working-directory-by-responsibility/fixtures/bad_pushd_without_popd.bash",
+        "line": 5,
+        "endLine": 5,
+        "kind": "noul",
+        "value": 0.34,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "working-directory-by-responsibility",
+        "file": "agents/hooks/lint/model-rules/bash/working-directory-by-responsibility/fixtures/bad_pushd_without_popd.bash",
+        "line": 5,
+        "endLine": 5,
+        "kind": "noul",
+        "value": 0.33,
+        "confidence": null
+      },
+      {
+        "rule": "working-directory-by-responsibility",
+        "file": "agents/hooks/lint/model-rules/bash/working-directory-by-responsibility/fixtures/clean_pushd_popd_pair.bash",
+        "line": 5,
+        "endLine": 5,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "working-directory-by-responsibility",
+        "file": "agents/hooks/lint/model-rules/bash/working-directory-by-responsibility/fixtures/clean_pushd_popd_pair.bash",
+        "line": 7,
+        "endLine": 7,
+        "kind": "noul",
+        "value": 0.09,
+        "confidence": null
+      },
+      {
+        "rule": "working-directory-by-responsibility",
+        "file": "agents/hooks/lint/model-rules/bash/working-directory-by-responsibility/fixtures/clean_all_work_in_script_dir.bash",
+        "line": 5,
+        "endLine": 5,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "working-directory-by-responsibility",
+        "file": "agents/hooks/lint/model-rules/bash/working-directory-by-responsibility/fixtures/bad_formatter_on_caller_dir.bash",
+        "line": 7,
+        "endLine": 7,
+        "kind": "noul",
+        "value": 0.88,
+        "confidence": null
+      },
+      {
+        "rule": "working-directory-by-responsibility",
+        "file": "agents/hooks/lint/model-rules/bash/working-directory-by-responsibility/fixtures/bad_hook_cds_into_itself.bash",
+        "line": 5,
+        "endLine": 5,
+        "kind": "noul",
+        "value": 0.92,
+        "confidence": null
+      },
+      {
+        "rule": "working-directory-by-responsibility",
+        "file": "agents/hooks/lint/model-rules/bash/working-directory-by-responsibility/fixtures/clean_subshell_for_bundled_files.bash",
+        "line": 5,
+        "endLine": 5,
+        "kind": "noul",
+        "value": 0.07,
+        "confidence": null
+      },
+      {
+        "rule": "working-directory-by-responsibility",
+        "file": "agents/hooks/lint/model-rules/bash/working-directory-by-responsibility/fixtures/clean_subshell_for_bundled_files.bash",
+        "line": 7,
+        "endLine": 7,
+        "kind": "noul",
+        "value": 0.12,
+        "confidence": null
+      },
+      {
+        "rule": "working-directory-by-responsibility",
+        "file": "agents/hooks/lint/model-rules/bash/working-directory-by-responsibility/fixtures/clean_cd_to_target_project.bash",
+        "line": 7,
+        "endLine": 7,
+        "kind": "noul",
+        "value": 0.02,
         "confidence": null
       }
     ]
   ],
   "spent": {
     "calls": 21,
-    "inputTokens": 16455,
-    "usd": 0.0006911100000000001,
-    "ms": 297
+    "inputTokens": 18291,
+    "usd": 0.0007682220000000002,
+    "ms": 213
   }
 }

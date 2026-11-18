@@ -1,5 +1,8 @@
 # bash-style: "Declare constants with `readonly`" (the name's case is checked by the ast-grep rule
-# bash_readonly_constant_name). Advisory; the prose stays until the rule is promoted (ADR-0021).
+# bash_readonly_constant_name).
+# Advisory; the prose stays until the rule is promoted (ADR-0021). The cutoff 0.5 is jev-lint's fitted midpoint: on
+# this folder's fixtures (3 bad, 4 clean, 3 passes) the highest clean case scored 0.04 and the lowest bad one 0.96.
+# Seven cases are not a calibration, so the rule stays advisory.
 id: script-constants-readonly
 language: Bash
 kind: noul
@@ -8,6 +11,9 @@ subject: node
 # the statements after it, which `local` (the assignment alone) did not show, so every clean case answered true.
 state: located
 threshold: 0.5
+inconclusive: >-
+  Blind: every fixture sits 0.46 or more from the cutoff; a boundary case needs a value a reader would argue over (one
+  that only a sourced file reassigns), and none is written yet.
 axis: file
 severity: warning
 # A top-level assignment: the script's own configuration and paths, which are constants unless the script changes them.

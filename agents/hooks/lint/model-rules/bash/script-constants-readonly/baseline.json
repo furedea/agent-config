@@ -1,12 +1,12 @@
 {
   "schema": "jev-lint-eval-1",
-  "recorded": "2026-11-18T06:23:46.486Z",
+  "recorded": "2026-11-18T06:27:42.634Z",
   "model": "jev-1.14.0",
   "suite": "bash/script-constants-readonly",
   "rules": [
     {
       "id": "script-constants-readonly",
-      "draft": "4cae748d71a9",
+      "draft": "8bc0cd5820f7",
       "at": 0.5
     }
   ],
@@ -19,7 +19,7 @@
         "line": 4,
         "endLine": 4,
         "kind": "noul",
-        "value": 0.79,
+        "value": 0.03,
         "confidence": null
       },
       {
@@ -28,7 +28,7 @@
         "line": 8,
         "endLine": 8,
         "kind": "noul",
-        "value": 0.69,
+        "value": 0.04,
         "confidence": null
       },
       {
@@ -37,7 +37,7 @@
         "line": 9,
         "endLine": 9,
         "kind": "noul",
-        "value": 0.75,
+        "value": 0.04,
         "confidence": null
       },
       {
@@ -46,7 +46,7 @@
         "line": 10,
         "endLine": 10,
         "kind": "noul",
-        "value": 0.76,
+        "value": 0.03,
         "confidence": null
       },
       {
@@ -55,7 +55,7 @@
         "line": 4,
         "endLine": 4,
         "kind": "noul",
-        "value": 0.92,
+        "value": 0.96,
         "confidence": null
       },
       {
@@ -64,7 +64,7 @@
         "line": 5,
         "endLine": 5,
         "kind": "noul",
-        "value": 0.89,
+        "value": 0.96,
         "confidence": null
       },
       {
@@ -73,7 +73,7 @@
         "line": 17,
         "endLine": 17,
         "kind": "noul",
-        "value": 0.87,
+        "value": 0.98,
         "confidence": null
       }
     ],
@@ -84,7 +84,7 @@
         "line": 4,
         "endLine": 4,
         "kind": "noul",
-        "value": 0.91,
+        "value": 0.96,
         "confidence": null
       },
       {
@@ -93,7 +93,7 @@
         "line": 5,
         "endLine": 5,
         "kind": "noul",
-        "value": 0.88,
+        "value": 0.97,
         "confidence": null
       },
       {
@@ -102,7 +102,7 @@
         "line": 17,
         "endLine": 17,
         "kind": "noul",
-        "value": 0.87,
+        "value": 0.98,
         "confidence": null
       },
       {
@@ -111,7 +111,7 @@
         "line": 4,
         "endLine": 4,
         "kind": "noul",
-        "value": 0.77,
+        "value": 0.03,
         "confidence": null
       },
       {
@@ -120,7 +120,7 @@
         "line": 8,
         "endLine": 8,
         "kind": "noul",
-        "value": 0.68,
+        "value": 0.03,
         "confidence": null
       },
       {
@@ -129,7 +129,7 @@
         "line": 9,
         "endLine": 9,
         "kind": "noul",
-        "value": 0.74,
+        "value": 0.04,
         "confidence": null
       },
       {
@@ -138,7 +138,7 @@
         "line": 10,
         "endLine": 10,
         "kind": "noul",
-        "value": 0.75,
+        "value": 0.03,
         "confidence": null
       }
     ],
@@ -149,7 +149,7 @@
         "line": 4,
         "endLine": 4,
         "kind": "noul",
-        "value": 0.74,
+        "value": 0.03,
         "confidence": null
       },
       {
@@ -158,7 +158,7 @@
         "line": 8,
         "endLine": 8,
         "kind": "noul",
-        "value": 0.71,
+        "value": 0.04,
         "confidence": null
       },
       {
@@ -167,7 +167,7 @@
         "line": 9,
         "endLine": 9,
         "kind": "noul",
-        "value": 0.76,
+        "value": 0.04,
         "confidence": null
       },
       {
@@ -176,7 +176,7 @@
         "line": 10,
         "endLine": 10,
         "kind": "noul",
-        "value": 0.77,
+        "value": 0.03,
         "confidence": null
       },
       {
@@ -185,7 +185,7 @@
         "line": 4,
         "endLine": 4,
         "kind": "noul",
-        "value": 0.9,
+        "value": 0.97,
         "confidence": null
       },
       {
@@ -194,7 +194,7 @@
         "line": 5,
         "endLine": 5,
         "kind": "noul",
-        "value": 0.89,
+        "value": 0.97,
         "confidence": null
       },
       {
@@ -203,15 +203,15 @@
         "line": 17,
         "endLine": 17,
         "kind": "noul",
-        "value": 0.85,
+        "value": 0.98,
         "confidence": null
       }
     ]
   ],
   "spent": {
     "calls": 6,
-    "inputTokens": 8688,
-    "usd": 0.000364896,
-    "ms": 266
+    "inputTokens": 11073,
+    "usd": 0.000465066,
+    "ms": 162
   }
 }

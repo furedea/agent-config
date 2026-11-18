@@ -2,12 +2,15 @@
 # (ADR-0021). The matcher selects the `cd` and `pushd` commands, so this rule judges only a change into the script's own
 # directory; the converse (opening bundled files by a relative path that resolves from the caller's directory) has no
 # command to select and stays prose.
+# The cutoff is jev-lint's fitted midpoint, 0.23: on this folder's fixtures (3 bad, 6 clean, 3 passes) the highest
+# clean case scored 0.10 and the lowest bad one 0.33, a `pushd` into the script's directory that no `popd` undoes; the
+# other bad cases scored 0.89 or more. Nine cases are not a calibration, so the rule stays advisory.
 id: working-directory-by-responsibility
 language: Bash
 kind: noul
 subject: node
 state: located
-threshold: 0.5
+threshold: 0.23
 axis: file
 severity: warning
 rule:

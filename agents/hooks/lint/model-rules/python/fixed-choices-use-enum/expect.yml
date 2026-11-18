@@ -1,0 +1,15 @@
+default: clean
+note: >-
+  Defects select behavior among a closed set of string literals by if-chain, match, dict or boolean chain. Hard clean
+  cases are a match over an Enum, a single sentinel comparison, HTTP header keys, one comparison against an external
+  payload value, and a path suffix check.
+fixtures/subjects.py:
+  - { line: 9, label: bad, window: 1, why: "if-chain over three shipping method literals" }
+  - { line: 19, label: bad, window: 1, why: "match over three status literals" }
+  - { line: 30, label: bad, window: 1, why: "dict from format literals to writers" }
+  - { line: 35, label: bad, window: 1, why: "boolean chain over three job state literals" }
+  - { line: 39, label: clean, window: 1, why: "matches through an Enum" }
+  - { line: 47, label: clean, window: 1, why: "a single comparison against the empty string" }
+  - { line: 53, label: clean, window: 1, why: "keys of an external HTTP header map" }
+  - { line: 57, label: clean, window: 1, why: "one comparison against a value of external data" }
+  - { line: 62, label: clean, window: 1, why: "a single path suffix comparison" }

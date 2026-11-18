@@ -1,0 +1,14 @@
+default: clean
+note: >-
+  Defects validate the unchanged result of json.loads or orjson.loads. Clean cases pass a conversion option, parse
+  TOML, build the dict in code, change the loaded value first, or validate a function argument inside a wrapping call
+  (the matcher selects only the inner model_validate call).
+fixtures/subjects.py:
+  - { line: 13, label: bad, window: 1, why: "validates json.loads directly" }
+  - { line: 18, label: bad, window: 1, why: "validates a variable that holds json.loads unchanged" }
+  - { line: 23, label: bad, window: 1, why: "validates orjson.loads unchanged" }
+  - { line: 28, label: clean, window: 1, why: "parse_float is a conversion model_validate_json does not run" }
+  - { line: 32, label: clean, window: 1, why: "TOML, not JSON" }
+  - { line: 36, label: clean, window: 1, why: "a dict built in code" }
+  - { line: 42, label: clean, window: 1, why: "the loaded value is changed before validation" }
+  - { line: 46, label: clean, window: 1, why: "a function argument inside a wrapping call" }

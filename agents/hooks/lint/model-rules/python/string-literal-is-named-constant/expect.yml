@@ -1,0 +1,12 @@
+default: clean
+note: >-
+  Defects embed an environment variable name, a header name, status values, and a URL. Clean cases are test data and
+  keys of a one-off dict literal.
+fixtures/subjects.py:
+  - { line: 8, label: bad, window: 1, why: "inline environment variable name" }
+  - { line: 12, label: bad, window: 1, why: "inline header name" }
+  - { line: 16, label: bad, window: 1, why: "inline status values" }
+  - { line: 23, label: bad, window: 1, why: "inline service URL" }
+  - { line: 27, label: clean, window: 1, why: "test data" }
+  - { line: 31, label: clean, window: 1, why: "test data" }
+  - { line: 36, label: clean, window: 1, why: "keys of a one-off dict literal" }

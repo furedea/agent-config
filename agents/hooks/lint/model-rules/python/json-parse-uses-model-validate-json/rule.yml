@@ -9,9 +9,13 @@ state: located
 threshold: 0.5
 axis: file
 severity: warning
+# Matched on the callee, so a call that only wraps `model_validate(...)` is not a subject of its own (#196).
 rule:
   kind: call
-  regex: \.model_validate\(
+  has:
+    field: function
+    kind: attribute
+    has: { field: attribute, regex: ^model_validate$ }
 ask: >-
   This `model_validate(...)` call validates a value that came from a JSON loader instead of using
   `model_validate_json`.

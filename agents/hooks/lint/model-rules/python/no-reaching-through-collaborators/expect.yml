@@ -1,0 +1,12 @@
+default: clean
+note: >-
+  Defects call through a collaborator's collaborator. Hard clean cases are a module path, attribute access on an
+  event DTO, and a path on a settings record.
+fixtures/subjects.py:
+  - { line: 4, label: bad, window: 1, why: "reaches through the customer into the wallet" }
+  - { line: 15, label: bad, window: 1, why: "reaches through the app container into the database" }
+  - { line: 20, label: bad, window: 1, why: "reaches through the account into its owner" }
+  - { line: 25, label: bad, window: 1, why: "reaches through the carrier into its API client" }
+  - { line: 30, label: clean, window: 1, why: "a standard-library module path" }
+  - { line: 35, label: clean, window: 1, why: "data access on a webhook payload DTO" }
+  - { line: 39, label: clean, window: 1, why: "a path on a plain settings record" }

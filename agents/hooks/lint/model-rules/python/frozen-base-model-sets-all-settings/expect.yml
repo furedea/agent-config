@@ -1,0 +1,23 @@
+default: clean
+note: >-
+  One FrozenBaseModel per file. Clean cases set all five settings in model_config, split between class keywords and
+  model_config, through a named constant, or in a dict. Defects miss a setting, set another value, or override one
+  through a class keyword.
+fixtures/base_complete.py:
+  - { line: 6, label: clean, window: 1, why: "all five settings in model_config" }
+fixtures/base_split.py:
+  - { line: 4, label: clean, window: 1, why: "settings split between class keywords and model_config" }
+fixtures/base_constant.py:
+  - { line: 12, label: clean, window: 1, why: "all five settings through a named constant" }
+fixtures/base_dict.py:
+  - { line: 4, label: clean, window: 1, why: "all five settings in a dict" }
+fixtures/base_missing_revalidate.py:
+  - { line: 4, label: bad, window: 1, why: "revalidate_instances is missing" }
+fixtures/base_extra_ignore.py:
+  - { line: 4, label: bad, window: 1, why: "extra is ignore, not forbid" }
+fixtures/base_constant_missing_strict.py:
+  - { line: 11, label: bad, window: 1, why: "the named constant lacks strict" }
+fixtures/base_no_config.py:
+  - { line: 4, label: bad, window: 1, why: "only frozen is set" }
+fixtures/base_keyword_overrides.py:
+  - { line: 4, label: bad, window: 1, why: "a class keyword sets revalidate_instances to never" }

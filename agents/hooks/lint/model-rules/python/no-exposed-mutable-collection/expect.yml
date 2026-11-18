@@ -1,0 +1,13 @@
+default: clean
+note: >-
+  Defects return the object's own list, set or dict that its methods guard. Clean cases return a scalar, a tuple
+  field, a copy, one element, or a list from a plain record with no invariants.
+fixtures/subjects.py:
+  - { line: 16, label: bad, window: 1, why: "returns the guarded item list itself" }
+  - { line: 19, label: clean, window: 1, why: "returns a scalar field" }
+  - { line: 33, label: bad, window: 1, why: "a property returns the internal set" }
+  - { line: 46, label: bad, window: 1, why: "returns the internal header dict" }
+  - { line: 56, label: clean, window: 1, why: "the field is a tuple" }
+  - { line: 69, label: clean, window: 1, why: "returns a copy" }
+  - { line: 72, label: clean, window: 1, why: "returns one element, not the collection" }
+  - { line: 80, label: clean, window: 1, why: "a plain record with no invariants" }

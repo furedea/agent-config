@@ -1,0 +1,13 @@
+default: clean
+note: >-
+  Defects are ordinary classes with attributes and no __slots__. Clean cases define __slots__, are exceptions, need
+  __dict__ for cached_property, or inherit from a framework base (Thread, logging.Handler).
+fixtures/subjects.py:
+  - { line: 6, label: bad, window: 1, why: "an ordinary class without __slots__" }
+  - { line: 15, label: bad, window: 1, why: "an ordinary stateful class without __slots__" }
+  - { line: 28, label: clean, window: 1, why: "defines __slots__" }
+  - { line: 36, label: clean, window: 1, why: "an exception" }
+  - { line: 42, label: clean, window: 1, why: "cached_property needs __dict__" }
+  - { line: 51, label: clean, window: 1, why: "inherits threading.Thread" }
+  - { line: 60, label: clean, window: 1, why: "inherits logging.Handler" }
+  - { line: 69, label: bad, window: 1, why: "an ordinary class without __slots__" }

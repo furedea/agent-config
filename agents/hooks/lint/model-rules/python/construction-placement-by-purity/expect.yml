@@ -1,0 +1,16 @@
+default: clean
+note: >-
+  Defects are pure constructions placed outside a classmethod (module-level or staticmethod) and classmethods that do
+  I/O. Hard clean cases are a module-level constructor that reads a file, a resource factory, and a parser that builds
+  a tuple rather than a value object.
+fixtures/subjects.py:
+  - { line: 16, label: clean, window: 1, why: "pure construction as a classmethod of the value" }
+  - { line: 21, label: bad, window: 1, why: "a classmethod that calls the network to build the value" }
+  - { line: 32, label: bad, window: 1, why: "a classmethod that reads the environment to build the value" }
+  - { line: 36, label: bad, window: 1, why: "pure construction placed in a staticmethod instead of a classmethod" }
+  - { line: 46, label: clean, window: 1, why: "pure construction from a mapping as a classmethod" }
+  - { line: 50, label: bad, window: 1, why: "pure construction as a module-level function" }
+  - { line: 54, label: bad, window: 1, why: "pure parsing into a value object as a module-level function" }
+  - { line: 58, label: clean, window: 1, why: "construction that reads a file is module-level" }
+  - { line: 62, label: clean, window: 1, why: "a factory for a resource, not a value object" }
+  - { line: 66, label: clean, window: 1, why: "builds a plain tuple, not a value object" }

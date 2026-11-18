@@ -1,0 +1,12 @@
+default: clean
+note: >-
+  Defects mix parsing, aggregation and output, or validation, persistence and protocol formatting, in one body. Hard
+  clean cases are an orchestrator with one inline filter and log line, a long single-level parser, and a thin wrapper.
+fixtures/subjects.py:
+  - { line: 7, label: bad, window: 1, why: "decodes bytes, aggregates totals and writes CSV in one body" }
+  - { line: 21, label: bad, window: 1, why: "validates, persists, formats a raw mail message and sends it" }
+  - { line: 31, label: bad, window: 1, why: "parses raw HTTP by hand around one business call" }
+  - { line: 40, label: clean, window: 1, why: "sequences named steps; the filter and log line serve the sync" }
+  - { line: 48, label: clean, window: 1, why: "only sequences named steps" }
+  - { line: 55, label: clean, window: 1, why: "a long body at one level that serves one result" }
+  - { line: 72, label: clean, window: 1, why: "a thin wrapper" }

@@ -1,0 +1,271 @@
+{
+  "schema": "jev-lint-eval-1",
+  "recorded": "2026-11-18T06:27:57.711Z",
+  "model": "jev-1.14.0",
+  "suite": "typescript/function-single-purpose",
+  "rules": [
+    {
+      "id": "function-single-purpose",
+      "draft": "352b01e0a177",
+      "at": 0.5
+    }
+  ],
+  "cutoffs": {},
+  "passes": [
+    [
+      {
+        "rule": "function-single-purpose",
+        "file": "agents/hooks/lint/model-rules/typescript/function-single-purpose/fixtures/conforming.ts",
+        "line": 3,
+        "endLine": 9,
+        "kind": "noul",
+        "value": 0.17,
+        "confidence": null
+      },
+      {
+        "rule": "function-single-purpose",
+        "file": "agents/hooks/lint/model-rules/typescript/function-single-purpose/fixtures/conforming.ts",
+        "line": 11,
+        "endLine": 16,
+        "kind": "noul",
+        "value": 0.15,
+        "confidence": null
+      },
+      {
+        "rule": "function-single-purpose",
+        "file": "agents/hooks/lint/model-rules/typescript/function-single-purpose/fixtures/conforming.ts",
+        "line": 18,
+        "endLine": 24,
+        "kind": "noul",
+        "value": 0.17,
+        "confidence": null
+      },
+      {
+        "rule": "function-single-purpose",
+        "file": "agents/hooks/lint/model-rules/typescript/function-single-purpose/fixtures/conforming.ts",
+        "line": 26,
+        "endLine": 26,
+        "kind": "noul",
+        "value": 0.13,
+        "confidence": null
+      },
+      {
+        "rule": "function-single-purpose",
+        "file": "agents/hooks/lint/model-rules/typescript/function-single-purpose/fixtures/violating.ts",
+        "line": 5,
+        "endLine": 16,
+        "kind": "noul",
+        "value": 0.92,
+        "confidence": null
+      },
+      {
+        "rule": "function-single-purpose",
+        "file": "agents/hooks/lint/model-rules/typescript/function-single-purpose/fixtures/violating.ts",
+        "line": 18,
+        "endLine": 28,
+        "kind": "noul",
+        "value": 0.61,
+        "confidence": null
+      },
+      {
+        "rule": "function-single-purpose",
+        "file": "agents/hooks/lint/model-rules/typescript/function-single-purpose/fixtures/violating.ts",
+        "line": 31,
+        "endLine": 31,
+        "kind": "noul",
+        "value": 0.08,
+        "confidence": null
+      },
+      {
+        "rule": "function-single-purpose",
+        "file": "agents/hooks/lint/model-rules/typescript/function-single-purpose/fixtures/violating.ts",
+        "line": 33,
+        "endLine": 41,
+        "kind": "noul",
+        "value": 0.84,
+        "confidence": null
+      },
+      {
+        "rule": "function-single-purpose",
+        "file": "agents/hooks/lint/model-rules/typescript/function-single-purpose/fixtures/violating.ts",
+        "line": 44,
+        "endLine": 50,
+        "kind": "noul",
+        "value": 0.8,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "function-single-purpose",
+        "file": "agents/hooks/lint/model-rules/typescript/function-single-purpose/fixtures/conforming.ts",
+        "line": 3,
+        "endLine": 9,
+        "kind": "noul",
+        "value": 0.18,
+        "confidence": null
+      },
+      {
+        "rule": "function-single-purpose",
+        "file": "agents/hooks/lint/model-rules/typescript/function-single-purpose/fixtures/conforming.ts",
+        "line": 11,
+        "endLine": 16,
+        "kind": "noul",
+        "value": 0.13,
+        "confidence": null
+      },
+      {
+        "rule": "function-single-purpose",
+        "file": "agents/hooks/lint/model-rules/typescript/function-single-purpose/fixtures/conforming.ts",
+        "line": 18,
+        "endLine": 24,
+        "kind": "noul",
+        "value": 0.19,
+        "confidence": null
+      },
+      {
+        "rule": "function-single-purpose",
+        "file": "agents/hooks/lint/model-rules/typescript/function-single-purpose/fixtures/conforming.ts",
+        "line": 26,
+        "endLine": 26,
+        "kind": "noul",
+        "value": 0.13,
+        "confidence": null
+      },
+      {
+        "rule": "function-single-purpose",
+        "file": "agents/hooks/lint/model-rules/typescript/function-single-purpose/fixtures/violating.ts",
+        "line": 5,
+        "endLine": 16,
+        "kind": "noul",
+        "value": 0.92,
+        "confidence": null
+      },
+      {
+        "rule": "function-single-purpose",
+        "file": "agents/hooks/lint/model-rules/typescript/function-single-purpose/fixtures/violating.ts",
+        "line": 18,
+        "endLine": 28,
+        "kind": "noul",
+        "value": 0.57,
+        "confidence": null
+      },
+      {
+        "rule": "function-single-purpose",
+        "file": "agents/hooks/lint/model-rules/typescript/function-single-purpose/fixtures/violating.ts",
+        "line": 31,
+        "endLine": 31,
+        "kind": "noul",
+        "value": 0.07,
+        "confidence": null
+      },
+      {
+        "rule": "function-single-purpose",
+        "file": "agents/hooks/lint/model-rules/typescript/function-single-purpose/fixtures/violating.ts",
+        "line": 33,
+        "endLine": 41,
+        "kind": "noul",
+        "value": 0.83,
+        "confidence": null
+      },
+      {
+        "rule": "function-single-purpose",
+        "file": "agents/hooks/lint/model-rules/typescript/function-single-purpose/fixtures/violating.ts",
+        "line": 44,
+        "endLine": 50,
+        "kind": "noul",
+        "value": 0.81,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "function-single-purpose",
+        "file": "agents/hooks/lint/model-rules/typescript/function-single-purpose/fixtures/conforming.ts",
+        "line": 3,
+        "endLine": 9,
+        "kind": "noul",
+        "value": 0.19,
+        "confidence": null
+      },
+      {
+        "rule": "function-single-purpose",
+        "file": "agents/hooks/lint/model-rules/typescript/function-single-purpose/fixtures/conforming.ts",
+        "line": 11,
+        "endLine": 16,
+        "kind": "noul",
+        "value": 0.16,
+        "confidence": null
+      },
+      {
+        "rule": "function-single-purpose",
+        "file": "agents/hooks/lint/model-rules/typescript/function-single-purpose/fixtures/conforming.ts",
+        "line": 18,
+        "endLine": 24,
+        "kind": "noul",
+        "value": 0.17,
+        "confidence": null
+      },
+      {
+        "rule": "function-single-purpose",
+        "file": "agents/hooks/lint/model-rules/typescript/function-single-purpose/fixtures/conforming.ts",
+        "line": 26,
+        "endLine": 26,
+        "kind": "noul",
+        "value": 0.12,
+        "confidence": null
+      },
+      {
+        "rule": "function-single-purpose",
+        "file": "agents/hooks/lint/model-rules/typescript/function-single-purpose/fixtures/violating.ts",
+        "line": 5,
+        "endLine": 16,
+        "kind": "noul",
+        "value": 0.92,
+        "confidence": null
+      },
+      {
+        "rule": "function-single-purpose",
+        "file": "agents/hooks/lint/model-rules/typescript/function-single-purpose/fixtures/violating.ts",
+        "line": 18,
+        "endLine": 28,
+        "kind": "noul",
+        "value": 0.59,
+        "confidence": null
+      },
+      {
+        "rule": "function-single-purpose",
+        "file": "agents/hooks/lint/model-rules/typescript/function-single-purpose/fixtures/violating.ts",
+        "line": 31,
+        "endLine": 31,
+        "kind": "noul",
+        "value": 0.07,
+        "confidence": null
+      },
+      {
+        "rule": "function-single-purpose",
+        "file": "agents/hooks/lint/model-rules/typescript/function-single-purpose/fixtures/violating.ts",
+        "line": 33,
+        "endLine": 41,
+        "kind": "noul",
+        "value": 0.83,
+        "confidence": null
+      },
+      {
+        "rule": "function-single-purpose",
+        "file": "agents/hooks/lint/model-rules/typescript/function-single-purpose/fixtures/violating.ts",
+        "line": 44,
+        "endLine": 50,
+        "kind": "noul",
+        "value": 0.81,
+        "confidence": null
+      }
+    ]
+  ],
+  "spent": {
+    "calls": 6,
+    "inputTokens": 13545,
+    "usd": 0.0005688900000000001,
+    "ms": 195
+  }
+}

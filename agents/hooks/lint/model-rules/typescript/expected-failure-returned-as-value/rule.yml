@@ -1,11 +1,14 @@
 # Expected failures are returned as values; throw is for programmer errors and unrecoverable states
-# (agents/skills/typescript-style/references/errors.md). Advisory and unfitted.
+# (agents/skills/typescript-style/references/errors.md). Advisory.
 id: expected-failure-returned-as-value
 languages: [ TypeScript, Tsx ]
 kind: noul
 subject: node
 state: local
-threshold: 0.5
+# The cutoff is jev-lint's fitted midpoint on this folder's fixtures (4 violations, 4 conforming cases, 3 passes,
+# means, #220): the highest conforming case scored 0.72 (0.77 in its worst pass) and the lowest violation 0.94 (0.94
+# in its worst pass). A fit on so few cases is not a calibration, so the rule stays advisory (ADR-0021).
+threshold: 0.86
 axis: file
 severity: warning
 rule:

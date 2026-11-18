@@ -1,0 +1,244 @@
+{
+  "schema": "jev-lint-eval-1",
+  "recorded": "2026-11-18T06:27:58.151Z",
+  "model": "jev-1.14.0",
+  "suite": "typescript/known-defect-marker-names-removal",
+  "rules": [
+    {
+      "id": "known-defect-marker-names-removal",
+      "draft": "74ae14e8942a",
+      "at": 0.5
+    }
+  ],
+  "cutoffs": {},
+  "passes": [
+    [
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "agents/hooks/lint/model-rules/typescript/known-defect-marker-names-removal/fixtures/violating.test.ts",
+        "line": 3,
+        "endLine": 5,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "agents/hooks/lint/model-rules/typescript/known-defect-marker-names-removal/fixtures/violating.test.ts",
+        "line": 8,
+        "endLine": 10,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "agents/hooks/lint/model-rules/typescript/known-defect-marker-names-removal/fixtures/violating.test.ts",
+        "line": 13,
+        "endLine": 15,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "agents/hooks/lint/model-rules/typescript/known-defect-marker-names-removal/fixtures/violating.test.ts",
+        "line": 18,
+        "endLine": 20,
+        "kind": "noul",
+        "value": 0.82,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "agents/hooks/lint/model-rules/typescript/known-defect-marker-names-removal/fixtures/conforming.test.ts",
+        "line": 4,
+        "endLine": 6,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "agents/hooks/lint/model-rules/typescript/known-defect-marker-names-removal/fixtures/conforming.test.ts",
+        "line": 9,
+        "endLine": 11,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "agents/hooks/lint/model-rules/typescript/known-defect-marker-names-removal/fixtures/conforming.test.ts",
+        "line": 14,
+        "endLine": 16,
+        "kind": "noul",
+        "value": 0.12,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "agents/hooks/lint/model-rules/typescript/known-defect-marker-names-removal/fixtures/conforming.test.ts",
+        "line": 18,
+        "endLine": 20,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "agents/hooks/lint/model-rules/typescript/known-defect-marker-names-removal/fixtures/conforming.test.ts",
+        "line": 4,
+        "endLine": 6,
+        "kind": "noul",
+        "value": 0.08,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "agents/hooks/lint/model-rules/typescript/known-defect-marker-names-removal/fixtures/conforming.test.ts",
+        "line": 9,
+        "endLine": 11,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "agents/hooks/lint/model-rules/typescript/known-defect-marker-names-removal/fixtures/conforming.test.ts",
+        "line": 14,
+        "endLine": 16,
+        "kind": "noul",
+        "value": 0.13,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "agents/hooks/lint/model-rules/typescript/known-defect-marker-names-removal/fixtures/conforming.test.ts",
+        "line": 18,
+        "endLine": 20,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "agents/hooks/lint/model-rules/typescript/known-defect-marker-names-removal/fixtures/violating.test.ts",
+        "line": 3,
+        "endLine": 5,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "agents/hooks/lint/model-rules/typescript/known-defect-marker-names-removal/fixtures/violating.test.ts",
+        "line": 8,
+        "endLine": 10,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "agents/hooks/lint/model-rules/typescript/known-defect-marker-names-removal/fixtures/violating.test.ts",
+        "line": 13,
+        "endLine": 15,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "agents/hooks/lint/model-rules/typescript/known-defect-marker-names-removal/fixtures/violating.test.ts",
+        "line": 18,
+        "endLine": 20,
+        "kind": "noul",
+        "value": 0.84,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "agents/hooks/lint/model-rules/typescript/known-defect-marker-names-removal/fixtures/violating.test.ts",
+        "line": 3,
+        "endLine": 5,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "agents/hooks/lint/model-rules/typescript/known-defect-marker-names-removal/fixtures/violating.test.ts",
+        "line": 8,
+        "endLine": 10,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "agents/hooks/lint/model-rules/typescript/known-defect-marker-names-removal/fixtures/violating.test.ts",
+        "line": 13,
+        "endLine": 15,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "agents/hooks/lint/model-rules/typescript/known-defect-marker-names-removal/fixtures/violating.test.ts",
+        "line": 18,
+        "endLine": 20,
+        "kind": "noul",
+        "value": 0.85,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "agents/hooks/lint/model-rules/typescript/known-defect-marker-names-removal/fixtures/conforming.test.ts",
+        "line": 4,
+        "endLine": 6,
+        "kind": "noul",
+        "value": 0.07,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "agents/hooks/lint/model-rules/typescript/known-defect-marker-names-removal/fixtures/conforming.test.ts",
+        "line": 9,
+        "endLine": 11,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "agents/hooks/lint/model-rules/typescript/known-defect-marker-names-removal/fixtures/conforming.test.ts",
+        "line": 14,
+        "endLine": 16,
+        "kind": "noul",
+        "value": 0.15,
+        "confidence": null
+      },
+      {
+        "rule": "known-defect-marker-names-removal",
+        "file": "agents/hooks/lint/model-rules/typescript/known-defect-marker-names-removal/fixtures/conforming.test.ts",
+        "line": 18,
+        "endLine": 20,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      }
+    ]
+  ],
+  "spent": {
+    "calls": 6,
+    "inputTokens": 10416,
+    "usd": 0.000437472,
+    "ms": 214
+  }
+}

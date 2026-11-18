@@ -1,0 +1,244 @@
+{
+  "schema": "jev-lint-eval-1",
+  "recorded": "2026-11-18T06:27:57.483Z",
+  "model": "jev-1.14.0",
+  "suite": "typescript/expected-failure-returned-as-value",
+  "rules": [
+    {
+      "id": "expected-failure-returned-as-value",
+      "draft": "8a4855ce334e",
+      "at": 0.5
+    }
+  ],
+  "cutoffs": {},
+  "passes": [
+    [
+      {
+        "rule": "expected-failure-returned-as-value",
+        "file": "agents/hooks/lint/model-rules/typescript/expected-failure-returned-as-value/fixtures/conforming.ts",
+        "line": 5,
+        "endLine": 7,
+        "kind": "noul",
+        "value": 0.09,
+        "confidence": null
+      },
+      {
+        "rule": "expected-failure-returned-as-value",
+        "file": "agents/hooks/lint/model-rules/typescript/expected-failure-returned-as-value/fixtures/conforming.ts",
+        "line": 9,
+        "endLine": 18,
+        "kind": "noul",
+        "value": 0.68,
+        "confidence": null
+      },
+      {
+        "rule": "expected-failure-returned-as-value",
+        "file": "agents/hooks/lint/model-rules/typescript/expected-failure-returned-as-value/fixtures/conforming.ts",
+        "line": 20,
+        "endLine": 31,
+        "kind": "noul",
+        "value": 0.66,
+        "confidence": null
+      },
+      {
+        "rule": "expected-failure-returned-as-value",
+        "file": "agents/hooks/lint/model-rules/typescript/expected-failure-returned-as-value/fixtures/conforming.ts",
+        "line": 40,
+        "endLine": 45,
+        "kind": "noul",
+        "value": 0.6,
+        "confidence": null
+      },
+      {
+        "rule": "expected-failure-returned-as-value",
+        "file": "agents/hooks/lint/model-rules/typescript/expected-failure-returned-as-value/fixtures/violating.ts",
+        "line": 3,
+        "endLine": 9,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "expected-failure-returned-as-value",
+        "file": "agents/hooks/lint/model-rules/typescript/expected-failure-returned-as-value/fixtures/violating.ts",
+        "line": 11,
+        "endLine": 17,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "expected-failure-returned-as-value",
+        "file": "agents/hooks/lint/model-rules/typescript/expected-failure-returned-as-value/fixtures/violating.ts",
+        "line": 19,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "expected-failure-returned-as-value",
+        "file": "agents/hooks/lint/model-rules/typescript/expected-failure-returned-as-value/fixtures/violating.ts",
+        "line": 27,
+        "endLine": 33,
+        "kind": "noul",
+        "value": 0.94,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "expected-failure-returned-as-value",
+        "file": "agents/hooks/lint/model-rules/typescript/expected-failure-returned-as-value/fixtures/violating.ts",
+        "line": 3,
+        "endLine": 9,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "expected-failure-returned-as-value",
+        "file": "agents/hooks/lint/model-rules/typescript/expected-failure-returned-as-value/fixtures/violating.ts",
+        "line": 11,
+        "endLine": 17,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "expected-failure-returned-as-value",
+        "file": "agents/hooks/lint/model-rules/typescript/expected-failure-returned-as-value/fixtures/violating.ts",
+        "line": 19,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "expected-failure-returned-as-value",
+        "file": "agents/hooks/lint/model-rules/typescript/expected-failure-returned-as-value/fixtures/violating.ts",
+        "line": 27,
+        "endLine": 33,
+        "kind": "noul",
+        "value": 0.94,
+        "confidence": null
+      },
+      {
+        "rule": "expected-failure-returned-as-value",
+        "file": "agents/hooks/lint/model-rules/typescript/expected-failure-returned-as-value/fixtures/conforming.ts",
+        "line": 5,
+        "endLine": 7,
+        "kind": "noul",
+        "value": 0.11,
+        "confidence": null
+      },
+      {
+        "rule": "expected-failure-returned-as-value",
+        "file": "agents/hooks/lint/model-rules/typescript/expected-failure-returned-as-value/fixtures/conforming.ts",
+        "line": 9,
+        "endLine": 18,
+        "kind": "noul",
+        "value": 0.77,
+        "confidence": null
+      },
+      {
+        "rule": "expected-failure-returned-as-value",
+        "file": "agents/hooks/lint/model-rules/typescript/expected-failure-returned-as-value/fixtures/conforming.ts",
+        "line": 20,
+        "endLine": 31,
+        "kind": "noul",
+        "value": 0.64,
+        "confidence": null
+      },
+      {
+        "rule": "expected-failure-returned-as-value",
+        "file": "agents/hooks/lint/model-rules/typescript/expected-failure-returned-as-value/fixtures/conforming.ts",
+        "line": 40,
+        "endLine": 45,
+        "kind": "noul",
+        "value": 0.58,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "expected-failure-returned-as-value",
+        "file": "agents/hooks/lint/model-rules/typescript/expected-failure-returned-as-value/fixtures/violating.ts",
+        "line": 3,
+        "endLine": 9,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "expected-failure-returned-as-value",
+        "file": "agents/hooks/lint/model-rules/typescript/expected-failure-returned-as-value/fixtures/violating.ts",
+        "line": 11,
+        "endLine": 17,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "expected-failure-returned-as-value",
+        "file": "agents/hooks/lint/model-rules/typescript/expected-failure-returned-as-value/fixtures/violating.ts",
+        "line": 19,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "expected-failure-returned-as-value",
+        "file": "agents/hooks/lint/model-rules/typescript/expected-failure-returned-as-value/fixtures/violating.ts",
+        "line": 27,
+        "endLine": 33,
+        "kind": "noul",
+        "value": 0.94,
+        "confidence": null
+      },
+      {
+        "rule": "expected-failure-returned-as-value",
+        "file": "agents/hooks/lint/model-rules/typescript/expected-failure-returned-as-value/fixtures/conforming.ts",
+        "line": 5,
+        "endLine": 7,
+        "kind": "noul",
+        "value": 0.1,
+        "confidence": null
+      },
+      {
+        "rule": "expected-failure-returned-as-value",
+        "file": "agents/hooks/lint/model-rules/typescript/expected-failure-returned-as-value/fixtures/conforming.ts",
+        "line": 9,
+        "endLine": 18,
+        "kind": "noul",
+        "value": 0.7,
+        "confidence": null
+      },
+      {
+        "rule": "expected-failure-returned-as-value",
+        "file": "agents/hooks/lint/model-rules/typescript/expected-failure-returned-as-value/fixtures/conforming.ts",
+        "line": 20,
+        "endLine": 31,
+        "kind": "noul",
+        "value": 0.68,
+        "confidence": null
+      },
+      {
+        "rule": "expected-failure-returned-as-value",
+        "file": "agents/hooks/lint/model-rules/typescript/expected-failure-returned-as-value/fixtures/conforming.ts",
+        "line": 40,
+        "endLine": 45,
+        "kind": "noul",
+        "value": 0.58,
+        "confidence": null
+      }
+    ]
+  ],
+  "spent": {
+    "calls": 6,
+    "inputTokens": 12837,
+    "usd": 0.000539154,
+    "ms": 179
+  }
+}

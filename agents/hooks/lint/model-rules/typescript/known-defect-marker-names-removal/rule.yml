@@ -6,7 +6,13 @@ kind: noul
 subject: node
 # The comment sits above the call statement, outside the call, so the arm that sends the file is used.
 state: located
-threshold: 0.5
+# The cutoff is jev-lint's fitted midpoint on this folder's fixtures (4 violations, 4 conforming cases, 3 passes,
+# means, #220): the highest conforming case scored 0.13 (0.15 in its worst pass) and the lowest violation 0.84 (0.82
+# in its worst pass). A fit on so few cases is not a calibration, so the rule stays advisory (ADR-0021).
+threshold: 0.49
+inconclusive: >-
+  Blind: every fixture is clearly clean or clearly defective (margins of 0.35 or more from the cutoff), and no
+  boundary fixture exists yet; eight cases are too few to find one.
 axis: file
 severity: warning
 rule:

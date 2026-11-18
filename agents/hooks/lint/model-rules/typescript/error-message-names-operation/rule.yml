@@ -5,10 +5,10 @@ kind: noul
 subject: node
 # The whole file: the message is often built by a helper beside the throw, and a reader must see that helper.
 state: located
-# The cutoff is fitted on this folder's fixtures (4 violations, 5 conforming cases, 3 passes, means): the highest
-# conforming case (projectTargets) scored 0.50 (0.55 in its worst pass) and the lowest violation 0.95, and 0.75 is the
-# midpoint of that gap. Refit it when fixtures change.
-threshold: 0.75
+# The cutoff is jev-lint's fitted midpoint on this folder's fixtures (4 violations, 5 conforming cases, 3 passes,
+# means, #220): the highest conforming case scored 0.49 (0.52 in its worst pass) and the lowest violation 0.96 (0.96
+# in its worst pass). A fit on so few cases is not a calibration, so the rule stays advisory (ADR-0021).
+threshold: 0.74
 axis: file
 severity: warning
 rule:

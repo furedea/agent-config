@@ -1,0 +1,244 @@
+{
+  "schema": "jev-lint-eval-1",
+  "recorded": "2026-11-18T06:27:56.490Z",
+  "model": "jev-1.14.0",
+  "suite": "typescript/angle-bracket-assertion-follows-validation",
+  "rules": [
+    {
+      "id": "angle-bracket-assertion-follows-validation",
+      "draft": "5f650aeb36c1",
+      "at": 0.5
+    }
+  ],
+  "cutoffs": {},
+  "passes": [
+    [
+      {
+        "rule": "angle-bracket-assertion-follows-validation",
+        "file": "agents/hooks/lint/model-rules/typescript/angle-bracket-assertion-follows-validation/fixtures/conforming.ts",
+        "line": 31,
+        "endLine": 31,
+        "kind": "noul",
+        "value": 0.16,
+        "confidence": null
+      },
+      {
+        "rule": "angle-bracket-assertion-follows-validation",
+        "file": "agents/hooks/lint/model-rules/typescript/angle-bracket-assertion-follows-validation/fixtures/conforming.ts",
+        "line": 39,
+        "endLine": 39,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "angle-bracket-assertion-follows-validation",
+        "file": "agents/hooks/lint/model-rules/typescript/angle-bracket-assertion-follows-validation/fixtures/conforming.ts",
+        "line": 46,
+        "endLine": 46,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "angle-bracket-assertion-follows-validation",
+        "file": "agents/hooks/lint/model-rules/typescript/angle-bracket-assertion-follows-validation/fixtures/conforming.ts",
+        "line": 50,
+        "endLine": 50,
+        "kind": "noul",
+        "value": 0.25,
+        "confidence": null
+      },
+      {
+        "rule": "angle-bracket-assertion-follows-validation",
+        "file": "agents/hooks/lint/model-rules/typescript/angle-bracket-assertion-follows-validation/fixtures/violating.ts",
+        "line": 28,
+        "endLine": 28,
+        "kind": "noul",
+        "value": 0.93,
+        "confidence": null
+      },
+      {
+        "rule": "angle-bracket-assertion-follows-validation",
+        "file": "agents/hooks/lint/model-rules/typescript/angle-bracket-assertion-follows-validation/fixtures/violating.ts",
+        "line": 32,
+        "endLine": 32,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "angle-bracket-assertion-follows-validation",
+        "file": "agents/hooks/lint/model-rules/typescript/angle-bracket-assertion-follows-validation/fixtures/violating.ts",
+        "line": 37,
+        "endLine": 37,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "angle-bracket-assertion-follows-validation",
+        "file": "agents/hooks/lint/model-rules/typescript/angle-bracket-assertion-follows-validation/fixtures/violating.ts",
+        "line": 44,
+        "endLine": 44,
+        "kind": "noul",
+        "value": 0.87,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "angle-bracket-assertion-follows-validation",
+        "file": "agents/hooks/lint/model-rules/typescript/angle-bracket-assertion-follows-validation/fixtures/violating.ts",
+        "line": 28,
+        "endLine": 28,
+        "kind": "noul",
+        "value": 0.93,
+        "confidence": null
+      },
+      {
+        "rule": "angle-bracket-assertion-follows-validation",
+        "file": "agents/hooks/lint/model-rules/typescript/angle-bracket-assertion-follows-validation/fixtures/violating.ts",
+        "line": 32,
+        "endLine": 32,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "angle-bracket-assertion-follows-validation",
+        "file": "agents/hooks/lint/model-rules/typescript/angle-bracket-assertion-follows-validation/fixtures/violating.ts",
+        "line": 37,
+        "endLine": 37,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "angle-bracket-assertion-follows-validation",
+        "file": "agents/hooks/lint/model-rules/typescript/angle-bracket-assertion-follows-validation/fixtures/violating.ts",
+        "line": 44,
+        "endLine": 44,
+        "kind": "noul",
+        "value": 0.85,
+        "confidence": null
+      },
+      {
+        "rule": "angle-bracket-assertion-follows-validation",
+        "file": "agents/hooks/lint/model-rules/typescript/angle-bracket-assertion-follows-validation/fixtures/conforming.ts",
+        "line": 31,
+        "endLine": 31,
+        "kind": "noul",
+        "value": 0.17,
+        "confidence": null
+      },
+      {
+        "rule": "angle-bracket-assertion-follows-validation",
+        "file": "agents/hooks/lint/model-rules/typescript/angle-bracket-assertion-follows-validation/fixtures/conforming.ts",
+        "line": 39,
+        "endLine": 39,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "angle-bracket-assertion-follows-validation",
+        "file": "agents/hooks/lint/model-rules/typescript/angle-bracket-assertion-follows-validation/fixtures/conforming.ts",
+        "line": 46,
+        "endLine": 46,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "angle-bracket-assertion-follows-validation",
+        "file": "agents/hooks/lint/model-rules/typescript/angle-bracket-assertion-follows-validation/fixtures/conforming.ts",
+        "line": 50,
+        "endLine": 50,
+        "kind": "noul",
+        "value": 0.25,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "angle-bracket-assertion-follows-validation",
+        "file": "agents/hooks/lint/model-rules/typescript/angle-bracket-assertion-follows-validation/fixtures/conforming.ts",
+        "line": 31,
+        "endLine": 31,
+        "kind": "noul",
+        "value": 0.15,
+        "confidence": null
+      },
+      {
+        "rule": "angle-bracket-assertion-follows-validation",
+        "file": "agents/hooks/lint/model-rules/typescript/angle-bracket-assertion-follows-validation/fixtures/conforming.ts",
+        "line": 39,
+        "endLine": 39,
+        "kind": "noul",
+        "value": 0.07,
+        "confidence": null
+      },
+      {
+        "rule": "angle-bracket-assertion-follows-validation",
+        "file": "agents/hooks/lint/model-rules/typescript/angle-bracket-assertion-follows-validation/fixtures/conforming.ts",
+        "line": 46,
+        "endLine": 46,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "angle-bracket-assertion-follows-validation",
+        "file": "agents/hooks/lint/model-rules/typescript/angle-bracket-assertion-follows-validation/fixtures/conforming.ts",
+        "line": 50,
+        "endLine": 50,
+        "kind": "noul",
+        "value": 0.19,
+        "confidence": null
+      },
+      {
+        "rule": "angle-bracket-assertion-follows-validation",
+        "file": "agents/hooks/lint/model-rules/typescript/angle-bracket-assertion-follows-validation/fixtures/violating.ts",
+        "line": 28,
+        "endLine": 28,
+        "kind": "noul",
+        "value": 0.94,
+        "confidence": null
+      },
+      {
+        "rule": "angle-bracket-assertion-follows-validation",
+        "file": "agents/hooks/lint/model-rules/typescript/angle-bracket-assertion-follows-validation/fixtures/violating.ts",
+        "line": 32,
+        "endLine": 32,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "angle-bracket-assertion-follows-validation",
+        "file": "agents/hooks/lint/model-rules/typescript/angle-bracket-assertion-follows-validation/fixtures/violating.ts",
+        "line": 37,
+        "endLine": 37,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "angle-bracket-assertion-follows-validation",
+        "file": "agents/hooks/lint/model-rules/typescript/angle-bracket-assertion-follows-validation/fixtures/violating.ts",
+        "line": 44,
+        "endLine": 44,
+        "kind": "noul",
+        "value": 0.86,
+        "confidence": null
+      }
+    ]
+  ],
+  "spent": {
+    "calls": 6,
+    "inputTokens": 11817,
+    "usd": 0.000496314,
+    "ms": 258
+  }
+}

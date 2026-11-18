@@ -9,7 +9,7 @@
 - Add project-specific dependencies using `uv add {package}`
 - Add project-specific tool dependencies using `uv add --group <group> {package}`
 - Upgrade pinned packages using `uv lock --upgrade-package {package}`
-- Prohibited: `@latest`
+- Prohibited: `uv add --dev`, `@latest`
 
 ## Directory Structure
 

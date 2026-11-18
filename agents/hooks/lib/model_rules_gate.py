@@ -299,16 +299,20 @@ def _uncommitted_selection(record: SessionRecord) -> Selection:
     return select(record.root, changed, ReviewedSpan("HEAD"))
 
 
+def _selection_fingerprint(record: SessionRecord) -> bytes:
+    # The same files can be the session's or not depending on how HEAD got there, which the snapshot cannot tell.
+    try:
+        committed = _session_commits_paths(record, record.head) if record.head else ()
+        return "\0".join(committed).encode() + b"\1" + "\0".join(sorted(uncommitted_paths(record.root))).encode()
+    except ValueError:
+        return b"selection unavailable"
+
+
 def _inputs(record: SessionRecord) -> str:
     """A fingerprint of everything a review depends on: the files, the base commit, and the rules."""
     digest = hashlib.sha256(capture(record.root).digest.encode())
     digest.update((record.head or "").encode())
-    # The same files can be the session's or not depending on how HEAD got there, which the snapshot cannot tell.
-    try:
-        digest.update("\0".join(_session_commits_paths(record, record.head) if record.head else ()).encode())
-        digest.update(b"\1" + "\0".join(sorted(uncommitted_paths(record.root))).encode())
-    except ValueError:
-        digest.update(b"reflog unavailable")
+    digest.update(_selection_fingerprint(record))
     for path in sorted(RULES_DIRECTORY.rglob("*.yml")):
         digest.update(os.fsencode(path.relative_to(RULES_DIRECTORY)))
         digest.update(path.read_bytes())

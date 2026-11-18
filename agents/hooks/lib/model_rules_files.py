@@ -97,8 +97,8 @@ def own_committed_paths(root: Path, base: str, registered: ReflogMark | None) ->
         raise ValueError("HEAD's reflog was not recorded when the session registered")
     try:
         lines = reflog_lines(root)
-    except SnapshotError as error:
-        raise ValueError(str(error)) from None
+    except SnapshotError:
+        raise ValueError("git reflog failed, so the session's commits cannot be told apart") from None
     since_registration = registered.newer_entries(lines)
     if since_registration <= 0:
         raise ValueError("HEAD moved but its reflog has no entry since the session registered")
@@ -176,7 +176,7 @@ def _git_output(root: Path, *arguments: str) -> bytes:
             ["git", "-c", "core.fsmonitor=false", "-C", str(root), *arguments], stderr=subprocess.DEVNULL
         )
     except OSError, subprocess.CalledProcessError:
-        raise ValueError("the commits since the session started cannot be listed") from None
+        raise ValueError(f"git {arguments[0]} failed, so the session's changes cannot be listed") from None
 
 
 def _verdict(real_root: Path, candidate: Path, path: str) -> bool | None:

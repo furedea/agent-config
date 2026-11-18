@@ -81,8 +81,8 @@ complete. Supply:
 - **Scope and focus:** the boundaries of the assignment and the review aspects that matter
   (for example correctness, boundaries, verification, or a specific risk), the list of what is
   out of scope, and the threat model: where the input comes from and what a wrong judgment
-  costs. Decide both when writing the brief; the lane answers out-of-scope findings by citing
-  the list.
+  costs. Decide both when writing the brief; the lane answers P2 and P3 findings outside it by
+  citing the list, and still fixes every P0 and P1 finding.
 - **Authority:** permitted edits, excluded files or tasks, and any existing delivery authorization.
 - **Completion:** observable acceptance conditions, relevant verification, and the expected
   response described below.

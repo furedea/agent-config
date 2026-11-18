@@ -196,6 +196,21 @@ def test_subjects_already_cached_do_not_count_against_the_cap(
     assert "a.py" not in launch["argv"]
 
 
+def test_a_file_whose_subjects_are_all_cached_is_still_judged_when_the_cap_leaves_other_files_out(
+    record: session_store.SessionRecord, tools: Tools
+) -> None:
+    (record.root / "created.txt").write_text("new\n")
+    # The dry run plans requests only for uncached subjects, so a file whose subjects are all cached has no batch.
+    tools.plan(35, [("created.txt", 30)], cached=5)
+
+    result = stop(record)
+
+    [launch] = tools.calls("op")
+    assert launch["argv"][-1] == "notes.txt"
+    assert "created.txt" not in launch["argv"]
+    assert "1 finding · 5/35 subjects" in result["reason"]
+
+
 def test_the_kill_switch_wins_over_a_stored_receipt_of_unseen_findings(
     record: session_store.SessionRecord, tools: Tools, monkeypatch: pytest.MonkeyPatch
 ) -> None:

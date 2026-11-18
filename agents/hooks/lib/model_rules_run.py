@@ -80,7 +80,7 @@ class Review:
         if isinstance(report, Prevented):
             return report
         try:
-            return _capped_plan(report, cap)
+            return _capped_plan(report, cap, self.paths)
         except ValueError, KeyError, TypeError, AttributeError:
             return Prevented(f"{REVIEWER} printed a plan that cannot be read")
 
@@ -296,14 +296,19 @@ def _unjudged(plan: Plan) -> Judgement:
     return Judgement((), plan.subjects, plan.skipped_files, plan.skipped_subjects)
 
 
-def _capped_plan(report: dict, cap: int) -> Plan:
+def _capped_plan(report: dict, cap: int, paths: tuple[str, ...]) -> Plan:
+    """Keep the files whose uncached subjects fit `cap`, and every file that asks the model nothing.
+
+    The dry run plans batches only for the subjects the verdict cache cannot answer, so a file of `paths` with no batch
+    costs nothing: it is kept, and its cached verdicts are still reported.
+    """
     subjects, cached = _count(report, "subjects"), _count(report, "cached")
     if subjects - cached <= cap:
         return Plan((), subjects, subjects - cached)
     per_file: dict[str, int] = {}
     for batch in report["batches"]:
         per_file[batch["file"]] = per_file.get(batch["file"], 0) + _count(batch, "subjects")
-    chosen: list[str] = []
+    chosen = [path for path in paths if path not in per_file]
     total = 0
     for file, count in per_file.items():
         if not file.startswith("-") and total + count <= cap:

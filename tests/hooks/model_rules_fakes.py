@@ -147,11 +147,14 @@ class Tools:
         (self.directory / "behavior.json").write_text(json.dumps(behavior))
 
 
-def finding(rule: str = "command-query-naming", file: str = "notes.txt", line: int = 3) -> dict:
+def finding(
+    rule: str = "command-query-naming", file: str = "notes.txt", line: int = 3, severity: str = "warning"
+) -> dict:
     return {
         "rule": rule,
         "file": file,
         "line": line,
+        "severity": severity,
         "reported": True,
         "value": 0.71,
         "at": 0.5,

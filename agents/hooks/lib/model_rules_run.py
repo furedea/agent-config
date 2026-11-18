@@ -21,6 +21,10 @@ from model_rules_programs import Programs
 from session_store import LockTimeoutError, StateError, file_lock, private_directory
 
 REVIEWER = "jev-lint"
+# The severity of a promoted rule. `jev-lint review --fail-on` exits FINDINGS_STATUS when it reports a finding of it,
+# which is a result to read, not a failed run.
+GATE_SEVERITY = "error"
+FINDINGS_STATUS = 1
 # Measured: the largest merged PR of this repository plans 104 subjects in 10 requests (about 0.0025 USD), and real
 # Stop runs took 3 to 8 seconds whatever the subject count, because requests run concurrently. Twice that fits whole.
 SUBJECT_CAP = 250
@@ -115,10 +119,16 @@ class Review:
             *paths,
         )
         child = _Child(arguments, _environment({TOKEN_VARIABLE: credentials.token}), self.root)
-        output = child.run(deadline.remaining(JUDGE_TIMEOUT_SECONDS))
-        if isinstance(output, Prevented):
-            return output
-        return _judgement(output, plan, cached)
+        exited = child.finish(deadline.remaining(JUDGE_TIMEOUT_SECONDS))
+        if isinstance(exited, Prevented):
+            return exited
+        if exited.status not in (0, FINDINGS_STATUS):
+            return exited.failure
+        outcome = _judgement(exited.output, plan, cached)
+        if exited.status == FINDINGS_STATUS and (isinstance(outcome, Prevented) or not outcome.gating):
+            # Anything but a readable report of a gating finding is `op` or `jev-lint` failing with the same status.
+            return exited.failure
+        return outcome
 
     def _cached_count(self, deadline: Deadline, paths: tuple[str, ...]) -> int | Prevented:
         report = self._dry_run(deadline, paths)
@@ -153,7 +163,7 @@ class Review:
             *extra,
             "--no-config",
             "--fail-on",
-            "error",
+            GATE_SEVERITY,
             *base,
             *self._rule_arguments(),
             "-c",
@@ -242,6 +252,13 @@ class _Child:
     cwd: Path
 
     def run(self, timeout: float) -> bytes | Prevented:
+        """Run it to the deadline and return what it printed; any exit status but 0 is a failure."""
+        exited = self.finish(timeout)
+        if isinstance(exited, Prevented):
+            return exited
+        return exited.output if exited.status == 0 else exited.failure
+
+    def finish(self, timeout: float) -> _Exited | Prevented:
         """Run it to the deadline; stderr is discarded and never surfaced.
 
         Two things end it. `timeout(1)` runs beside the hook and still fires if Claude Code kills the hook, which
@@ -273,11 +290,23 @@ class _Child:
             output = None
         if output is None or (wrapper and process.returncode in DEADLINE_STATUSES):
             return Prevented(f"{program} timed out after {timeout:.0f}s")
-        if process.returncode != 0:
-            return Prevented(f"{program} exited with status {process.returncode}")
         if len(output) > OUTPUT_LIMIT_BYTES:
             return Prevented(f"{program} printed more than {OUTPUT_LIMIT_BYTES // (1024 * 1024)} MiB")
-        return output
+        return _Exited(program, process.returncode, output)
+
+
+@dataclass(frozen=True, slots=True)
+class _Exited:
+    """A child that ran to its end: its program name, its exit status, and what it printed."""
+
+    program: str
+    status: int
+    output: bytes
+
+    @property
+    def failure(self) -> Prevented:
+        """The run reported as failed by its exit status."""
+        return Prevented(f"{self.program} exited with status {self.status}")
 
 
 def _deadline_wrapper(timeout: float) -> tuple[str, ...]:
@@ -343,7 +372,13 @@ def _finding(item: dict) -> Finding:
     if not isinstance(item["rule"], str) or not isinstance(item["file"], str) or not isinstance(message, str):
         raise TypeError("finding fields must be strings")
     return Finding(
-        item["rule"], item["file"], _count(item, "line"), message, _number(item.get("value")), _number(item.get("at"))
+        item["rule"],
+        item["file"],
+        _count(item, "line"),
+        message,
+        _number(item.get("value")),
+        _number(item.get("at")),
+        gating=item.get("severity") == GATE_SEVERITY,
     )
 
 

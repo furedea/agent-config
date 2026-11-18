@@ -12,7 +12,11 @@ class Prevented:
 
 @dataclass(frozen=True, slots=True)
 class Finding:
-    """One reported rule violation, with the score and cutoff the model judged it by."""
+    """One reported rule violation, with the score and cutoff the model judged it by.
+
+    A `gating` finding comes from a promoted rule: it blocks every Stop until the code no longer has it, where any
+    other finding is advisory and blocks once.
+    """
 
     rule: str
     file: str
@@ -20,6 +24,7 @@ class Finding:
     message: str
     score: float | None = None
     cutoff: float | None = None
+    gating: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -63,6 +68,11 @@ class Judgement:
     def judged(self) -> int:
         """How many subjects were passed to the model, cached ones included."""
         return self.subjects - self.skipped_subjects
+
+    @property
+    def gating(self) -> tuple[Finding, ...]:
+        """The findings that block every Stop."""
+        return tuple(finding for finding in self.findings if finding.gating)
 
     def combined(self, other: Judgement) -> Judgement:
         """Add another review's result; a finding at the same rule, file and line is kept once."""

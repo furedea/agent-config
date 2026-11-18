@@ -6,6 +6,7 @@ partly-superseded-by: [ADR-0027]
 amended:
   - "2026-11-11: the hook behaviour, the two reviews, the Keychain"
   - "2026-11-15: static rules block on edit; suppression; shared rules only in trusted repositories"
+  - "2026-11-18: how a promoted model-judged rule blocks; files the subject cap keeps"
 ---
 
 # ADR-0021: Enforce prose rules with each tool's own checks that report before they block
@@ -67,7 +68,12 @@ own repositories get model judgement and the shared static rules.
     fix cannot trap it; nothing blocks while `stop_hook_active` is set, and findings that it kept from blocking are recorded as not yet shown, so that they block once at the next Stop on the same inputs; and anything that prevents a run is only a
     message. A model-judged rule becomes a gate that blocks every time only when its example tests pass with no false positive on
     the conforming examples and on the repository's own files; the promotion is a reviewed change to the tool's
-    config. Model-judged rules are not promoted until their cutoff has been fitted on a larger corpus, as ADR-0020
+    config: the rule's `severity: error`. `jev-lint review --fail-on error` exits 1 when it reports a finding of such
+    a rule, so the hook reads that exit as a result, not a failed run, and treats it as a failure only when the
+    report it printed is unreadable or holds no error finding. An error finding blocks every Stop, on unchanged
+    inputs and while `stop_hook_active` is set too, until a change clears it; the receipt keeps it so that the same
+    inputs block again without asking the model. A block shows the error findings, each marked as blocking until
+    fixed, and the advisory findings not shown yet. Model-judged rules are not promoted until their cutoff has been fitted on a larger corpus, as ADR-0020
     requires.
 - **Judging time.** Static rules run on the files changed by each edit. Model-judged rules run at Stop, as
     `jev-lint review --json` with all model rules (`-R <rules dir>`) over the changes made in the session, not per
@@ -85,7 +91,9 @@ own repositories get model judgement and the shared static rules.
 - **Subjects and context.** `jev-lint` selects the subjects with each rule's ast-grep matcher and judges per function
     (the rule's `subject:`). Each subject is judged with the function plus the same file's imports and enclosing
     declarations (state arm `local`); no other file is sent. Only functions changed in the session are judged, at most
-    250 per Stop, and the hook reports how many were skipped. The value comes from measurement: over this
+    250 per Stop, and the hook reports how many were skipped. The cap counts only subjects the verdict cache cannot
+    answer, since the dry run plans requests for those alone; when the cap leaves files out, a file whose subjects
+    are all cached is still passed, so its cached findings are still reported. The value comes from measurement: over this
     repository's merged PRs, `jev-lint review --dry-run` planned at most 104 subjects in 10 requests (about 0.0025
     USD), and 30 recorded Stop runs took 2.7 to 7.9 seconds for 1 to 8 requests, because requests run concurrently
     and wall time follows the request count, not the subject count. 250 holds twice the largest measured session
@@ -126,7 +134,8 @@ own repositories get model judgement and the shared static rules.
     `TYPESAFE_BASE_URL` cannot redirect the request, and their standard error is discarded.
 - **Failure behaviour.** A run has 60 seconds and never ends in a block for a reason other than a finding. When it
     is skipped (untrusted repository, kill switch, missing Keychain item, missing `op` or `jev-lint`) or fails
-    (timeout, non-zero exit, unparsable output, errors reported by `jev-lint`), the hook returns a one-line message
+    (timeout, a non-zero exit other than a readable report of an error finding, unparsable output, errors reported
+    by `jev-lint`), the hook returns a one-line message
     instead of staying silent, and does not store a receipt, so the next Stop tries again.
 - **Orphaned children.** When Claude Code kills the hook (its timeout, Ctrl+C, closing the session), the hook cannot
     clean up, and macOS has no parent-death signal, so `op` and `jev-lint` could run on. Each child is therefore

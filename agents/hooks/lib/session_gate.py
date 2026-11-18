@@ -67,7 +67,8 @@ def stop(record: SessionRecord, *, stop_hook_active: bool = False) -> dict[str, 
 
     The model rules share the verification's one rule: findings on inputs not judged before block once, and the same
     inputs never block again. `stop_hook_active` means the agent already continued because of a Stop block, so
-    findings are reported without blocking again. The model rules get only the time the hook has left, so that
+    findings are reported without blocking again. Findings of promoted model rules are the exception: they block
+    every Stop until a change clears them. The model rules get only the time the hook has left, so that
     verification and model rules together stay inside the provider's Stop timeout.
     """
     started = time.monotonic()

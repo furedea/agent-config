@@ -29,7 +29,6 @@ Subject rules:
 
 - Imperative mood: `add`, `fix`, `remove`, `rename`.
 - Lowercase first letter unless it is a proper noun or identifier.
-- No trailing period.
 - Aim for 50 characters or fewer; hard cap at 72.
 - Describe behavior or intent, not filenames.
 
@@ -81,7 +80,7 @@ EOF
 
 Agent git runs inside the sandbox, so the call may chain other commands. Agent commits and tags
 are intentionally unsigned; the squash merge into main is signed by GitHub. Do not re-enable
-signing with `-S` or `-c commit.gpgsign=true`, and do not bypass the repository hooks.
+signing with `-c commit.gpgsign=true`.
 
 For explicit commit requests:
 

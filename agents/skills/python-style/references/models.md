@@ -57,7 +57,7 @@ def swe_instance_from_dict(data: dict) -> SWEInstance: ...  # move inside as cla
 
 ## Pydantic
 
-Boundary schemas inherit one shared base class; only the class named `FrozenBaseModel` may inherit `pydantic.BaseModel` directly. Place it next to the boundary models (for example `schemas/base.py`; the location is not fixed). Parse JSON with `Model.model_validate_json(...)`.
+Boundary schemas inherit one shared base class. Place it next to the boundary models (for example `schemas/base.py`; the location is not fixed). Parse JSON with `Model.model_validate_json(...)`.
 
 ```python
 """Base model for schemas that parse untrusted input at a boundary."""

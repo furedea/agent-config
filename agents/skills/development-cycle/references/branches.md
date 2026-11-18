@@ -61,9 +61,7 @@ Rules:
     agents it started, and they ask before claiming a name another agent holds.
 - Start Claude for an implementation lane, even from a Codex session. Codex keeps a linked
     worktree's Git directory read-only inside its sandbox (openai/codex#14338), so a Codex lane
-    cannot commit there without approval. Lanes run on Sonnet at medium effort to save usage; pass
-    exactly `-- --model sonnet --effort medium` and nothing else after `--`: other agent arguments
-    ask, since they could switch off the child's sandbox or approvals.
+    cannot commit there without approval. Lanes run on Sonnet at medium effort to save usage.
 - The brief follows [herdr-delegation](../../herdr-delegation/SKILL.md) and is self-contained: the
     Issue body and the approved plan text, not only their numbers or links, the lane scope, delivery
     authority (commit, push, and open a PR; never merge), and the reply format.

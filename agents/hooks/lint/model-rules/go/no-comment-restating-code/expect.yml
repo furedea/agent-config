@@ -1,0 +1,13 @@
+default: clean
+# Lines are the first line of each function. violating.go: comments that paraphrase the next statement.
+# conforming.go: comments that give a reason, an issue link, a workaround, or a unit that the code does not state; the
+# last one sits beside a line it could be mistaken for restating.
+fixtures/violating.go:
+  - { line: 9, label: bad, window: 1, why: "restates the increment" }
+  - { line: 14, label: bad, window: 1, why: "narrates the loop and the append" }
+  - { line: 24, label: bad, window: 1, why: "restates each standard-library call" }
+fixtures/conforming.go:
+  - { line: 8, label: clean, window: 1 }
+  - { line: 13, label: clean, window: 1 }
+  - { line: 18, label: clean, window: 1 }
+  - { line: 23, label: clean, window: 1, why: "boundary: next to a plain addition, but it states the unit and why it is an int" }

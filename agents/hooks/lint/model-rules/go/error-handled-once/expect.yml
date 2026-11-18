@@ -1,0 +1,14 @@
+default: clean
+# Lines are the first line of each function. violating.go: the function logs an error and returns that error or a
+# wrapper of it. conforming.go: an error logged and swallowed, a log of something that is not the returned error, and
+# two boundary cases (an error logged and replaced by a fallback value, and attempt errors logged while retrying and
+# only the last one returned in a new message).
+fixtures/violating.go:
+  - { line: 9, label: bad, window: 1, why: "logs the read error, then returns it" }
+  - { line: 18, label: bad, window: 1, why: "logs the write error, then returns it wrapped" }
+  - { line: 30, label: bad, window: 1, why: "logs through a logger field, then returns the same error" }
+fixtures/conforming.go:
+  - { line: 9, label: clean, window: 1 }
+  - { line: 17, label: clean, window: 1 }
+  - { line: 26, label: clean, window: 1, why: "boundary: the logged error is recovered from with a fallback, not returned" }
+  - { line: 35, label: clean, window: 1, why: "boundary: each attempt is logged at debug while retrying; only the final failure is returned" }

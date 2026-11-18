@@ -1,0 +1,15 @@
+default: clean
+# Lines are `func main`; each fixture is its own `package main` file because a file holds one entry point.
+# violating_*: main parses and totals domain data, or holds a retry policy. conforming_*: main wires dependencies and
+# serves, calls one entry point and turns its error into an exit code, and a boundary case that maps error kinds to
+# distinct exit codes, which is still turning the result into an exit code.
+fixtures/violating_totals.go:
+  - { line: 11, label: bad, window: 1, why: "parses rows and totals them inside main" }
+fixtures/violating_retry.go:
+  - { line: 13, label: bad, window: 1, why: "the retry and backoff policy lives in main" }
+fixtures/conforming_wiring.go:
+  - { line: 13, label: clean, window: 1 }
+fixtures/conforming_run.go:
+  - { line: 10, label: clean, window: 1 }
+fixtures/conforming_exit_codes.go:
+  - { line: 11, label: clean, window: 1, why: "boundary: a switch over error kinds that only chooses the exit code" }

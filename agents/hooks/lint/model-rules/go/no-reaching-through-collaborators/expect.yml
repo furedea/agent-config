@@ -1,0 +1,13 @@
+default: clean
+# Lines are the first line of each function. violating.go: a chain that walks through collaborators the function does
+# not own into a third object's method. conforming.go: chains over the receiver's own nested fields, a method on a
+# standard value held in an own field, and a boundary case that reads a plain standard-library record
+# (http.Response.Request.URL).
+fixtures/violating.go:
+  - { line: 7, label: bad, window: 1, why: "reaches through the account and its owner to the mailer" }
+  - { line: 15, label: bad, window: 1, why: "reaches through the server and its store to the database" }
+  - { line: 20, label: bad, window: 1, why: "reaches through the customer and wallet to the card" }
+fixtures/conforming.go:
+  - { line: 20, label: clean, window: 1, why: "a chain over the receiver's own nested fields" }
+  - { line: 27, label: clean, window: 1, why: "a method of a time.Duration held in an own field" }
+  - { line: 31, label: clean, window: 1, why: "boundary: data access on a plain standard-library record" }

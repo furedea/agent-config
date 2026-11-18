@@ -1,12 +1,20 @@
-# M-32 Law of Demeter (agents/AGENTS.md: "prefer DRY, YAGNI, and Law of Demeter"). Advisory: the Stop hook reports
-# findings and never promotes this rule to a gate (ADR-0021). Selected by a call chain of three member accesses or
-# more; the criteria exempt fluent builders and standard libraries.
+# M-32 Law of Demeter (agents/AGENTS.md: "prefer DRY, YAGNI, and Law of Demeter"). Advisory (ADR-0021). Selected by a
+# call chain of three member accesses or more; the criteria exempt the receiver's own state, value types, plain
+# records, fluent builders and package paths. The first criteria did not separate the classes (clean cases up to 0.72,
+# bad ones down to 0.58); the criteria now require two collaborators passed through before a behaviour call. The
+# cutoff 0.5 is jev-lint's fitted midpoint on this folder's fixtures (eval of 2026-11-18, 3 passes, after the criteria
+# rewrite): the highest clean case scored 0.16 and the lowest bad one 0.83.
 id: no-reaching-through-collaborators
 language: Go
 kind: noul
 subject: node
 state: local
 threshold: 0.5
+# The fixtures sit far from the cutoff on both sides, so replay calls the suite blind; a boundary fixture would
+# need a case a reviewer would argue over.
+inconclusive: >-
+  Blind: every fixture is clearly clean or clearly defective and no boundary case exists yet; the next one to
+  add is a chain through a collaborator's exported configuration struct.
 axis: file
 severity: warning
 rule:
@@ -16,12 +24,14 @@ rule:
         - kind: method_declaration
     - has: { pattern: $A.$B.$C.$D($$$), stopBy: end }
 ask: >-
-  This function reaches through one collaborator into another's internals instead of asking its direct collaborator.
+  This function calls a method on an object that it reaches only by walking through a collaborator's collaborators.
 criteria:
   "true": >-
-    The body navigates a chain such as a.b.c.d() through objects it does not own, so it depends on the structure of
-    its collaborators' collaborators and would break if an intermediate object were reorganized.
+    The chain passes through at least two objects that are collaborators in their own right (an account, a server, a
+    store, a wallet) and ends in a behaviour call on a third (sending mail, executing a query, charging a card), so the
+    function depends on how its collaborators are wired inside.
   "false": >-
-    The chain is a fluent builder or iterator pipeline over one value, a standard-library or module path
-    (os.path.join, std::fs::read), data access on a plain record or DTO, or a chain over the function's own fields.
-    Calling methods on a direct collaborator is not a violation.
+    Each step of the chain is the receiver's own state (its nested struct fields, a mutex or a config field it owns), a
+    method of a value type (a duration, a URL), data access on a plain record, including a standard-library one, a
+    fluent builder or iterator over one value, or a package path. Calling methods on a direct collaborator is not a
+    violation.

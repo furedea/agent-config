@@ -1,0 +1,12 @@
+default: clean
+# Lines are the first line of each function. violating.go: the function builds and configures a client or store and
+# then drives the business logic with it. conforming.go: a constructor that only builds and returns, a composition root
+# that wires and calls one entry point, and a boundary case that builds a short-lived reader over its own injected
+# client.
+fixtures/violating.go:
+  - { line: 12, label: bad, window: 1, why: "builds a configured payments client, then runs the settlement loop" }
+  - { line: 33, label: bad, window: 1, why: "builds a configured blob store, then runs the archive policy" }
+fixtures/conforming.go:
+  - { line: 11, label: clean, window: 1, why: "constructs and returns only" }
+  - { line: 16, label: clean, window: 1, why: "a composition root that wires and calls one entry point" }
+  - { line: 26, label: clean, window: 1, why: "boundary: a short-lived helper over the injected client" }

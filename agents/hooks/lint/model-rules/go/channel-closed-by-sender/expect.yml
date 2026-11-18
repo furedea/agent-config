@@ -1,0 +1,15 @@
+default: clean
+# Lines are the close call. violating.go: a receiver closes the channel, or several senders or code paths can each
+# close the same channel. conforming.go: the one sender closes after its sends, a coordinator closes after the senders
+# finish, and two boundary cases that look like a violation (a close shared by callers but guarded by sync.Once, and a
+# done channel that is never sent on, closed by the code that watches for the signal).
+fixtures/violating.go:
+  - { line: 10, label: bad, window: 1, why: "the receiver closes the channel it ranges over" }
+  - { line: 21, label: bad, window: 1, why: "every sender goroutine closes the shared channel" }
+  - { line: 34, label: bad, window: 1, why: "one of two code paths that both close the jobs channel" }
+  - { line: 39, label: bad, window: 1, why: "the second code path that closes the jobs channel" }
+fixtures/conforming.go:
+  - { line: 8, label: clean, window: 1 }
+  - { line: 30, label: clean, window: 1 }
+  - { line: 41, label: clean, window: 1, why: "boundary: several callers, but sync.Once lets only one close happen" }
+  - { line: 47, label: clean, window: 1, why: "boundary: a done channel that is never sent on, closed as the signal" }

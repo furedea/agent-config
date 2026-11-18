@@ -1,0 +1,14 @@
+default: clean
+# Lines are the panic call. violating.go: a panic for a missing file, bad input, or a failed response, all of which a
+# correct program meets. conforming.go: an initialization failure of embedded data, a Must helper, an impossible enum
+# value, and a boundary case (a violated precondition that the caller is documented to check).
+fixtures/violating.go:
+  - { line: 13, label: bad, window: 1, why: "a missing settings file is an expected failure" }
+  - { line: 21, label: bad, window: 1, why: "bad user input is an expected failure" }
+  - { line: 28, label: bad, window: 1, why: "an unexpected HTTP status is an expected failure" }
+  - { line: 31, label: bad, window: 1, why: "a malformed response body is an expected failure" }
+fixtures/conforming.go:
+  - { line: 17, label: clean, window: 1 }
+  - { line: 25, label: clean, window: 1 }
+  - { line: 44, label: clean, window: 1 }
+  - { line: 50, label: clean, window: 1, why: "boundary: a violated precondition the callers check, so a bug, not input" }

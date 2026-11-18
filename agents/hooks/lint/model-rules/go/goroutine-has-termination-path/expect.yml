@@ -1,0 +1,13 @@
+default: clean
+# Lines are the go statement. violating.go: a goroutine nobody waits for, or one that can never stop. conforming.go: a
+# WaitGroup that is waited on, a context-cancelled loop with a done channel, a result channel that is received, and a
+# boundary case bound to the process lifetime on purpose, with a comment saying so.
+fixtures/violating.go:
+  - { line: 13, label: bad, window: 1, why: "an endless refresh loop with no owner and no stop" }
+  - { line: 22, label: bad, window: 1, why: "fire-and-forget request that nobody waits for" }
+  - { line: 26, label: bad, window: 1, why: "loops forever even after the events channel is closed" }
+fixtures/conforming.go:
+  - { line: 15, label: clean, window: 1 }
+  - { line: 25, label: clean, window: 1 }
+  - { line: 43, label: clean, window: 1 }
+  - { line: 57, label: clean, window: 1, why: "boundary: bound to the process lifetime on purpose, and the comment says so" }

@@ -1,0 +1,190 @@
+{
+  "schema": "jev-lint-eval-1",
+  "recorded": "2026-11-18T06:34:46.002Z",
+  "model": "jev-1.14.0",
+  "suite": "go/no-reaching-through-collaborators",
+  "rules": [
+    {
+      "id": "no-reaching-through-collaborators",
+      "draft": "dd923d93ef39",
+      "at": 0.5
+    }
+  ],
+  "cutoffs": {},
+  "passes": [
+    [
+      {
+        "rule": "no-reaching-through-collaborators",
+        "file": "agents/hooks/lint/model-rules/go/no-reaching-through-collaborators/fixtures/violating.go",
+        "line": 7,
+        "endLine": 9,
+        "kind": "noul",
+        "value": 0.88,
+        "confidence": null
+      },
+      {
+        "rule": "no-reaching-through-collaborators",
+        "file": "agents/hooks/lint/model-rules/go/no-reaching-through-collaborators/fixtures/violating.go",
+        "line": 15,
+        "endLine": 18,
+        "kind": "noul",
+        "value": 0.83,
+        "confidence": null
+      },
+      {
+        "rule": "no-reaching-through-collaborators",
+        "file": "agents/hooks/lint/model-rules/go/no-reaching-through-collaborators/fixtures/violating.go",
+        "line": 20,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.88,
+        "confidence": null
+      },
+      {
+        "rule": "no-reaching-through-collaborators",
+        "file": "agents/hooks/lint/model-rules/go/no-reaching-through-collaborators/fixtures/conforming.go",
+        "line": 20,
+        "endLine": 25,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "no-reaching-through-collaborators",
+        "file": "agents/hooks/lint/model-rules/go/no-reaching-through-collaborators/fixtures/conforming.go",
+        "line": 27,
+        "endLine": 29,
+        "kind": "noul",
+        "value": 0.1,
+        "confidence": null
+      },
+      {
+        "rule": "no-reaching-through-collaborators",
+        "file": "agents/hooks/lint/model-rules/go/no-reaching-through-collaborators/fixtures/conforming.go",
+        "line": 31,
+        "endLine": 33,
+        "kind": "noul",
+        "value": 0.16,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "no-reaching-through-collaborators",
+        "file": "agents/hooks/lint/model-rules/go/no-reaching-through-collaborators/fixtures/conforming.go",
+        "line": 20,
+        "endLine": 25,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "no-reaching-through-collaborators",
+        "file": "agents/hooks/lint/model-rules/go/no-reaching-through-collaborators/fixtures/conforming.go",
+        "line": 27,
+        "endLine": 29,
+        "kind": "noul",
+        "value": 0.09,
+        "confidence": null
+      },
+      {
+        "rule": "no-reaching-through-collaborators",
+        "file": "agents/hooks/lint/model-rules/go/no-reaching-through-collaborators/fixtures/conforming.go",
+        "line": 31,
+        "endLine": 33,
+        "kind": "noul",
+        "value": 0.14,
+        "confidence": null
+      },
+      {
+        "rule": "no-reaching-through-collaborators",
+        "file": "agents/hooks/lint/model-rules/go/no-reaching-through-collaborators/fixtures/violating.go",
+        "line": 7,
+        "endLine": 9,
+        "kind": "noul",
+        "value": 0.84,
+        "confidence": null
+      },
+      {
+        "rule": "no-reaching-through-collaborators",
+        "file": "agents/hooks/lint/model-rules/go/no-reaching-through-collaborators/fixtures/violating.go",
+        "line": 15,
+        "endLine": 18,
+        "kind": "noul",
+        "value": 0.87,
+        "confidence": null
+      },
+      {
+        "rule": "no-reaching-through-collaborators",
+        "file": "agents/hooks/lint/model-rules/go/no-reaching-through-collaborators/fixtures/violating.go",
+        "line": 20,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.89,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "no-reaching-through-collaborators",
+        "file": "agents/hooks/lint/model-rules/go/no-reaching-through-collaborators/fixtures/conforming.go",
+        "line": 20,
+        "endLine": 25,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "no-reaching-through-collaborators",
+        "file": "agents/hooks/lint/model-rules/go/no-reaching-through-collaborators/fixtures/conforming.go",
+        "line": 27,
+        "endLine": 29,
+        "kind": "noul",
+        "value": 0.09,
+        "confidence": null
+      },
+      {
+        "rule": "no-reaching-through-collaborators",
+        "file": "agents/hooks/lint/model-rules/go/no-reaching-through-collaborators/fixtures/conforming.go",
+        "line": 31,
+        "endLine": 33,
+        "kind": "noul",
+        "value": 0.14,
+        "confidence": null
+      },
+      {
+        "rule": "no-reaching-through-collaborators",
+        "file": "agents/hooks/lint/model-rules/go/no-reaching-through-collaborators/fixtures/violating.go",
+        "line": 7,
+        "endLine": 9,
+        "kind": "noul",
+        "value": 0.87,
+        "confidence": null
+      },
+      {
+        "rule": "no-reaching-through-collaborators",
+        "file": "agents/hooks/lint/model-rules/go/no-reaching-through-collaborators/fixtures/violating.go",
+        "line": 15,
+        "endLine": 18,
+        "kind": "noul",
+        "value": 0.84,
+        "confidence": null
+      },
+      {
+        "rule": "no-reaching-through-collaborators",
+        "file": "agents/hooks/lint/model-rules/go/no-reaching-through-collaborators/fixtures/violating.go",
+        "line": 20,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.87,
+        "confidence": null
+      }
+    ]
+  ],
+  "spent": {
+    "calls": 6,
+    "inputTokens": 10098,
+    "usd": 0.000424116,
+    "ms": 190
+  }
+}

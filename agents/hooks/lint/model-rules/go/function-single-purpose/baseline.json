@@ -1,0 +1,190 @@
+{
+  "schema": "jev-lint-eval-1",
+  "recorded": "2026-11-18T06:22:04.011Z",
+  "model": "jev-1.14.0",
+  "suite": "go/function-single-purpose",
+  "rules": [
+    {
+      "id": "function-single-purpose",
+      "draft": "9b10253c4044",
+      "at": 0.5
+    }
+  ],
+  "cutoffs": {},
+  "passes": [
+    [
+      {
+        "rule": "function-single-purpose",
+        "file": "agents/hooks/lint/model-rules/go/function-single-purpose/fixtures/violating.go",
+        "line": 12,
+        "endLine": 27,
+        "kind": "noul",
+        "value": 0.91,
+        "confidence": null
+      },
+      {
+        "rule": "function-single-purpose",
+        "file": "agents/hooks/lint/model-rules/go/function-single-purpose/fixtures/violating.go",
+        "line": 29,
+        "endLine": 41,
+        "kind": "noul",
+        "value": 0.77,
+        "confidence": null
+      },
+      {
+        "rule": "function-single-purpose",
+        "file": "agents/hooks/lint/model-rules/go/function-single-purpose/fixtures/violating.go",
+        "line": 45,
+        "endLine": 45,
+        "kind": "noul",
+        "value": 0.08,
+        "confidence": null
+      },
+      {
+        "rule": "function-single-purpose",
+        "file": "agents/hooks/lint/model-rules/go/function-single-purpose/fixtures/conforming.go",
+        "line": 13,
+        "endLine": 20,
+        "kind": "noul",
+        "value": 0.16,
+        "confidence": null
+      },
+      {
+        "rule": "function-single-purpose",
+        "file": "agents/hooks/lint/model-rules/go/function-single-purpose/fixtures/conforming.go",
+        "line": 22,
+        "endLine": 32,
+        "kind": "noul",
+        "value": 0.18,
+        "confidence": null
+      },
+      {
+        "rule": "function-single-purpose",
+        "file": "agents/hooks/lint/model-rules/go/function-single-purpose/fixtures/conforming.go",
+        "line": 34,
+        "endLine": 36,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "function-single-purpose",
+        "file": "agents/hooks/lint/model-rules/go/function-single-purpose/fixtures/conforming.go",
+        "line": 13,
+        "endLine": 20,
+        "kind": "noul",
+        "value": 0.17,
+        "confidence": null
+      },
+      {
+        "rule": "function-single-purpose",
+        "file": "agents/hooks/lint/model-rules/go/function-single-purpose/fixtures/conforming.go",
+        "line": 22,
+        "endLine": 32,
+        "kind": "noul",
+        "value": 0.19,
+        "confidence": null
+      },
+      {
+        "rule": "function-single-purpose",
+        "file": "agents/hooks/lint/model-rules/go/function-single-purpose/fixtures/conforming.go",
+        "line": 34,
+        "endLine": 36,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "function-single-purpose",
+        "file": "agents/hooks/lint/model-rules/go/function-single-purpose/fixtures/violating.go",
+        "line": 12,
+        "endLine": 27,
+        "kind": "noul",
+        "value": 0.92,
+        "confidence": null
+      },
+      {
+        "rule": "function-single-purpose",
+        "file": "agents/hooks/lint/model-rules/go/function-single-purpose/fixtures/violating.go",
+        "line": 29,
+        "endLine": 41,
+        "kind": "noul",
+        "value": 0.73,
+        "confidence": null
+      },
+      {
+        "rule": "function-single-purpose",
+        "file": "agents/hooks/lint/model-rules/go/function-single-purpose/fixtures/violating.go",
+        "line": 45,
+        "endLine": 45,
+        "kind": "noul",
+        "value": 0.08,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "function-single-purpose",
+        "file": "agents/hooks/lint/model-rules/go/function-single-purpose/fixtures/violating.go",
+        "line": 12,
+        "endLine": 27,
+        "kind": "noul",
+        "value": 0.91,
+        "confidence": null
+      },
+      {
+        "rule": "function-single-purpose",
+        "file": "agents/hooks/lint/model-rules/go/function-single-purpose/fixtures/violating.go",
+        "line": 29,
+        "endLine": 41,
+        "kind": "noul",
+        "value": 0.75,
+        "confidence": null
+      },
+      {
+        "rule": "function-single-purpose",
+        "file": "agents/hooks/lint/model-rules/go/function-single-purpose/fixtures/violating.go",
+        "line": 45,
+        "endLine": 45,
+        "kind": "noul",
+        "value": 0.09,
+        "confidence": null
+      },
+      {
+        "rule": "function-single-purpose",
+        "file": "agents/hooks/lint/model-rules/go/function-single-purpose/fixtures/conforming.go",
+        "line": 13,
+        "endLine": 20,
+        "kind": "noul",
+        "value": 0.16,
+        "confidence": null
+      },
+      {
+        "rule": "function-single-purpose",
+        "file": "agents/hooks/lint/model-rules/go/function-single-purpose/fixtures/conforming.go",
+        "line": 22,
+        "endLine": 32,
+        "kind": "noul",
+        "value": 0.19,
+        "confidence": null
+      },
+      {
+        "rule": "function-single-purpose",
+        "file": "agents/hooks/lint/model-rules/go/function-single-purpose/fixtures/conforming.go",
+        "line": 34,
+        "endLine": 36,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      }
+    ]
+  ],
+  "spent": {
+    "calls": 6,
+    "inputTokens": 8823,
+    "usd": 0.000370566,
+    "ms": 166
+  }
+}

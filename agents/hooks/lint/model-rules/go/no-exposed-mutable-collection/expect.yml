@@ -1,0 +1,12 @@
+default: clean
+# Lines are the first line of each function. violating.go: a getter returns the object's own slice or map, including a
+# sub-slice that shares its backing array. conforming.go: a field of a plain JSON record, and two boundary cases that
+# return a field yet hand out no internal state (a field of a value built from a clone, a field of a local value).
+fixtures/violating.go:
+  - { line: 7, label: bad, window: 1, why: "returns the cart's own slice" }
+  - { line: 15, label: bad, window: 1, why: "returns the registry's own map" }
+  - { line: 24, label: bad, window: 1, why: "a sub-slice still shares the queue's backing array" }
+fixtures/conforming.go:
+  - { line: 12, label: clean, window: 1, why: "a plain data record with no invariants" }
+  - { line: 24, label: clean, window: 1, why: "boundary: the returned field holds a clone, not the library's slice" }
+  - { line: 33, label: clean, window: 1, why: "boundary: a field of a value the function built itself" }

@@ -1,0 +1,11 @@
+default: clean
+# Every function is a subject; lines are the first line of each. violating.go: validation, persistence and mail in one
+# body, and byte-level header parsing mixed with orchestration. conforming.go: an orchestrator of named steps, a
+# one-level loop that serves one result, and a thin wrapper; the stub in violating.go is clean by default.
+fixtures/violating.go:
+  - { line: 12, label: bad, window: 1, why: "validates, stores and sends mail: three jobs" }
+  - { line: 29, label: bad, window: 1, why: "parses header bytes inline between orchestration steps" }
+fixtures/conforming.go:
+  - { line: 13, label: clean, window: 1, why: "only sequences named steps" }
+  - { line: 22, label: clean, window: 1, why: "boundary: several statements, all serving one cleaned list" }
+  - { line: 34, label: clean, window: 1, why: "a thin wrapper" }

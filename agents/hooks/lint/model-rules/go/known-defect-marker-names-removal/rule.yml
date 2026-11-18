@@ -1,8 +1,8 @@
 # M-60 a known-defect marker carries a comment naming the condition for removing it
 # (agents/skills/python-style/references/testing.md, which states it for xfail). Go has no expected-failure marker
-# (go-style/references/testing.md), so a test skipped for a known defect is the marker here. Advisory. The cutoff
-# is the 0.5 starting value, not fitted: on this folder's fixtures the highest conforming case scored 0.27
-# (conforming_test.go:31, whose score spread across passes is 0.16).
+# (go-style/references/testing.md), so a test skipped for a known defect is the marker here. Advisory (ADR-0021). The
+# cutoff 0.56 is jev-lint's fitted midpoint on this folder's fixtures (eval of 2026-11-18, 3 passes): the highest
+# clean case scored 0.33 (conforming_test.go:31) and the lowest bad one 0.79.
 id: known-defect-marker-names-removal
 language: Go
 divergent: Go has no xfail; the marker is a skipped test, and a skip for another reason is not a violation.
@@ -10,7 +10,12 @@ kind: noul
 subject: node
 # The comment sits above the call statement, outside the call, so the arm that sends the file is used.
 state: located
-threshold: 0.5
+threshold: 0.56
+# The fixtures sit far from the cutoff on both sides (highest clean and lowest bad: 0.33 and 0.79), so replay
+# calls the suite blind; a boundary fixture would need a case a reviewer would argue over.
+inconclusive: >-
+  Blind: every fixture is clearly clean or clearly defective and no boundary case exists yet; the next one to
+  add is a skip whose message names an issue number but no condition.
 axis: file
 severity: warning
 rule:

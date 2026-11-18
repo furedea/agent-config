@@ -210,6 +210,10 @@ def test_rust_rules_select_the_functions_they_ask_about(repository: Path) -> Non
     }
 
 
+# The rules that must ship an eval suite: every Go rule (None), and the first three Rust rules.
+SUITE_RULE_IDS: dict[str, set[str] | None] = {"go": None, "rust": RULE_IDS}
+
+
 @pytest.mark.parametrize("language", ["go", "rust"])
 def test_every_go_and_rust_rule_ships_an_eval_suite_with_both_kinds_of_fixture(language: str) -> None:
     result = subprocess.run(
@@ -220,12 +224,16 @@ def test_every_go_and_rust_rule_ships_an_eval_suite_with_both_kinds_of_fixture(l
         timeout=60,
     )
 
+    rule_ids = SUITE_RULE_IDS[language]
+    if rule_ids is None:
+        rule_ids = {rule.parent.name for rule in (RULES / language).glob("*/rule.yml")}
     suites = [line for line in result.stdout.splitlines() if line.startswith(f"{language}/")]
-    assert {line.split(":")[0] for line in suites} == {f"{language}/{rule_id}" for rule_id in RULE_IDS}
-    for rule_id in RULE_IDS:
+    assert {line.split(":")[0] for line in suites} == {f"{language}/{rule_id}" for rule_id in rule_ids}
+    for rule_id in rule_ids:
         fixtures = (RULES / language / rule_id / "fixtures").iterdir()
-        names = {path.name for path in fixtures}
-        assert {name.split(".")[0].removesuffix("_test") for name in names} == {"violating", "conforming"}
+        # A fixture is named for its kind, optionally followed by `_<case>` (a Go `package main` holds one `main`).
+        kinds = {path.name.split(".")[0].removesuffix("_test").split("_")[0] for path in fixtures}
+        assert kinds == {"violating", "conforming"}
 
 
 def test_functions_committed_since_the_base_are_still_selected(repository: Path) -> None:

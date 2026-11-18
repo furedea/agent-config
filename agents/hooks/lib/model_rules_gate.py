@@ -285,7 +285,7 @@ def _session_commits_paths(record: SessionRecord, head: str) -> tuple[str, ...]:
     if head_commit(record.root) == head:
         return ()
     try:
-        return own_committed_paths(record.root, head, record.reflog_entries)
+        return own_committed_paths(record.root, head, record.reflog)
     except ValueError:
         return committed_paths(record.root, head)
 

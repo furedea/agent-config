@@ -64,8 +64,10 @@ def test_a_head_that_is_not_a_commit_id_is_ignored(state: Path) -> None:
     assert session_store.load(record.directory).head is None
 
 
-def test_registration_records_how_many_reflog_entries_existed_and_not_the_later_ones(state: Path) -> None:
+def test_registration_records_the_reflog_as_it_stood_and_not_the_later_entries(state: Path) -> None:
     record = session_store.register(state, "claude", "head-test")
     subprocess.run(["git", "commit", "--quiet", "--allow-empty", "-m", "later"], cwd=state, check=True)
 
-    assert session_store.load(record.directory).reflog_entries == 1
+    mark = session_store.load(record.directory).reflog
+    assert mark is not None
+    assert mark.entries == 1

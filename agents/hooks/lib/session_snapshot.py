@@ -72,16 +72,66 @@ def head_commit(root: Path) -> str | None:
     return value if COMMIT_ID.fullmatch(value) else None
 
 
-def reflog_entries(root: Path) -> int | None:
-    """How many entries HEAD's reflog holds, or None when git cannot say."""
+@dataclass(frozen=True, slots=True)
+class ReflogMark:
+    """Where HEAD's reflog stood when a session registered: how many entries it held and which was the newest.
+
+    Entries are only ever added at the newest end and expired at the oldest, so the newest entry at registration, found
+    again later, tells which entries are newer, however many old ones have expired since.
+    """
+
+    entries: int
+    newest: str
+
+    def newer_entries(self, lines: list[str]) -> int:
+        """How many of the reflog `lines` (newest first) were added after registration.
+
+        Raises ValueError when the entry that was newest at registration is no longer there.
+        """
+        if self.entries == 0:
+            return len(lines)
+        # An expired older entry only moves the mark nearer the oldest end, never beyond where it was recorded.
+        candidates = [number for number, line in enumerate(lines) if line == self.newest]
+        candidates = [number for number in candidates if len(lines) - 1 - number <= self.entries - 1]
+        if not candidates:
+            raise ValueError("the reflog entry that was newest when the session registered is gone")
+        return min(candidates)
+
+
+def reflog_lines(root: Path) -> list[str]:
+    """HEAD's reflog entries, newest first, as `commit<TAB>selector<TAB>subject`.
+
+    Only a newline ends a line: `splitlines` also splits on characters a commit subject may contain.
+    """
     try:
         output = subprocess.check_output(
-            ["git", "-c", "core.fsmonitor=false", "-C", str(root), "reflog", "show", "--format=%H", "HEAD", "--"],
+            [
+                "git",
+                "-c",
+                "core.fsmonitor=false",
+                "-C",
+                str(root),
+                "reflog",
+                "show",
+                "--date=unix",
+                "--format=%H%x09%gd%x09%gs",
+                "HEAD",
+                "--",
+            ],
             stderr=subprocess.DEVNULL,
         )
     except OSError, subprocess.CalledProcessError:
+        raise SnapshotError("HEAD's reflog cannot be read") from None
+    return [line for line in output.decode(errors="replace").split("\n") if line]
+
+
+def reflog_mark(root: Path) -> ReflogMark | None:
+    """The reflog's current state, or None when git cannot say."""
+    try:
+        lines = reflog_lines(root)
+    except SnapshotError:
         return None
-    return len(output.splitlines())
+    return ReflogMark(len(lines), lines[0] if lines else "")
 
 
 def repository_root(directory: Path) -> Path:

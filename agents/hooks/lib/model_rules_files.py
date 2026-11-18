@@ -21,6 +21,7 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 
 from model_rule_fixtures import is_model_rule_fixture
+from session_snapshot import ReflogMark, SnapshotError, reflog_lines
 
 # MADR files are `docs/adr/NNNN_words.md`; the index, a template and nested folders are not decisions.
 _ADR_PATTERN = "docs/adr/[0-9]*.md"
@@ -73,7 +74,7 @@ def select(root: Path, paths: Iterable[str], span: ReviewedSpan) -> Selection:
     return Selection(tuple(sendable), frozenset(withheld), adrs)
 
 
-def own_committed_paths(root: Path, base: str, registered_entries: int | None) -> tuple[str, ...]:
+def own_committed_paths(root: Path, base: str, registered: ReflogMark | None) -> tuple[str, ...]:
     """The files the session's own commits since `base` added or changed, with links and replaced types included.
 
     HEAD's reflog says how each step came to be. A step the session made (commit, amend, cherry-pick, revert, or a
@@ -81,7 +82,7 @@ def own_committed_paths(root: Path, base: str, registered_entries: int | None) -
     an amend counts what it added, not the commit it replaced. A step that arrived by fast-forward, pull, checkout or
     merge belongs to someone else, so its files are left out even though `base..HEAD` contains them; a merge commit is
     never counted, as its diff cannot be split into the session's part and the part it merged in. Only steps made
-    after the session registered (`registered_entries` of them existed then) count. A path counts only if its content
+    after the session registered (`registered` marks where the reflog stood) count. A path counts only if its content
     now differs from `base`, so work that was discarded or undone is not the session's.
 
     A commit made in another worktree and brought in here by a fast-forward leaves no entry in this reflog and is not
@@ -92,15 +93,16 @@ def own_committed_paths(root: Path, base: str, registered_entries: int | None) -
     Raises ValueError when the reflog cannot tell: it was not counted at registration, or HEAD moved without an entry;
     `committed_paths` is then the fallback.
     """
-    if registered_entries is None:
-        raise ValueError("HEAD's reflog was not counted when the session registered")
-    steps = [
-        tuple(line.partition("\t")[::2])
-        for line in _git_lines(root, "reflog", "show", "--format=%H%x09%gs", "HEAD", "--")
-    ]
-    since_registration = len(steps) - registered_entries
+    if registered is None:
+        raise ValueError("HEAD's reflog was not recorded when the session registered")
+    try:
+        lines = reflog_lines(root)
+    except SnapshotError as error:
+        raise ValueError(str(error)) from None
+    since_registration = registered.newer_entries(lines)
     if since_registration <= 0:
         raise ValueError("HEAD moved but its reflog has no entry since the session registered")
+    steps = [(line.split("\t")[0], line.split("\t", 2)[2]) for line in lines]
     own = [
         _still_in_head(
             root, commit, _paths_changed_by(root, commit, steps[number + 1][0] if number + 1 < len(steps) else None)
@@ -154,11 +156,6 @@ def _name_only(root: Path, command: list[str], diff_filter: str = "AMT") -> list
     options = ["-r", "--name-only", "-z", "--no-renames", *([f"--diff-filter={diff_filter}"] if diff_filter else [])]
     output = _git_output(root, command[0], *options, *command[1:])
     return [os.fsdecode(name) for name in output.split(b"\0") if name]
-
-
-def _git_lines(root: Path, *arguments: str) -> list[str]:
-    # Only a newline ends a line: `splitlines` also splits on characters a commit subject may contain.
-    return [line for line in _git_output(root, *arguments).decode(errors="replace").split("\n") if line]
 
 
 def _git_output(root: Path, *arguments: str) -> bytes:

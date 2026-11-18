@@ -12,7 +12,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 
-from session_snapshot import COMMIT_ID, Snapshot, capture, head_commit, reflog_entries
+from session_snapshot import COMMIT_ID, ReflogMark, Snapshot, capture, head_commit, reflog_mark
 
 SCHEMA = 1
 RETENTION_SECONDS = 7 * 24 * 60 * 60
@@ -56,10 +56,15 @@ class SessionRecord:
         return value if isinstance(value, str) and COMMIT_ID.fullmatch(value) else None
 
     @property
-    def reflog_entries(self) -> int | None:
-        """How many entries HEAD's reflog held when the session registered; None when it was not counted."""
-        value = read_json(self.directory / "baseline.json").get("reflog_entries")
-        return value if isinstance(value, int) and value >= 0 else None
+    def reflog(self) -> ReflogMark | None:
+        """HEAD's reflog as it stood when the session registered; None when it was not recorded."""
+        value = read_json(self.directory / "baseline.json").get("reflog")
+        if not isinstance(value, dict):
+            return None
+        entries, newest = value.get("entries"), value.get("newest")
+        if isinstance(entries, int) and entries >= 0 and isinstance(newest, str):
+            return ReflogMark(entries, newest)
+        return None
 
     def results(self) -> dict:
         """Read the saved results; raise StateError when they are unreadable or lack a `checks` mapping."""
@@ -167,6 +172,11 @@ def _register(key: SessionKey, *, resuming: bool) -> SessionRecord:
     return reopen(directory)
 
 
+def _reflog_json(root: Path) -> dict[str, object] | None:
+    mark = reflog_mark(root)
+    return None if mark is None else {"entries": mark.entries, "newest": mark.newest}
+
+
 def _create_record(key: SessionKey, directory: Path, *, resuming: bool) -> SessionRecord:
     baseline = capture(key.root)
     with tempfile.TemporaryDirectory(prefix=".register-", dir=directory.parent) as temporary:
@@ -180,7 +190,7 @@ def _create_record(key: SessionKey, directory: Path, *, resuming: bool) -> Sessi
                 "created_at": time.time(),
                 "files": baseline.to_json(),
                 "head": head_commit(key.root),
-                "reflog_entries": reflog_entries(key.root),
+                "reflog": _reflog_json(key.root),
             },
         )
         atomic_json(staging / "results.json", {"checks": {}, "session_id": key.session_id, "revalidate_all": resuming})

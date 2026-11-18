@@ -14,7 +14,11 @@ from tests.runtime import REPO_ROOT, StubWriter
 sys.path.insert(0, str(REPO_ROOT / "agents/hooks/lib"))
 import model_rules_files
 import model_rules_gate
+import session_snapshot
 import session_store
+from session_snapshot import ReflogMark
+
+EMPTY_BEFORE = ReflogMark(0, "")
 
 
 def git(root: Path, *arguments: str, env: dict[str, str] | None = None) -> str:
@@ -41,8 +45,8 @@ def others_work(root: Path, *names: str) -> None:
     git(root, "fetch", "--quiet", str(clone), "main:others")
 
 
-def own_paths(root: Path, base: str, registered_entries: int | None = 0) -> tuple[str, ...]:
-    return model_rules_files.own_committed_paths(root, base, registered_entries)
+def own_paths(root: Path, base: str, registered: ReflogMark | None = EMPTY_BEFORE) -> tuple[str, ...]:
+    return model_rules_files.own_committed_paths(root, base, registered)
 
 
 @pytest.fixture
@@ -141,14 +145,14 @@ def test_a_cherry_pick_finished_by_hand_after_a_conflict_is_the_sessions_commit(
     git(git_project, "switch", "--quiet", "main")
     commit(git_project, "f.txt", "main\n")
     base = git(git_project, "rev-parse", "HEAD")
-    registered_entries = len(git(git_project, "reflog", "show", "--format=%H", "HEAD").splitlines())
+    registered = session_snapshot.reflog_mark(git_project)
     subprocess.run(["git", "cherry-pick", "side"], check=False, cwd=git_project, capture_output=True)
     (git_project / "f.txt").write_text("resolved\n")
     git(git_project, "add", "f.txt")
 
     git(git_project, "commit", "--quiet", "-m", "resolved")
 
-    assert own_paths(git_project, base, registered_entries) == ("f.txt",)
+    assert own_paths(git_project, base, registered) == ("f.txt",)
 
 
 def test_a_revert_is_the_sessions_commit(git_project: Path) -> None:
@@ -167,11 +171,11 @@ def test_a_commit_made_before_the_session_and_fast_forwarded_in_is_not_the_sessi
     git(git_project, "switch", "--quiet", "-c", "side")
     commit(git_project, "earlier.txt")
     git(git_project, "switch", "--quiet", "main")
-    registered_entries = len(git(git_project, "reflog", "show", "--format=%H", "HEAD").splitlines())
+    registered = session_snapshot.reflog_mark(git_project)
 
     git(git_project, "merge", "--quiet", "--ff-only", "side")
 
-    assert own_paths(git_project, base, registered_entries) == ()
+    assert own_paths(git_project, base, registered) == ()
 
 
 def test_amending_a_fast_forwarded_tip_counts_only_what_the_amend_added(git_project: Path, base: str) -> None:
@@ -188,17 +192,17 @@ def test_amending_a_fast_forwarded_tip_counts_only_what_the_amend_added(git_proj
 def test_an_uncounted_reflog_cannot_tell_which_commits_are_the_sessions(git_project: Path, base: str) -> None:
     commit(git_project, "mine.txt")
 
-    with pytest.raises(ValueError, match="not counted"):
+    with pytest.raises(ValueError, match="not recorded"):
         own_paths(git_project, base, None)
 
 
 def test_a_repository_without_a_reflog_cannot_tell_either(git_project: Path, base: str) -> None:
     git(git_project, "config", "core.logAllRefUpdates", "false")
     commit(git_project, "mine.txt")
-    registered_entries = len(git(git_project, "reflog", "show", "--format=%H", "HEAD").splitlines())
+    registered = session_snapshot.reflog_mark(git_project)
 
     with pytest.raises(ValueError, match="no entry"):
-        own_paths(git_project, base, registered_entries)
+        own_paths(git_project, base, registered)
 
 
 def test_a_commit_subject_with_a_unicode_line_break_does_not_split_its_reflog_entry(
@@ -211,8 +215,20 @@ def test_a_commit_subject_with_a_unicode_line_break_does_not_split_its_reflog_en
     assert own_paths(git_project, base) == ("mine.txt",)
 
 
+def test_an_expired_old_entry_does_not_hide_the_sessions_first_commits(git_project: Path) -> None:
+    commit(git_project, "pre.txt")
+    base = git(git_project, "rev-parse", "HEAD")
+    registered = session_snapshot.reflog_mark(git_project)
+    commit(git_project, "one.txt")
+    commit(git_project, "two.txt")
+
+    git(git_project, "reflog", "delete", "--rewrite", "HEAD@{3}")
+
+    assert own_paths(git_project, base, registered) == ("one.txt", "two.txt")
+
+
 def test_a_failing_git_is_reported_as_a_value_error(tmp_path: Path) -> None:
-    with pytest.raises(ValueError, match="cannot be listed"):
+    with pytest.raises(ValueError, match="cannot"):
         own_paths(tmp_path, "HEAD")
 
 
@@ -251,13 +267,14 @@ def test_the_same_files_reached_by_cherry_pick_instead_of_fast_forward_are_a_new
 def test_a_discarded_commit_does_not_claim_a_path_that_an_outside_commit_then_changes(
     git_project: Path, base: str
 ) -> None:
+    registered = session_snapshot.reflog_mark(git_project)
     commit(git_project, "f.txt", "discarded\n")
     git(git_project, "reset", "--quiet", "--hard", base)
     others_work(git_project, "f.txt")
 
     git(git_project, "merge", "--quiet", "--ff-only", "others")
 
-    assert own_paths(git_project, base, 1) == ()
+    assert own_paths(git_project, base, registered) == ()
 
 
 def test_files_the_session_committed_in_a_repository_that_had_no_commit_are_still_judged(
@@ -281,7 +298,7 @@ def test_a_session_whose_reflog_cannot_say_judges_every_commit_since_it_started_
     install_fakes(executable, tmp_path, monkeypatch)
     record = register_session(git_project, tmp_path, monkeypatch)
     baseline = record.directory / "baseline.json"
-    baseline.write_text(json.dumps({**json.loads(baseline.read_text()), "reflog_entries": None}))
+    baseline.write_text(json.dumps({**json.loads(baseline.read_text()), "reflog": None}))
     others_work(git_project, "theirs.txt")
     git(git_project, "merge", "--quiet", "--ff-only", "others")
     commit(git_project, "committed.txt")

@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.2.0](https://github.com/furedea/agent-config/compare/v0.1.4...v0.2.0) (2026-11-18)
+
+
+### Features
+
+* add adr-check command for MADR ADRs ([#225](https://github.com/furedea/agent-config/issues/225)) ([138c542](https://github.com/furedea/agent-config/commit/138c542e3eec5ae6ec9e7080b619af6ee9b9fd0b))
+* **adr:** adopt the shared ADR checks ([#226](https://github.com/furedea/agent-config/issues/226)) ([5c94a78](https://github.com/furedea/agent-config/commit/5c94a78019d9ed9ec14690116981f06188a75f5c))
+* **hooks:** block edits on static rule errors and guard ast-grep-ignore ([#203](https://github.com/furedea/agent-config/issues/203)) ([f5b3317](https://github.com/furedea/agent-config/commit/f5b331711d0f3c82d1a1c76f07a735018bd79d01))
+* **hooks:** judge gh calls by effect through a policy table ([#201](https://github.com/furedea/agent-config/issues/201)) ([db7226d](https://github.com/furedea/agent-config/commit/db7226d09d303055c7c2ea6dc7a50d1766251172))
+* **hooks:** keep ask prefixes only for widening authority and promotion ([#199](https://github.com/furedea/agent-config/issues/199)) ([c3985f6](https://github.com/furedea/agent-config/commit/c3985f61da6e141159db8c8d63050f9e02d3212f))
+* **hooks:** migrate TypeScript style rules to ast-grep and jev-lint checks ([#195](https://github.com/furedea/agent-config/issues/195)) ([24d1a3e](https://github.com/furedea/agent-config/commit/24d1a3e893bc9b1aa23af6bb08ebd988fda6f3af))
+* **lint:** flag Go packages under util and common with an error rule ([#202](https://github.com/furedea/agent-config/issues/202)) ([de25e1d](https://github.com/furedea/agent-config/commit/de25e1d1ffabefc1dbed3ff15debe8f56e5f40c7))
+* **lint:** judge ADR rationale with Jev ([#228](https://github.com/furedea/agent-config/issues/228)) ([cf1c0a3](https://github.com/furedea/agent-config/commit/cf1c0a354aa8980be9cb5cdc52156cff6e095e70))
+* **lint:** migrate agents/AGENTS.md rules to model rules and linters ([#191](https://github.com/furedea/agent-config/issues/191)) ([9e3e37d](https://github.com/furedea/agent-config/commit/9e3e37d050f1f986adf18d514c878fef48cffc43))
+* **lint:** migrate bash-style and github-actions-style rules to checks ([#194](https://github.com/furedea/agent-config/issues/194)) ([4e473ba](https://github.com/furedea/agent-config/commit/4e473baa66c8085ae60a080f7b0948c074c61587))
+* **lint:** migrate go-style rules to ast-grep and jev-lint rules ([#190](https://github.com/furedea/agent-config/issues/190)) ([296ad84](https://github.com/furedea/agent-config/commit/296ad84b4c367ceeba06946591f76a5e48a78178))
+* **lint:** migrate rust-style prose rules to checks ([#193](https://github.com/furedea/agent-config/issues/193)) ([e184682](https://github.com/furedea/agent-config/commit/e1846824900c6645c2c245d2b98a2d5036b15e5a))
+
+
+### Bug Fixes
+
+* **ci:** run the jev-lint model-rule tests in CI ([#218](https://github.com/furedea/agent-config/issues/218)) ([1919b06](https://github.com/furedea/agent-config/commit/1919b06646996360fc4c3f7bc718df00c3ee3daf))
+* **deps:** pin dependencies ([#221](https://github.com/furedea/agent-config/issues/221)) ([5d083e4](https://github.com/furedea/agent-config/commit/5d083e4b84c2870e41343198e6cf905f5e91c2e8))
+* **hooks:** deny git options that skip repository hooks ([#212](https://github.com/furedea/agent-config/issues/212)) ([e10e5b6](https://github.com/furedea/agent-config/commit/e10e5b6fb5ec4aa2eb70fddcc736f1f1aef27657))
+* **hooks:** judge a cell turned into code from scratch and ignore attribute reasons ([#224](https://github.com/furedea/agent-config/issues/224)) ([96fb561](https://github.com/furedea/agent-config/commit/96fb561c2e6555eac199b7bc26260900ae38baa2))
+* **lint:** close blocking ast-grep rule gaps recorded in [#196](https://github.com/furedea/agent-config/issues/196) ([#216](https://github.com/furedea/agent-config/issues/216)) ([fa31947](https://github.com/furedea/agent-config/commit/fa31947a7621f12e0a07194b092695ef0f7673d5))
+* **skills:** drop the agent-run verify step that protected records block ([#213](https://github.com/furedea/agent-config/issues/213)) ([700244d](https://github.com/furedea/agent-config/commit/700244de37642413e2f94d4a310738bd16910bf8))
+
 ## [0.1.4](https://github.com/furedea/agent-config/compare/v0.1.3...v0.1.4) (2026-11-13)
 
 

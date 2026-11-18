@@ -1,0 +1,14 @@
+default: clean
+note: >-
+  Comments that narrate statements or explain what a name could say, inside functions and outside them, against
+  comments that give a workaround, a constraint, an intent or an issue.
+fixtures/violating.ts:
+  - { line: 3, label: bad, window: 1, why: "comments narrate each statement" }
+  - { line: 14, label: bad, window: 1, why: "a comment explains a step a name would make clear" }
+  - { line: 19, label: bad, window: 1, why: "a comment outside any function restates the declaration below it" }
+  - { line: 23, label: bad, window: 1, why: "the comment in the callback restates the call" }
+fixtures/conforming.ts:
+  - { line: 3, label: clean, window: 1, why: "the comment names a workaround for a tool behaviour" }
+  - { line: 8, label: clean, window: 1, why: "the comment gives the constraint behind a constant" }
+  - { line: 11, label: clean, window: 1, why: "the comment states the intent of a non-obvious order" }
+  - { line: 17, label: clean, window: 1, why: "a TODO with an issue reference" }

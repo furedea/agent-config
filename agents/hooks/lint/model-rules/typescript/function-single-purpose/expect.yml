@@ -1,0 +1,15 @@
+default: clean
+note: >-
+  Bodies that do several jobs or mix orchestration with byte, string or protocol detail, against a sequence of
+  named steps, one-job functions, a long single-level body and a thin wrapper. Constructors are subjects too and
+  are clean.
+fixtures/violating.ts:
+  - { line: 5, label: bad, window: 1, why: "parses, validates, hashes, stores and renders mail in one body" }
+  - { line: 18, label: bad, window: 1, why: "computes the totals and also formats and writes a padded CSV" }
+  - { line: 33, label: bad, window: 1, why: "orchestrates named steps and slices a protocol header inline" }
+  - { line: 44, label: bad, window: 1, why: "parses CSV text and saves each row through the database" }
+fixtures/conforming.ts:
+  - { line: 3, label: clean, window: 1, why: "only sequences named steps at one level" }
+  - { line: 11, label: clean, window: 1, why: "one job: format an amount" }
+  - { line: 18, label: clean, window: 1, why: "several statements of one level that all serve one result" }
+  - { line: 26, label: clean, window: 1, why: "a thin wrapper" }

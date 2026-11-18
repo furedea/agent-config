@@ -1,0 +1,14 @@
+default: clean
+note: >-
+  Throws and rejected promises for lookups, validation and business outcomes, against impossible branches,
+  violated preconditions, broken invariants and a function that already returns its failures as values.
+fixtures/violating.ts:
+  - { line: 3, label: bad, window: 1, why: "a missing record is an expected outcome of a lookup" }
+  - { line: 11, label: bad, window: 1, why: "invalid user input is thrown instead of returned" }
+  - { line: 19, label: bad, window: 1, why: "an unknown SKU is returned as a rejected promise" }
+  - { line: 27, label: bad, window: 1, why: "running out of stock is a business outcome the caller handles" }
+fixtures/conforming.ts:
+  - { line: 5, label: clean, window: 1, why: "an impossible branch of an exhaustive switch" }
+  - { line: 9, label: clean, window: 1, why: "a violated precondition is a programmer error" }
+  - { line: 20, label: clean, window: 1, why: "returns its expected failure as a value and wraps only the unexpected one" }
+  - { line: 40, label: clean, window: 1, why: "an invariant the class's own code must keep" }

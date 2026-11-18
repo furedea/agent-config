@@ -1,0 +1,14 @@
+default: clean
+note: >-
+  Functions that build and configure a client, connection or repository and then run logic with it, against
+  composition roots, builders, static factories and a short-lived helper.
+fixtures/violating.ts:
+  - { line: 3, label: bad, window: 1, why: "builds and configures a client, then runs the billing logic with it" }
+  - { line: 17, label: bad, window: 1, why: "opens its own connection, then queries and formats the report" }
+  - { line: 25, label: bad, window: 1, why: "wires a repository over a new pool, then imports the rows with it" }
+  - { line: 38, label: bad, window: 1, why: "configures an SMTP client inside the function that decides what to send" }
+fixtures/conforming.ts:
+  - { line: 3, label: clean, window: 1, why: "a composition root that only constructs and returns" }
+  - { line: 9, label: clean, window: 1, why: "a builder that constructs, configures and returns" }
+  - { line: 20, label: clean, window: 1, why: "a static factory that only constructs" }
+  - { line: 25, label: clean, window: 1, why: "receives its collaborator; the reader it makes is a short-lived helper over the given text" }

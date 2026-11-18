@@ -1,0 +1,14 @@
+default: clean
+note: >-
+  Methods and getters that return a class's own mutable array, set, map or queue, against readonly types and a
+  plain data record.
+fixtures/violating.ts:
+  - { line: 12, label: bad, window: 1, why: "returns the team's own member array" }
+  - { line: 20, label: bad, window: 1, why: "a getter hands out the internal set" }
+  - { line: 34, label: bad, window: 1, why: "returns the internal counter map that the class keeps consistent" }
+  - { line: 42, label: bad, window: 1, why: "returns the pending queue that only the scheduler should change" }
+fixtures/conforming.ts:
+  - { line: 6, label: clean, window: 1, why: "the return type is readonly" }
+  - { line: 14, label: clean, window: 1, why: "a ReadonlyMap view" }
+  - { line: 22, label: clean, window: 1, why: "a readonly record" }
+  - { line: 30, label: clean, window: 1, why: "a plain data record with no invariants" }

@@ -1,0 +1,14 @@
+default: clean
+note: >-
+  Groups (describe and suite) whose tests differ only in input and expected value, against groups of different
+  behaviours, an it.each table, and the top level of a file (line 1).
+fixtures/violating.test.ts:
+  - { line: 3, label: bad, window: 1, why: "four tests differ only in input and expected value" }
+  - { line: 18, label: bad, window: 1, why: "three rejection tests repeat one body" }
+  - { line: 30, label: bad, window: 1, why: "a Vitest suite with repeated cases" }
+  - { line: 42, label: bad, window: 1, why: "two of the three tests are the same body with other values" }
+fixtures/conforming.test.ts:
+  - { line: 1, label: clean, window: 1, why: "the top level holds tests of different behaviours" }
+  - { line: 10, label: clean, window: 1, why: "each test checks a different behaviour with its own setup" }
+  - { line: 29, label: clean, window: 1, why: "the repeated cases already use it.each" }
+  - { line: 39, label: clean, window: 1, why: "two tests with different arrange and assert steps" }

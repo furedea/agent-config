@@ -1,0 +1,15 @@
+default: clean
+note: >-
+  Logic that reads the clock or a random source itself, including `new Date` without parentheses, against an
+  entry point that supplies them, elapsed-time logging, a same-named project helper over an injected rng, and the
+  clock adapter.
+fixtures/violating.ts:
+  - { line: 5, label: bad, window: 1, why: "compares against the clock it reads itself" }
+  - { line: 9, label: bad, window: 1, why: "reads the clock and the crypto random source inside the logic" }
+  - { line: 13, label: bad, window: 1, why: "draws a winner from Math.random" }
+  - { line: 16, label: bad, window: 1, why: "reads today with `new Date` without parentheses" }
+fixtures/conforming.ts:
+  - { line: 6, label: clean, window: 1, why: "the clock that a thin entry point supplies to the logic" }
+  - { line: 9, label: clean, window: 1, why: "measures elapsed time only for a log line" }
+  - { line: 16, label: clean, window: 1, why: "`randomInt` is the project's helper over the injected rng, not node:crypto" }
+  - { line: 26, label: clean, window: 1, why: "the system clock adapter itself, the one place that reads the time" }

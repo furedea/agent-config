@@ -1,0 +1,14 @@
+default: clean
+note: >-
+  Chains through a collaborator's collaborators, against a standard-library path, a plain event record, the
+  object's own fields and the Web Crypto global.
+fixtures/violating.ts:
+  - { line: 3, label: bad, window: 1, why: "reaches through the order and customer into the address" }
+  - { line: 7, label: bad, window: 1, why: "reaches through the invoice's account to its owner" }
+  - { line: 11, label: bad, window: 1, why: "reaches through the cart's store into the warehouse rates" }
+  - { line: 14, label: bad, window: 1, why: "reaches through the context into the app's service registry" }
+fixtures/conforming.ts:
+  - { line: 3, label: clean, window: 1, why: "a standard-library path" }
+  - { line: 7, label: clean, window: 1, why: "data access on a plain event record" }
+  - { line: 14, label: clean, window: 1, why: "a chain over the object's own fields" }
+  - { line: 19, label: clean, window: 1, why: "the Web Crypto API through its global path" }

@@ -1,0 +1,14 @@
+default: clean
+note: >-
+  Comments that paraphrase the next statement or mark sections, against comments that state a reason, a tool
+  directive or a link to an issue.
+fixtures/violating.ts:
+  - { line: 3, label: bad, window: 1, why: "comments narrate each statement" }
+  - { line: 14, label: bad, window: 1, why: "section comments that a named function would replace" }
+  - { line: 23, label: bad, window: 1, why: "the comment repeats the return statement" }
+  - { line: 31, label: bad, window: 1, why: "the comment paraphrases the assignment in a method" }
+fixtures/conforming.ts:
+  - { line: 3, label: clean, window: 1, why: "the comment names a workaround for a tool behaviour" }
+  - { line: 8, label: clean, window: 1, why: "the comment states the intent of a non-obvious order" }
+  - { line: 14, label: clean, window: 1, why: "the comment states a guarantee the callers rely on" }
+  - { line: 19, label: clean, window: 1, why: "the comment links the constraint to an issue" }

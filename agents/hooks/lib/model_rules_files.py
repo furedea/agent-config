@@ -27,8 +27,10 @@ _ADR_PATTERN = "docs/adr/[0-9]*.md"
 _FRONT_MATTER_FENCE = "---"
 # Reflog subjects of HEAD that mean the session itself created the commit; `commit (merge)` is deliberately absent.
 _OWN_REFLOG_SUBJECT = re.compile(
-    r"commit(?: \((?:amend|initial)\))?:|cherry-pick|revert|rebase \((?:pick|reword|edit|squash|fixup|continue)\)"
+    r"commit(?: \((?:amend|initial)\))?:|cherry-pick|revert"
+    r"|(?:pull\b[^:(]*)?rebase\b[^:]*\((?:pick|reword|edit|squash|fixup|continue)\)"
 )
+_REFLOG_SELECTOR_TIME = re.compile(r"@\{(\d+)\}")
 
 
 @dataclass(frozen=True, slots=True)
@@ -72,17 +74,19 @@ def select(root: Path, paths: Iterable[str], span: ReviewedSpan) -> Selection:
     return Selection(tuple(sendable), frozenset(withheld), adrs)
 
 
-def own_committed_paths(root: Path, base: str) -> tuple[str, ...]:
+def own_committed_paths(root: Path, base: str, registered_at: float) -> tuple[str, ...]:
     """The files the session's own commits since `base` added or changed, with links and replaced types included.
 
     HEAD's reflog says how each commit came to be. A commit the session made (commit, amend, cherry-pick, revert, or a
     rebase replaying its own work) counts; one that arrived by fast-forward, pull, checkout or merge belongs to someone
     else, so its files are left out even though `base..HEAD` contains it. A merge commit is never counted: its diff
-    cannot be split into the session's part and the part it merged in. A commit made in another worktree and brought in
+    cannot be split into the session's part and the part it merged in. Only entries from `registered_at` (epoch
+    seconds) on count, so a commit made before the session and brought in by a later fast-forward is not the session's.
+    A commit made in another worktree and brought in
     here by a fast-forward leaves no entry in this reflog and is not counted either.
     """
     reachable = set(_git_lines(root, "rev-list", f"{base}..HEAD"))
-    own = _own_commits(root) & reachable
+    own = _own_commits(root, registered_at) & reachable
     return tuple(sorted({path for commit in own for path in _paths_changed_by(root, commit)}))
 
 
@@ -95,13 +99,16 @@ def uncommitted_paths(root: Path) -> frozenset[str]:
     return frozenset(os.fsdecode(entry[3:]) for entry in output.split(b"\0") if entry)
 
 
-def _own_commits(root: Path) -> set[str]:
-    entries = _git_lines(root, "reflog", "show", "--format=%H%x09%gs", "HEAD", "--")
-    return {
-        commit
-        for commit, _, subject in (entry.partition("\t") for entry in entries)
-        if _OWN_REFLOG_SUBJECT.match(subject)
-    }
+def _own_commits(root: Path, registered_at: float) -> set[str]:
+    entries = _git_lines(root, "reflog", "show", "--date=unix", "--format=%H%x09%gd%x09%gs", "HEAD", "--")
+    own: set[str] = set()
+    for entry in entries:
+        commit, _, rest = entry.partition("\t")
+        selector, _, subject = rest.partition("\t")
+        moved = _REFLOG_SELECTOR_TIME.search(selector)
+        if moved and int(moved[1]) >= int(registered_at) and _OWN_REFLOG_SUBJECT.match(subject):
+            own.add(commit)
+    return own
 
 
 def _paths_changed_by(root: Path, commit: str) -> list[str]:

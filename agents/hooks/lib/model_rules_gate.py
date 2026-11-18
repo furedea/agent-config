@@ -205,7 +205,9 @@ class _Changes:
         committed = Selection()
         if record.head is not None and head_commit(record.root) != record.head:
             committed = select(
-                record.root, own_committed_paths(record.root, record.head), ReviewedSpan(record.head, "HEAD")
+                record.root,
+                own_committed_paths(record.root, record.head, record.registered_at),
+                ReviewedSpan(record.head, "HEAD"),
             )
         dirty = uncommitted_paths(record.root)
         changed = (path for path in record.baseline.changed_paths(capture(record.root)) if path in dirty)

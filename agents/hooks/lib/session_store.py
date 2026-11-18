@@ -55,6 +55,12 @@ class SessionRecord:
         value = read_json(self.directory / "baseline.json").get("head")
         return value if isinstance(value, str) and COMMIT_ID.fullmatch(value) else None
 
+    @property
+    def registered_at(self) -> float:
+        """When the session registered, in epoch seconds; 0 for an older record, so no entry predates it."""
+        value = read_json(self.directory / "baseline.json").get("created_at")
+        return float(value) if isinstance(value, int | float) else 0.0
+
     def results(self) -> dict:
         """Read the saved results; raise StateError when they are unreadable or lack a `checks` mapping."""
         value = read_json(self.directory / "results.json")

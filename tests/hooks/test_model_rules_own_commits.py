@@ -1,7 +1,9 @@
 """Stop model rules judge the commits the session made, not the ones it fast-forwarded or pulled in."""
 
+import os
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 import pytest
@@ -14,8 +16,10 @@ import model_rules_files
 import session_store
 
 
-def git(root: Path, *arguments: str) -> str:
-    result = subprocess.run(["git", *arguments], cwd=root, check=True, capture_output=True, text=True)
+def git(root: Path, *arguments: str, env: dict[str, str] | None = None) -> str:
+    result = subprocess.run(
+        ["git", *arguments], cwd=root, check=True, capture_output=True, text=True, env={**os.environ, **(env or {})}
+    )
     return result.stdout.strip()
 
 
@@ -36,8 +40,8 @@ def others_work(root: Path, *names: str) -> None:
     git(root, "fetch", "--quiet", str(clone), "main:others")
 
 
-def own_paths(root: Path, base: str) -> tuple[str, ...]:
-    return model_rules_files.own_committed_paths(root, base)
+def own_paths(root: Path, base: str, registered_at: float = 0.0) -> tuple[str, ...]:
+    return model_rules_files.own_committed_paths(root, base, registered_at)
 
 
 @pytest.fixture
@@ -97,6 +101,40 @@ def test_a_merge_commit_is_not_counted_for_the_files_it_merged_in(git_project: P
     git(git_project, "merge", "--quiet", "--no-ff", "-m", "merge", "others")
 
     assert own_paths(git_project, base) == ("mine.py",)
+
+
+def test_a_pull_that_rebases_keeps_the_sessions_own_commits(git_project: Path, base: str) -> None:
+    others_work(git_project, "theirs.txt")
+    commit(git_project, "mine.txt")
+    git(git_project, "remote", "add", "upstream", str(git_project))
+    git(git_project, "fetch", "--quiet", "upstream", "others")
+
+    git(git_project, "pull", "--quiet", "--rebase", "upstream", "others")
+
+    assert own_paths(git_project, base) == ("mine.txt",)
+
+
+def test_a_cherry_pick_and_a_revert_are_the_sessions_commits(git_project: Path, base: str) -> None:
+    others_work(git_project, "theirs.txt")
+    git(git_project, "cherry-pick", "others")
+    git(git_project, "revert", "--no-edit", "HEAD")
+
+    assert own_paths(git_project, base) == ("theirs.txt",)
+
+
+def test_a_commit_made_before_the_session_and_fast_forwarded_in_is_not_the_sessions(
+    git_project: Path, base: str
+) -> None:
+    long_ago = {"GIT_AUTHOR_DATE": "2020-01-01T00:00:00Z", "GIT_COMMITTER_DATE": "2020-01-01T00:00:00Z"}
+    git(git_project, "switch", "--quiet", "-c", "side")
+    (git_project / "earlier.txt").write_text("x\n")
+    git(git_project, "add", "earlier.txt")
+    git(git_project, "commit", "--quiet", "-m", "earlier", env=long_ago)
+    git(git_project, "switch", "--quiet", "main")
+
+    git(git_project, "merge", "--quiet", "--ff-only", "side")
+
+    assert own_paths(git_project, base, registered_at=time.time() - 60) == ()
 
 
 def test_a_failing_git_is_reported_as_a_value_error(tmp_path: Path) -> None:

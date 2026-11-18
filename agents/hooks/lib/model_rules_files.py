@@ -82,12 +82,14 @@ def own_committed_paths(root: Path, base: str, registered_at: float) -> tuple[st
     else, so its files are left out even though `base..HEAD` contains it. A merge commit is never counted: its diff
     cannot be split into the session's part and the part it merged in. Only entries from `registered_at` (epoch
     seconds) on count, so a commit made before the session and brought in by a later fast-forward is not the session's.
-    A commit made in another worktree and brought in
-    here by a fast-forward leaves no entry in this reflog and is not counted either.
+    A commit made in another worktree and brought in here by a fast-forward leaves no entry in this reflog and is not
+    counted either. A path counts only if its content now differs from `base`, so amending or rebasing a commit that
+    was already there when the session started does not make that commit's other files the session's.
     """
     reachable = set(_git_lines(root, "rev-list", f"{base}..HEAD"))
     own = _own_commits(root, registered_at) & reachable
-    return tuple(sorted({path for commit in own for path in _paths_changed_by(root, commit)}))
+    changed_since_base = set(_paths_changed_between(root, base, "HEAD"))
+    return tuple(sorted({path for commit in own for path in _paths_changed_by(root, commit)} & changed_since_base))
 
 
 def uncommitted_paths(root: Path) -> frozenset[str]:
@@ -112,18 +114,16 @@ def _own_commits(root: Path, registered_at: float) -> set[str]:
 
 
 def _paths_changed_by(root: Path, commit: str) -> list[str]:
-    output = _git_output(
-        root,
-        "diff-tree",
-        "--root",
-        "--no-commit-id",
-        "-r",
-        "--name-only",
-        "-z",
-        "--no-renames",
-        "--diff-filter=AMT",
-        commit,
-    )
+    return _name_only(root, ["diff-tree", "--root", "--no-commit-id"], [commit])
+
+
+def _paths_changed_between(root: Path, base: str, until: str) -> list[str]:
+    return _name_only(root, ["diff"], [base, until, "--"])
+
+
+def _name_only(root: Path, command: list[str], revisions: list[str]) -> list[str]:
+    options = ["-r", "--name-only", "-z", "--no-renames", "--diff-filter=AMT"]
+    output = _git_output(root, *command, *options, *revisions)
     return [os.fsdecode(name) for name in output.split(b"\0") if name]
 
 

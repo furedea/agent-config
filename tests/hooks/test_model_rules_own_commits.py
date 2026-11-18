@@ -84,6 +84,17 @@ def test_an_amended_commit_counts_once_under_its_new_identity(git_project: Path,
     assert own_paths(git_project, base) == ("mine.py", "more.py")
 
 
+def test_amending_a_commit_that_predates_the_session_counts_only_what_the_amend_changed(git_project: Path) -> None:
+    commit(git_project, "old.txt")
+    base = git(git_project, "rev-parse", "HEAD")
+    (git_project / "new.txt").write_text("x\n")
+    git(git_project, "add", "new.txt")
+
+    git(git_project, "commit", "--quiet", "--amend", "--no-edit")
+
+    assert own_paths(git_project, base) == ("new.txt",)
+
+
 def test_a_commit_made_on_a_side_branch_and_fast_forwarded_still_counts(git_project: Path, base: str) -> None:
     git(git_project, "switch", "--quiet", "-c", "side")
     commit(git_project, "mine.py")
@@ -114,12 +125,22 @@ def test_a_pull_that_rebases_keeps_the_sessions_own_commits(git_project: Path, b
     assert own_paths(git_project, base) == ("mine.txt",)
 
 
-def test_a_cherry_pick_and_a_revert_are_the_sessions_commits(git_project: Path, base: str) -> None:
+def test_a_cherry_pick_is_the_sessions_commit(git_project: Path, base: str) -> None:
     others_work(git_project, "theirs.txt")
+
     git(git_project, "cherry-pick", "others")
-    git(git_project, "revert", "--no-edit", "HEAD")
 
     assert own_paths(git_project, base) == ("theirs.txt",)
+
+
+def test_a_revert_is_the_sessions_commit(git_project: Path) -> None:
+    commit(git_project, "f.txt", "a\n")
+    commit(git_project, "f.txt", "b\n")
+    base = git(git_project, "rev-parse", "HEAD")
+
+    git(git_project, "revert", "--no-edit", "HEAD")
+
+    assert own_paths(git_project, base) == ("f.txt",)
 
 
 def test_a_commit_made_before_the_session_and_fast_forwarded_in_is_not_the_sessions(

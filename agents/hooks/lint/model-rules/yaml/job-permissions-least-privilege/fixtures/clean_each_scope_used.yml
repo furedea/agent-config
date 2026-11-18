@@ -1,0 +1,19 @@
+name: Coverage
+on: pull_request
+permissions: {}
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read # checkout
+      pull-requests: write # comment the coverage summary
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - run: uv run pytest --cov --cov-report=markdown:coverage.md
+      - run: gh pr comment "$PR_NUMBER" --body-file coverage.md
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}

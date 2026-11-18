@@ -1,0 +1,19 @@
+default: clean
+# The subject is each `cd` or `pushd`. The cleans include `cd` inside the command substitution that resolves the
+# script's own directory, which changes nothing for the commands that follow.
+fixtures/bad_hook_cds_into_itself.bash:
+  - { line: 5, label: bad, window: 1, why: "a hook that must act on the project moves into its own directory" }
+fixtures/bad_formatter_on_caller_dir.bash:
+  - { line: 7, label: bad, window: 1, why: "the default target `.` now resolves to the script's directory" }
+fixtures/bad_pushd_without_popd.bash:
+  - { line: 5, label: bad, window: 1, why: "the build runs in the script's directory, not the project" }
+fixtures/clean_all_work_in_script_dir.bash:
+  - { line: 5, label: clean, window: 1, why: "every command works on the script's own directory" }
+fixtures/clean_cd_to_target_project.bash:
+  - { line: 7, label: clean, window: 1, why: "changes into the target project, not the script's directory" }
+fixtures/clean_subshell_for_bundled_files.bash:
+  - { line: 5, label: clean, window: 1, why: "cd inside the substitution that resolves the script's directory" }
+  - { line: 7, label: clean, window: 1, why: "the change is confined to a subshell around one operation" }
+fixtures/clean_pushd_popd_pair.bash:
+  - { line: 5, label: clean, window: 1, why: "cd inside the substitution that resolves the script's directory" }
+  - { line: 7, label: clean, window: 1, why: "a pushd/popd pair around one operation" }

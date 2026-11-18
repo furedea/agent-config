@@ -1,0 +1,20 @@
+default: clean
+# The subject is each `uses: actions/cache...` step. clean_real_agent_harness_cache.yml is the first part of
+# .github/actions/install-agent-harness/action.yml.
+fixtures/bad_key_without_os.yml:
+  - { line: 15, label: bad, window: 1, why: "node_modules on two operating systems under one key" }
+fixtures/bad_key_without_lock_hash.yml:
+  - { line: 12, label: bad, window: 1, why: "the key ignores Cargo.lock and the toolchain" }
+fixtures/bad_partial_restore_unvalidated.yml:
+  - { line: 12, label: bad, window: 1, why: "a partial match restores a stale .venv that nothing syncs" }
+fixtures/bad_caches_home_credentials.yml:
+  - { line: 14, label: bad, window: 1, why: "caches ~/.npmrc and ~/.docker, which hold credentials" }
+fixtures/clean_os_and_lock_hash.yml:
+  - { line: 15, label: clean, window: 1 }
+fixtures/clean_partial_restore_validated.yml:
+  - { line: 13, label: clean, window: 1, why: "a partial match whose consumer validates it against the lock" }
+fixtures/clean_real_agent_harness_cache.yml:
+  - { line: 18, label: clean, window: 1, why: "real composite action: os, arch, revision and lock hash" }
+fixtures/clean_restore_save_split.yml:
+  - { line: 13, label: clean, window: 1, why: "restore with an exact key" }
+  - { line: 19, label: clean, window: 1, why: "save with the same key" }

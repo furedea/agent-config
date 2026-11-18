@@ -1,0 +1,17 @@
+# The subject is the whole script, so each fixture is one case on line 1.
+fixtures/bad_no_strict_mode.bash:
+  - { line: 1, label: bad, window: 1, why: "no set at all" }
+fixtures/bad_errexit_only.bash:
+  - { line: 1, label: bad, window: 1, why: "only errexit; pipes hide failures" }
+fixtures/bad_set_after_first_command.bash:
+  - { line: 1, label: bad, window: 1, why: "the header comes after two commands that do work" }
+fixtures/bad_errexit_disabled_for_rest.bash:
+  - { line: 1, label: bad, window: 1, why: "set +e is never undone" }
+fixtures/clean_euo_pipefail.bash:
+  - { line: 1, label: clean, window: 1 }
+fixtures/clean_long_option_spelling.bash:
+  - { line: 1, label: clean, window: 1, why: "the long spelling of the three options" }
+fixtures/clean_errexit_restored.bash:
+  - { line: 1, label: clean, window: 1, why: "errexit is turned off for one command and back on" }
+fixtures/clean_real_bootstrap_header.bash:
+  - { line: 1, label: clean, window: 1, why: "the header of scripts/bootstrap_server.sh, with -C" }

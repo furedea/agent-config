@@ -1,0 +1,21 @@
+default: clean
+# The subject is the `set -x` command; each fixture has one, except the bad_retraced and clean_off_around fixtures,
+# whose second `set -x` is a subject too.
+fixtures/bad_token_in_header.bash:
+  - { line: 3, label: bad, window: 1, why: "the token is expanded into curl's arguments with tracing on" }
+fixtures/bad_debug_switch_password.bash:
+  - { line: 3, label: bad, window: 1, why: "a debug switch does not excuse tracing the password" }
+fixtures/bad_user_input_traced.bash:
+  - { line: 9, label: bad, window: 1, why: "a password read from the user is traced" }
+fixtures/bad_retraced_before_secret.bash:
+  - { line: 3, label: clean, window: 1, why: "the first trace ends before anything sensitive" }
+  - { line: 10, label: bad, window: 1, why: "tracing comes back on before the password is expanded" }
+fixtures/clean_off_around_secret.bash:
+  - { line: 3, label: clean, window: 1 }
+  - { line: 10, label: clean, window: 1, why: "turned back on only after the secret is used" }
+fixtures/clean_no_secret.bash:
+  - { line: 3, label: clean, window: 1, why: "a build script with no secret or user input" }
+fixtures/clean_trace_scoped_to_build.bash:
+  - { line: 7, label: clean, window: 1, why: "tracing is off again before the token is used" }
+fixtures/clean_secret_file_not_expanded.bash:
+  - { line: 3, label: clean, window: 1, why: "only the key's path is traced, never its contents" }

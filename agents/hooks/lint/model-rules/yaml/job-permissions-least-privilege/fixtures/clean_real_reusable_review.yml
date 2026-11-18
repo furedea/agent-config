@@ -1,0 +1,18 @@
+name: CI
+on:
+  pull_request:
+permissions: {}
+jobs:
+  ast-grep:
+    uses: furedea/reusable-workflows/.github/workflows/ast-grep.yml@5e16a8d7d92a84a4392de97e3ccc1ccac9c8579b # v1.6.0
+    permissions:
+      contents: read
+      pull-requests: read
+
+  claude-review:
+    uses: furedea/reusable-workflows/.github/workflows/claude-review.yml@5e16a8d7d92a84a4392de97e3ccc1ccac9c8579b # v1.6.0
+    permissions:
+      contents: read
+      pull-requests: write
+    secrets:
+      claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}

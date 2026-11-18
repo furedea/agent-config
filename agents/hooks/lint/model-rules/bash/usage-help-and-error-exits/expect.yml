@@ -1,0 +1,17 @@
+default: clean
+# violating.bash: help exits 1, and an unknown argument prints usage on standard output.
+# violating_help_without_usage.bash: help does not call usage, and a missing argument exits 0.
+# conforming.bash: the hard clean is the `*) break` branch, which handles neither case.
+fixtures/violating.bash:
+  - { line: 14, label: bad, window: 1, why: "requested help exits 1" }
+  - { line: 22, label: bad, window: 1, why: "invalid argument: usage on standard output" }
+fixtures/violating_help_without_usage.bash:
+  - { line: 12, label: bad, window: 1, why: "requested help does not call usage" }
+  - { line: 15, label: bad, window: 1, why: "missing argument exits 0" }
+fixtures/conforming.bash:
+  - { line: 14, label: clean, window: 1 }
+  - { line: 22, label: clean, window: 1 }
+  - { line: 26, label: clean, window: 1, why: "a positional argument, neither help nor an error" }
+  - { line: 32, label: clean, window: 1 }
+fixtures/conforming_if_help.bash:
+  - { line: 11, label: clean, window: 1, why: "help tested in an if" }

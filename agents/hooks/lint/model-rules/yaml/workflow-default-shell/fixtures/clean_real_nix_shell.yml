@@ -1,0 +1,23 @@
+name: CI
+on: pull_request
+permissions: {}
+# Every tool a job runs comes from the flake dev shell, so CI and a local shell use the versions in flake.lock.
+defaults:
+  run:
+    shell: nix develop --command bash -eo pipefail {0}
+jobs:
+  shell-lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Run shellcheck and shfmt
+        run: |
+          mapfile -d '' -t files < <(git ls-files -z -- '*.sh')
+          shellcheck -x --source-path=SCRIPTDIR "${files[@]}"
+          shfmt -d "${files[@]}"

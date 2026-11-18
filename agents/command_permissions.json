@@ -2184,7 +2184,7 @@
         "pnpm",
         "add"
       ],
-      "justification": "Ask before changing dependencies that no package-age limit guards; a version published minutes ago could be malicious."
+      "justification": "Ask before changing dependencies; the guard cannot see every setting that lifts the package-age limit or points the change at another source."
     },
     {
       "decision": "ask",

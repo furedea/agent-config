@@ -7,13 +7,26 @@ approvals_reviewer = "guardian_subagent"
 # Use the OS keyring where one exists (macOS); on hosts without one (the SSH-only Linux
 # servers) fall back to ~/.codex/auth.json instead of failing to load the login.
 cli_auth_credentials_store = "auto"
-# `[permissions.guarded.filesystem]` is appended by `agent-harness
-# generate-codex-config-source`. Do not set `default_permissions = "guarded"` by default:
+# `agent-harness generate-codex-config-source` merges the harness files into
+# `[permissions.guarded.filesystem]` below. Do not set `default_permissions = "guarded"` by default:
 # Codex treats that profile as the full filesystem sandbox policy, so a profile
 # containing only harness files prevents even read-only commands from starting.
 
 [sandbox_workspace_write]
 network_access = true
+
+# Nix pins the package managers' release-age wait and fetch source in these files. Keep them
+# read-only even when the workspace root contains them, such as a session opened in the home
+# directory.
+[permissions.guarded.filesystem]
+"~/.config/uv" = "read"
+"~/.config/pnpm" = "read"
+"~/Library/Preferences/pnpm" = "read"
+"~/.config/nix" = "read"
+"~/.npmrc" = "read"
+"~/.cargo/config.toml" = "read"
+"~/.cargo/config" = "read"
+"~/Library/Application Support/go/env" = "read"
 
 # Same Git environment as Claude: no fsmonitor daemon, unsigned agent commits and tags.
 [shell_environment_policy.set]

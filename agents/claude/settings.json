@@ -88,7 +88,15 @@
         "~/.local/state/agent-harness/audit",
         "~/**/.git/hooks",
         "~/**/.git/config",
-        "~/**/.git/worktrees/*/config.worktree"
+        "~/**/.git/worktrees/*/config.worktree",
+        "~/.config/uv",
+        "~/.config/pnpm",
+        "~/Library/Preferences/pnpm",
+        "~/.config/nix",
+        "~/.npmrc",
+        "~/.cargo/config.toml",
+        "~/.cargo/config",
+        "~/Library/Application Support/go/env"
       ]
     },
     "network": {

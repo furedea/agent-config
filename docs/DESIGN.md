@@ -64,6 +64,10 @@ everywhere under its working directory.
 - Codex cannot reach the network or the Nix daemon; the lane updates dependencies and computes Nix hashes.
 - The agent's GitHub App cannot push workflow files; the user pushes them.
 - Dependencies younger than seven days are not installed (pnpm `minimumReleaseAge`, uv `exclude-newer`).
+    The dotfiles pin these and the fetch sources in the user-level package-manager settings, and no
+    session writes those files: Claude's sandbox `denyWrite` and `Edit` denials, and Codex's guarded
+    profile, cover `~/.config/uv`, `~/.config/pnpm`, `~/Library/Preferences/pnpm`, `~/.config/nix`,
+    `~/.npmrc`, `~/.cargo/config.toml`, `~/.cargo/config`, and the Go `env` file.
 
 ## Verification
 
@@ -235,8 +239,9 @@ Without the items, the hook reports `Model rules skipped` at every Stop and does
     unpinned code, containers, other people's workspaces, outside hosts) or promote work and cannot be
     undone (merge, release, stash drop, remote changes, signals, the Herdr server); an `ask` rule still
     prompts in Claude Code's auto mode. Dependency changes (`uv add`, `uv lock --upgrade`, `pnpm add`,
-    `cargo add`, `cargo update`, `go get`, `go mod tidy`, `nix flake update`) keep asking: the guard
-    cannot see every setting that lifts the package-age limit or points the change elsewhere.
+    `cargo add`, `cargo update`, `go get`, `go mod tidy`, `nix flake update`) keep asking: the pinned
+    user settings cannot be written, but project files, environment variables, and options still
+    override them, and cargo, go, and flake inputs have no release-age wait at all.
 - `rm` runs unprompted for files inside the worktree and the session's own temporary directories
     (named by `CLAUDE_TMPDIR`, or a `TMPDIR` such as `/tmp/claude-<uid>`; never a shared `/tmp`,
     `/var/tmp`, or macOS's per-user temporary directory). The command guard asks for Git metadata,

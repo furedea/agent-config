@@ -58,7 +58,7 @@ flowchart LR
 - 各 `herdr` コマンドと各 Codex プラグインの呼び出しは 1 つのコマンドとして実行する：`cd`，パイプ，リダイレクト，`$` は使わない．
 - Codex はネットワークにも Nix デーモンにも届かないので，依存関係の更新と Nix のハッシュの計算はレーンが行う．
 - エージェントの GitHub App はワークフローファイルを push できないので，ユーザーが push する．
-- 公開から 7 日未満の依存関係はインストールしない（pnpm の `minimumReleaseAge`，uv の `exclude-newer`）．
+- 公開から 7 日未満の依存関係はインストールしない（pnpm の `minimumReleaseAge`，uv の `exclude-newer`）．これらと取得元は dotfiles がユーザー単位のパッケージマネージャ設定で固定し，どのセッションもその設定ファイルに書き込めない（Claude は sandbox の `denyWrite` と `Edit` の拒否，Codex は guarded プロファイル）．対象は `~/.config/uv`，`~/.config/pnpm`，`~/Library/Preferences/pnpm`，`~/.config/nix`，`~/.npmrc`，`~/.cargo/config.toml`，`~/.cargo/config`，Go の `env` ファイル．
 
 ## 検証
 
@@ -102,6 +102,6 @@ flowchart LR
 - allow prefix が承認した `gh` の呼び出しは，書き方ではなく効果で判定する．ガードは呼び出しをリポジトリ，操作，効果に変換し，`agents/hooks/rules/gh_policy.json` の対象 × 操作の grant と照合する．読み取りとローカルの checkout はどのリポジトリでも実行し，取り消せる書き込みは `trusted_owners.json` にある owner のリポジトリでだけ実行する．allowlist にある review thread の mutation は node ID で実行する．それ以外の書き込み，分類できない呼び出し，`secret_content_patterns.json` に一致する本文は確認を求める．
 - `agent-browser` と `agent-desktop` はサンドボックスの外で動き，許可された形式はプロンプトなしで実行する．`file:` と `chrome:` の URL，ターミナル，システム設定，認証情報のアプリは拒否し，ログイン済みのセッションや名前のない対象に届く形式は確認を求める．[ADR-0018](adr/0018_allow_browser_and_desktop_automation_except_named_risky_forms.md) を参照．各サブコマンドは一覧にあるオプションだけを使え，それ以外のオプションは確認を求める．引数はシンボリックリンクをたどって worktree かセッションの一時ディレクトリの中に解決できなければ確認を求める．ブラウザーの daemon が書き込むファイルは，パスを指定しない screenshot を除いて確認を求める．[ADR-0019](adr/0019_resolve_automation_path_arguments_through_symlinks.md) を参照．
 - 補助のガードは，静的に判定できるシェルのテキストだけを判定し，残りは確認を求める．[ADR-0015](adr/0015_judge_only_statically_determinable_shell_text_in_the_guards.md) と [ADR-0016](adr/0016_inspect_shell_syntax_in_the_supplementary_command_guards.md) を参照．
-- provider 自身の `ask` 接頭辞は，権限を広げるコマンド（取得したコードや固定していないコード，コンテナ，他人のワークスペース，外部のホスト）と，作業を反映し取り消せないコマンド（merge，release，stash drop，remote の変更，シグナル，Herdr サーバ）だけに残す．`ask` ルールは Claude Code の auto mode でも確認を出す．依存の変更（`uv add`，`uv lock --upgrade`，`pnpm add`，`cargo add`，`cargo update`，`go get`，`go mod tidy`，`nix flake update`）は確認のまま残す．年齢制限を外したり別の取得元を指したりする設定を，ガードがすべて見ることはできないため．
+- provider 自身の `ask` 接頭辞は，権限を広げるコマンド（取得したコードや固定していないコード，コンテナ，他人のワークスペース，外部のホスト）と，作業を反映し取り消せないコマンド（merge，release，stash drop，remote の変更，シグナル，Herdr サーバ）だけに残す．`ask` ルールは Claude Code の auto mode でも確認を出す．依存の変更（`uv add`，`uv lock --upgrade`，`pnpm add`，`cargo add`，`cargo update`，`go get`，`go mod tidy`，`nix flake update`）は確認のまま残す．固定したユーザー設定は書き換えられないが，プロジェクトのファイル・環境変数・オプションで上書きでき，cargo・go・flake の入力にはそもそも公開からの待機がないため．
 - `rm` は，ワークツリーとセッション自身の一時ディレクトリ（`CLAUDE_TMPDIR`，または `/tmp/claude-<uid>` のような `TMPDIR` が示すもの．共有の `/tmp`，`/var/tmp`，macOS のユーザー共通の一時ディレクトリは除く）の中のファイルなら確認なしで走る．Git のメタデータ，それ以外のパス（親ディレクトリのリンクをたどって解決する），実行時にしか決まらないパス，xargs の引数，拒否の接頭辞にない再帰の形，列挙したシェル組み込み（`echo`，`test`，`pwd` など）以外のプログラムと並んだ `rm`（先に作業ディレクトリを変えたりリンクを作ったりしうる）はコマンドガードが確認を求める．PATH で解決した `rm`・ラッパーが root 所有のシステムのプログラムでないとき，継承したシェル関数や `BASH_ENV` があるとき，git とディスク上の `.git` でワークツリーの判断が食い違うときも確認する．
 - Herdr のペインへの入力（`pane send-text`，`pane send-keys`，`pane run`，`agent send-keys`）は，このセッションが起動したエージェントのペインでも常に確認を求める．キーやテキストはそのエージェントの許可ダイアログに答えたり，エージェントを終了させてその下のシェルに届いたりしうるため．作業を渡すときは `agent prompt` を使う．

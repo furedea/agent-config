@@ -64,3 +64,16 @@ def test_a_default_branch_that_does_not_lead_to_the_starting_commit_leaves_the_b
     committed, _ = tools.calls("op")
     assert committed["argv"][committed["argv"].index("--base") + 1] == record.head
     assert committed["argv"][-1] == "mine.txt"
+
+
+def test_a_default_branch_that_moves_between_stops_judges_again_instead_of_replaying_the_old_receipt(
+    record: session_store.SessionRecord, tools: Tools
+) -> None:
+    commit_file(record, "mine.txt")
+    stop(record)
+    first = len(tools.calls("op"))
+
+    _publish_default_branch(record, _head(record))
+    stop(record)
+
+    assert len(tools.calls("op")) > first

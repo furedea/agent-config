@@ -280,9 +280,9 @@ def _repository_gate(root: Path) -> Prevented | None:
 
 
 def _inputs(record: SessionRecord) -> str:
-    """A fingerprint of everything a review depends on: the files, the base commit, and the rules."""
+    """A fingerprint of everything a review depends on: the files, the commit the review starts from, and the rules."""
     digest = hashlib.sha256(capture(record.root).digest.encode())
-    digest.update((record.head or "").encode())
+    digest.update((review_base(record.root, record.head) if record.head else "").encode())
     for path in sorted(RULES_DIRECTORY.rglob("*.yml")):
         digest.update(os.fsencode(path.relative_to(RULES_DIRECTORY)))
         digest.update(path.read_bytes())

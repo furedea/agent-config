@@ -339,6 +339,9 @@ def merged_worktree_with_ignored(primary: Path, merged: dict[str, str], *ignored
     path = task_worktree(primary, "feat/done")
     merged["feat/done"] = git("rev-parse", "HEAD", cwd=path)
     (path / ".gitignore").write_text("*.ignored\n.venv/\nnode_modules/\nresult\nresult-*\n__pycache__/\n.claude/\n")
+    (path / ".gitignore").write_text(
+        (path / ".gitignore").read_text() + ".hypothesis/\n.astro/\ndist/\ntest-results/\n.pnpm-store/\n.wrangler/\n"
+    )
     git("add", ".gitignore", cwd=path)
     git("commit", "--quiet", "-m", "ignore", cwd=path)
     merged["feat/done"] = git("rev-parse", "HEAD", cwd=path)
@@ -349,7 +352,18 @@ def merged_worktree_with_ignored(primary: Path, merged: dict[str, str], *ignored
 
 
 @pytest.mark.parametrize(
-    "name", [".venv/bin/python", "node_modules/pkg/index.js", "src/__pycache__/a.pyc", "result-1"]
+    "name",
+    [
+        ".venv/bin/python",
+        "node_modules/pkg/index.js",
+        "src/__pycache__/a.pyc",
+        "result-1",
+        ".hypothesis/constants/a",
+        ".astro/types.d.ts",
+        "dist/index.js",
+        "test-results/.last-run.json",
+        ".pnpm-store/v3/files/00",
+    ],
 )
 def test_regenerable_ignored_files_do_not_keep_a_merged_worktree(
     primary: Path, merged: dict[str, str], name: str
@@ -370,7 +384,15 @@ def test_other_ignored_files_keep_the_worktree_and_are_reported(primary: Path, m
     assert ".venv" not in result.stdout
 
 
-@pytest.mark.parametrize("name", [".claude/.cc-writes", ".claude/.cc-writes/session.json"])
+@pytest.mark.parametrize(
+    "name",
+    [
+        ".claude/.cc-writes",
+        ".claude/.cc-writes/session.json",
+        "agents/hooks/.claude/.cc-writes/a",
+        "a/b/.claude/.cc-writes",
+    ],
+)
 def test_claude_code_session_files_do_not_keep_a_merged_worktree(
     primary: Path, merged: dict[str, str], name: str
 ) -> None:
@@ -395,6 +417,18 @@ def test_session_files_beside_tracked_claude_files_do_not_keep_a_merged_worktree
     (path / ".claude/.cc-writes").write_text("")
     assert cleanup(primary).returncode == 0
     assert not path.exists()
+
+
+def test_wrangler_state_may_hold_local_data_so_it_keeps_the_worktree(primary: Path, merged: dict[str, str]) -> None:
+    path = merged_worktree_with_ignored(primary, merged, ".wrangler/state/v3/d1/db.sqlite")
+    assert cleanup(primary).returncode == 0
+    assert (path / ".wrangler/state/v3/d1/db.sqlite").exists()
+
+
+def test_other_files_in_a_nested_claude_directory_keep_the_worktree(primary: Path, merged: dict[str, str]) -> None:
+    path = merged_worktree_with_ignored(primary, merged, "docs/.claude/.cc-writes", "docs/.claude/settings.local.json")
+    cleanup(primary)
+    assert (path / "docs/.claude/settings.local.json").exists()
 
 
 def test_other_files_under_claude_keep_the_worktree_beside_session_files(

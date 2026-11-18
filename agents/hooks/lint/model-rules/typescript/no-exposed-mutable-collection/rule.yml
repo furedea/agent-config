@@ -9,6 +9,8 @@ state: local
 # The cutoff is jev-lint's fitted midpoint on this folder's fixtures (4 violations, 4 conforming cases, 3 passes,
 # means, #220): the highest conforming case scored 0.89 (0.91 in its worst pass) and the lowest violation 0.95 (0.95
 # in its worst pass). A fit on so few cases is not a calibration, so the rule stays advisory (ADR-0021).
+# Provisional: the worst passes leave about 0.02 on each side, so a re-run can flip the plain-data-record case
+# (CsvRow). The criteria's exception for plain data records needs tightening and a refit before this value is relied on.
 threshold: 0.93
 axis: file
 severity: warning

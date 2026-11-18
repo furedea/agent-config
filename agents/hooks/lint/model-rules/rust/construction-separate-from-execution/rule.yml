@@ -22,9 +22,11 @@ ask: >-
 criteria:
   "true": >-
     The body constructs a service, client, connection, repository, parser or similar collaborator, configures it
-    (options, credentials, wiring), and then drives the business logic with it, so that testing the logic requires
-    building the collaborator inside this function.
+    (options, credentials, wiring), and then itself performs the business logic with it: it loops, branches, filters
+    or calculates over what the collaborator returns, so that testing that logic requires building the collaborator
+    inside this function.
   "false": >-
-    The collaborator is passed in, or the function only constructs and returns (a factory, a builder, a composition
-    root), or only executes with what it was given. Creating plain data, value objects, local collections or
-    short-lived helpers is not a violation.
+    The collaborator is passed in; or the function only constructs and returns it (a factory, a builder, a `new`); or
+    it is a composition root that wires collaborators together and hands control to one call such as `app.run()`,
+    doing no business logic of its own. Creating plain data, value objects, local collections or a short-lived helper
+    over in-memory data is not a violation.

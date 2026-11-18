@@ -213,8 +213,8 @@ def test_rust_rules_select_the_functions_they_ask_about(repository: Path) -> Non
     }
 
 
-# The rules that must ship an eval suite: every Go rule (None), and the first three Rust rules.
-SUITE_RULE_IDS: dict[str, set[str] | None] = {"go": None, "rust": RULE_IDS}
+# The rules that must ship an eval suite: every Go and every Rust rule (None).
+SUITE_RULE_IDS: dict[str, set[str] | None] = {"go": None, "rust": None}
 
 
 @pytest.mark.parametrize("language", ["go", "rust"])

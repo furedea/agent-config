@@ -1,6 +1,8 @@
 # M-32 Law of Demeter (agents/AGENTS.md: "prefer DRY, YAGNI, and Law of Demeter"). Advisory: the Stop hook reports
 # findings and never promotes this rule to a gate (ADR-0021). Selected by a call chain of three member accesses or
-# more; the criteria exempt fluent builders and standard libraries.
+# more; the criteria exempt fluent builders and standard libraries. Each access before the last may be a field or a
+# method call: `$A.$B.$C.$D($$$)` alone matched only field chains, so `self.session.connection().pool().acquire()` was
+# never asked about.
 id: no-reaching-through-collaborators
 language: Rust
 kind: noul
@@ -12,7 +14,13 @@ severity: warning
 rule:
   all:
     - kind: function_item
-    - has: { pattern: $A.$B.$C.$D($$$), stopBy: end }
+    - has:
+        stopBy: end
+        any:
+          - pattern: $A.$B.$C.$D($$$)
+          - pattern: $A.$B($$$).$C.$D($$$)
+          - pattern: $A.$B.$C($$$).$D($$$)
+          - pattern: $A.$B($$$).$C($$$).$D($$$)
 ask: >-
   This function reaches through one collaborator into another's internals instead of asking its direct collaborator.
 criteria:

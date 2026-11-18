@@ -5,7 +5,9 @@ id: no-exposed-mutable-collection
 language: Rust
 kind: noul
 subject: node
-state: local
+# The struct that owns the field, its documentation and its other methods sit outside the method's `impl` block, so the
+# whole file is sent: under `local` every `&mut` collection looked like protected state (4 of 4 clean cases flagged).
+state: located
 threshold: 0.5
 axis: file
 severity: warning
@@ -20,10 +22,10 @@ ask: >-
   object noticing.
 criteria:
   "true": >-
-    The function returns a list, dict, set, map, slice, array or Vec that is the object's own field or an internal
-    buffer, by reference or as the same mutable instance, so the caller can add or remove elements without going
-    through the object's methods.
+    The function is a method that returns `&mut` access to a collection held in a private field of its own type, and
+    the type keeps a rule over that collection (sorted, unique, bounded, in step with another field, only partly
+    valid), stated in its documentation or enforced by its other methods, which the caller can now break.
   "false": >-
-    The function returns a copy, a read-only or immutable view (tuple, frozenset, shared reference, iterator, readonly
-    type), or a value the function built itself. Returning a collection from a plain data record that has no
-    invariants is not a violation.
+    The type keeps no rule over the collection: its fields are public anyway, or it is a plain data record or a
+    newtype over raw values documented as accepting any content. Also not a violation: a free function (not a method)
+    that returns a reference into a collection the caller passed in, or into an element it has just created there.

@@ -40,9 +40,10 @@ ask: >-
 criteria:
   "true": >-
     A parameter or value named for a closed set (a mode, kind, state, provider, policy) is a `&str` or `String` that is
-    compared or matched against string literals past the boundary that read it, or a `match` over a domain enum ends in
-    a `_` arm that hides new variants.
+    compared or matched against string literals past the boundary that read it, or a `match` over the project's own
+    domain enum ends in a `_` arm that hides its other variants.
   "false": >-
-    The function is the boundary that parses a string into an enum, the string is free text or an open set (a path, a
-    name, a message), or the `_` arm covers an open domain such as integers, strings or an error type's non-exhaustive
-    variants.
+    The function is the boundary that turns a string into an enum (`FromStr::from_str`, `TryFrom`, a `parse_*`
+    function), whose `_` arm returns an error for unknown input; the string is free text or an open set (a path, a
+    name, a message) that is only displayed, not compared; or the `_` arm covers an open domain: integers, strings, or
+    an enum from another crate such as `std::io::ErrorKind`, which is `#[non_exhaustive]` and requires a wildcard.

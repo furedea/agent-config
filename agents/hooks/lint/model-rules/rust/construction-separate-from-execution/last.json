@@ -1,0 +1,298 @@
+{
+  "schema": "jev-lint-eval-1",
+  "recorded": "2026-11-18T06:15:32.392Z",
+  "model": "jev-1.14.0",
+  "suite": "rust/construction-separate-from-execution",
+  "rules": [
+    {
+      "id": "construction-separate-from-execution",
+      "draft": "9da2c9df3f33",
+      "at": 0.5
+    }
+  ],
+  "cutoffs": {},
+  "passes": [
+    [
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/construction-separate-from-execution/fixtures/conforming.rs",
+        "line": 4,
+        "endLine": 11,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/construction-separate-from-execution/fixtures/conforming.rs",
+        "line": 13,
+        "endLine": 18,
+        "kind": "noul",
+        "value": 0.9,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/construction-separate-from-execution/fixtures/conforming.rs",
+        "line": 20,
+        "endLine": 23,
+        "kind": "noul",
+        "value": 0.19,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/construction-separate-from-execution/fixtures/conforming.rs",
+        "line": 31,
+        "endLine": 36,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/construction-separate-from-execution/fixtures/conforming.rs",
+        "line": 39,
+        "endLine": 41,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/construction-separate-from-execution/fixtures/violating.rs",
+        "line": 4,
+        "endLine": 14,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/construction-separate-from-execution/fixtures/violating.rs",
+        "line": 16,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.93,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/construction-separate-from-execution/fixtures/violating.rs",
+        "line": 24,
+        "endLine": 35,
+        "kind": "noul",
+        "value": 0.9,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/construction-separate-from-execution/fixtures/violating.rs",
+        "line": 37,
+        "endLine": 53,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/construction-separate-from-execution/fixtures/violating.rs",
+        "line": 55,
+        "endLine": 65,
+        "kind": "noul",
+        "value": 0.83,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/construction-separate-from-execution/fixtures/violating.rs",
+        "line": 4,
+        "endLine": 14,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/construction-separate-from-execution/fixtures/violating.rs",
+        "line": 16,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.93,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/construction-separate-from-execution/fixtures/violating.rs",
+        "line": 24,
+        "endLine": 35,
+        "kind": "noul",
+        "value": 0.89,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/construction-separate-from-execution/fixtures/violating.rs",
+        "line": 37,
+        "endLine": 53,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/construction-separate-from-execution/fixtures/violating.rs",
+        "line": 55,
+        "endLine": 65,
+        "kind": "noul",
+        "value": 0.81,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/construction-separate-from-execution/fixtures/conforming.rs",
+        "line": 4,
+        "endLine": 11,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/construction-separate-from-execution/fixtures/conforming.rs",
+        "line": 13,
+        "endLine": 18,
+        "kind": "noul",
+        "value": 0.89,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/construction-separate-from-execution/fixtures/conforming.rs",
+        "line": 20,
+        "endLine": 23,
+        "kind": "noul",
+        "value": 0.19,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/construction-separate-from-execution/fixtures/conforming.rs",
+        "line": 31,
+        "endLine": 36,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/construction-separate-from-execution/fixtures/conforming.rs",
+        "line": 39,
+        "endLine": 41,
+        "kind": "noul",
+        "value": 0.03,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/construction-separate-from-execution/fixtures/conforming.rs",
+        "line": 4,
+        "endLine": 11,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/construction-separate-from-execution/fixtures/conforming.rs",
+        "line": 13,
+        "endLine": 18,
+        "kind": "noul",
+        "value": 0.89,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/construction-separate-from-execution/fixtures/conforming.rs",
+        "line": 20,
+        "endLine": 23,
+        "kind": "noul",
+        "value": 0.15,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/construction-separate-from-execution/fixtures/conforming.rs",
+        "line": 31,
+        "endLine": 36,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/construction-separate-from-execution/fixtures/conforming.rs",
+        "line": 39,
+        "endLine": 41,
+        "kind": "noul",
+        "value": 0.03,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/construction-separate-from-execution/fixtures/violating.rs",
+        "line": 4,
+        "endLine": 14,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/construction-separate-from-execution/fixtures/violating.rs",
+        "line": 16,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.94,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/construction-separate-from-execution/fixtures/violating.rs",
+        "line": 24,
+        "endLine": 35,
+        "kind": "noul",
+        "value": 0.91,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/construction-separate-from-execution/fixtures/violating.rs",
+        "line": 37,
+        "endLine": 53,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/construction-separate-from-execution/fixtures/violating.rs",
+        "line": 55,
+        "endLine": 65,
+        "kind": "noul",
+        "value": 0.84,
+        "confidence": null
+      }
+    ]
+  ],
+  "spent": {
+    "calls": 6,
+    "inputTokens": 13845,
+    "usd": 0.00058149,
+    "ms": 270
+  }
+}

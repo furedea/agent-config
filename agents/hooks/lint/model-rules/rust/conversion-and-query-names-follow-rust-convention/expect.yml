@@ -1,0 +1,19 @@
+default: clean
+# Lines are the first line of each function; a window of 1 keeps neighbouring subjects apart.
+# violating.rs: every subject breaks the rule. conforming.rs: every subject keeps it, and most sit near the boundary
+# that the criteria's false side names.
+fixtures/violating.rs:
+  - { line: 8, label: bad, window: 1 }
+  - { line: 12, label: bad, window: 1 }
+  - { line: 16, label: bad, window: 1 }
+  - { line: 20, label: bad, window: 1 }
+  - { line: 24, label: bad, window: 1 }
+  - { line: 29, label: bad, window: 1 }
+fixtures/conforming.rs:
+  - { line: 11, label: clean, window: 1 }
+  - { line: 15, label: clean, window: 1 }
+  - { line: 19, label: clean, window: 1 }
+  - { line: 23, label: clean, window: 1 }
+  - { line: 27, label: clean, window: 1 }
+  - { line: 33, label: clean, window: 1 }
+  - { line: 37, label: clean, window: 1 }

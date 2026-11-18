@@ -1,0 +1,244 @@
+{
+  "schema": "jev-lint-eval-1",
+  "recorded": "2026-11-18T06:15:33.532Z",
+  "model": "jev-1.14.0",
+  "suite": "rust/no-exposed-mutable-collection",
+  "rules": [
+    {
+      "id": "no-exposed-mutable-collection",
+      "draft": "d5ec7790b362",
+      "at": 0.5
+    }
+  ],
+  "cutoffs": {},
+  "passes": [
+    [
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/no-exposed-mutable-collection/fixtures/conforming.rs",
+        "line": 10,
+        "endLine": 12,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/no-exposed-mutable-collection/fixtures/conforming.rs",
+        "line": 19,
+        "endLine": 21,
+        "kind": "noul",
+        "value": 0.9,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/no-exposed-mutable-collection/fixtures/conforming.rs",
+        "line": 24,
+        "endLine": 29,
+        "kind": "noul",
+        "value": 0.72,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/no-exposed-mutable-collection/fixtures/conforming.rs",
+        "line": 31,
+        "endLine": 34,
+        "kind": "noul",
+        "value": 0.67,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/no-exposed-mutable-collection/fixtures/violating.rs",
+        "line": 16,
+        "endLine": 18,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/no-exposed-mutable-collection/fixtures/violating.rs",
+        "line": 28,
+        "endLine": 30,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/no-exposed-mutable-collection/fixtures/violating.rs",
+        "line": 40,
+        "endLine": 42,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/no-exposed-mutable-collection/fixtures/violating.rs",
+        "line": 52,
+        "endLine": 54,
+        "kind": "noul",
+        "value": 0.94,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/no-exposed-mutable-collection/fixtures/conforming.rs",
+        "line": 10,
+        "endLine": 12,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/no-exposed-mutable-collection/fixtures/conforming.rs",
+        "line": 19,
+        "endLine": 21,
+        "kind": "noul",
+        "value": 0.89,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/no-exposed-mutable-collection/fixtures/conforming.rs",
+        "line": 24,
+        "endLine": 29,
+        "kind": "noul",
+        "value": 0.68,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/no-exposed-mutable-collection/fixtures/conforming.rs",
+        "line": 31,
+        "endLine": 34,
+        "kind": "noul",
+        "value": 0.7,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/no-exposed-mutable-collection/fixtures/violating.rs",
+        "line": 16,
+        "endLine": 18,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/no-exposed-mutable-collection/fixtures/violating.rs",
+        "line": 28,
+        "endLine": 30,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/no-exposed-mutable-collection/fixtures/violating.rs",
+        "line": 40,
+        "endLine": 42,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/no-exposed-mutable-collection/fixtures/violating.rs",
+        "line": 52,
+        "endLine": 54,
+        "kind": "noul",
+        "value": 0.93,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/no-exposed-mutable-collection/fixtures/conforming.rs",
+        "line": 10,
+        "endLine": 12,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/no-exposed-mutable-collection/fixtures/conforming.rs",
+        "line": 19,
+        "endLine": 21,
+        "kind": "noul",
+        "value": 0.9,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/no-exposed-mutable-collection/fixtures/conforming.rs",
+        "line": 24,
+        "endLine": 29,
+        "kind": "noul",
+        "value": 0.68,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/no-exposed-mutable-collection/fixtures/conforming.rs",
+        "line": 31,
+        "endLine": 34,
+        "kind": "noul",
+        "value": 0.7,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/no-exposed-mutable-collection/fixtures/violating.rs",
+        "line": 16,
+        "endLine": 18,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/no-exposed-mutable-collection/fixtures/violating.rs",
+        "line": 28,
+        "endLine": 30,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/no-exposed-mutable-collection/fixtures/violating.rs",
+        "line": 40,
+        "endLine": 42,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "/Users/kaito/.herdr/worktrees/agent-config/feat-fit-jev-rules-rust/agents/hooks/lint/model-rules/rust/no-exposed-mutable-collection/fixtures/violating.rs",
+        "line": 52,
+        "endLine": 54,
+        "kind": "noul",
+        "value": 0.94,
+        "confidence": null
+      }
+    ]
+  ],
+  "spent": {
+    "calls": 6,
+    "inputTokens": 10902,
+    "usd": 0.00045788400000000004,
+    "ms": 178
+  }
+}

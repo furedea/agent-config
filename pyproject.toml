@@ -7,7 +7,7 @@ dependencies = []
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
-testpaths = ["tests"]
+testpaths = ["tests", "tools/adr-check/tests"]
 addopts = ["-n", "auto"]
 markers = [
   "integration: requires installed toolchains, provider CLIs, or the managed macOS profile",
@@ -16,8 +16,11 @@ markers = [
 
 [tool.deptry]
 ignore_notebooks = true
+
 # Standalone hooks import these adjacent repository modules after trusted path setup.
 known_first_party = [
+  "adrcheck",
+  "adr_check_scan",
   "audit_log",
   "automation_options",
   "automation_paths",
@@ -90,11 +93,23 @@ known_first_party = [
   "verification_session",
 ]
 
+[tool.deptry.per_rule_ignores]
+# tools/adr-check declares its own dependencies in its pyproject.toml; the root sees them as transitive through the
+# adr-check workspace member, and sees the member's tests as importing a dev dependency.
+DEP003 = ["jsonschema", "ruamel"]
+DEP004 = ["pytest"]
+
 [tool.vulture]
-paths = ["agents", "scripts", "tests"]
+paths = ["agents", "scripts", "tests", "tools/adr-check/src", "tools/adr-check/tests"]
 min_confidence = 100
 sort_by_size = true
 exclude = [".venv", "build", "dist", "*/agents/hooks/lint/model-rules/*/*/fixtures/*"]
+
+[tool.uv.workspace]
+members = ["tools/adr-check"]
+
+[tool.uv.sources]
+adr-check = { workspace = true }
 
 [tool.uv]
 managed = true
@@ -107,15 +122,17 @@ lint = [
   "ruff==0.17.0",
 ]
 typecheck = [
+  "adr-check",
   "ty==0.0.87",
 ]
 test = [
-  "hypothesis>=6.170.14",
+  "adr-check",
+  "hypothesis==6.170.14",
   "pytest==9.0.3",
   "pytest-cov==7.1.0",
   "pytest-mock==3.15.1",
   "pytest-xdist==3.8.0",
-  "z3-solver>=5.3.3.0",
+  "z3-solver==5.3.3.0",
 ]
 audit = [
   "deptry==0.25.1",
@@ -124,7 +141,7 @@ audit = [
 
 [tool.ruff]
 target-version = "py315"
-src = ["agents", "scripts", "tests"]
+src = ["agents", "scripts", "tests", "tools/adr-check/src", "tools/adr-check/tests"]
 line-length = 119
 # Eval fixtures of the model rules plant the defects a rule must find and the code it must leave alone; they are
 # read by the model, never imported, so linting them would only report the planted code.
@@ -200,6 +217,7 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["D", "PLR0913"]
+"tools/adr-check/tests/**" = ["D", "PLR0913"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
@@ -212,7 +230,7 @@ max-args = 3
 max-nested-blocks = 2
 
 [tool.ty.src]
-include = ["agents", "scripts", "tests"]
+include = ["agents", "scripts", "tests", "tools/adr-check/src", "tools/adr-check/tests"]
 # Model-rule eval fixtures are planted code the model reads, not modules; see tool.ruff.extend-exclude.
 exclude = ["agents/hooks/lint/model-rules/*/*/fixtures"]
 

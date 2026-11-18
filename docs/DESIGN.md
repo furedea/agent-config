@@ -134,6 +134,16 @@ few cases is not a calibration, so the prose stays in `AGENTS.md` and the style 
     system's, by absolute path, with only options the BSD and GNU versions share), so it still ends within its
     budget (at most 60 seconds, plus 5) if Claude Code kills the hook; without `/usr/bin/timeout` only the hook's
     own process-group kill applies (see ADR-0021).
+- **ADR rules.** Two advisory rules under `model-rules/markdown/` judge how an ADR is written: `adr-states-why` (the
+    chosen option carries a justification, not only a description) and `adr-options-are-real-alternatives` (each
+    rejected option is a plausible alternative with a reason). Their subject is the whole document. jev-lint cannot
+    restrict a `Text` rule to a path, so the hook does: rule folders named `adr-*` are reviewed apart from the other
+    rules, and only with the ADRs under `docs/adr/` that are new or whose body, the text after the front matter,
+    differs from the revision the review is based on (`select()` in `model_rules_files.py`); other Markdown and
+    front-matter-only edits never reach them. Whether the options were really considered cannot be read from the
+    document, so the rules judge the reason and its plausibility. Their cutoffs stay 0.5: the fixtures separate with a wide
+    margin (highest clean 0.03 and 0.13, lowest bad 0.91 and 0.94), but ten cases are not a calibration. They run only in
+    the Stop hook, never in CI.
 - **What is judged.** `jev-lint review` has no single mode for "everything since the session started": with
     `--base <commit>` it judges the commits since that commit (`base...HEAD`), and without it the uncommitted changes
     and the files git does not track yet (limited here to the files the session changed since registration, so

@@ -10,7 +10,7 @@ SCRIPT = Path(__file__).resolve()
 sys.path.insert(0, str(SCRIPT.parent))
 sys.path.insert(0, str(SCRIPT.parent / "lib"))
 
-from lib import formatter_policy, hook_input, lint_engine, process_runner, static_rule_scan
+from lib import adr_check_scan, formatter_policy, hook_input, lint_engine, process_runner, static_rule_scan
 
 EXTENSIONS = hook_input.EXTENSIONS
 LANGUAGES = frozenset(EXTENSIONS.values())
@@ -55,16 +55,22 @@ def block(message: str) -> dict[str, object]:
 
 
 def diagnostics(payload: dict, kind: str | None = None) -> Report:
-    """Normalize a provider payload, run the shared lint engine, then report ast-grep rule findings.
+    """Normalize a provider payload, run the shared lint engine, then report ast-grep rule and ADR findings.
 
     Linter diagnostics are advice. The rules scan the files after formatting, so their line numbers match what
     the agent now sees.
     """
     if not isinstance(payload, dict):
-        raise TypeError("hook payload must be an object")
+        raise TypeError("cannot compute diagnostics: hook payload must be an object")
     targets = lint_engine.supported_targets(target_paths(payload), EXTENSIONS, kind)
     lint = Report(advice=lint_engine.diagnostics(targets, check_file))
-    return lint + static_rule_scan.diagnostics(target.path for target in targets)
+    # A deleted ADR leaves no target, but references to it elsewhere in its directory now break.
+    adr_paths = target_paths(payload) if kind in (None, "md") else []
+    return (
+        lint
+        + static_rule_scan.diagnostics(target.path for target in targets)
+        + Report(advice=adr_check_scan.diagnostics(adr_paths))
+    )
 
 
 def emit(

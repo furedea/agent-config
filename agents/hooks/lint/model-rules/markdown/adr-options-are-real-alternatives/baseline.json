@@ -1,0 +1,298 @@
+{
+  "schema": "jev-lint-eval-1",
+  "recorded": "2026-11-17T14:09:11.523Z",
+  "model": "jev-1.14.0",
+  "suite": "markdown/adr-options-are-real-alternatives",
+  "rules": [
+    {
+      "id": "adr-options-are-real-alternatives",
+      "draft": "875f2769c500",
+      "at": 0.5
+    }
+  ],
+  "cutoffs": {},
+  "passes": [
+    [
+      {
+        "rule": "adr-options-are-real-alternatives",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-options-are-real-alternatives/fixtures/clean_do_nothing_with_cost.md",
+        "line": 1,
+        "endLine": 24,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "adr-options-are-real-alternatives",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-options-are-real-alternatives/fixtures/clean_options_with_reasons.md",
+        "line": 1,
+        "endLine": 30,
+        "kind": "noul",
+        "value": 0.02,
+        "confidence": null
+      },
+      {
+        "rule": "adr-options-are-real-alternatives",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-options-are-real-alternatives/fixtures/clean_no_rejected_option.md",
+        "line": 1,
+        "endLine": 20,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "adr-options-are-real-alternatives",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-options-are-real-alternatives/fixtures/bad_padding_around_chosen.md",
+        "line": 1,
+        "endLine": 26,
+        "kind": "noul",
+        "value": 0.94,
+        "confidence": null
+      },
+      {
+        "rule": "adr-options-are-real-alternatives",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-options-are-real-alternatives/fixtures/bad_option_same_as_chosen.md",
+        "line": 1,
+        "endLine": 24,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "adr-options-are-real-alternatives",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-options-are-real-alternatives/fixtures/bad_rejected_without_reason.md",
+        "line": 1,
+        "endLine": 27,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "adr-options-are-real-alternatives",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-options-are-real-alternatives/fixtures/clean_real_y_statement_audit_evidence.md",
+        "line": 1,
+        "endLine": 21,
+        "kind": "noul",
+        "value": 0.09,
+        "confidence": null
+      },
+      {
+        "rule": "adr-options-are-real-alternatives",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-options-are-real-alternatives/fixtures/clean_real_madr_with_reasons.md",
+        "line": 1,
+        "endLine": 59,
+        "kind": "noul",
+        "value": 0.1,
+        "confidence": null
+      },
+      {
+        "rule": "adr-options-are-real-alternatives",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-options-are-real-alternatives/fixtures/clean_real_y_statement.md",
+        "line": 1,
+        "endLine": 19,
+        "kind": "noul",
+        "value": 0.11,
+        "confidence": null
+      },
+      {
+        "rule": "adr-options-are-real-alternatives",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-options-are-real-alternatives/fixtures/bad_straw_man_options.md",
+        "line": 1,
+        "endLine": 25,
+        "kind": "noul",
+        "value": 0.99,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "adr-options-are-real-alternatives",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-options-are-real-alternatives/fixtures/bad_straw_man_options.md",
+        "line": 1,
+        "endLine": 25,
+        "kind": "noul",
+        "value": 0.99,
+        "confidence": null
+      },
+      {
+        "rule": "adr-options-are-real-alternatives",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-options-are-real-alternatives/fixtures/clean_options_with_reasons.md",
+        "line": 1,
+        "endLine": 30,
+        "kind": "noul",
+        "value": 0.02,
+        "confidence": null
+      },
+      {
+        "rule": "adr-options-are-real-alternatives",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-options-are-real-alternatives/fixtures/clean_real_y_statement_audit_evidence.md",
+        "line": 1,
+        "endLine": 21,
+        "kind": "noul",
+        "value": 0.09,
+        "confidence": null
+      },
+      {
+        "rule": "adr-options-are-real-alternatives",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-options-are-real-alternatives/fixtures/bad_option_same_as_chosen.md",
+        "line": 1,
+        "endLine": 24,
+        "kind": "noul",
+        "value": 0.99,
+        "confidence": null
+      },
+      {
+        "rule": "adr-options-are-real-alternatives",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-options-are-real-alternatives/fixtures/clean_no_rejected_option.md",
+        "line": 1,
+        "endLine": 20,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "adr-options-are-real-alternatives",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-options-are-real-alternatives/fixtures/clean_real_madr_with_reasons.md",
+        "line": 1,
+        "endLine": 59,
+        "kind": "noul",
+        "value": 0.12,
+        "confidence": null
+      },
+      {
+        "rule": "adr-options-are-real-alternatives",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-options-are-real-alternatives/fixtures/clean_real_y_statement.md",
+        "line": 1,
+        "endLine": 19,
+        "kind": "noul",
+        "value": 0.15,
+        "confidence": null
+      },
+      {
+        "rule": "adr-options-are-real-alternatives",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-options-are-real-alternatives/fixtures/clean_do_nothing_with_cost.md",
+        "line": 1,
+        "endLine": 24,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "adr-options-are-real-alternatives",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-options-are-real-alternatives/fixtures/bad_padding_around_chosen.md",
+        "line": 1,
+        "endLine": 26,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "adr-options-are-real-alternatives",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-options-are-real-alternatives/fixtures/bad_rejected_without_reason.md",
+        "line": 1,
+        "endLine": 27,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "adr-options-are-real-alternatives",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-options-are-real-alternatives/fixtures/bad_option_same_as_chosen.md",
+        "line": 1,
+        "endLine": 24,
+        "kind": "noul",
+        "value": 0.99,
+        "confidence": null
+      },
+      {
+        "rule": "adr-options-are-real-alternatives",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-options-are-real-alternatives/fixtures/clean_real_y_statement.md",
+        "line": 1,
+        "endLine": 19,
+        "kind": "noul",
+        "value": 0.14,
+        "confidence": null
+      },
+      {
+        "rule": "adr-options-are-real-alternatives",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-options-are-real-alternatives/fixtures/clean_options_with_reasons.md",
+        "line": 1,
+        "endLine": 30,
+        "kind": "noul",
+        "value": 0.02,
+        "confidence": null
+      },
+      {
+        "rule": "adr-options-are-real-alternatives",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-options-are-real-alternatives/fixtures/bad_padding_around_chosen.md",
+        "line": 1,
+        "endLine": 26,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "adr-options-are-real-alternatives",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-options-are-real-alternatives/fixtures/clean_no_rejected_option.md",
+        "line": 1,
+        "endLine": 20,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "adr-options-are-real-alternatives",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-options-are-real-alternatives/fixtures/bad_straw_man_options.md",
+        "line": 1,
+        "endLine": 25,
+        "kind": "noul",
+        "value": 0.99,
+        "confidence": null
+      },
+      {
+        "rule": "adr-options-are-real-alternatives",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-options-are-real-alternatives/fixtures/bad_rejected_without_reason.md",
+        "line": 1,
+        "endLine": 27,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "adr-options-are-real-alternatives",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-options-are-real-alternatives/fixtures/clean_real_y_statement_audit_evidence.md",
+        "line": 1,
+        "endLine": 21,
+        "kind": "noul",
+        "value": 0.09,
+        "confidence": null
+      },
+      {
+        "rule": "adr-options-are-real-alternatives",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-options-are-real-alternatives/fixtures/clean_do_nothing_with_cost.md",
+        "line": 1,
+        "endLine": 24,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "adr-options-are-real-alternatives",
+        "file": "agents/hooks/lint/model-rules/markdown/adr-options-are-real-alternatives/fixtures/clean_real_madr_with_reasons.md",
+        "line": 1,
+        "endLine": 59,
+        "kind": "noul",
+        "value": 0.17,
+        "confidence": null
+      }
+    ]
+  ],
+  "spent": {
+    "calls": 30,
+    "inputTokens": 29478,
+    "usd": 0.001238076,
+    "ms": 4648
+  }
+}

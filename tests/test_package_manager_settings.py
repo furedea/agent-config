@@ -46,10 +46,10 @@ def claude_settings(agent_harness: CliRunner, tmp_path_factory: pytest.TempPathF
     return json.loads(path.read_text())
 
 
-@pytest.mark.integration
 @pytest.mark.parametrize("path", PINNED_PATHS)
-def test_claude_shell_commands_cannot_write_pinned_package_manager_settings(claude_settings: dict, path: str) -> None:
-    assert path in claude_settings["sandbox"]["filesystem"]["denyWrite"]
+def test_claude_shell_commands_cannot_write_pinned_package_manager_settings(path: str) -> None:
+    sandbox = json.loads((REPO_ROOT / "agents/claude/settings.json").read_text())["sandbox"]
+    assert path in sandbox["filesystem"]["denyWrite"]
 
 
 @pytest.mark.integration

@@ -1,0 +1,298 @@
+{
+  "schema": "jev-lint-eval-1",
+  "recorded": "2026-11-18T06:21:55.345Z",
+  "model": "jev-1.14.0",
+  "suite": "python/construction-placement-by-purity",
+  "rules": [
+    {
+      "id": "construction-placement-by-purity",
+      "draft": "a3d9aefceb32",
+      "at": 0.5
+    }
+  ],
+  "cutoffs": {},
+  "passes": [
+    [
+      {
+        "rule": "construction-placement-by-purity",
+        "file": "agents/hooks/lint/model-rules/python/construction-placement-by-purity/fixtures/subjects.py",
+        "line": 16,
+        "endLine": 18,
+        "kind": "noul",
+        "value": 0.03,
+        "confidence": null
+      },
+      {
+        "rule": "construction-placement-by-purity",
+        "file": "agents/hooks/lint/model-rules/python/construction-placement-by-purity/fixtures/subjects.py",
+        "line": 21,
+        "endLine": 24,
+        "kind": "noul",
+        "value": 0.92,
+        "confidence": null
+      },
+      {
+        "rule": "construction-placement-by-purity",
+        "file": "agents/hooks/lint/model-rules/python/construction-placement-by-purity/fixtures/subjects.py",
+        "line": 32,
+        "endLine": 33,
+        "kind": "noul",
+        "value": 0.92,
+        "confidence": null
+      },
+      {
+        "rule": "construction-placement-by-purity",
+        "file": "agents/hooks/lint/model-rules/python/construction-placement-by-purity/fixtures/subjects.py",
+        "line": 36,
+        "endLine": 37,
+        "kind": "noul",
+        "value": 0.9,
+        "confidence": null
+      },
+      {
+        "rule": "construction-placement-by-purity",
+        "file": "agents/hooks/lint/model-rules/python/construction-placement-by-purity/fixtures/subjects.py",
+        "line": 46,
+        "endLine": 47,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "construction-placement-by-purity",
+        "file": "agents/hooks/lint/model-rules/python/construction-placement-by-purity/fixtures/subjects.py",
+        "line": 50,
+        "endLine": 51,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "construction-placement-by-purity",
+        "file": "agents/hooks/lint/model-rules/python/construction-placement-by-purity/fixtures/subjects.py",
+        "line": 54,
+        "endLine": 55,
+        "kind": "noul",
+        "value": 0.93,
+        "confidence": null
+      },
+      {
+        "rule": "construction-placement-by-purity",
+        "file": "agents/hooks/lint/model-rules/python/construction-placement-by-purity/fixtures/subjects.py",
+        "line": 58,
+        "endLine": 59,
+        "kind": "noul",
+        "value": 0.12,
+        "confidence": null
+      },
+      {
+        "rule": "construction-placement-by-purity",
+        "file": "agents/hooks/lint/model-rules/python/construction-placement-by-purity/fixtures/subjects.py",
+        "line": 62,
+        "endLine": 63,
+        "kind": "noul",
+        "value": 0.46,
+        "confidence": null
+      },
+      {
+        "rule": "construction-placement-by-purity",
+        "file": "agents/hooks/lint/model-rules/python/construction-placement-by-purity/fixtures/subjects.py",
+        "line": 66,
+        "endLine": 68,
+        "kind": "noul",
+        "value": 0.25,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "construction-placement-by-purity",
+        "file": "agents/hooks/lint/model-rules/python/construction-placement-by-purity/fixtures/subjects.py",
+        "line": 16,
+        "endLine": 18,
+        "kind": "noul",
+        "value": 0.03,
+        "confidence": null
+      },
+      {
+        "rule": "construction-placement-by-purity",
+        "file": "agents/hooks/lint/model-rules/python/construction-placement-by-purity/fixtures/subjects.py",
+        "line": 21,
+        "endLine": 24,
+        "kind": "noul",
+        "value": 0.91,
+        "confidence": null
+      },
+      {
+        "rule": "construction-placement-by-purity",
+        "file": "agents/hooks/lint/model-rules/python/construction-placement-by-purity/fixtures/subjects.py",
+        "line": 32,
+        "endLine": 33,
+        "kind": "noul",
+        "value": 0.92,
+        "confidence": null
+      },
+      {
+        "rule": "construction-placement-by-purity",
+        "file": "agents/hooks/lint/model-rules/python/construction-placement-by-purity/fixtures/subjects.py",
+        "line": 36,
+        "endLine": 37,
+        "kind": "noul",
+        "value": 0.91,
+        "confidence": null
+      },
+      {
+        "rule": "construction-placement-by-purity",
+        "file": "agents/hooks/lint/model-rules/python/construction-placement-by-purity/fixtures/subjects.py",
+        "line": 46,
+        "endLine": 47,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "construction-placement-by-purity",
+        "file": "agents/hooks/lint/model-rules/python/construction-placement-by-purity/fixtures/subjects.py",
+        "line": 50,
+        "endLine": 51,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "construction-placement-by-purity",
+        "file": "agents/hooks/lint/model-rules/python/construction-placement-by-purity/fixtures/subjects.py",
+        "line": 54,
+        "endLine": 55,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "construction-placement-by-purity",
+        "file": "agents/hooks/lint/model-rules/python/construction-placement-by-purity/fixtures/subjects.py",
+        "line": 58,
+        "endLine": 59,
+        "kind": "noul",
+        "value": 0.11,
+        "confidence": null
+      },
+      {
+        "rule": "construction-placement-by-purity",
+        "file": "agents/hooks/lint/model-rules/python/construction-placement-by-purity/fixtures/subjects.py",
+        "line": 62,
+        "endLine": 63,
+        "kind": "noul",
+        "value": 0.35,
+        "confidence": null
+      },
+      {
+        "rule": "construction-placement-by-purity",
+        "file": "agents/hooks/lint/model-rules/python/construction-placement-by-purity/fixtures/subjects.py",
+        "line": 66,
+        "endLine": 68,
+        "kind": "noul",
+        "value": 0.29,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "construction-placement-by-purity",
+        "file": "agents/hooks/lint/model-rules/python/construction-placement-by-purity/fixtures/subjects.py",
+        "line": 16,
+        "endLine": 18,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "construction-placement-by-purity",
+        "file": "agents/hooks/lint/model-rules/python/construction-placement-by-purity/fixtures/subjects.py",
+        "line": 21,
+        "endLine": 24,
+        "kind": "noul",
+        "value": 0.92,
+        "confidence": null
+      },
+      {
+        "rule": "construction-placement-by-purity",
+        "file": "agents/hooks/lint/model-rules/python/construction-placement-by-purity/fixtures/subjects.py",
+        "line": 32,
+        "endLine": 33,
+        "kind": "noul",
+        "value": 0.92,
+        "confidence": null
+      },
+      {
+        "rule": "construction-placement-by-purity",
+        "file": "agents/hooks/lint/model-rules/python/construction-placement-by-purity/fixtures/subjects.py",
+        "line": 36,
+        "endLine": 37,
+        "kind": "noul",
+        "value": 0.91,
+        "confidence": null
+      },
+      {
+        "rule": "construction-placement-by-purity",
+        "file": "agents/hooks/lint/model-rules/python/construction-placement-by-purity/fixtures/subjects.py",
+        "line": 46,
+        "endLine": 47,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "construction-placement-by-purity",
+        "file": "agents/hooks/lint/model-rules/python/construction-placement-by-purity/fixtures/subjects.py",
+        "line": 50,
+        "endLine": 51,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "construction-placement-by-purity",
+        "file": "agents/hooks/lint/model-rules/python/construction-placement-by-purity/fixtures/subjects.py",
+        "line": 54,
+        "endLine": 55,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "construction-placement-by-purity",
+        "file": "agents/hooks/lint/model-rules/python/construction-placement-by-purity/fixtures/subjects.py",
+        "line": 58,
+        "endLine": 59,
+        "kind": "noul",
+        "value": 0.11,
+        "confidence": null
+      },
+      {
+        "rule": "construction-placement-by-purity",
+        "file": "agents/hooks/lint/model-rules/python/construction-placement-by-purity/fixtures/subjects.py",
+        "line": 62,
+        "endLine": 63,
+        "kind": "noul",
+        "value": 0.42,
+        "confidence": null
+      },
+      {
+        "rule": "construction-placement-by-purity",
+        "file": "agents/hooks/lint/model-rules/python/construction-placement-by-purity/fixtures/subjects.py",
+        "line": 66,
+        "endLine": 68,
+        "kind": "noul",
+        "value": 0.31,
+        "confidence": null
+      }
+    ]
+  ],
+  "spent": {
+    "calls": 3,
+    "inputTokens": 13428,
+    "usd": 0.0005639760000000001,
+    "ms": 194
+  }
+}

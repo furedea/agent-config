@@ -1,0 +1,244 @@
+{
+  "schema": "jev-lint-eval-1",
+  "recorded": "2026-11-18T06:21:56.271Z",
+  "model": "jev-1.14.0",
+  "suite": "python/fixture-justified",
+  "rules": [
+    {
+      "id": "fixture-justified",
+      "draft": "2ebd7a163a70",
+      "at": 0.5
+    }
+  ],
+  "cutoffs": {},
+  "passes": [
+    [
+      {
+        "rule": "fixture-justified",
+        "file": "agents/hooks/lint/model-rules/python/fixture-justified/fixtures/test_needs_arguments.py",
+        "line": 6,
+        "endLine": 8,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "fixture-justified",
+        "file": "agents/hooks/lint/model-rules/python/fixture-justified/fixtures/conftest.py",
+        "line": 6,
+        "endLine": 8,
+        "kind": "noul",
+        "value": 0.15,
+        "confidence": null
+      },
+      {
+        "rule": "fixture-justified",
+        "file": "agents/hooks/lint/model-rules/python/fixture-justified/fixtures/test_expensive_module_scope.py",
+        "line": 6,
+        "endLine": 10,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "fixture-justified",
+        "file": "agents/hooks/lint/model-rules/python/fixture-justified/fixtures/test_shared.py",
+        "line": 6,
+        "endLine": 8,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "fixture-justified",
+        "file": "agents/hooks/lint/model-rules/python/fixture-justified/fixtures/test_single_use.py",
+        "line": 6,
+        "endLine": 8,
+        "kind": "noul",
+        "value": 0.94,
+        "confidence": null
+      },
+      {
+        "rule": "fixture-justified",
+        "file": "agents/hooks/lint/model-rules/python/fixture-justified/fixtures/test_session_scope.py",
+        "line": 6,
+        "endLine": 8,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "fixture-justified",
+        "file": "agents/hooks/lint/model-rules/python/fixture-justified/fixtures/test_unused.py",
+        "line": 6,
+        "endLine": 8,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "fixture-justified",
+        "file": "agents/hooks/lint/model-rules/python/fixture-justified/fixtures/test_teardown.py",
+        "line": 8,
+        "endLine": 12,
+        "kind": "noul",
+        "value": 0.09,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "fixture-justified",
+        "file": "agents/hooks/lint/model-rules/python/fixture-justified/fixtures/test_shared.py",
+        "line": 6,
+        "endLine": 8,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "fixture-justified",
+        "file": "agents/hooks/lint/model-rules/python/fixture-justified/fixtures/test_session_scope.py",
+        "line": 6,
+        "endLine": 8,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "fixture-justified",
+        "file": "agents/hooks/lint/model-rules/python/fixture-justified/fixtures/test_needs_arguments.py",
+        "line": 6,
+        "endLine": 8,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "fixture-justified",
+        "file": "agents/hooks/lint/model-rules/python/fixture-justified/fixtures/test_single_use.py",
+        "line": 6,
+        "endLine": 8,
+        "kind": "noul",
+        "value": 0.93,
+        "confidence": null
+      },
+      {
+        "rule": "fixture-justified",
+        "file": "agents/hooks/lint/model-rules/python/fixture-justified/fixtures/conftest.py",
+        "line": 6,
+        "endLine": 8,
+        "kind": "noul",
+        "value": 0.12,
+        "confidence": null
+      },
+      {
+        "rule": "fixture-justified",
+        "file": "agents/hooks/lint/model-rules/python/fixture-justified/fixtures/test_unused.py",
+        "line": 6,
+        "endLine": 8,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "fixture-justified",
+        "file": "agents/hooks/lint/model-rules/python/fixture-justified/fixtures/test_teardown.py",
+        "line": 8,
+        "endLine": 12,
+        "kind": "noul",
+        "value": 0.12,
+        "confidence": null
+      },
+      {
+        "rule": "fixture-justified",
+        "file": "agents/hooks/lint/model-rules/python/fixture-justified/fixtures/test_expensive_module_scope.py",
+        "line": 6,
+        "endLine": 10,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "fixture-justified",
+        "file": "agents/hooks/lint/model-rules/python/fixture-justified/fixtures/test_session_scope.py",
+        "line": 6,
+        "endLine": 8,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "fixture-justified",
+        "file": "agents/hooks/lint/model-rules/python/fixture-justified/fixtures/test_unused.py",
+        "line": 6,
+        "endLine": 8,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "fixture-justified",
+        "file": "agents/hooks/lint/model-rules/python/fixture-justified/fixtures/test_teardown.py",
+        "line": 8,
+        "endLine": 12,
+        "kind": "noul",
+        "value": 0.13,
+        "confidence": null
+      },
+      {
+        "rule": "fixture-justified",
+        "file": "agents/hooks/lint/model-rules/python/fixture-justified/fixtures/conftest.py",
+        "line": 6,
+        "endLine": 8,
+        "kind": "noul",
+        "value": 0.13,
+        "confidence": null
+      },
+      {
+        "rule": "fixture-justified",
+        "file": "agents/hooks/lint/model-rules/python/fixture-justified/fixtures/test_single_use.py",
+        "line": 6,
+        "endLine": 8,
+        "kind": "noul",
+        "value": 0.94,
+        "confidence": null
+      },
+      {
+        "rule": "fixture-justified",
+        "file": "agents/hooks/lint/model-rules/python/fixture-justified/fixtures/test_shared.py",
+        "line": 6,
+        "endLine": 8,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "fixture-justified",
+        "file": "agents/hooks/lint/model-rules/python/fixture-justified/fixtures/test_expensive_module_scope.py",
+        "line": 6,
+        "endLine": 10,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "fixture-justified",
+        "file": "agents/hooks/lint/model-rules/python/fixture-justified/fixtures/test_needs_arguments.py",
+        "line": 6,
+        "endLine": 8,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      }
+    ]
+  ],
+  "spent": {
+    "calls": 24,
+    "inputTokens": 19179,
+    "usd": 0.0008055180000000001,
+    "ms": 267
+  }
+}

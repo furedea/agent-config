@@ -1,12 +1,12 @@
 {
   "schema": "jev-lint-eval-1",
-  "recorded": "2026-11-18T06:21:57.120Z",
+  "recorded": "2026-11-18T07:08:24.213Z",
   "model": "jev-1.14.0",
   "suite": "python/import-name-self-explanatory",
   "rules": [
     {
       "id": "import-name-self-explanatory",
-      "draft": "184c77387286",
+      "draft": "97b0b50a49b7",
       "at": 0.5
     }
   ],
@@ -19,7 +19,7 @@
         "line": 3,
         "endLine": 3,
         "kind": "noul",
-        "value": 0.63,
+        "value": 0.82,
         "confidence": null
       },
       {
@@ -28,7 +28,7 @@
         "line": 4,
         "endLine": 4,
         "kind": "noul",
-        "value": 0.79,
+        "value": 0.92,
         "confidence": null
       },
       {
@@ -37,7 +37,7 @@
         "line": 5,
         "endLine": 5,
         "kind": "noul",
-        "value": 0.78,
+        "value": 0.93,
         "confidence": null
       },
       {
@@ -46,7 +46,7 @@
         "line": 6,
         "endLine": 6,
         "kind": "noul",
-        "value": 0.47,
+        "value": 0.86,
         "confidence": null
       },
       {
@@ -55,7 +55,7 @@
         "line": 7,
         "endLine": 7,
         "kind": "noul",
-        "value": 0.87,
+        "value": 0.96,
         "confidence": null
       },
       {
@@ -73,7 +73,7 @@
         "line": 9,
         "endLine": 9,
         "kind": "noul",
-        "value": 0.09,
+        "value": 0.07,
         "confidence": null
       },
       {
@@ -82,7 +82,7 @@
         "line": 10,
         "endLine": 10,
         "kind": "noul",
-        "value": 0.43,
+        "value": 0.32,
         "confidence": null
       },
       {
@@ -91,7 +91,7 @@
         "line": 11,
         "endLine": 11,
         "kind": "noul",
-        "value": 0.45,
+        "value": 0.32,
         "confidence": null
       },
       {
@@ -100,7 +100,7 @@
         "line": 12,
         "endLine": 12,
         "kind": "noul",
-        "value": 0.56,
+        "value": 0.13,
         "confidence": null
       }
     ],
@@ -111,7 +111,7 @@
         "line": 3,
         "endLine": 3,
         "kind": "noul",
-        "value": 0.64,
+        "value": 0.83,
         "confidence": null
       },
       {
@@ -120,7 +120,7 @@
         "line": 4,
         "endLine": 4,
         "kind": "noul",
-        "value": 0.75,
+        "value": 0.92,
         "confidence": null
       },
       {
@@ -129,7 +129,7 @@
         "line": 5,
         "endLine": 5,
         "kind": "noul",
-        "value": 0.74,
+        "value": 0.92,
         "confidence": null
       },
       {
@@ -138,7 +138,7 @@
         "line": 6,
         "endLine": 6,
         "kind": "noul",
-        "value": 0.43,
+        "value": 0.91,
         "confidence": null
       },
       {
@@ -147,7 +147,7 @@
         "line": 7,
         "endLine": 7,
         "kind": "noul",
-        "value": 0.88,
+        "value": 0.96,
         "confidence": null
       },
       {
@@ -165,7 +165,7 @@
         "line": 9,
         "endLine": 9,
         "kind": "noul",
-        "value": 0.08,
+        "value": 0.06,
         "confidence": null
       },
       {
@@ -174,7 +174,7 @@
         "line": 10,
         "endLine": 10,
         "kind": "noul",
-        "value": 0.45,
+        "value": 0.29,
         "confidence": null
       },
       {
@@ -183,7 +183,7 @@
         "line": 11,
         "endLine": 11,
         "kind": "noul",
-        "value": 0.43,
+        "value": 0.29,
         "confidence": null
       },
       {
@@ -192,7 +192,7 @@
         "line": 12,
         "endLine": 12,
         "kind": "noul",
-        "value": 0.54,
+        "value": 0.14,
         "confidence": null
       }
     ],
@@ -203,7 +203,7 @@
         "line": 3,
         "endLine": 3,
         "kind": "noul",
-        "value": 0.63,
+        "value": 0.81,
         "confidence": null
       },
       {
@@ -212,7 +212,7 @@
         "line": 4,
         "endLine": 4,
         "kind": "noul",
-        "value": 0.78,
+        "value": 0.93,
         "confidence": null
       },
       {
@@ -221,7 +221,7 @@
         "line": 5,
         "endLine": 5,
         "kind": "noul",
-        "value": 0.76,
+        "value": 0.91,
         "confidence": null
       },
       {
@@ -230,7 +230,7 @@
         "line": 6,
         "endLine": 6,
         "kind": "noul",
-        "value": 0.48,
+        "value": 0.88,
         "confidence": null
       },
       {
@@ -239,7 +239,7 @@
         "line": 7,
         "endLine": 7,
         "kind": "noul",
-        "value": 0.88,
+        "value": 0.96,
         "confidence": null
       },
       {
@@ -248,7 +248,7 @@
         "line": 8,
         "endLine": 8,
         "kind": "noul",
-        "value": 0.06,
+        "value": 0.08,
         "confidence": null
       },
       {
@@ -257,7 +257,7 @@
         "line": 9,
         "endLine": 9,
         "kind": "noul",
-        "value": 0.09,
+        "value": 0.07,
         "confidence": null
       },
       {
@@ -266,7 +266,7 @@
         "line": 10,
         "endLine": 10,
         "kind": "noul",
-        "value": 0.43,
+        "value": 0.3,
         "confidence": null
       },
       {
@@ -275,7 +275,7 @@
         "line": 11,
         "endLine": 11,
         "kind": "noul",
-        "value": 0.41,
+        "value": 0.29,
         "confidence": null
       },
       {
@@ -284,15 +284,15 @@
         "line": 12,
         "endLine": 12,
         "kind": "noul",
-        "value": 0.5,
+        "value": 0.14,
         "confidence": null
       }
     ]
   ],
   "spent": {
     "calls": 3,
-    "inputTokens": 11268,
-    "usd": 0.000473256,
-    "ms": 188
+    "inputTokens": 13959,
+    "usd": 0.000586278,
+    "ms": 381
   }
 }

@@ -1,12 +1,12 @@
 {
   "schema": "jev-lint-eval-1",
-  "recorded": "2026-11-18T06:21:57.989Z",
+  "recorded": "2026-11-18T07:08:24.416Z",
   "model": "jev-1.14.0",
   "suite": "python/no-exposed-mutable-collection",
   "rules": [
     {
       "id": "no-exposed-mutable-collection",
-      "draft": "5adfe186004c",
+      "draft": "81c48d778067",
       "at": 0.5
     }
   ],
@@ -19,7 +19,7 @@
         "line": 16,
         "endLine": 17,
         "kind": "noul",
-        "value": 0.87,
+        "value": 0.97,
         "confidence": null
       },
       {
@@ -28,7 +28,7 @@
         "line": 19,
         "endLine": 20,
         "kind": "noul",
-        "value": 0.08,
+        "value": 0.05,
         "confidence": null
       },
       {
@@ -37,7 +37,7 @@
         "line": 33,
         "endLine": 34,
         "kind": "noul",
-        "value": 0.85,
+        "value": 0.97,
         "confidence": null
       },
       {
@@ -46,7 +46,7 @@
         "line": 46,
         "endLine": 47,
         "kind": "noul",
-        "value": 0.78,
+        "value": 0.97,
         "confidence": null
       },
       {
@@ -55,7 +55,7 @@
         "line": 56,
         "endLine": 57,
         "kind": "noul",
-        "value": 0.87,
+        "value": 0.04,
         "confidence": null
       },
       {
@@ -64,7 +64,7 @@
         "line": 69,
         "endLine": 70,
         "kind": "noul",
-        "value": 0.06,
+        "value": 0.05,
         "confidence": null
       },
       {
@@ -73,7 +73,7 @@
         "line": 72,
         "endLine": 73,
         "kind": "noul",
-        "value": 0.27,
+        "value": 0.05,
         "confidence": null
       },
       {
@@ -82,7 +82,7 @@
         "line": 80,
         "endLine": 81,
         "kind": "noul",
-        "value": 0.83,
+        "value": 0.94,
         "confidence": null
       }
     ],
@@ -93,7 +93,7 @@
         "line": 16,
         "endLine": 17,
         "kind": "noul",
-        "value": 0.89,
+        "value": 0.96,
         "confidence": null
       },
       {
@@ -102,7 +102,7 @@
         "line": 19,
         "endLine": 20,
         "kind": "noul",
-        "value": 0.08,
+        "value": 0.04,
         "confidence": null
       },
       {
@@ -111,7 +111,7 @@
         "line": 33,
         "endLine": 34,
         "kind": "noul",
-        "value": 0.84,
+        "value": 0.97,
         "confidence": null
       },
       {
@@ -120,7 +120,7 @@
         "line": 46,
         "endLine": 47,
         "kind": "noul",
-        "value": 0.81,
+        "value": 0.96,
         "confidence": null
       },
       {
@@ -129,7 +129,7 @@
         "line": 56,
         "endLine": 57,
         "kind": "noul",
-        "value": 0.85,
+        "value": 0.04,
         "confidence": null
       },
       {
@@ -137,6 +137,89 @@
         "file": "agents/hooks/lint/model-rules/python/no-exposed-mutable-collection/fixtures/subjects.py",
         "line": 69,
         "endLine": 70,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "agents/hooks/lint/model-rules/python/no-exposed-mutable-collection/fixtures/subjects.py",
+        "line": 72,
+        "endLine": 73,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "agents/hooks/lint/model-rules/python/no-exposed-mutable-collection/fixtures/subjects.py",
+        "line": 80,
+        "endLine": 81,
+        "kind": "noul",
+        "value": 0.93,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "agents/hooks/lint/model-rules/python/no-exposed-mutable-collection/fixtures/subjects.py",
+        "line": 16,
+        "endLine": 17,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "agents/hooks/lint/model-rules/python/no-exposed-mutable-collection/fixtures/subjects.py",
+        "line": 19,
+        "endLine": 20,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "agents/hooks/lint/model-rules/python/no-exposed-mutable-collection/fixtures/subjects.py",
+        "line": 33,
+        "endLine": 34,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "agents/hooks/lint/model-rules/python/no-exposed-mutable-collection/fixtures/subjects.py",
+        "line": 46,
+        "endLine": 47,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "agents/hooks/lint/model-rules/python/no-exposed-mutable-collection/fixtures/subjects.py",
+        "line": 56,
+        "endLine": 57,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "agents/hooks/lint/model-rules/python/no-exposed-mutable-collection/fixtures/subjects.py",
+        "line": 69,
+        "endLine": 70,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "agents/hooks/lint/model-rules/python/no-exposed-mutable-collection/fixtures/subjects.py",
+        "line": 72,
+        "endLine": 73,
         "kind": "noul",
         "value": 0.07,
         "confidence": null
@@ -144,101 +227,18 @@
       {
         "rule": "no-exposed-mutable-collection",
         "file": "agents/hooks/lint/model-rules/python/no-exposed-mutable-collection/fixtures/subjects.py",
-        "line": 72,
-        "endLine": 73,
-        "kind": "noul",
-        "value": 0.23,
-        "confidence": null
-      },
-      {
-        "rule": "no-exposed-mutable-collection",
-        "file": "agents/hooks/lint/model-rules/python/no-exposed-mutable-collection/fixtures/subjects.py",
         "line": 80,
         "endLine": 81,
         "kind": "noul",
-        "value": 0.82,
-        "confidence": null
-      }
-    ],
-    [
-      {
-        "rule": "no-exposed-mutable-collection",
-        "file": "agents/hooks/lint/model-rules/python/no-exposed-mutable-collection/fixtures/subjects.py",
-        "line": 16,
-        "endLine": 17,
-        "kind": "noul",
-        "value": 0.87,
-        "confidence": null
-      },
-      {
-        "rule": "no-exposed-mutable-collection",
-        "file": "agents/hooks/lint/model-rules/python/no-exposed-mutable-collection/fixtures/subjects.py",
-        "line": 19,
-        "endLine": 20,
-        "kind": "noul",
-        "value": 0.06,
-        "confidence": null
-      },
-      {
-        "rule": "no-exposed-mutable-collection",
-        "file": "agents/hooks/lint/model-rules/python/no-exposed-mutable-collection/fixtures/subjects.py",
-        "line": 33,
-        "endLine": 34,
-        "kind": "noul",
-        "value": 0.84,
-        "confidence": null
-      },
-      {
-        "rule": "no-exposed-mutable-collection",
-        "file": "agents/hooks/lint/model-rules/python/no-exposed-mutable-collection/fixtures/subjects.py",
-        "line": 46,
-        "endLine": 47,
-        "kind": "noul",
-        "value": 0.81,
-        "confidence": null
-      },
-      {
-        "rule": "no-exposed-mutable-collection",
-        "file": "agents/hooks/lint/model-rules/python/no-exposed-mutable-collection/fixtures/subjects.py",
-        "line": 56,
-        "endLine": 57,
-        "kind": "noul",
-        "value": 0.85,
-        "confidence": null
-      },
-      {
-        "rule": "no-exposed-mutable-collection",
-        "file": "agents/hooks/lint/model-rules/python/no-exposed-mutable-collection/fixtures/subjects.py",
-        "line": 69,
-        "endLine": 70,
-        "kind": "noul",
-        "value": 0.06,
-        "confidence": null
-      },
-      {
-        "rule": "no-exposed-mutable-collection",
-        "file": "agents/hooks/lint/model-rules/python/no-exposed-mutable-collection/fixtures/subjects.py",
-        "line": 72,
-        "endLine": 73,
-        "kind": "noul",
-        "value": 0.31,
-        "confidence": null
-      },
-      {
-        "rule": "no-exposed-mutable-collection",
-        "file": "agents/hooks/lint/model-rules/python/no-exposed-mutable-collection/fixtures/subjects.py",
-        "line": 80,
-        "endLine": 81,
-        "kind": "noul",
-        "value": 0.84,
+        "value": 0.91,
         "confidence": null
       }
     ]
   ],
   "spent": {
     "calls": 3,
-    "inputTokens": 9408,
-    "usd": 0.00039513600000000003,
-    "ms": 190
+    "inputTokens": 10578,
+    "usd": 0.00044427600000000007,
+    "ms": 185
   }
 }

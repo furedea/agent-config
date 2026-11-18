@@ -8,6 +8,9 @@ subject: node
 # The whole file: whether the returned field is a mutable collection, and whether its class guards it, is decided in
 # `__init__` and the class header, outside the returning function.
 state: located
+# Cutoff 0.5 (unchanged): the classes do not separate. With the whole file sent, the plain record CsvRow (a dataclass
+# whose list field is private) scored 0.93 against 0.96 for the quietest violation (3 passes, means; baseline.json,
+# 2026-11-18); a cutoff inside that gap would sit within one case's pass-to-pass spread. It stays advisory.
 threshold: 0.5
 axis: file
 severity: warning

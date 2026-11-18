@@ -1,0 +1,244 @@
+{
+  "schema": "jev-lint-eval-1",
+  "recorded": "2026-11-18T06:21:58.625Z",
+  "model": "jev-1.14.0",
+  "suite": "python/plain-class-defines-slots",
+  "rules": [
+    {
+      "id": "plain-class-defines-slots",
+      "draft": "d7ab9752eee3",
+      "at": 0.5
+    }
+  ],
+  "cutoffs": {},
+  "passes": [
+    [
+      {
+        "rule": "plain-class-defines-slots",
+        "file": "agents/hooks/lint/model-rules/python/plain-class-defines-slots/fixtures/subjects.py",
+        "line": 6,
+        "endLine": 12,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "plain-class-defines-slots",
+        "file": "agents/hooks/lint/model-rules/python/plain-class-defines-slots/fixtures/subjects.py",
+        "line": 15,
+        "endLine": 25,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "plain-class-defines-slots",
+        "file": "agents/hooks/lint/model-rules/python/plain-class-defines-slots/fixtures/subjects.py",
+        "line": 28,
+        "endLine": 33,
+        "kind": "noul",
+        "value": 0.02,
+        "confidence": null
+      },
+      {
+        "rule": "plain-class-defines-slots",
+        "file": "agents/hooks/lint/model-rules/python/plain-class-defines-slots/fixtures/subjects.py",
+        "line": 36,
+        "endLine": 39,
+        "kind": "noul",
+        "value": 0.19,
+        "confidence": null
+      },
+      {
+        "rule": "plain-class-defines-slots",
+        "file": "agents/hooks/lint/model-rules/python/plain-class-defines-slots/fixtures/subjects.py",
+        "line": 42,
+        "endLine": 48,
+        "kind": "noul",
+        "value": 0.18,
+        "confidence": null
+      },
+      {
+        "rule": "plain-class-defines-slots",
+        "file": "agents/hooks/lint/model-rules/python/plain-class-defines-slots/fixtures/subjects.py",
+        "line": 51,
+        "endLine": 57,
+        "kind": "noul",
+        "value": 0.76,
+        "confidence": null
+      },
+      {
+        "rule": "plain-class-defines-slots",
+        "file": "agents/hooks/lint/model-rules/python/plain-class-defines-slots/fixtures/subjects.py",
+        "line": 60,
+        "endLine": 66,
+        "kind": "noul",
+        "value": 0.71,
+        "confidence": null
+      },
+      {
+        "rule": "plain-class-defines-slots",
+        "file": "agents/hooks/lint/model-rules/python/plain-class-defines-slots/fixtures/subjects.py",
+        "line": 69,
+        "endLine": 75,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "plain-class-defines-slots",
+        "file": "agents/hooks/lint/model-rules/python/plain-class-defines-slots/fixtures/subjects.py",
+        "line": 6,
+        "endLine": 12,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "plain-class-defines-slots",
+        "file": "agents/hooks/lint/model-rules/python/plain-class-defines-slots/fixtures/subjects.py",
+        "line": 15,
+        "endLine": 25,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "plain-class-defines-slots",
+        "file": "agents/hooks/lint/model-rules/python/plain-class-defines-slots/fixtures/subjects.py",
+        "line": 28,
+        "endLine": 33,
+        "kind": "noul",
+        "value": 0.02,
+        "confidence": null
+      },
+      {
+        "rule": "plain-class-defines-slots",
+        "file": "agents/hooks/lint/model-rules/python/plain-class-defines-slots/fixtures/subjects.py",
+        "line": 36,
+        "endLine": 39,
+        "kind": "noul",
+        "value": 0.18,
+        "confidence": null
+      },
+      {
+        "rule": "plain-class-defines-slots",
+        "file": "agents/hooks/lint/model-rules/python/plain-class-defines-slots/fixtures/subjects.py",
+        "line": 42,
+        "endLine": 48,
+        "kind": "noul",
+        "value": 0.17,
+        "confidence": null
+      },
+      {
+        "rule": "plain-class-defines-slots",
+        "file": "agents/hooks/lint/model-rules/python/plain-class-defines-slots/fixtures/subjects.py",
+        "line": 51,
+        "endLine": 57,
+        "kind": "noul",
+        "value": 0.79,
+        "confidence": null
+      },
+      {
+        "rule": "plain-class-defines-slots",
+        "file": "agents/hooks/lint/model-rules/python/plain-class-defines-slots/fixtures/subjects.py",
+        "line": 60,
+        "endLine": 66,
+        "kind": "noul",
+        "value": 0.81,
+        "confidence": null
+      },
+      {
+        "rule": "plain-class-defines-slots",
+        "file": "agents/hooks/lint/model-rules/python/plain-class-defines-slots/fixtures/subjects.py",
+        "line": 69,
+        "endLine": 75,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "plain-class-defines-slots",
+        "file": "agents/hooks/lint/model-rules/python/plain-class-defines-slots/fixtures/subjects.py",
+        "line": 6,
+        "endLine": 12,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "plain-class-defines-slots",
+        "file": "agents/hooks/lint/model-rules/python/plain-class-defines-slots/fixtures/subjects.py",
+        "line": 15,
+        "endLine": 25,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "plain-class-defines-slots",
+        "file": "agents/hooks/lint/model-rules/python/plain-class-defines-slots/fixtures/subjects.py",
+        "line": 28,
+        "endLine": 33,
+        "kind": "noul",
+        "value": 0.02,
+        "confidence": null
+      },
+      {
+        "rule": "plain-class-defines-slots",
+        "file": "agents/hooks/lint/model-rules/python/plain-class-defines-slots/fixtures/subjects.py",
+        "line": 36,
+        "endLine": 39,
+        "kind": "noul",
+        "value": 0.18,
+        "confidence": null
+      },
+      {
+        "rule": "plain-class-defines-slots",
+        "file": "agents/hooks/lint/model-rules/python/plain-class-defines-slots/fixtures/subjects.py",
+        "line": 42,
+        "endLine": 48,
+        "kind": "noul",
+        "value": 0.17,
+        "confidence": null
+      },
+      {
+        "rule": "plain-class-defines-slots",
+        "file": "agents/hooks/lint/model-rules/python/plain-class-defines-slots/fixtures/subjects.py",
+        "line": 51,
+        "endLine": 57,
+        "kind": "noul",
+        "value": 0.75,
+        "confidence": null
+      },
+      {
+        "rule": "plain-class-defines-slots",
+        "file": "agents/hooks/lint/model-rules/python/plain-class-defines-slots/fixtures/subjects.py",
+        "line": 60,
+        "endLine": 66,
+        "kind": "noul",
+        "value": 0.75,
+        "confidence": null
+      },
+      {
+        "rule": "plain-class-defines-slots",
+        "file": "agents/hooks/lint/model-rules/python/plain-class-defines-slots/fixtures/subjects.py",
+        "line": 69,
+        "endLine": 75,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      }
+    ]
+  ],
+  "spent": {
+    "calls": 3,
+    "inputTokens": 10437,
+    "usd": 0.000438354,
+    "ms": 174
+  }
+}

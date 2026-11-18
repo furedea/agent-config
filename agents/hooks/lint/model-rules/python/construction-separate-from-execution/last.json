@@ -1,0 +1,244 @@
+{
+  "schema": "jev-lint-eval-1",
+  "recorded": "2026-11-18T06:21:55.546Z",
+  "model": "jev-1.14.0",
+  "suite": "python/construction-separate-from-execution",
+  "rules": [
+    {
+      "id": "construction-separate-from-execution",
+      "draft": "409a68c11bc8",
+      "at": 0.5
+    }
+  ],
+  "cutoffs": {},
+  "passes": [
+    [
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/python/construction-separate-from-execution/fixtures/subjects.py",
+        "line": 10,
+        "endLine": 15,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/python/construction-separate-from-execution/fixtures/subjects.py",
+        "line": 18,
+        "endLine": 23,
+        "kind": "noul",
+        "value": 0.94,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/python/construction-separate-from-execution/fixtures/subjects.py",
+        "line": 26,
+        "endLine": 34,
+        "kind": "noul",
+        "value": 0.92,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/python/construction-separate-from-execution/fixtures/subjects.py",
+        "line": 43,
+        "endLine": 46,
+        "kind": "noul",
+        "value": 0.94,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/python/construction-separate-from-execution/fixtures/subjects.py",
+        "line": 49,
+        "endLine": 53,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/python/construction-separate-from-execution/fixtures/subjects.py",
+        "line": 62,
+        "endLine": 65,
+        "kind": "noul",
+        "value": 0.2,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/python/construction-separate-from-execution/fixtures/subjects.py",
+        "line": 68,
+        "endLine": 71,
+        "kind": "noul",
+        "value": 0.7,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/python/construction-separate-from-execution/fixtures/subjects.py",
+        "line": 81,
+        "endLine": 82,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/python/construction-separate-from-execution/fixtures/subjects.py",
+        "line": 10,
+        "endLine": 15,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/python/construction-separate-from-execution/fixtures/subjects.py",
+        "line": 18,
+        "endLine": 23,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/python/construction-separate-from-execution/fixtures/subjects.py",
+        "line": 26,
+        "endLine": 34,
+        "kind": "noul",
+        "value": 0.93,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/python/construction-separate-from-execution/fixtures/subjects.py",
+        "line": 43,
+        "endLine": 46,
+        "kind": "noul",
+        "value": 0.94,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/python/construction-separate-from-execution/fixtures/subjects.py",
+        "line": 49,
+        "endLine": 53,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/python/construction-separate-from-execution/fixtures/subjects.py",
+        "line": 62,
+        "endLine": 65,
+        "kind": "noul",
+        "value": 0.21,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/python/construction-separate-from-execution/fixtures/subjects.py",
+        "line": 68,
+        "endLine": 71,
+        "kind": "noul",
+        "value": 0.7,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/python/construction-separate-from-execution/fixtures/subjects.py",
+        "line": 81,
+        "endLine": 82,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/python/construction-separate-from-execution/fixtures/subjects.py",
+        "line": 10,
+        "endLine": 15,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/python/construction-separate-from-execution/fixtures/subjects.py",
+        "line": 18,
+        "endLine": 23,
+        "kind": "noul",
+        "value": 0.94,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/python/construction-separate-from-execution/fixtures/subjects.py",
+        "line": 26,
+        "endLine": 34,
+        "kind": "noul",
+        "value": 0.92,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/python/construction-separate-from-execution/fixtures/subjects.py",
+        "line": 43,
+        "endLine": 46,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/python/construction-separate-from-execution/fixtures/subjects.py",
+        "line": 49,
+        "endLine": 53,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/python/construction-separate-from-execution/fixtures/subjects.py",
+        "line": 62,
+        "endLine": 65,
+        "kind": "noul",
+        "value": 0.22,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/python/construction-separate-from-execution/fixtures/subjects.py",
+        "line": 68,
+        "endLine": 71,
+        "kind": "noul",
+        "value": 0.61,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/python/construction-separate-from-execution/fixtures/subjects.py",
+        "line": 81,
+        "endLine": 82,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      }
+    ]
+  ],
+  "spent": {
+    "calls": 3,
+    "inputTokens": 9903,
+    "usd": 0.00041592600000000006,
+    "ms": 176
+  }
+}

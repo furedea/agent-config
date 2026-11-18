@@ -1,12 +1,21 @@
 # rust-style/references/filesystem.md: build paths with Path/PathBuf, do not follow symlinks while traversing unless
 # required and tested, use DirEntry::file_type() where symlink behaviour matters, and write through a temporary file
-# when a partial write would be harmful. Advisory and not fitted.
+# when a partial write would be harmful. Advisory.
 id: filesystem-code-keeps-paths-and-symlinks-safe
 language: Rust
 kind: noul
 subject: node
 state: local
-threshold: 0.5
+# Fitted by `jev-lint eval` on this rule's own fixtures (10 cases, 4 bad and 6 clean, over 3 passes; baseline of
+# 2026-11-18): the highest clean case scored 0.2 (conforming.rs:25) and the lowest violation 0.85 (violating.rs:22); the
+# cutoff is jev-lint's fitted midpoint of that gap. A fit on so few cases is a starting point, not a calibration
+# (ADR-0020), so the rule stays advisory.
+threshold: 0.53
+# Every clean case answers far below the cutoff and every bad case far above it, so this corpus cannot see the rule
+# drift; boundary cases need code a reviewer would argue over.
+inconclusive: >-
+  Blind: the fixtures are clearly clean or clearly defective (the gap runs from 0.2 to 0.85), and no
+  boundary fixture exists yet.
 axis: file
 severity: warning
 # Calls that traverse, test a path's kind, or replace file content; a plain read is not selected here.

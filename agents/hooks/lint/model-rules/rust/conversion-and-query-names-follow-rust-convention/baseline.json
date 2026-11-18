@@ -1,0 +1,379 @@
+{
+  "schema": "jev-lint-eval-1",
+  "recorded": "2026-11-18T06:25:02.180Z",
+  "model": "jev-1.14.0",
+  "suite": "rust/conversion-and-query-names-follow-rust-convention",
+  "rules": [
+    {
+      "id": "conversion-and-query-names-follow-rust-convention",
+      "draft": "b7eb1109482b",
+      "at": 0.5
+    }
+  ],
+  "cutoffs": {},
+  "passes": [
+    [
+      {
+        "rule": "conversion-and-query-names-follow-rust-convention",
+        "file": "agents/hooks/lint/model-rules/rust/conversion-and-query-names-follow-rust-convention/fixtures/conforming.rs",
+        "line": 11,
+        "endLine": 13,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "conversion-and-query-names-follow-rust-convention",
+        "file": "agents/hooks/lint/model-rules/rust/conversion-and-query-names-follow-rust-convention/fixtures/conforming.rs",
+        "line": 15,
+        "endLine": 17,
+        "kind": "noul",
+        "value": 0.07,
+        "confidence": null
+      },
+      {
+        "rule": "conversion-and-query-names-follow-rust-convention",
+        "file": "agents/hooks/lint/model-rules/rust/conversion-and-query-names-follow-rust-convention/fixtures/conforming.rs",
+        "line": 19,
+        "endLine": 21,
+        "kind": "noul",
+        "value": 0.07,
+        "confidence": null
+      },
+      {
+        "rule": "conversion-and-query-names-follow-rust-convention",
+        "file": "agents/hooks/lint/model-rules/rust/conversion-and-query-names-follow-rust-convention/fixtures/conforming.rs",
+        "line": 23,
+        "endLine": 25,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "conversion-and-query-names-follow-rust-convention",
+        "file": "agents/hooks/lint/model-rules/rust/conversion-and-query-names-follow-rust-convention/fixtures/conforming.rs",
+        "line": 27,
+        "endLine": 29,
+        "kind": "noul",
+        "value": 0.07,
+        "confidence": null
+      },
+      {
+        "rule": "conversion-and-query-names-follow-rust-convention",
+        "file": "agents/hooks/lint/model-rules/rust/conversion-and-query-names-follow-rust-convention/fixtures/conforming.rs",
+        "line": 33,
+        "endLine": 35,
+        "kind": "noul",
+        "value": 0.1,
+        "confidence": null
+      },
+      {
+        "rule": "conversion-and-query-names-follow-rust-convention",
+        "file": "agents/hooks/lint/model-rules/rust/conversion-and-query-names-follow-rust-convention/fixtures/conforming.rs",
+        "line": 37,
+        "endLine": 39,
+        "kind": "noul",
+        "value": 0.09,
+        "confidence": null
+      },
+      {
+        "rule": "conversion-and-query-names-follow-rust-convention",
+        "file": "agents/hooks/lint/model-rules/rust/conversion-and-query-names-follow-rust-convention/fixtures/violating.rs",
+        "line": 8,
+        "endLine": 10,
+        "kind": "noul",
+        "value": 0.63,
+        "confidence": null
+      },
+      {
+        "rule": "conversion-and-query-names-follow-rust-convention",
+        "file": "agents/hooks/lint/model-rules/rust/conversion-and-query-names-follow-rust-convention/fixtures/violating.rs",
+        "line": 12,
+        "endLine": 14,
+        "kind": "noul",
+        "value": 0.89,
+        "confidence": null
+      },
+      {
+        "rule": "conversion-and-query-names-follow-rust-convention",
+        "file": "agents/hooks/lint/model-rules/rust/conversion-and-query-names-follow-rust-convention/fixtures/violating.rs",
+        "line": 16,
+        "endLine": 18,
+        "kind": "noul",
+        "value": 0.73,
+        "confidence": null
+      },
+      {
+        "rule": "conversion-and-query-names-follow-rust-convention",
+        "file": "agents/hooks/lint/model-rules/rust/conversion-and-query-names-follow-rust-convention/fixtures/violating.rs",
+        "line": 20,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.59,
+        "confidence": null
+      },
+      {
+        "rule": "conversion-and-query-names-follow-rust-convention",
+        "file": "agents/hooks/lint/model-rules/rust/conversion-and-query-names-follow-rust-convention/fixtures/violating.rs",
+        "line": 24,
+        "endLine": 26,
+        "kind": "noul",
+        "value": 0.88,
+        "confidence": null
+      },
+      {
+        "rule": "conversion-and-query-names-follow-rust-convention",
+        "file": "agents/hooks/lint/model-rules/rust/conversion-and-query-names-follow-rust-convention/fixtures/violating.rs",
+        "line": 29,
+        "endLine": 31,
+        "kind": "noul",
+        "value": 0.49,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "conversion-and-query-names-follow-rust-convention",
+        "file": "agents/hooks/lint/model-rules/rust/conversion-and-query-names-follow-rust-convention/fixtures/violating.rs",
+        "line": 8,
+        "endLine": 10,
+        "kind": "noul",
+        "value": 0.62,
+        "confidence": null
+      },
+      {
+        "rule": "conversion-and-query-names-follow-rust-convention",
+        "file": "agents/hooks/lint/model-rules/rust/conversion-and-query-names-follow-rust-convention/fixtures/violating.rs",
+        "line": 12,
+        "endLine": 14,
+        "kind": "noul",
+        "value": 0.88,
+        "confidence": null
+      },
+      {
+        "rule": "conversion-and-query-names-follow-rust-convention",
+        "file": "agents/hooks/lint/model-rules/rust/conversion-and-query-names-follow-rust-convention/fixtures/violating.rs",
+        "line": 16,
+        "endLine": 18,
+        "kind": "noul",
+        "value": 0.75,
+        "confidence": null
+      },
+      {
+        "rule": "conversion-and-query-names-follow-rust-convention",
+        "file": "agents/hooks/lint/model-rules/rust/conversion-and-query-names-follow-rust-convention/fixtures/violating.rs",
+        "line": 20,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.5,
+        "confidence": null
+      },
+      {
+        "rule": "conversion-and-query-names-follow-rust-convention",
+        "file": "agents/hooks/lint/model-rules/rust/conversion-and-query-names-follow-rust-convention/fixtures/violating.rs",
+        "line": 24,
+        "endLine": 26,
+        "kind": "noul",
+        "value": 0.85,
+        "confidence": null
+      },
+      {
+        "rule": "conversion-and-query-names-follow-rust-convention",
+        "file": "agents/hooks/lint/model-rules/rust/conversion-and-query-names-follow-rust-convention/fixtures/violating.rs",
+        "line": 29,
+        "endLine": 31,
+        "kind": "noul",
+        "value": 0.46,
+        "confidence": null
+      },
+      {
+        "rule": "conversion-and-query-names-follow-rust-convention",
+        "file": "agents/hooks/lint/model-rules/rust/conversion-and-query-names-follow-rust-convention/fixtures/conforming.rs",
+        "line": 11,
+        "endLine": 13,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "conversion-and-query-names-follow-rust-convention",
+        "file": "agents/hooks/lint/model-rules/rust/conversion-and-query-names-follow-rust-convention/fixtures/conforming.rs",
+        "line": 15,
+        "endLine": 17,
+        "kind": "noul",
+        "value": 0.07,
+        "confidence": null
+      },
+      {
+        "rule": "conversion-and-query-names-follow-rust-convention",
+        "file": "agents/hooks/lint/model-rules/rust/conversion-and-query-names-follow-rust-convention/fixtures/conforming.rs",
+        "line": 19,
+        "endLine": 21,
+        "kind": "noul",
+        "value": 0.07,
+        "confidence": null
+      },
+      {
+        "rule": "conversion-and-query-names-follow-rust-convention",
+        "file": "agents/hooks/lint/model-rules/rust/conversion-and-query-names-follow-rust-convention/fixtures/conforming.rs",
+        "line": 23,
+        "endLine": 25,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "conversion-and-query-names-follow-rust-convention",
+        "file": "agents/hooks/lint/model-rules/rust/conversion-and-query-names-follow-rust-convention/fixtures/conforming.rs",
+        "line": 27,
+        "endLine": 29,
+        "kind": "noul",
+        "value": 0.07,
+        "confidence": null
+      },
+      {
+        "rule": "conversion-and-query-names-follow-rust-convention",
+        "file": "agents/hooks/lint/model-rules/rust/conversion-and-query-names-follow-rust-convention/fixtures/conforming.rs",
+        "line": 33,
+        "endLine": 35,
+        "kind": "noul",
+        "value": 0.09,
+        "confidence": null
+      },
+      {
+        "rule": "conversion-and-query-names-follow-rust-convention",
+        "file": "agents/hooks/lint/model-rules/rust/conversion-and-query-names-follow-rust-convention/fixtures/conforming.rs",
+        "line": 37,
+        "endLine": 39,
+        "kind": "noul",
+        "value": 0.09,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "conversion-and-query-names-follow-rust-convention",
+        "file": "agents/hooks/lint/model-rules/rust/conversion-and-query-names-follow-rust-convention/fixtures/violating.rs",
+        "line": 8,
+        "endLine": 10,
+        "kind": "noul",
+        "value": 0.59,
+        "confidence": null
+      },
+      {
+        "rule": "conversion-and-query-names-follow-rust-convention",
+        "file": "agents/hooks/lint/model-rules/rust/conversion-and-query-names-follow-rust-convention/fixtures/violating.rs",
+        "line": 12,
+        "endLine": 14,
+        "kind": "noul",
+        "value": 0.89,
+        "confidence": null
+      },
+      {
+        "rule": "conversion-and-query-names-follow-rust-convention",
+        "file": "agents/hooks/lint/model-rules/rust/conversion-and-query-names-follow-rust-convention/fixtures/violating.rs",
+        "line": 16,
+        "endLine": 18,
+        "kind": "noul",
+        "value": 0.71,
+        "confidence": null
+      },
+      {
+        "rule": "conversion-and-query-names-follow-rust-convention",
+        "file": "agents/hooks/lint/model-rules/rust/conversion-and-query-names-follow-rust-convention/fixtures/violating.rs",
+        "line": 20,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.63,
+        "confidence": null
+      },
+      {
+        "rule": "conversion-and-query-names-follow-rust-convention",
+        "file": "agents/hooks/lint/model-rules/rust/conversion-and-query-names-follow-rust-convention/fixtures/violating.rs",
+        "line": 24,
+        "endLine": 26,
+        "kind": "noul",
+        "value": 0.86,
+        "confidence": null
+      },
+      {
+        "rule": "conversion-and-query-names-follow-rust-convention",
+        "file": "agents/hooks/lint/model-rules/rust/conversion-and-query-names-follow-rust-convention/fixtures/violating.rs",
+        "line": 29,
+        "endLine": 31,
+        "kind": "noul",
+        "value": 0.52,
+        "confidence": null
+      },
+      {
+        "rule": "conversion-and-query-names-follow-rust-convention",
+        "file": "agents/hooks/lint/model-rules/rust/conversion-and-query-names-follow-rust-convention/fixtures/conforming.rs",
+        "line": 11,
+        "endLine": 13,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "conversion-and-query-names-follow-rust-convention",
+        "file": "agents/hooks/lint/model-rules/rust/conversion-and-query-names-follow-rust-convention/fixtures/conforming.rs",
+        "line": 15,
+        "endLine": 17,
+        "kind": "noul",
+        "value": 0.07,
+        "confidence": null
+      },
+      {
+        "rule": "conversion-and-query-names-follow-rust-convention",
+        "file": "agents/hooks/lint/model-rules/rust/conversion-and-query-names-follow-rust-convention/fixtures/conforming.rs",
+        "line": 19,
+        "endLine": 21,
+        "kind": "noul",
+        "value": 0.07,
+        "confidence": null
+      },
+      {
+        "rule": "conversion-and-query-names-follow-rust-convention",
+        "file": "agents/hooks/lint/model-rules/rust/conversion-and-query-names-follow-rust-convention/fixtures/conforming.rs",
+        "line": 23,
+        "endLine": 25,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "conversion-and-query-names-follow-rust-convention",
+        "file": "agents/hooks/lint/model-rules/rust/conversion-and-query-names-follow-rust-convention/fixtures/conforming.rs",
+        "line": 27,
+        "endLine": 29,
+        "kind": "noul",
+        "value": 0.08,
+        "confidence": null
+      },
+      {
+        "rule": "conversion-and-query-names-follow-rust-convention",
+        "file": "agents/hooks/lint/model-rules/rust/conversion-and-query-names-follow-rust-convention/fixtures/conforming.rs",
+        "line": 33,
+        "endLine": 35,
+        "kind": "noul",
+        "value": 0.1,
+        "confidence": null
+      },
+      {
+        "rule": "conversion-and-query-names-follow-rust-convention",
+        "file": "agents/hooks/lint/model-rules/rust/conversion-and-query-names-follow-rust-convention/fixtures/conforming.rs",
+        "line": 37,
+        "endLine": 39,
+        "kind": "noul",
+        "value": 0.07,
+        "confidence": null
+      }
+    ]
+  ],
+  "spent": {
+    "calls": 6,
+    "inputTokens": 18120,
+    "usd": 0.00076104,
+    "ms": 198
+  }
+}

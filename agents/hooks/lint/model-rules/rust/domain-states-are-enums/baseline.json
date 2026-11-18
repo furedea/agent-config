@@ -1,0 +1,298 @@
+{
+  "schema": "jev-lint-eval-1",
+  "recorded": "2026-11-18T06:25:02.378Z",
+  "model": "jev-1.14.0",
+  "suite": "rust/domain-states-are-enums",
+  "rules": [
+    {
+      "id": "domain-states-are-enums",
+      "draft": "2f841e8d4736",
+      "at": 0.5
+    }
+  ],
+  "cutoffs": {},
+  "passes": [
+    [
+      {
+        "rule": "domain-states-are-enums",
+        "file": "agents/hooks/lint/model-rules/rust/domain-states-are-enums/fixtures/conforming.rs",
+        "line": 16,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.13,
+        "confidence": null
+      },
+      {
+        "rule": "domain-states-are-enums",
+        "file": "agents/hooks/lint/model-rules/rust/domain-states-are-enums/fixtures/conforming.rs",
+        "line": 25,
+        "endLine": 27,
+        "kind": "noul",
+        "value": 0.11,
+        "confidence": null
+      },
+      {
+        "rule": "domain-states-are-enums",
+        "file": "agents/hooks/lint/model-rules/rust/domain-states-are-enums/fixtures/conforming.rs",
+        "line": 29,
+        "endLine": 36,
+        "kind": "noul",
+        "value": 0.24,
+        "confidence": null
+      },
+      {
+        "rule": "domain-states-are-enums",
+        "file": "agents/hooks/lint/model-rules/rust/domain-states-are-enums/fixtures/conforming.rs",
+        "line": 38,
+        "endLine": 44,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "domain-states-are-enums",
+        "file": "agents/hooks/lint/model-rules/rust/domain-states-are-enums/fixtures/conforming.rs",
+        "line": 46,
+        "endLine": 48,
+        "kind": "noul",
+        "value": 0.1,
+        "confidence": null
+      },
+      {
+        "rule": "domain-states-are-enums",
+        "file": "agents/hooks/lint/model-rules/rust/domain-states-are-enums/fixtures/violating.rs",
+        "line": 10,
+        "endLine": 16,
+        "kind": "noul",
+        "value": 0.91,
+        "confidence": null
+      },
+      {
+        "rule": "domain-states-are-enums",
+        "file": "agents/hooks/lint/model-rules/rust/domain-states-are-enums/fixtures/violating.rs",
+        "line": 18,
+        "endLine": 26,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "domain-states-are-enums",
+        "file": "agents/hooks/lint/model-rules/rust/domain-states-are-enums/fixtures/violating.rs",
+        "line": 28,
+        "endLine": 34,
+        "kind": "noul",
+        "value": 0.91,
+        "confidence": null
+      },
+      {
+        "rule": "domain-states-are-enums",
+        "file": "agents/hooks/lint/model-rules/rust/domain-states-are-enums/fixtures/violating.rs",
+        "line": 36,
+        "endLine": 38,
+        "kind": "noul",
+        "value": 0.9,
+        "confidence": null
+      },
+      {
+        "rule": "domain-states-are-enums",
+        "file": "agents/hooks/lint/model-rules/rust/domain-states-are-enums/fixtures/violating.rs",
+        "line": 40,
+        "endLine": 46,
+        "kind": "noul",
+        "value": 0.92,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "domain-states-are-enums",
+        "file": "agents/hooks/lint/model-rules/rust/domain-states-are-enums/fixtures/conforming.rs",
+        "line": 16,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.16,
+        "confidence": null
+      },
+      {
+        "rule": "domain-states-are-enums",
+        "file": "agents/hooks/lint/model-rules/rust/domain-states-are-enums/fixtures/conforming.rs",
+        "line": 25,
+        "endLine": 27,
+        "kind": "noul",
+        "value": 0.11,
+        "confidence": null
+      },
+      {
+        "rule": "domain-states-are-enums",
+        "file": "agents/hooks/lint/model-rules/rust/domain-states-are-enums/fixtures/conforming.rs",
+        "line": 29,
+        "endLine": 36,
+        "kind": "noul",
+        "value": 0.27,
+        "confidence": null
+      },
+      {
+        "rule": "domain-states-are-enums",
+        "file": "agents/hooks/lint/model-rules/rust/domain-states-are-enums/fixtures/conforming.rs",
+        "line": 38,
+        "endLine": 44,
+        "kind": "noul",
+        "value": 0.07,
+        "confidence": null
+      },
+      {
+        "rule": "domain-states-are-enums",
+        "file": "agents/hooks/lint/model-rules/rust/domain-states-are-enums/fixtures/conforming.rs",
+        "line": 46,
+        "endLine": 48,
+        "kind": "noul",
+        "value": 0.1,
+        "confidence": null
+      },
+      {
+        "rule": "domain-states-are-enums",
+        "file": "agents/hooks/lint/model-rules/rust/domain-states-are-enums/fixtures/violating.rs",
+        "line": 10,
+        "endLine": 16,
+        "kind": "noul",
+        "value": 0.92,
+        "confidence": null
+      },
+      {
+        "rule": "domain-states-are-enums",
+        "file": "agents/hooks/lint/model-rules/rust/domain-states-are-enums/fixtures/violating.rs",
+        "line": 18,
+        "endLine": 26,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "domain-states-are-enums",
+        "file": "agents/hooks/lint/model-rules/rust/domain-states-are-enums/fixtures/violating.rs",
+        "line": 28,
+        "endLine": 34,
+        "kind": "noul",
+        "value": 0.92,
+        "confidence": null
+      },
+      {
+        "rule": "domain-states-are-enums",
+        "file": "agents/hooks/lint/model-rules/rust/domain-states-are-enums/fixtures/violating.rs",
+        "line": 36,
+        "endLine": 38,
+        "kind": "noul",
+        "value": 0.88,
+        "confidence": null
+      },
+      {
+        "rule": "domain-states-are-enums",
+        "file": "agents/hooks/lint/model-rules/rust/domain-states-are-enums/fixtures/violating.rs",
+        "line": 40,
+        "endLine": 46,
+        "kind": "noul",
+        "value": 0.93,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "domain-states-are-enums",
+        "file": "agents/hooks/lint/model-rules/rust/domain-states-are-enums/fixtures/conforming.rs",
+        "line": 16,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.13,
+        "confidence": null
+      },
+      {
+        "rule": "domain-states-are-enums",
+        "file": "agents/hooks/lint/model-rules/rust/domain-states-are-enums/fixtures/conforming.rs",
+        "line": 25,
+        "endLine": 27,
+        "kind": "noul",
+        "value": 0.11,
+        "confidence": null
+      },
+      {
+        "rule": "domain-states-are-enums",
+        "file": "agents/hooks/lint/model-rules/rust/domain-states-are-enums/fixtures/conforming.rs",
+        "line": 29,
+        "endLine": 36,
+        "kind": "noul",
+        "value": 0.25,
+        "confidence": null
+      },
+      {
+        "rule": "domain-states-are-enums",
+        "file": "agents/hooks/lint/model-rules/rust/domain-states-are-enums/fixtures/conforming.rs",
+        "line": 38,
+        "endLine": 44,
+        "kind": "noul",
+        "value": 0.07,
+        "confidence": null
+      },
+      {
+        "rule": "domain-states-are-enums",
+        "file": "agents/hooks/lint/model-rules/rust/domain-states-are-enums/fixtures/conforming.rs",
+        "line": 46,
+        "endLine": 48,
+        "kind": "noul",
+        "value": 0.09,
+        "confidence": null
+      },
+      {
+        "rule": "domain-states-are-enums",
+        "file": "agents/hooks/lint/model-rules/rust/domain-states-are-enums/fixtures/violating.rs",
+        "line": 10,
+        "endLine": 16,
+        "kind": "noul",
+        "value": 0.91,
+        "confidence": null
+      },
+      {
+        "rule": "domain-states-are-enums",
+        "file": "agents/hooks/lint/model-rules/rust/domain-states-are-enums/fixtures/violating.rs",
+        "line": 18,
+        "endLine": 26,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "domain-states-are-enums",
+        "file": "agents/hooks/lint/model-rules/rust/domain-states-are-enums/fixtures/violating.rs",
+        "line": 28,
+        "endLine": 34,
+        "kind": "noul",
+        "value": 0.92,
+        "confidence": null
+      },
+      {
+        "rule": "domain-states-are-enums",
+        "file": "agents/hooks/lint/model-rules/rust/domain-states-are-enums/fixtures/violating.rs",
+        "line": 36,
+        "endLine": 38,
+        "kind": "noul",
+        "value": 0.9,
+        "confidence": null
+      },
+      {
+        "rule": "domain-states-are-enums",
+        "file": "agents/hooks/lint/model-rules/rust/domain-states-are-enums/fixtures/violating.rs",
+        "line": 40,
+        "endLine": 46,
+        "kind": "noul",
+        "value": 0.93,
+        "confidence": null
+      }
+    ]
+  ],
+  "spent": {
+    "calls": 6,
+    "inputTokens": 15816,
+    "usd": 0.000664272,
+    "ms": 178
+  }
+}

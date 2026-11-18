@@ -1,0 +1,298 @@
+{
+  "schema": "jev-lint-eval-1",
+  "recorded": "2026-11-18T06:25:03.413Z",
+  "model": "jev-1.14.0",
+  "suite": "rust/no-comment-restating-code",
+  "rules": [
+    {
+      "id": "no-comment-restating-code",
+      "draft": "9d2101f9754a",
+      "at": 0.5
+    }
+  ],
+  "cutoffs": {},
+  "passes": [
+    [
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/violating.rs",
+        "line": 1,
+        "endLine": 11,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/violating.rs",
+        "line": 13,
+        "endLine": 18,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/violating.rs",
+        "line": 20,
+        "endLine": 23,
+        "kind": "noul",
+        "value": 0.94,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/violating.rs",
+        "line": 25,
+        "endLine": 36,
+        "kind": "noul",
+        "value": 0.94,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/violating.rs",
+        "line": 38,
+        "endLine": 41,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/conforming.rs",
+        "line": 1,
+        "endLine": 5,
+        "kind": "noul",
+        "value": 0.21,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/conforming.rs",
+        "line": 7,
+        "endLine": 10,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/conforming.rs",
+        "line": 12,
+        "endLine": 17,
+        "kind": "noul",
+        "value": 0.08,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/conforming.rs",
+        "line": 19,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.18,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/conforming.rs",
+        "line": 24,
+        "endLine": 27,
+        "kind": "noul",
+        "value": 0.16,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/conforming.rs",
+        "line": 1,
+        "endLine": 5,
+        "kind": "noul",
+        "value": 0.22,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/conforming.rs",
+        "line": 7,
+        "endLine": 10,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/conforming.rs",
+        "line": 12,
+        "endLine": 17,
+        "kind": "noul",
+        "value": 0.1,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/conforming.rs",
+        "line": 19,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.17,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/conforming.rs",
+        "line": 24,
+        "endLine": 27,
+        "kind": "noul",
+        "value": 0.16,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/violating.rs",
+        "line": 1,
+        "endLine": 11,
+        "kind": "noul",
+        "value": 0.99,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/violating.rs",
+        "line": 13,
+        "endLine": 18,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/violating.rs",
+        "line": 20,
+        "endLine": 23,
+        "kind": "noul",
+        "value": 0.93,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/violating.rs",
+        "line": 25,
+        "endLine": 36,
+        "kind": "noul",
+        "value": 0.94,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/violating.rs",
+        "line": 38,
+        "endLine": 41,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/violating.rs",
+        "line": 1,
+        "endLine": 11,
+        "kind": "noul",
+        "value": 0.99,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/violating.rs",
+        "line": 13,
+        "endLine": 18,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/violating.rs",
+        "line": 20,
+        "endLine": 23,
+        "kind": "noul",
+        "value": 0.93,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/violating.rs",
+        "line": 25,
+        "endLine": 36,
+        "kind": "noul",
+        "value": 0.94,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/violating.rs",
+        "line": 38,
+        "endLine": 41,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/conforming.rs",
+        "line": 1,
+        "endLine": 5,
+        "kind": "noul",
+        "value": 0.19,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/conforming.rs",
+        "line": 7,
+        "endLine": 10,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/conforming.rs",
+        "line": 12,
+        "endLine": 17,
+        "kind": "noul",
+        "value": 0.09,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/conforming.rs",
+        "line": 19,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.2,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/conforming.rs",
+        "line": 24,
+        "endLine": 27,
+        "kind": "noul",
+        "value": 0.15,
+        "confidence": null
+      }
+    ]
+  ],
+  "spent": {
+    "calls": 6,
+    "inputTokens": 12960,
+    "usd": 0.00054432,
+    "ms": 182
+  }
+}

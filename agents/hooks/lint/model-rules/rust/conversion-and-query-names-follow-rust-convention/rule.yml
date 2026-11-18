@@ -1,13 +1,18 @@
 # rust-style/references/types.md (Getter and Conversion Naming): as_* borrows, into_* consumes, to_* copies or
 # converts, boolean queries start with is_/has_/can_/should_, fallible parsing is parse/try_from/from_str. The get_
 # prefix stays prose in types.md. Complements command-query-naming (M-05), which asks whether the name's verb
-# agrees with the body's effect. Advisory and not fitted.
+# agrees with the body's effect. Advisory.
 id: conversion-and-query-names-follow-rust-convention
 language: Rust
 kind: noul
 subject: node
 state: local
-threshold: 0.5
+# Fitted by `jev-lint eval` on this rule's own fixtures (13 cases, 6 bad and 7 clean, over 3 passes; baseline of
+# 2026-11-18): the highest clean case scored 0.1 (conforming.rs:33) and the lowest violation 0.46 (violating.rs:29); the
+# cutoff is jev-lint's fitted midpoint of that gap. At the 0.5 starting value the swallowed parse at violating.rs:29
+# (0.46 to 0.52) passed in one pass of three. A fit on so few cases is a starting point, not a calibration (ADR-0020),
+# so the rule stays advisory.
+threshold: 0.28
 axis: file
 severity: warning
 rule:

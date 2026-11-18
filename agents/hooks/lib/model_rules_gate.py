@@ -307,6 +307,7 @@ def _inputs(record: SessionRecord) -> str:
     # The same files can be the session's or not depending on how HEAD got there, which the snapshot cannot tell.
     try:
         digest.update("\0".join(_own_committed(record)).encode())
+        digest.update(b"\1" + "\0".join(sorted(uncommitted_paths(record.root))).encode())
     except ValueError:
         digest.update(b"reflog unavailable")
     for path in sorted(RULES_DIRECTORY.rglob("*.yml")):

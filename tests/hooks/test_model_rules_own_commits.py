@@ -289,3 +289,18 @@ def test_a_session_whose_reflog_cannot_say_still_has_its_uncommitted_files_judge
 
     assert changes.committed.sendable == ()
     assert changes.uncommitted.sendable == ("notes.txt",)
+
+
+def test_the_same_content_committed_or_left_uncommitted_is_a_new_review_input(
+    git_project: Path, tmp_path: Path, executable: StubWriter, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    install_fakes(executable, tmp_path, monkeypatch)
+    record = register_session(git_project, tmp_path, monkeypatch)
+    start = git(git_project, "rev-parse", "HEAD")
+    others_work(git_project, "theirs.txt")
+    git(git_project, "merge", "--quiet", "--ff-only", "others")
+    fast_forwarded = model_rules_gate._inputs(record)
+
+    git(git_project, "reset", "--quiet", "--soft", start)
+
+    assert model_rules_gate._inputs(record) != fast_forwarded

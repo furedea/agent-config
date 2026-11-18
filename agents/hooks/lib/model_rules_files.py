@@ -147,7 +147,8 @@ def _name_only(root: Path, command: list[str], diff_filter: str = "AMT") -> list
 
 
 def _git_lines(root: Path, *arguments: str) -> list[str]:
-    return _git_output(root, *arguments).decode(errors="replace").splitlines()
+    # Only a newline ends a line: `splitlines` also splits on characters a commit subject may contain.
+    return [line for line in _git_output(root, *arguments).decode(errors="replace").split("\n") if line]
 
 
 def _git_output(root: Path, *arguments: str) -> bytes:

@@ -201,6 +201,16 @@ def test_a_repository_without_a_reflog_cannot_tell_either(git_project: Path, bas
         own_paths(git_project, base, registered_entries)
 
 
+def test_a_commit_subject_with_a_unicode_line_break_does_not_split_its_reflog_entry(
+    git_project: Path, base: str
+) -> None:
+    (git_project / "mine.txt").write_text("x\n")
+    git(git_project, "add", "mine.txt")
+    git(git_project, "commit", "--quiet", "-m", "split\x0bhere\x85now")
+
+    assert own_paths(git_project, base) == ("mine.txt",)
+
+
 def test_a_failing_git_is_reported_as_a_value_error(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="cannot be listed"):
         own_paths(tmp_path, "HEAD")

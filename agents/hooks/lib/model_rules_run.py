@@ -305,7 +305,6 @@ class _Exited:
 
     @property
     def failure(self) -> Prevented:
-        """The run reported as failed by its exit status."""
         return Prevented(f"{self.program} exited with status {self.status}")
 
 

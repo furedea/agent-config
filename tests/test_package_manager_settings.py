@@ -35,15 +35,26 @@ EDITED_FILES = (
     *PINNED_FILES,
 )
 
+CODEX_READ_ONLY = "read"
+
 policy = load_script_module("agents/hooks/lib/secret_path_policy.py", "secret_path_policy")
 RULES = policy.load(REPO_ROOT / "agents/hooks/rules/secret_path_policy.json")
 
 
 @pytest.fixture(scope="module")
 def claude_settings(agent_harness: CliRunner, tmp_path_factory: pytest.TempPathFactory) -> dict:
+    """Render the Claude settings once; every pinned path is checked against the same output."""
     path = tmp_path_factory.mktemp("claude-settings") / "settings.json"
     agent_harness("generate-claude-settings", "--output", str(path))
     return json.loads(path.read_text())
+
+
+@pytest.fixture(scope="module")
+def codex_filesystem(agent_harness: CliRunner, tmp_path_factory: pytest.TempPathFactory) -> dict:
+    """Render the Codex config once; every pinned path is checked against the same guarded profile."""
+    path = tmp_path_factory.mktemp("codex-config") / "config.toml"
+    agent_harness("generate-codex-config-source", "--output", str(path))
+    return tomllib.loads(path.read_text())["permissions"]["guarded"]["filesystem"]
 
 
 @pytest.mark.parametrize("path", PINNED_PATHS)
@@ -62,12 +73,9 @@ def test_claude_file_tools_cannot_edit_pinned_package_manager_settings(claude_se
 @pytest.mark.integration
 @pytest.mark.parametrize("path", PINNED_PATHS)
 def test_codex_commands_cannot_write_pinned_package_manager_settings_even_from_a_home_workspace(
-    agent_harness: CliRunner, tmp_path: Path, path: str
+    codex_filesystem: dict, path: str
 ) -> None:
-    config_path = tmp_path / "config.toml"
-    agent_harness("generate-codex-config-source", "--output", str(config_path))
-    filesystem = tomllib.loads(config_path.read_text())["permissions"]["guarded"]["filesystem"]
-    assert filesystem[path] == "read"
+    assert codex_filesystem[path] == CODEX_READ_ONLY
 
 
 @pytest.mark.parametrize("path", EDITED_FILES)

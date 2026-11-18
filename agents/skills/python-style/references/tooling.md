@@ -2,14 +2,14 @@
 
 ## Package Management
 
-- Use only `uv` for package management, don't use `pip`
+- Use only `uv` for package management
 - Install dependencies using `uv sync`
 - Run verification tools using `uv run --frozen {tool}` so checks never rewrite `uv.lock`
 - Baseline tooling dependencies belong in template-defined dependency groups, not ad hoc commands
 - Add project-specific dependencies using `uv add {package}`
 - Add project-specific tool dependencies using `uv add --group <group> {package}`
 - Upgrade pinned packages using `uv lock --upgrade-package {package}`
-- Prohibited: `uv pip install`, `uv add --dev`, `@latest`
+- Prohibited: `uv add --dev`, `@latest`
 
 ## Directory Structure
 

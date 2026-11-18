@@ -31,16 +31,12 @@ For explicit PR requests:
     Do not write the body to a file; `--body-file -` reading the same heredoc is also fine. The
     quoted `'EOF'` keeps backticks and `$` literal, so code spans in the body are never run.
 
-Do not pass `-u` or `--set-upstream` to `git push`: setting the upstream writes `.git/config`,
-which the sandbox protects, so the push succeeds but the command exits with an error. Name the
-branch explicitly in later pushes and in `gh pr create --head`.
-
 For rebase and force-push:
 
 - `git rebase origin/<base>` refreshes a PR branch before its first push. Non-interactive rebases onto other refs, including `--onto`, are allowed when the task needs them; reflog can undo them.
 - `git rebase --continue` and `git rebase --abort` complete or recover a rebase.
 - Interactive rebase is outside the default workflow.
-- After rebasing a branch this task already pushed, publish it with `git push --force-with-lease --force-if-includes origin <branch>`. The lease refuses to overwrite commits that were pushed elsewhere, and `--force-if-includes` refuses when a background fetch hid them. Never use bare `--force`, `+refspec` pushes, or any force push to the default branch. If the lease is rejected, stop and ask the user.
+- After rebasing a branch this task already pushed, publish it with `git push --force-with-lease --force-if-includes origin <branch>`. The lease refuses to overwrite commits that were pushed elsewhere, and `--force-if-includes` refuses when a background fetch hid them. If the lease is rejected, stop and ask the user.
 
 ## Pull Request Body
 

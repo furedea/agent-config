@@ -1,0 +1,163 @@
+{
+  "schema": "jev-lint-eval-1",
+  "recorded": "2026-11-18T06:22:04.676Z",
+  "model": "jev-1.14.0",
+  "suite": "go/main-is-thin",
+  "rules": [
+    {
+      "id": "main-is-thin",
+      "draft": "9e034ec025e0",
+      "at": 0.5
+    }
+  ],
+  "cutoffs": {},
+  "passes": [
+    [
+      {
+        "rule": "main-is-thin",
+        "file": "agents/hooks/lint/model-rules/go/main-is-thin/fixtures/conforming_exit_codes.go",
+        "line": 11,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.17,
+        "confidence": null
+      },
+      {
+        "rule": "main-is-thin",
+        "file": "agents/hooks/lint/model-rules/go/main-is-thin/fixtures/conforming_run.go",
+        "line": 10,
+        "endLine": 15,
+        "kind": "noul",
+        "value": 0.1,
+        "confidence": null
+      },
+      {
+        "rule": "main-is-thin",
+        "file": "agents/hooks/lint/model-rules/go/main-is-thin/fixtures/conforming_wiring.go",
+        "line": 13,
+        "endLine": 27,
+        "kind": "noul",
+        "value": 0.12,
+        "confidence": null
+      },
+      {
+        "rule": "main-is-thin",
+        "file": "agents/hooks/lint/model-rules/go/main-is-thin/fixtures/violating_totals.go",
+        "line": 11,
+        "endLine": 28,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "main-is-thin",
+        "file": "agents/hooks/lint/model-rules/go/main-is-thin/fixtures/violating_retry.go",
+        "line": 13,
+        "endLine": 30,
+        "kind": "noul",
+        "value": 0.89,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "main-is-thin",
+        "file": "agents/hooks/lint/model-rules/go/main-is-thin/fixtures/conforming_exit_codes.go",
+        "line": 11,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.18,
+        "confidence": null
+      },
+      {
+        "rule": "main-is-thin",
+        "file": "agents/hooks/lint/model-rules/go/main-is-thin/fixtures/conforming_run.go",
+        "line": 10,
+        "endLine": 15,
+        "kind": "noul",
+        "value": 0.1,
+        "confidence": null
+      },
+      {
+        "rule": "main-is-thin",
+        "file": "agents/hooks/lint/model-rules/go/main-is-thin/fixtures/conforming_wiring.go",
+        "line": 13,
+        "endLine": 27,
+        "kind": "noul",
+        "value": 0.13,
+        "confidence": null
+      },
+      {
+        "rule": "main-is-thin",
+        "file": "agents/hooks/lint/model-rules/go/main-is-thin/fixtures/violating_retry.go",
+        "line": 13,
+        "endLine": 30,
+        "kind": "noul",
+        "value": 0.92,
+        "confidence": null
+      },
+      {
+        "rule": "main-is-thin",
+        "file": "agents/hooks/lint/model-rules/go/main-is-thin/fixtures/violating_totals.go",
+        "line": 11,
+        "endLine": 28,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "main-is-thin",
+        "file": "agents/hooks/lint/model-rules/go/main-is-thin/fixtures/conforming_exit_codes.go",
+        "line": 11,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.17,
+        "confidence": null
+      },
+      {
+        "rule": "main-is-thin",
+        "file": "agents/hooks/lint/model-rules/go/main-is-thin/fixtures/violating_retry.go",
+        "line": 13,
+        "endLine": 30,
+        "kind": "noul",
+        "value": 0.91,
+        "confidence": null
+      },
+      {
+        "rule": "main-is-thin",
+        "file": "agents/hooks/lint/model-rules/go/main-is-thin/fixtures/conforming_wiring.go",
+        "line": 13,
+        "endLine": 27,
+        "kind": "noul",
+        "value": 0.12,
+        "confidence": null
+      },
+      {
+        "rule": "main-is-thin",
+        "file": "agents/hooks/lint/model-rules/go/main-is-thin/fixtures/conforming_run.go",
+        "line": 10,
+        "endLine": 15,
+        "kind": "noul",
+        "value": 0.09,
+        "confidence": null
+      },
+      {
+        "rule": "main-is-thin",
+        "file": "agents/hooks/lint/model-rules/go/main-is-thin/fixtures/violating_totals.go",
+        "line": 11,
+        "endLine": 28,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      }
+    ]
+  ],
+  "spent": {
+    "calls": 15,
+    "inputTokens": 10254,
+    "usd": 0.000430668,
+    "ms": 231
+  }
+}

@@ -1,0 +1,163 @@
+{
+  "schema": "jev-lint-eval-1",
+  "recorded": "2026-11-18T06:22:03.432Z",
+  "model": "jev-1.14.0",
+  "suite": "go/construction-separate-from-execution",
+  "rules": [
+    {
+      "id": "construction-separate-from-execution",
+      "draft": "116c1c1ef772",
+      "at": 0.5
+    }
+  ],
+  "cutoffs": {},
+  "passes": [
+    [
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/go/construction-separate-from-execution/fixtures/violating.go",
+        "line": 12,
+        "endLine": 31,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/go/construction-separate-from-execution/fixtures/violating.go",
+        "line": 33,
+        "endLine": 47,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/go/construction-separate-from-execution/fixtures/conforming.go",
+        "line": 11,
+        "endLine": 14,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/go/construction-separate-from-execution/fixtures/conforming.go",
+        "line": 16,
+        "endLine": 20,
+        "kind": "noul",
+        "value": 0.93,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/go/construction-separate-from-execution/fixtures/conforming.go",
+        "line": 26,
+        "endLine": 33,
+        "kind": "noul",
+        "value": 0.39,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/go/construction-separate-from-execution/fixtures/conforming.go",
+        "line": 11,
+        "endLine": 14,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/go/construction-separate-from-execution/fixtures/conforming.go",
+        "line": 16,
+        "endLine": 20,
+        "kind": "noul",
+        "value": 0.92,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/go/construction-separate-from-execution/fixtures/conforming.go",
+        "line": 26,
+        "endLine": 33,
+        "kind": "noul",
+        "value": 0.35,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/go/construction-separate-from-execution/fixtures/violating.go",
+        "line": 12,
+        "endLine": 31,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/go/construction-separate-from-execution/fixtures/violating.go",
+        "line": 33,
+        "endLine": 47,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/go/construction-separate-from-execution/fixtures/violating.go",
+        "line": 12,
+        "endLine": 31,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/go/construction-separate-from-execution/fixtures/violating.go",
+        "line": 33,
+        "endLine": 47,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/go/construction-separate-from-execution/fixtures/conforming.go",
+        "line": 11,
+        "endLine": 14,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/go/construction-separate-from-execution/fixtures/conforming.go",
+        "line": 16,
+        "endLine": 20,
+        "kind": "noul",
+        "value": 0.92,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/go/construction-separate-from-execution/fixtures/conforming.go",
+        "line": 26,
+        "endLine": 33,
+        "kind": "noul",
+        "value": 0.35,
+        "confidence": null
+      }
+    ]
+  ],
+  "spent": {
+    "calls": 6,
+    "inputTokens": 8208,
+    "usd": 0.000344736,
+    "ms": 216
+  }
+}

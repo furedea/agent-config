@@ -1,0 +1,217 @@
+{
+  "schema": "jev-lint-eval-1",
+  "recorded": "2026-11-18T06:22:04.874Z",
+  "model": "jev-1.14.0",
+  "suite": "go/no-comment-restating-code",
+  "rules": [
+    {
+      "id": "no-comment-restating-code",
+      "draft": "b599a0de7b94",
+      "at": 0.5
+    }
+  ],
+  "cutoffs": {},
+  "passes": [
+    [
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/go/no-comment-restating-code/fixtures/conforming.go",
+        "line": 8,
+        "endLine": 11,
+        "kind": "noul",
+        "value": 0.1,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/go/no-comment-restating-code/fixtures/conforming.go",
+        "line": 13,
+        "endLine": 16,
+        "kind": "noul",
+        "value": 0.1,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/go/no-comment-restating-code/fixtures/conforming.go",
+        "line": 18,
+        "endLine": 21,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/go/no-comment-restating-code/fixtures/conforming.go",
+        "line": 23,
+        "endLine": 30,
+        "kind": "noul",
+        "value": 0.1,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/go/no-comment-restating-code/fixtures/violating.go",
+        "line": 9,
+        "endLine": 12,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/go/no-comment-restating-code/fixtures/violating.go",
+        "line": 14,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/go/no-comment-restating-code/fixtures/violating.go",
+        "line": 24,
+        "endLine": 29,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/go/no-comment-restating-code/fixtures/violating.go",
+        "line": 9,
+        "endLine": 12,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/go/no-comment-restating-code/fixtures/violating.go",
+        "line": 14,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/go/no-comment-restating-code/fixtures/violating.go",
+        "line": 24,
+        "endLine": 29,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/go/no-comment-restating-code/fixtures/conforming.go",
+        "line": 8,
+        "endLine": 11,
+        "kind": "noul",
+        "value": 0.09,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/go/no-comment-restating-code/fixtures/conforming.go",
+        "line": 13,
+        "endLine": 16,
+        "kind": "noul",
+        "value": 0.12,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/go/no-comment-restating-code/fixtures/conforming.go",
+        "line": 18,
+        "endLine": 21,
+        "kind": "noul",
+        "value": 0.03,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/go/no-comment-restating-code/fixtures/conforming.go",
+        "line": 23,
+        "endLine": 30,
+        "kind": "noul",
+        "value": 0.09,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/go/no-comment-restating-code/fixtures/violating.go",
+        "line": 9,
+        "endLine": 12,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/go/no-comment-restating-code/fixtures/violating.go",
+        "line": 14,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/go/no-comment-restating-code/fixtures/violating.go",
+        "line": 24,
+        "endLine": 29,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/go/no-comment-restating-code/fixtures/conforming.go",
+        "line": 8,
+        "endLine": 11,
+        "kind": "noul",
+        "value": 0.09,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/go/no-comment-restating-code/fixtures/conforming.go",
+        "line": 13,
+        "endLine": 16,
+        "kind": "noul",
+        "value": 0.11,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/go/no-comment-restating-code/fixtures/conforming.go",
+        "line": 18,
+        "endLine": 21,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/go/no-comment-restating-code/fixtures/conforming.go",
+        "line": 23,
+        "endLine": 30,
+        "kind": "noul",
+        "value": 0.08,
+        "confidence": null
+      }
+    ]
+  ],
+  "spent": {
+    "calls": 6,
+    "inputTokens": 9261,
+    "usd": 0.000388962,
+    "ms": 169
+  }
+}

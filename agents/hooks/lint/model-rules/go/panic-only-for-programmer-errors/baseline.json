@@ -1,0 +1,244 @@
+{
+  "schema": "jev-lint-eval-1",
+  "recorded": "2026-11-18T06:22:05.473Z",
+  "model": "jev-1.14.0",
+  "suite": "go/panic-only-for-programmer-errors",
+  "rules": [
+    {
+      "id": "panic-only-for-programmer-errors",
+      "draft": "976a2103b201",
+      "at": 0.5
+    }
+  ],
+  "cutoffs": {},
+  "passes": [
+    [
+      {
+        "rule": "panic-only-for-programmer-errors",
+        "file": "agents/hooks/lint/model-rules/go/panic-only-for-programmer-errors/fixtures/conforming.go",
+        "line": 17,
+        "endLine": 17,
+        "kind": "noul",
+        "value": 0.37,
+        "confidence": null
+      },
+      {
+        "rule": "panic-only-for-programmer-errors",
+        "file": "agents/hooks/lint/model-rules/go/panic-only-for-programmer-errors/fixtures/conforming.go",
+        "line": 25,
+        "endLine": 25,
+        "kind": "noul",
+        "value": 0.43,
+        "confidence": null
+      },
+      {
+        "rule": "panic-only-for-programmer-errors",
+        "file": "agents/hooks/lint/model-rules/go/panic-only-for-programmer-errors/fixtures/conforming.go",
+        "line": 44,
+        "endLine": 44,
+        "kind": "noul",
+        "value": 0.15,
+        "confidence": null
+      },
+      {
+        "rule": "panic-only-for-programmer-errors",
+        "file": "agents/hooks/lint/model-rules/go/panic-only-for-programmer-errors/fixtures/conforming.go",
+        "line": 50,
+        "endLine": 50,
+        "kind": "noul",
+        "value": 0.42,
+        "confidence": null
+      },
+      {
+        "rule": "panic-only-for-programmer-errors",
+        "file": "agents/hooks/lint/model-rules/go/panic-only-for-programmer-errors/fixtures/violating.go",
+        "line": 13,
+        "endLine": 13,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "panic-only-for-programmer-errors",
+        "file": "agents/hooks/lint/model-rules/go/panic-only-for-programmer-errors/fixtures/violating.go",
+        "line": 21,
+        "endLine": 21,
+        "kind": "noul",
+        "value": 0.92,
+        "confidence": null
+      },
+      {
+        "rule": "panic-only-for-programmer-errors",
+        "file": "agents/hooks/lint/model-rules/go/panic-only-for-programmer-errors/fixtures/violating.go",
+        "line": 28,
+        "endLine": 28,
+        "kind": "noul",
+        "value": 0.92,
+        "confidence": null
+      },
+      {
+        "rule": "panic-only-for-programmer-errors",
+        "file": "agents/hooks/lint/model-rules/go/panic-only-for-programmer-errors/fixtures/violating.go",
+        "line": 31,
+        "endLine": 31,
+        "kind": "noul",
+        "value": 0.93,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "panic-only-for-programmer-errors",
+        "file": "agents/hooks/lint/model-rules/go/panic-only-for-programmer-errors/fixtures/violating.go",
+        "line": 13,
+        "endLine": 13,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "panic-only-for-programmer-errors",
+        "file": "agents/hooks/lint/model-rules/go/panic-only-for-programmer-errors/fixtures/violating.go",
+        "line": 21,
+        "endLine": 21,
+        "kind": "noul",
+        "value": 0.93,
+        "confidence": null
+      },
+      {
+        "rule": "panic-only-for-programmer-errors",
+        "file": "agents/hooks/lint/model-rules/go/panic-only-for-programmer-errors/fixtures/violating.go",
+        "line": 28,
+        "endLine": 28,
+        "kind": "noul",
+        "value": 0.92,
+        "confidence": null
+      },
+      {
+        "rule": "panic-only-for-programmer-errors",
+        "file": "agents/hooks/lint/model-rules/go/panic-only-for-programmer-errors/fixtures/violating.go",
+        "line": 31,
+        "endLine": 31,
+        "kind": "noul",
+        "value": 0.94,
+        "confidence": null
+      },
+      {
+        "rule": "panic-only-for-programmer-errors",
+        "file": "agents/hooks/lint/model-rules/go/panic-only-for-programmer-errors/fixtures/conforming.go",
+        "line": 17,
+        "endLine": 17,
+        "kind": "noul",
+        "value": 0.41,
+        "confidence": null
+      },
+      {
+        "rule": "panic-only-for-programmer-errors",
+        "file": "agents/hooks/lint/model-rules/go/panic-only-for-programmer-errors/fixtures/conforming.go",
+        "line": 25,
+        "endLine": 25,
+        "kind": "noul",
+        "value": 0.37,
+        "confidence": null
+      },
+      {
+        "rule": "panic-only-for-programmer-errors",
+        "file": "agents/hooks/lint/model-rules/go/panic-only-for-programmer-errors/fixtures/conforming.go",
+        "line": 44,
+        "endLine": 44,
+        "kind": "noul",
+        "value": 0.16,
+        "confidence": null
+      },
+      {
+        "rule": "panic-only-for-programmer-errors",
+        "file": "agents/hooks/lint/model-rules/go/panic-only-for-programmer-errors/fixtures/conforming.go",
+        "line": 50,
+        "endLine": 50,
+        "kind": "noul",
+        "value": 0.4,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "panic-only-for-programmer-errors",
+        "file": "agents/hooks/lint/model-rules/go/panic-only-for-programmer-errors/fixtures/conforming.go",
+        "line": 17,
+        "endLine": 17,
+        "kind": "noul",
+        "value": 0.38,
+        "confidence": null
+      },
+      {
+        "rule": "panic-only-for-programmer-errors",
+        "file": "agents/hooks/lint/model-rules/go/panic-only-for-programmer-errors/fixtures/conforming.go",
+        "line": 25,
+        "endLine": 25,
+        "kind": "noul",
+        "value": 0.44,
+        "confidence": null
+      },
+      {
+        "rule": "panic-only-for-programmer-errors",
+        "file": "agents/hooks/lint/model-rules/go/panic-only-for-programmer-errors/fixtures/conforming.go",
+        "line": 44,
+        "endLine": 44,
+        "kind": "noul",
+        "value": 0.15,
+        "confidence": null
+      },
+      {
+        "rule": "panic-only-for-programmer-errors",
+        "file": "agents/hooks/lint/model-rules/go/panic-only-for-programmer-errors/fixtures/conforming.go",
+        "line": 50,
+        "endLine": 50,
+        "kind": "noul",
+        "value": 0.37,
+        "confidence": null
+      },
+      {
+        "rule": "panic-only-for-programmer-errors",
+        "file": "agents/hooks/lint/model-rules/go/panic-only-for-programmer-errors/fixtures/violating.go",
+        "line": 13,
+        "endLine": 13,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "panic-only-for-programmer-errors",
+        "file": "agents/hooks/lint/model-rules/go/panic-only-for-programmer-errors/fixtures/violating.go",
+        "line": 21,
+        "endLine": 21,
+        "kind": "noul",
+        "value": 0.91,
+        "confidence": null
+      },
+      {
+        "rule": "panic-only-for-programmer-errors",
+        "file": "agents/hooks/lint/model-rules/go/panic-only-for-programmer-errors/fixtures/violating.go",
+        "line": 28,
+        "endLine": 28,
+        "kind": "noul",
+        "value": 0.92,
+        "confidence": null
+      },
+      {
+        "rule": "panic-only-for-programmer-errors",
+        "file": "agents/hooks/lint/model-rules/go/panic-only-for-programmer-errors/fixtures/violating.go",
+        "line": 31,
+        "endLine": 31,
+        "kind": "noul",
+        "value": 0.92,
+        "confidence": null
+      }
+    ]
+  ],
+  "spent": {
+    "calls": 6,
+    "inputTokens": 10974,
+    "usd": 0.000460908,
+    "ms": 187
+  }
+}

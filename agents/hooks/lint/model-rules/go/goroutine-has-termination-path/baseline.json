@@ -1,0 +1,217 @@
+{
+  "schema": "jev-lint-eval-1",
+  "recorded": "2026-11-18T06:22:04.207Z",
+  "model": "jev-1.14.0",
+  "suite": "go/goroutine-has-termination-path",
+  "rules": [
+    {
+      "id": "goroutine-has-termination-path",
+      "draft": "c8d2629d9f90",
+      "at": 0.5
+    }
+  ],
+  "cutoffs": {},
+  "passes": [
+    [
+      {
+        "rule": "goroutine-has-termination-path",
+        "file": "agents/hooks/lint/model-rules/go/goroutine-has-termination-path/fixtures/violating.go",
+        "line": 13,
+        "endLine": 18,
+        "kind": "noul",
+        "value": 0.99,
+        "confidence": null
+      },
+      {
+        "rule": "goroutine-has-termination-path",
+        "file": "agents/hooks/lint/model-rules/go/goroutine-has-termination-path/fixtures/violating.go",
+        "line": 22,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.9,
+        "confidence": null
+      },
+      {
+        "rule": "goroutine-has-termination-path",
+        "file": "agents/hooks/lint/model-rules/go/goroutine-has-termination-path/fixtures/violating.go",
+        "line": 26,
+        "endLine": 30,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "goroutine-has-termination-path",
+        "file": "agents/hooks/lint/model-rules/go/goroutine-has-termination-path/fixtures/conforming.go",
+        "line": 15,
+        "endLine": 18,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "goroutine-has-termination-path",
+        "file": "agents/hooks/lint/model-rules/go/goroutine-has-termination-path/fixtures/conforming.go",
+        "line": 25,
+        "endLine": 37,
+        "kind": "noul",
+        "value": 0.13,
+        "confidence": null
+      },
+      {
+        "rule": "goroutine-has-termination-path",
+        "file": "agents/hooks/lint/model-rules/go/goroutine-has-termination-path/fixtures/conforming.go",
+        "line": 43,
+        "endLine": 49,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "goroutine-has-termination-path",
+        "file": "agents/hooks/lint/model-rules/go/goroutine-has-termination-path/fixtures/conforming.go",
+        "line": 57,
+        "endLine": 61,
+        "kind": "noul",
+        "value": 0.46,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "goroutine-has-termination-path",
+        "file": "agents/hooks/lint/model-rules/go/goroutine-has-termination-path/fixtures/conforming.go",
+        "line": 15,
+        "endLine": 18,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "goroutine-has-termination-path",
+        "file": "agents/hooks/lint/model-rules/go/goroutine-has-termination-path/fixtures/conforming.go",
+        "line": 25,
+        "endLine": 37,
+        "kind": "noul",
+        "value": 0.23,
+        "confidence": null
+      },
+      {
+        "rule": "goroutine-has-termination-path",
+        "file": "agents/hooks/lint/model-rules/go/goroutine-has-termination-path/fixtures/conforming.go",
+        "line": 43,
+        "endLine": 49,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "goroutine-has-termination-path",
+        "file": "agents/hooks/lint/model-rules/go/goroutine-has-termination-path/fixtures/conforming.go",
+        "line": 57,
+        "endLine": 61,
+        "kind": "noul",
+        "value": 0.48,
+        "confidence": null
+      },
+      {
+        "rule": "goroutine-has-termination-path",
+        "file": "agents/hooks/lint/model-rules/go/goroutine-has-termination-path/fixtures/violating.go",
+        "line": 13,
+        "endLine": 18,
+        "kind": "noul",
+        "value": 0.99,
+        "confidence": null
+      },
+      {
+        "rule": "goroutine-has-termination-path",
+        "file": "agents/hooks/lint/model-rules/go/goroutine-has-termination-path/fixtures/violating.go",
+        "line": 22,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.91,
+        "confidence": null
+      },
+      {
+        "rule": "goroutine-has-termination-path",
+        "file": "agents/hooks/lint/model-rules/go/goroutine-has-termination-path/fixtures/violating.go",
+        "line": 26,
+        "endLine": 30,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "goroutine-has-termination-path",
+        "file": "agents/hooks/lint/model-rules/go/goroutine-has-termination-path/fixtures/conforming.go",
+        "line": 15,
+        "endLine": 18,
+        "kind": "noul",
+        "value": 0.03,
+        "confidence": null
+      },
+      {
+        "rule": "goroutine-has-termination-path",
+        "file": "agents/hooks/lint/model-rules/go/goroutine-has-termination-path/fixtures/conforming.go",
+        "line": 25,
+        "endLine": 37,
+        "kind": "noul",
+        "value": 0.11,
+        "confidence": null
+      },
+      {
+        "rule": "goroutine-has-termination-path",
+        "file": "agents/hooks/lint/model-rules/go/goroutine-has-termination-path/fixtures/conforming.go",
+        "line": 43,
+        "endLine": 49,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "goroutine-has-termination-path",
+        "file": "agents/hooks/lint/model-rules/go/goroutine-has-termination-path/fixtures/conforming.go",
+        "line": 57,
+        "endLine": 61,
+        "kind": "noul",
+        "value": 0.49,
+        "confidence": null
+      },
+      {
+        "rule": "goroutine-has-termination-path",
+        "file": "agents/hooks/lint/model-rules/go/goroutine-has-termination-path/fixtures/violating.go",
+        "line": 13,
+        "endLine": 18,
+        "kind": "noul",
+        "value": 0.99,
+        "confidence": null
+      },
+      {
+        "rule": "goroutine-has-termination-path",
+        "file": "agents/hooks/lint/model-rules/go/goroutine-has-termination-path/fixtures/violating.go",
+        "line": 22,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.87,
+        "confidence": null
+      },
+      {
+        "rule": "goroutine-has-termination-path",
+        "file": "agents/hooks/lint/model-rules/go/goroutine-has-termination-path/fixtures/violating.go",
+        "line": 26,
+        "endLine": 30,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      }
+    ]
+  ],
+  "spent": {
+    "calls": 6,
+    "inputTokens": 11400,
+    "usd": 0.00047880000000000004,
+    "ms": 171
+  }
+}

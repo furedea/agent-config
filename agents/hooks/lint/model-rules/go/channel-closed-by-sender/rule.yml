@@ -1,12 +1,14 @@
 # Go concurrency (agents/skills/go-style/references/concurrency.md: "The sender closes a channel, never the receiver;
-# do not close a channel from several senders"). Advisory (ADR-0021). The cutoff is the 0.5 starting value, not fitted.
+# do not close a channel from several senders"). Advisory (ADR-0021). The cutoff 0.52 is jev-lint's fitted midpoint
+# on this folder's fixtures (eval of 2026-11-18, 3 passes): the highest clean case scored 0.30 (a done channel closed by
+# its watcher) and the lowest bad one 0.73 (one of two code paths that close the same channel).
 id: channel-closed-by-sender
 language: Go
 kind: noul
 subject: node
 # The file is sent whole: the other senders of the channel are usually in other functions.
 state: located
-threshold: 0.5
+threshold: 0.52
 axis: file
 severity: warning
 rule:

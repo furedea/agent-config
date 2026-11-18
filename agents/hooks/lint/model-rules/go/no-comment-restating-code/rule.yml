@@ -1,13 +1,19 @@
 # M-33 minimal comments (agents/AGENTS.md: "minimize comments and docstrings; use them for public APIs, TODOs,
-# non-obvious constraints, and intent that code cannot express"). Advisory: the Stop hook reports findings and never
-# promotes this rule to a gate (ADR-0021). Selected by a comment or docstring inside the function that is not a tool
-# directive or TODO; a comment that restates the next line is the violation.
+# non-obvious constraints, and intent that code cannot express"). Advisory (ADR-0021). Selected by a comment inside
+# the function that is not a tool directive or TODO; a comment that restates the next line is the violation. The
+# cutoff 0.54 is jev-lint's fitted midpoint on this folder's fixtures (eval of 2026-11-18, 3 passes): the highest
+# clean case scored 0.12 and the lowest bad one 0.97.
 id: no-comment-restating-code
 language: Go
 kind: noul
 subject: node
 state: local
-threshold: 0.5
+threshold: 0.54
+# The fixtures sit far from the cutoff on both sides (highest clean and lowest bad: 0.12 and 0.97), so replay
+# calls the suite blind; a boundary fixture would need a case a reviewer would argue over.
+inconclusive: >-
+  Blind: every fixture is clearly clean or clearly defective and no boundary case exists yet; the next one to
+  add is a comment that restates the line but adds a unit or a reason in a few words.
 axis: file
 severity: warning
 rule:

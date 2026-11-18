@@ -1,15 +1,19 @@
 # M-05 command/query naming (agents/AGENTS.md: "name command functions for their side effects and query functions for
-# the value they return"). Advisory: the Stop hook reports findings and never promotes this rule to a gate (ADR-0021).
-# The cutoff is the 0.5 starting value, not fitted: on this folder's fixtures the highest conforming case scored 0.30
-# and the fit would be 0.63. That is a margin of 0.20 from the cutoff, close to the 0.25 line at which replay can call
-# a suite blind, so this boundary is still near the edge.
+# the value they return"). Advisory (ADR-0021). The cutoff 0.63 is jev-lint's fitted midpoint on this folder's
+# fixtures (eval of 2026-11-18, 3 passes): the highest clean case scored 0.31 (a method named Judge) and the lowest
+# bad one 0.95.
 id: command-query-naming
 language: Go
 kind: noul
 subject: node
 # The function plus the same file's imports and enclosing declarations; no other file is sent.
 state: local
-threshold: 0.5
+threshold: 0.63
+# The fixtures sit far from the cutoff on both sides (highest clean and lowest bad: 0.31 and 0.95), so replay
+# calls the suite blind; a boundary fixture would need a case a reviewer would argue over.
+inconclusive: >-
+  Blind: every fixture is clearly clean or clearly defective and no boundary case exists yet; the next one to
+  add is a name whose verb half promises a read, such as Refresh or Sync, that only computes.
 axis: file
 severity: warning
 rule:

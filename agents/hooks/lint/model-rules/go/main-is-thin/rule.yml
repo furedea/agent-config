@@ -1,11 +1,13 @@
 # Go layout (agents/skills/go-style/references/tooling.md: "Keep `main` thin: parse flags, wire dependencies, and call
-# library code"). Advisory (ADR-0021). The cutoff is the 0.5 starting value, not fitted.
+# library code"). Advisory (ADR-0021). The cutoff 0.54 is jev-lint's fitted midpoint on this folder's fixtures (eval
+# of 2026-11-18, 3 passes): the highest clean case scored 0.18 (a switch that maps error kinds to exit codes) and the
+# lowest bad one 0.89.
 id: main-is-thin
 language: Go
 kind: noul
 subject: node
 state: local
-threshold: 0.5
+threshold: 0.54
 axis: file
 severity: warning
 rule:

@@ -220,12 +220,15 @@ def test_every_go_and_rust_rule_ships_an_eval_suite_with_both_kinds_of_fixture(l
         timeout=60,
     )
 
+    rule_ids = {expect.parent.name for expect in (RULES / language).glob("*/expect.yml")}
+    assert RULE_IDS <= rule_ids
     suites = [line for line in result.stdout.splitlines() if line.startswith(f"{language}/")]
-    assert {line.split(":")[0] for line in suites} == {f"{language}/{rule_id}" for rule_id in RULE_IDS}
-    for rule_id in RULE_IDS:
+    assert {line.split(":")[0] for line in suites} == {f"{language}/{rule_id}" for rule_id in rule_ids}
+    for rule_id in rule_ids:
         fixtures = (RULES / language / rule_id / "fixtures").iterdir()
-        names = {path.name for path in fixtures}
-        assert {name.split(".")[0].removesuffix("_test") for name in names} == {"violating", "conforming"}
+        # A fixture is named for its kind, optionally followed by `_<case>` (a Go `package main` holds one `main`).
+        kinds = {path.name.split(".")[0].removesuffix("_test").split("_")[0] for path in fixtures}
+        assert kinds == {"violating", "conforming"}
 
 
 def test_functions_committed_since_the_base_are_still_selected(repository: Path) -> None:

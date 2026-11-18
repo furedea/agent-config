@@ -1,13 +1,19 @@
-# M-30 single-purpose functions (agents/AGENTS.md: "keep functions single-purpose at one abstraction level").
-# Advisory: the Stop hook reports findings and never promotes this rule to a gate (ADR-0021). Every function changed
-# in the session is a subject: a matcher over-matches on purpose, because a missed function fails silently and an
-# irrelevant one is cheap to read; the criteria exclude orchestration that only calls named steps.
+# M-30 single-purpose functions (agents/AGENTS.md: "keep functions single-purpose at one abstraction level"). Advisory
+# (ADR-0021). Every function changed in the session is a subject: a matcher over-matches on purpose, because a missed
+# function fails silently and an irrelevant one is cheap to read; the criteria exclude orchestration that only calls
+# named steps. The cutoff 0.46 is jev-lint's fitted midpoint on this folder's fixtures (eval of 2026-11-18, 3 passes):
+# the highest clean case scored 0.19 and the lowest bad one 0.73 (byte parsing mixed with orchestration).
 id: function-single-purpose
 language: Go
 kind: noul
 subject: node
 state: local
-threshold: 0.5
+threshold: 0.46
+# The fixtures sit far from the cutoff on both sides (highest clean and lowest bad: 0.19 and 0.73), so replay
+# calls the suite blind; a boundary fixture would need a case a reviewer would argue over.
+inconclusive: >-
+  Blind: every fixture is clearly clean or clearly defective and no boundary case exists yet; the next one to
+  add is a function that validates its input and then does the one job it is named for.
 axis: file
 severity: warning
 rule:

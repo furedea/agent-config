@@ -1,11 +1,13 @@
 # Go errors (agents/skills/go-style/references/errors.md: "Use `panic` only for programmer errors and initialization
-# failures, never for expected failures"). Advisory (ADR-0021). The cutoff is the 0.5 starting value, not fitted.
+# failures, never for expected failures"). Advisory (ADR-0021). The cutoff 0.68 is jev-lint's fitted midpoint on this
+# folder's fixtures (eval of 2026-11-18, 3 passes): the highest clean case scored 0.44 (a Must helper) and the lowest
+# bad one 0.91.
 id: panic-only-for-programmer-errors
 language: Go
 kind: noul
 subject: node
 state: local
-threshold: 0.5
+threshold: 0.68
 axis: file
 severity: warning
 rule:

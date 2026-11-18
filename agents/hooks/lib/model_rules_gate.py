@@ -206,7 +206,7 @@ class _Changes:
         if record.head is not None and head_commit(record.root) != record.head:
             committed = select(
                 record.root,
-                own_committed_paths(record.root, record.head, record.registered_at),
+                own_committed_paths(record.root, record.head, record.reflog_entries),
                 ReviewedSpan(record.head, "HEAD"),
             )
         dirty = uncommitted_paths(record.root)

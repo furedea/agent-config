@@ -12,7 +12,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 
-from session_snapshot import COMMIT_ID, Snapshot, capture, head_commit
+from session_snapshot import COMMIT_ID, Snapshot, capture, head_commit, reflog_entries
 
 SCHEMA = 1
 RETENTION_SECONDS = 7 * 24 * 60 * 60
@@ -56,10 +56,10 @@ class SessionRecord:
         return value if isinstance(value, str) and COMMIT_ID.fullmatch(value) else None
 
     @property
-    def registered_at(self) -> float:
-        """When the session registered, in epoch seconds; 0 for an older record, so no entry predates it."""
-        value = read_json(self.directory / "baseline.json").get("created_at")
-        return float(value) if isinstance(value, int | float) else 0.0
+    def reflog_entries(self) -> int:
+        """How many entries HEAD's reflog held when the session registered; 0 for an older record."""
+        value = read_json(self.directory / "baseline.json").get("reflog_entries")
+        return value if isinstance(value, int) and value >= 0 else 0
 
     def results(self) -> dict:
         """Read the saved results; raise StateError when they are unreadable or lack a `checks` mapping."""
@@ -180,6 +180,7 @@ def _create_record(key: SessionKey, directory: Path, *, resuming: bool) -> Sessi
                 "created_at": time.time(),
                 "files": baseline.to_json(),
                 "head": head_commit(key.root),
+                "reflog_entries": reflog_entries(key.root),
             },
         )
         atomic_json(staging / "results.json", {"checks": {}, "session_id": key.session_id, "revalidate_all": resuming})

@@ -62,3 +62,10 @@ def test_a_head_that_is_not_a_commit_id_is_ignored(state: Path) -> None:
     session_store.atomic_json(baseline, {**session_store.read_json(baseline), "head": "--output=/tmp/x"})
 
     assert session_store.load(record.directory).head is None
+
+
+def test_registration_records_how_many_reflog_entries_existed_and_not_the_later_ones(state: Path) -> None:
+    record = session_store.register(state, "claude", "head-test")
+    subprocess.run(["git", "commit", "--quiet", "--allow-empty", "-m", "later"], cwd=state, check=True)
+
+    assert session_store.load(record.directory).reflog_entries == 1

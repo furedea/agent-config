@@ -3,7 +3,6 @@
 import os
 import subprocess
 import sys
-import time
 from pathlib import Path
 
 import pytest
@@ -40,8 +39,8 @@ def others_work(root: Path, *names: str) -> None:
     git(root, "fetch", "--quiet", str(clone), "main:others")
 
 
-def own_paths(root: Path, base: str, registered_at: float = 0.0) -> tuple[str, ...]:
-    return model_rules_files.own_committed_paths(root, base, registered_at)
+def own_paths(root: Path, base: str, registered_entries: int = 0) -> tuple[str, ...]:
+    return model_rules_files.own_committed_paths(root, base, registered_entries)
 
 
 @pytest.fixture
@@ -146,16 +145,14 @@ def test_a_revert_is_the_sessions_commit(git_project: Path) -> None:
 def test_a_commit_made_before_the_session_and_fast_forwarded_in_is_not_the_sessions(
     git_project: Path, base: str
 ) -> None:
-    long_ago = {"GIT_AUTHOR_DATE": "2020-01-01T00:00:00Z", "GIT_COMMITTER_DATE": "2020-01-01T00:00:00Z"}
     git(git_project, "switch", "--quiet", "-c", "side")
-    (git_project / "earlier.txt").write_text("x\n")
-    git(git_project, "add", "earlier.txt")
-    git(git_project, "commit", "--quiet", "-m", "earlier", env=long_ago)
+    commit(git_project, "earlier.txt")
     git(git_project, "switch", "--quiet", "main")
+    registered_entries = len(git(git_project, "reflog", "show", "--format=%H", "HEAD").splitlines())
 
     git(git_project, "merge", "--quiet", "--ff-only", "side")
 
-    assert own_paths(git_project, base, registered_at=time.time() - 60) == ()
+    assert own_paths(git_project, base, registered_entries) == ()
 
 
 def test_a_failing_git_is_reported_as_a_value_error(tmp_path: Path) -> None:

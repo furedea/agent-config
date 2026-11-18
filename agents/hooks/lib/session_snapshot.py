@@ -72,6 +72,18 @@ def head_commit(root: Path) -> str | None:
     return value if COMMIT_ID.fullmatch(value) else None
 
 
+def reflog_entries(root: Path) -> int:
+    """How many entries HEAD's reflog holds; 0 when it has none or cannot be read."""
+    try:
+        output = subprocess.check_output(
+            ["git", "-c", "core.fsmonitor=false", "-C", str(root), "reflog", "show", "--format=%H", "HEAD", "--"],
+            stderr=subprocess.DEVNULL,
+        )
+    except OSError, subprocess.CalledProcessError:
+        return 0
+    return len(output.splitlines())
+
+
 def repository_root(directory: Path) -> Path:
     """Resolve the actual worktree, independently of remote refs and shell state."""
     try:

@@ -29,13 +29,15 @@ rule:
         stopBy: neighbor
         inside: { kind: block_node, stopBy: neighbor, inside: { kind: block_sequence_item, stopBy: neighbor } }
 ask: >-
-  This `run:` step executes under a shell that does not enable `pipefail`, because neither the workflow nor the job sets
-  `defaults.run.shell` and the step sets no `shell:` of its own.
+  The shell that this `run:` step executes under does not enable `pipefail`.
 criteria:
   "true": >-
-    No `defaults.run.shell` at the workflow level, in the job, and no `shell:` on the step, selects a shell with
-    `pipefail` (`bash`, or a custom command that passes `-o pipefail` to bash). A custom shell that only mentions the
-    word `pipefail`, for example as an environment variable name, does not count.
+    Find the step's effective shell: its own `shell:`, else the job's `defaults.run.shell`, else the workflow's, else
+    GitHub's default for a Linux or macOS runner, `bash -e {0}`, which has no `pipefail`. True when that shell is not
+    one with `pipefail`: nothing is set, `sh`, `bash -e {0}`, or a custom command that does not pass `-o pipefail`
+    (or `-eo pipefail`) to bash. A custom shell that only mentions the word `pipefail`, for example in an environment
+    variable name, does not enable it. A composite action step's `shell: sh` is true too.
   "false": >-
-    The workflow or the job sets `defaults.run.shell: bash` (or a custom shell that enables `pipefail`), or the step
-    sets such a `shell:` itself, or the runner is Windows and the step needs PowerShell, or the file is not a GitHub Actions workflow or composite action (for example CircleCI or GitLab CI).
+    The effective shell is `bash` (which GitHub runs as `bash --noprofile --norc -eo pipefail {0}`) or a custom command
+    that runs bash with `-o pipefail`, or the runner is Windows and the step runs under PowerShell (`pwsh` or
+    `powershell`).

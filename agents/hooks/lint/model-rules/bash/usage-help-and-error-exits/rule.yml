@@ -1,11 +1,14 @@
 # bash-style: "For requested help (`--help`/`-h`), call `usage` and `exit 0`. For missing or invalid arguments, call
 # `usage >&2` and `exit 1`." Advisory; the prose stays until the rule is promoted (ADR-0021).
+# The cutoff is jev-lint's fitted midpoint, 0.64: on this folder's fixtures (4 bad, 5 clean, 3 passes) the highest
+# clean case scored 0.42 (`if` testing -h, judged with the usage function above it) and the lowest bad one 0.84. Nine
+# cases are not a calibration, so the rule stays advisory.
 id: usage-help-and-error-exits
 language: Bash
 kind: noul
 subject: node
 state: located
-threshold: 0.5
+threshold: 0.64
 axis: file
 severity: warning
 # The script's own argument handling: a `case` branch or an `if` that tests a help flag or calls `usage`. A branch that

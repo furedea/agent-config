@@ -1,0 +1,271 @@
+{
+  "schema": "jev-lint-eval-1",
+  "recorded": "2026-11-18T06:23:47.197Z",
+  "model": "jev-1.14.0",
+  "suite": "bash/usage-help-and-error-exits",
+  "rules": [
+    {
+      "id": "usage-help-and-error-exits",
+      "draft": "51a210f731e7",
+      "at": 0.5
+    }
+  ],
+  "cutoffs": {},
+  "passes": [
+    [
+      {
+        "rule": "usage-help-and-error-exits",
+        "file": "agents/hooks/lint/model-rules/bash/usage-help-and-error-exits/fixtures/conforming_if_help.bash",
+        "line": 11,
+        "endLine": 14,
+        "kind": "noul",
+        "value": 0.39,
+        "confidence": null
+      },
+      {
+        "rule": "usage-help-and-error-exits",
+        "file": "agents/hooks/lint/model-rules/bash/usage-help-and-error-exits/fixtures/violating_help_without_usage.bash",
+        "line": 12,
+        "endLine": 14,
+        "kind": "noul",
+        "value": 0.93,
+        "confidence": null
+      },
+      {
+        "rule": "usage-help-and-error-exits",
+        "file": "agents/hooks/lint/model-rules/bash/usage-help-and-error-exits/fixtures/violating_help_without_usage.bash",
+        "line": 15,
+        "endLine": 18,
+        "kind": "noul",
+        "value": 0.92,
+        "confidence": null
+      },
+      {
+        "rule": "usage-help-and-error-exits",
+        "file": "agents/hooks/lint/model-rules/bash/usage-help-and-error-exits/fixtures/conforming.bash",
+        "line": 14,
+        "endLine": 17,
+        "kind": "noul",
+        "value": 0.12,
+        "confidence": null
+      },
+      {
+        "rule": "usage-help-and-error-exits",
+        "file": "agents/hooks/lint/model-rules/bash/usage-help-and-error-exits/fixtures/conforming.bash",
+        "line": 22,
+        "endLine": 25,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "usage-help-and-error-exits",
+        "file": "agents/hooks/lint/model-rules/bash/usage-help-and-error-exits/fixtures/conforming.bash",
+        "line": 26,
+        "endLine": 28,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "usage-help-and-error-exits",
+        "file": "agents/hooks/lint/model-rules/bash/usage-help-and-error-exits/fixtures/conforming.bash",
+        "line": 32,
+        "endLine": 35,
+        "kind": "noul",
+        "value": 0.03,
+        "confidence": null
+      },
+      {
+        "rule": "usage-help-and-error-exits",
+        "file": "agents/hooks/lint/model-rules/bash/usage-help-and-error-exits/fixtures/violating.bash",
+        "line": 14,
+        "endLine": 17,
+        "kind": "noul",
+        "value": 0.86,
+        "confidence": null
+      },
+      {
+        "rule": "usage-help-and-error-exits",
+        "file": "agents/hooks/lint/model-rules/bash/usage-help-and-error-exits/fixtures/violating.bash",
+        "line": 22,
+        "endLine": 25,
+        "kind": "noul",
+        "value": 0.88,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "usage-help-and-error-exits",
+        "file": "agents/hooks/lint/model-rules/bash/usage-help-and-error-exits/fixtures/violating_help_without_usage.bash",
+        "line": 12,
+        "endLine": 14,
+        "kind": "noul",
+        "value": 0.92,
+        "confidence": null
+      },
+      {
+        "rule": "usage-help-and-error-exits",
+        "file": "agents/hooks/lint/model-rules/bash/usage-help-and-error-exits/fixtures/violating_help_without_usage.bash",
+        "line": 15,
+        "endLine": 18,
+        "kind": "noul",
+        "value": 0.93,
+        "confidence": null
+      },
+      {
+        "rule": "usage-help-and-error-exits",
+        "file": "agents/hooks/lint/model-rules/bash/usage-help-and-error-exits/fixtures/conforming_if_help.bash",
+        "line": 11,
+        "endLine": 14,
+        "kind": "noul",
+        "value": 0.39,
+        "confidence": null
+      },
+      {
+        "rule": "usage-help-and-error-exits",
+        "file": "agents/hooks/lint/model-rules/bash/usage-help-and-error-exits/fixtures/conforming.bash",
+        "line": 14,
+        "endLine": 17,
+        "kind": "noul",
+        "value": 0.08,
+        "confidence": null
+      },
+      {
+        "rule": "usage-help-and-error-exits",
+        "file": "agents/hooks/lint/model-rules/bash/usage-help-and-error-exits/fixtures/conforming.bash",
+        "line": 22,
+        "endLine": 25,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "usage-help-and-error-exits",
+        "file": "agents/hooks/lint/model-rules/bash/usage-help-and-error-exits/fixtures/conforming.bash",
+        "line": 26,
+        "endLine": 28,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "usage-help-and-error-exits",
+        "file": "agents/hooks/lint/model-rules/bash/usage-help-and-error-exits/fixtures/conforming.bash",
+        "line": 32,
+        "endLine": 35,
+        "kind": "noul",
+        "value": 0.03,
+        "confidence": null
+      },
+      {
+        "rule": "usage-help-and-error-exits",
+        "file": "agents/hooks/lint/model-rules/bash/usage-help-and-error-exits/fixtures/violating.bash",
+        "line": 14,
+        "endLine": 17,
+        "kind": "noul",
+        "value": 0.85,
+        "confidence": null
+      },
+      {
+        "rule": "usage-help-and-error-exits",
+        "file": "agents/hooks/lint/model-rules/bash/usage-help-and-error-exits/fixtures/violating.bash",
+        "line": 22,
+        "endLine": 25,
+        "kind": "noul",
+        "value": 0.88,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "usage-help-and-error-exits",
+        "file": "agents/hooks/lint/model-rules/bash/usage-help-and-error-exits/fixtures/violating_help_without_usage.bash",
+        "line": 12,
+        "endLine": 14,
+        "kind": "noul",
+        "value": 0.93,
+        "confidence": null
+      },
+      {
+        "rule": "usage-help-and-error-exits",
+        "file": "agents/hooks/lint/model-rules/bash/usage-help-and-error-exits/fixtures/violating_help_without_usage.bash",
+        "line": 15,
+        "endLine": 18,
+        "kind": "noul",
+        "value": 0.92,
+        "confidence": null
+      },
+      {
+        "rule": "usage-help-and-error-exits",
+        "file": "agents/hooks/lint/model-rules/bash/usage-help-and-error-exits/fixtures/conforming.bash",
+        "line": 14,
+        "endLine": 17,
+        "kind": "noul",
+        "value": 0.08,
+        "confidence": null
+      },
+      {
+        "rule": "usage-help-and-error-exits",
+        "file": "agents/hooks/lint/model-rules/bash/usage-help-and-error-exits/fixtures/conforming.bash",
+        "line": 22,
+        "endLine": 25,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "usage-help-and-error-exits",
+        "file": "agents/hooks/lint/model-rules/bash/usage-help-and-error-exits/fixtures/conforming.bash",
+        "line": 26,
+        "endLine": 28,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "usage-help-and-error-exits",
+        "file": "agents/hooks/lint/model-rules/bash/usage-help-and-error-exits/fixtures/conforming.bash",
+        "line": 32,
+        "endLine": 35,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "usage-help-and-error-exits",
+        "file": "agents/hooks/lint/model-rules/bash/usage-help-and-error-exits/fixtures/conforming_if_help.bash",
+        "line": 11,
+        "endLine": 14,
+        "kind": "noul",
+        "value": 0.47,
+        "confidence": null
+      },
+      {
+        "rule": "usage-help-and-error-exits",
+        "file": "agents/hooks/lint/model-rules/bash/usage-help-and-error-exits/fixtures/violating.bash",
+        "line": 14,
+        "endLine": 17,
+        "kind": "noul",
+        "value": 0.81,
+        "confidence": null
+      },
+      {
+        "rule": "usage-help-and-error-exits",
+        "file": "agents/hooks/lint/model-rules/bash/usage-help-and-error-exits/fixtures/violating.bash",
+        "line": 22,
+        "endLine": 25,
+        "kind": "noul",
+        "value": 0.86,
+        "confidence": null
+      }
+    ]
+  ],
+  "spent": {
+    "calls": 12,
+    "inputTokens": 14508,
+    "usd": 0.000609336,
+    "ms": 207
+  }
+}

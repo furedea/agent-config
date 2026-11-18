@@ -1,11 +1,16 @@
 # github-actions-style section 7, Cache Design: key covers every compatibility boundary, a correct miss fallback, and no
 # credentials in cached paths. Advisory; the prose stays until the rule is promoted (ADR-0021).
+# The cutoff is jev-lint's fitted midpoint, 0.57: on this folder's fixtures (4 bad, 5 clean, 3 passes) the highest
+# clean case scored 0.20 and the lowest bad one 0.94. Nine cases are not a calibration, so the rule stays advisory.
 id: cache-key-and-trust
 language: Yaml
 kind: noul
 subject: node
 state: located
-threshold: 0.5
+threshold: 0.57
+inconclusive: >-
+  Blind: every fixture sits 0.30 or more from the cutoff; a boundary case needs a key whose missing boundary a reader
+  would argue over (a tool version pinned only by the lock file), and none is written yet.
 axis: file
 severity: warning
 rule:

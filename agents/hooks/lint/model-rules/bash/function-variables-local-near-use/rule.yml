@@ -4,8 +4,9 @@ id: function-variables-local-near-use
 language: Bash
 kind: noul
 subject: node
-# The function plus the same file's imports and enclosing declarations; no other file is sent.
-state: local
+# The whole file: the comment above the function and the callers that read a variable it sets for them decide whether
+# that variable is a deliberate global, and `local` (the function alone) misread a documented output variable.
+state: located
 threshold: 0.5
 axis: file
 severity: warning
@@ -28,11 +29,13 @@ ask: >-
   where it is first used.
 criteria:
   "true": >-
-    The function assigns a variable that is meant for its own use (a temporary, an argument copy, a loop result) without
-    declaring it `local`, so it leaks into the caller's scope, or it declares and assigns a variable many lines before
-    the first statement that reads it, with unrelated statements in between.
+    The function assigns a variable that is meant for its own use without declaring it `local`, so it leaks into the
+    caller's scope. Check every name the function assigns, not only `NAME=value`: the variable of a `for` loop, the
+    target of `read`, `mapfile`, `readarray` or `printf -v`, and a counter in `(( ))` each need their own `local`, even
+    when the function declares other variables `local`. Also true when the function declares and assigns a variable
+    many lines before the first statement that reads it, with unrelated statements in between.
   "false": >-
-    Every variable the function assigns for its own use is declared `local` and sits just before its first use. A
-    variable that the function deliberately sets for its caller or for the script (a documented global, or an output
-    variable named in a comment), and an environment variable assigned only for one command (`VAR=value cmd`), are not
-    violations.
+    Every name the function assigns for its own use, loop variables and `read` targets included, is declared `local`
+    and sits just before its first use. A variable that the function deliberately sets for its caller or for the script
+    is not a violation when a comment above or inside the function says so or the rest of the file reads it after the
+    call. An environment variable assigned only for one command (`VAR=value cmd`) is not a violation.

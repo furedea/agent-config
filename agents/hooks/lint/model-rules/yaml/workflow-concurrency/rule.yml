@@ -1,12 +1,18 @@
 # github-actions-style: cancel stale runs of the same ref with `concurrency`. Advisory; it was a blocking ast-grep rule
 # (gha_workflow_concurrency) until review showed the trigger spellings under `on:` are too many to match by syntax.
 # zizmor's `concurrency-limits` audit covers a similar check only under its pedantic persona (ADR-0021).
+# The cutoff is jev-lint's fitted midpoint, 0.4: on this folder's fixtures (4 bad, 4 clean, 3 passes) the highest
+# clean case scored 0.03 and the lowest bad one 0.76 (a group without cancel-in-progress). Eight cases are not a
+# calibration, so the rule stays advisory.
 id: workflow-concurrency
 language: Yaml
 kind: noul
 subject: node
 state: located
-threshold: 0.5
+threshold: 0.4
+inconclusive: >-
+  Blind: every fixture sits 0.26 or more from the cutoff; a boundary case needs a trigger a reader would argue over
+  (`pull_request_target`, or a push limited to tags), and none is written yet.
 axis: file
 severity: warning
 # The workflow's `on:` key, which names the triggers whose stale runs are wasted work.

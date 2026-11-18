@@ -18,8 +18,11 @@ ask: >-
   This script changes into its own directory although some of its work operates on the target project.
 criteria:
   "true": >-
-    The script changes the working directory to its own location (`cd "$(dirname "$0")"`) and then runs commands that
-    should act on the caller's project or the current directory.
+    The script changes the working directory to its own location (`cd "$(dirname "$0")"`, or a `pushd` into it that no
+    `popd` undoes) and then runs commands that should act on the caller's project or the current directory, as its
+    comments, usage or arguments describe them.
   "false": >-
-    Every command after the change works on the location it changed to, or the change is confined to a subshell or a
-    `pushd`/`popd` pair around one operation, or the change goes to a directory other than the script's own location.
+    Every command after the change works on the location it changed to, or the change is confined to a subshell or
+    to a `pushd` that a `popd` undoes right after one operation, or the change goes to a directory other than the
+    script's own location. A `cd` inside the command substitution that resolves the script's directory
+    (`SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"`) changes nothing for the commands that follow.

@@ -4,7 +4,9 @@ id: script-constants-readonly
 language: Bash
 kind: noul
 subject: node
-state: local
+# The whole file: whether a top-level value is ever reassigned, or declared `readonly` on the next line, is decided by
+# the statements after it, which `local` (the assignment alone) did not show, so every clean case answered true.
+state: located
 threshold: 0.5
 axis: file
 severity: warning
@@ -14,12 +16,15 @@ rule:
     - kind: variable_assignment
     - inside: { kind: program, stopBy: neighbor }
 ask: >-
-  This script-level value is a constant that the script never reassigns, yet it is not declared `readonly`.
+  The variable assigned by this top-level statement is a constant that the script never changes, yet no `readonly`
+  declares it.
 criteria:
   "true": >-
-    The value is assigned once at the top level, no later statement in the file assigns, unsets or appends to it, and no
-    `readonly NAME` or `declare -r NAME` for it follows (the two-step `NAME=$(cmd)` then `readonly NAME` is a
-    declaration).
+    Search the whole file for the variable's name. It is true only when no later statement assigns it again (`NAME=`,
+    `NAME+=`, `((NAME++))`, `read NAME`, a `for NAME in` loop, `getopts ... NAME`), none unsets it, and no `readonly
+    NAME`, `readonly NAME=...` or `declare -r NAME` declares it.
   "false": >-
-    The value is declared `readonly`, or the script reassigns, appends to, or unsets it, or it is a loop counter, an
-    accumulator, or a variable that the environment or an option parser sets, so it is not a constant.
+    Some other statement in the file declares the name `readonly` (the two-step `NAME=$(cmd)` followed by `readonly
+    NAME` is the usual way to make a command's output constant), or some statement changes it later: a counter or
+    accumulator that a loop or an `if` updates, an array that `+=` extends, a flag that a `case` branch or `getopts`
+    sets. Such a variable is not a constant, whatever its initial value looks like.

@@ -1,0 +1,271 @@
+{
+  "schema": "jev-lint-eval-1",
+  "recorded": "2026-11-18T06:23:47.815Z",
+  "model": "jev-1.14.0",
+  "suite": "yaml/cache-key-and-trust",
+  "rules": [
+    {
+      "id": "cache-key-and-trust",
+      "draft": "3bb8613fc6d1",
+      "at": 0.5
+    }
+  ],
+  "cutoffs": {},
+  "passes": [
+    [
+      {
+        "rule": "cache-key-and-trust",
+        "file": "agents/hooks/lint/model-rules/yaml/cache-key-and-trust/fixtures/bad_caches_home_credentials.yml",
+        "line": 14,
+        "endLine": 14,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "cache-key-and-trust",
+        "file": "agents/hooks/lint/model-rules/yaml/cache-key-and-trust/fixtures/bad_key_without_os.yml",
+        "line": 15,
+        "endLine": 15,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "cache-key-and-trust",
+        "file": "agents/hooks/lint/model-rules/yaml/cache-key-and-trust/fixtures/clean_os_and_lock_hash.yml",
+        "line": 15,
+        "endLine": 15,
+        "kind": "noul",
+        "value": 0.1,
+        "confidence": null
+      },
+      {
+        "rule": "cache-key-and-trust",
+        "file": "agents/hooks/lint/model-rules/yaml/cache-key-and-trust/fixtures/bad_key_without_lock_hash.yml",
+        "line": 12,
+        "endLine": 12,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "cache-key-and-trust",
+        "file": "agents/hooks/lint/model-rules/yaml/cache-key-and-trust/fixtures/clean_real_agent_harness_cache.yml",
+        "line": 18,
+        "endLine": 18,
+        "kind": "noul",
+        "value": 0.12,
+        "confidence": null
+      },
+      {
+        "rule": "cache-key-and-trust",
+        "file": "agents/hooks/lint/model-rules/yaml/cache-key-and-trust/fixtures/clean_partial_restore_validated.yml",
+        "line": 13,
+        "endLine": 13,
+        "kind": "noul",
+        "value": 0.2,
+        "confidence": null
+      },
+      {
+        "rule": "cache-key-and-trust",
+        "file": "agents/hooks/lint/model-rules/yaml/cache-key-and-trust/fixtures/clean_restore_save_split.yml",
+        "line": 13,
+        "endLine": 13,
+        "kind": "noul",
+        "value": 0.16,
+        "confidence": null
+      },
+      {
+        "rule": "cache-key-and-trust",
+        "file": "agents/hooks/lint/model-rules/yaml/cache-key-and-trust/fixtures/clean_restore_save_split.yml",
+        "line": 19,
+        "endLine": 19,
+        "kind": "noul",
+        "value": 0.13,
+        "confidence": null
+      },
+      {
+        "rule": "cache-key-and-trust",
+        "file": "agents/hooks/lint/model-rules/yaml/cache-key-and-trust/fixtures/bad_partial_restore_unvalidated.yml",
+        "line": 12,
+        "endLine": 12,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "cache-key-and-trust",
+        "file": "agents/hooks/lint/model-rules/yaml/cache-key-and-trust/fixtures/clean_partial_restore_validated.yml",
+        "line": 13,
+        "endLine": 13,
+        "kind": "noul",
+        "value": 0.2,
+        "confidence": null
+      },
+      {
+        "rule": "cache-key-and-trust",
+        "file": "agents/hooks/lint/model-rules/yaml/cache-key-and-trust/fixtures/bad_caches_home_credentials.yml",
+        "line": 14,
+        "endLine": 14,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "cache-key-and-trust",
+        "file": "agents/hooks/lint/model-rules/yaml/cache-key-and-trust/fixtures/bad_key_without_os.yml",
+        "line": 15,
+        "endLine": 15,
+        "kind": "noul",
+        "value": 0.94,
+        "confidence": null
+      },
+      {
+        "rule": "cache-key-and-trust",
+        "file": "agents/hooks/lint/model-rules/yaml/cache-key-and-trust/fixtures/bad_key_without_lock_hash.yml",
+        "line": 12,
+        "endLine": 12,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "cache-key-and-trust",
+        "file": "agents/hooks/lint/model-rules/yaml/cache-key-and-trust/fixtures/clean_real_agent_harness_cache.yml",
+        "line": 18,
+        "endLine": 18,
+        "kind": "noul",
+        "value": 0.14,
+        "confidence": null
+      },
+      {
+        "rule": "cache-key-and-trust",
+        "file": "agents/hooks/lint/model-rules/yaml/cache-key-and-trust/fixtures/clean_restore_save_split.yml",
+        "line": 13,
+        "endLine": 13,
+        "kind": "noul",
+        "value": 0.14,
+        "confidence": null
+      },
+      {
+        "rule": "cache-key-and-trust",
+        "file": "agents/hooks/lint/model-rules/yaml/cache-key-and-trust/fixtures/clean_restore_save_split.yml",
+        "line": 19,
+        "endLine": 19,
+        "kind": "noul",
+        "value": 0.11,
+        "confidence": null
+      },
+      {
+        "rule": "cache-key-and-trust",
+        "file": "agents/hooks/lint/model-rules/yaml/cache-key-and-trust/fixtures/clean_os_and_lock_hash.yml",
+        "line": 15,
+        "endLine": 15,
+        "kind": "noul",
+        "value": 0.1,
+        "confidence": null
+      },
+      {
+        "rule": "cache-key-and-trust",
+        "file": "agents/hooks/lint/model-rules/yaml/cache-key-and-trust/fixtures/bad_partial_restore_unvalidated.yml",
+        "line": 12,
+        "endLine": 12,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "cache-key-and-trust",
+        "file": "agents/hooks/lint/model-rules/yaml/cache-key-and-trust/fixtures/clean_partial_restore_validated.yml",
+        "line": 13,
+        "endLine": 13,
+        "kind": "noul",
+        "value": 0.2,
+        "confidence": null
+      },
+      {
+        "rule": "cache-key-and-trust",
+        "file": "agents/hooks/lint/model-rules/yaml/cache-key-and-trust/fixtures/clean_os_and_lock_hash.yml",
+        "line": 15,
+        "endLine": 15,
+        "kind": "noul",
+        "value": 0.11,
+        "confidence": null
+      },
+      {
+        "rule": "cache-key-and-trust",
+        "file": "agents/hooks/lint/model-rules/yaml/cache-key-and-trust/fixtures/bad_caches_home_credentials.yml",
+        "line": 14,
+        "endLine": 14,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "cache-key-and-trust",
+        "file": "agents/hooks/lint/model-rules/yaml/cache-key-and-trust/fixtures/clean_restore_save_split.yml",
+        "line": 13,
+        "endLine": 13,
+        "kind": "noul",
+        "value": 0.17,
+        "confidence": null
+      },
+      {
+        "rule": "cache-key-and-trust",
+        "file": "agents/hooks/lint/model-rules/yaml/cache-key-and-trust/fixtures/clean_restore_save_split.yml",
+        "line": 19,
+        "endLine": 19,
+        "kind": "noul",
+        "value": 0.12,
+        "confidence": null
+      },
+      {
+        "rule": "cache-key-and-trust",
+        "file": "agents/hooks/lint/model-rules/yaml/cache-key-and-trust/fixtures/bad_key_without_os.yml",
+        "line": 15,
+        "endLine": 15,
+        "kind": "noul",
+        "value": 0.94,
+        "confidence": null
+      },
+      {
+        "rule": "cache-key-and-trust",
+        "file": "agents/hooks/lint/model-rules/yaml/cache-key-and-trust/fixtures/bad_partial_restore_unvalidated.yml",
+        "line": 12,
+        "endLine": 12,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "cache-key-and-trust",
+        "file": "agents/hooks/lint/model-rules/yaml/cache-key-and-trust/fixtures/bad_key_without_lock_hash.yml",
+        "line": 12,
+        "endLine": 12,
+        "kind": "noul",
+        "value": 0.94,
+        "confidence": null
+      },
+      {
+        "rule": "cache-key-and-trust",
+        "file": "agents/hooks/lint/model-rules/yaml/cache-key-and-trust/fixtures/clean_real_agent_harness_cache.yml",
+        "line": 18,
+        "endLine": 18,
+        "kind": "noul",
+        "value": 0.11,
+        "confidence": null
+      }
+    ]
+  ],
+  "spent": {
+    "calls": 24,
+    "inputTokens": 23766,
+    "usd": 0.000998172,
+    "ms": 234
+  }
+}

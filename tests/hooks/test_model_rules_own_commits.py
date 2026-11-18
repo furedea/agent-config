@@ -227,6 +227,29 @@ def test_an_expired_old_entry_does_not_hide_the_sessions_first_commits(git_proje
     assert own_paths(git_project, base, registered) == ("one.txt", "two.txt")
 
 
+def test_a_patch_applied_with_am_is_the_sessions_commit(git_project: Path, base: str) -> None:
+    commit(git_project, "mine.txt")
+    patch = git(git_project, "format-patch", "-1", "--stdout")
+    git(git_project, "reset", "--quiet", "--hard", base)
+    (git_project.parent / "mine.patch").write_text(patch + "\n")
+    registered = session_snapshot.reflog_mark(git_project)
+
+    git(git_project, "am", "--quiet", str(git_project.parent / "mine.patch"))
+
+    assert own_paths(git_project, base, registered) == ("mine.txt",)
+
+
+def test_a_commit_the_session_made_keeps_its_files_when_an_outside_commit_changes_them_later(
+    git_project: Path, base: str
+) -> None:
+    commit(git_project, "f.txt", "mine\n")
+    others_work(git_project, "f.txt")
+
+    git(git_project, "merge", "--quiet", "--ff-only", "others")
+
+    assert own_paths(git_project, base) == ("f.txt",)
+
+
 def test_a_failing_git_is_reported_as_a_value_error(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="cannot"):
         own_paths(tmp_path, "HEAD")

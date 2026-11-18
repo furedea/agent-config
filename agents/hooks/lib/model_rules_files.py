@@ -28,7 +28,7 @@ _ADR_PATTERN = "docs/adr/[0-9]*.md"
 _FRONT_MATTER_FENCE = "---"
 # Reflog subjects of HEAD that mean the session itself created the commit; `commit (merge)` is deliberately absent.
 _OWN_REFLOG_SUBJECT = re.compile(
-    r"commit(?: \((?:amend|initial|cherry-pick)\))?:|cherry-pick|revert"
+    r"commit(?: \((?:amend|initial|cherry-pick)\))?:|cherry-pick|revert|am(?: \\(continue\\))?:"
     r"|(?:pull\b[^:(]*)?rebase\b[^:]*\((?:pick|reword|edit|squash|fixup|continue)\)"
 )
 
@@ -77,7 +77,7 @@ def select(root: Path, paths: Iterable[str], span: ReviewedSpan) -> Selection:
 def own_committed_paths(root: Path, base: str, registered: ReflogMark | None) -> tuple[str, ...]:
     """The files the session's own commits since `base` added or changed, with links and replaced types included.
 
-    HEAD's reflog says how each step came to be. A step the session made (commit, amend, cherry-pick, revert, or a
+    HEAD's reflog says how each step came to be. A step the session made (commit, amend, cherry-pick, revert, am, or a
     rebase replaying commits) counts, and so does only what that step changed from the commit HEAD named before it:
     an amend counts what it added, not the commit it replaced. A step that arrived by fast-forward, pull, checkout or
     merge belongs to someone else, so its files are left out even though `base..HEAD` contains them; a merge commit is
@@ -133,12 +133,24 @@ def uncommitted_paths(root: Path) -> frozenset[str]:
 
 
 def _still_in_head(root: Path, commit: str, paths: list[str]) -> list[str]:
-    """The `paths` HEAD still holds as `commit` left them.
+    """The `paths` of a step that HEAD still carries.
 
-    A step that was discarded, and whose path an outside commit then changed, no longer counts.
+    A commit that HEAD contains carries all of them, whatever happened to the files later. One that was discarded,
+    amended away or rebased away carries only the paths HEAD still holds as it left them, so a discarded step no longer
+    claims a path that an outside commit changed.
     """
+    if _is_ancestor_of_head(root, commit):
+        return paths
     differing = set(_name_only(root, ["diff", commit, "HEAD", "--"], diff_filter=""))
     return [path for path in paths if path not in differing]
+
+
+def _is_ancestor_of_head(root: Path, commit: str) -> bool:
+    command = ["git", "-c", "core.fsmonitor=false", "-C", str(root), "merge-base", "--is-ancestor", commit, "HEAD"]
+    try:
+        return subprocess.run(command, stderr=subprocess.DEVNULL, check=False).returncode == 0
+    except OSError:
+        return False
 
 
 def _paths_changed_by(root: Path, commit: str, previous: str | None) -> list[str]:

@@ -154,7 +154,9 @@ def test_adr_rules_review_only_the_selected_adrs_after_the_general_rules(
         (rules / language / name / "rule.yml").write_text("id: x\n")
     monkeypatch.setattr(model_rules_gate, "RULES_DIRECTORY", rules)
     monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path / "state"))
-    changes = model_rules_gate._Changes(Selection(("a.py", ADR), adrs=(ADR,)), Selection(("b.py", "docs/notes.md")))
+    changes = model_rules_gate._Changes(
+        Selection(("a.py", ADR), adrs=(ADR,)), Selection(("b.py", "docs/notes.md")), "abc"
+    )
     record = SimpleNamespace(root=tmp_path, head="abc")
 
     reviews = changes.reviews(cast(Any, record), cast(Any, None))

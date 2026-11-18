@@ -135,7 +135,7 @@ def test_the_reviews_of_two_tiers_run_committed_then_uncommitted_within_each_tie
             (folder / "baseline.json").write_text("{}")
     monkeypatch.setattr(model_rules_gate, "RULES_DIRECTORY", rules)
     monkeypatch.setattr(model_rules_run, "cache_path", lambda _directory: tmp_path / "cache.json")
-    changes = model_rules_gate._Changes(Selection(("c.py",)), Selection(("u.py",)))
+    changes = model_rules_gate._Changes(Selection(("c.py",)), Selection(("u.py",)), "abc")
     record = cast(Any, SimpleNamespace(root=tmp_path, head="abc"))
 
     reviews = changes.reviews(record, cast(Any, None))

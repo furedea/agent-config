@@ -80,7 +80,7 @@ EOF
 
 Agent git runs inside the sandbox, so the call may chain other commands. Agent commits and tags
 are intentionally unsigned; the squash merge into main is signed by GitHub. Do not re-enable
-signing with `-c commit.gpgsign=true`.
+signing with `-c commit.gpgsign=true`, and do not bypass the repository hooks.
 
 For explicit commit requests:
 

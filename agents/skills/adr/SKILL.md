@@ -39,7 +39,7 @@ format with its own template, naming, and status values, and mark superseded ADR
    not. The title line is `# <short title>` without an ID.
 3. Fill the template and delete its source comment and the unused front-matter lines. Add MADR's full-variant sections only when the minimal ones are too compressed.
 4. To supersede, set `supersedes` in the new ADR and `status: superseded` plus `superseded-by` in the old one, in the
-   same change.
+   same change. Edit nothing else in an accepted ADR's body; record later changes in `amended`.
 
 ## Writing Rules
 

@@ -28,7 +28,10 @@ MERGED_PULL_REQUEST_LIMIT = "200"
 TIMEOUT_SECONDS = 30
 REGENERABLE_NAMES = frozenset({".venv", "node_modules", "__pycache__", ".pytest_cache", ".ruff_cache", ".direnv"})
 REGENERABLE_NAMES |= frozenset({"result", "target", ".coverage"})
+REGENERABLE_NAMES |= frozenset({".hypothesis", ".astro", "dist", "test-results", ".pnpm-store"})
 REGENERABLE_PREFIXES = ("result-",)
+CLAUDE_DIRECTORY = ".claude"
+SESSION_SCRATCH = ".cc-writes"
 HERDR_WORKTREES = Path(".herdr/worktrees")
 """Herdr's default worktrees.directory, holding <repo>/<branch-slug> checkouts."""
 
@@ -266,6 +269,14 @@ def _registration_blocker(primary: Path, worktree: Worktree) -> str | None:
 def irreplaceable_ignored_paths(primary: Path, worktree: Worktree) -> list[str]:
     """List ignored paths that are not regenerable caches, which a forced removal would delete."""
     command = ("git", f"--git-dir={worktree.admin_dir}", f"--work-tree={worktree.path}")
+    return [
+        p
+        for p in _ignored_paths(primary, command)
+        if not is_regenerable(primary, command, p) and not is_session_scratch(worktree.path, p)
+    ]
+
+
+def _ignored_paths(primary: Path, command: tuple[str, ...]) -> list[str]:
     output = run(
         *command,
         "status",
@@ -276,16 +287,21 @@ def irreplaceable_ignored_paths(primary: Path, worktree: Worktree) -> list[str]:
         "-z",
         cwd=primary,
     )
-    paths = [entry.removeprefix("!! ") for entry in output.split("\0") if entry.startswith("!! ")]
-    claude = worktree.path / ".claude"
-    return [p for p in paths if not is_regenerable(primary, command, p) and not is_session_scratch(claude, p)]
+    return [entry.removeprefix("!! ") for entry in output.split("\0") if entry.startswith("!! ")]
 
 
-def is_session_scratch(claude: Path, path: str) -> bool:
-    """Claude Code's .cc-writes is disposable, alone or as the only content of an ignored .claude/."""
-    if claude.is_symlink() or not claude.is_dir() or Path(path).parts[:1] != (".claude",):
+def is_session_scratch(root: Path, path: str) -> bool:
+    """Claude Code's .cc-writes is disposable, alone or as the only content of an ignored .claude/ at any depth."""
+    parts = Path(path).parts
+    if CLAUDE_DIRECTORY not in parts:
         return False
-    return Path(path).parts[1:2] == (".cc-writes",) or {entry.name for entry in claude.iterdir()} <= {".cc-writes"}
+    index = parts.index(CLAUDE_DIRECTORY)
+    claude = root.joinpath(*parts[: index + 1])
+    if claude.is_symlink() or not claude.is_dir():
+        return False
+    return parts[index + 1 : index + 2] == (SESSION_SCRATCH,) or {entry.name for entry in claude.iterdir()} <= {
+        SESSION_SCRATCH
+    }
 
 
 def is_regenerable(primary: Path, command: tuple[str, ...], path: str) -> bool:

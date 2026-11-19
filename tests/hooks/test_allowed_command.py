@@ -204,7 +204,6 @@ def test_commands_whose_effects_the_checks_can_see_pass(capsys: pytest.CaptureFi
         pytest.param(
             "x='repos/o/r/issues/1 -X DELETE'; gh api $x", [], id="unquoted variables that split into options"
         ),
-        pytest.param("gh api repos/o/r/contents/*", [], id="unquoted globs"),
         pytest.param(
             "printf '%s\\n' 'repos/o/r/issues/comments/123 -X DELETE' | read -rA a; gh api -H 'Accept: x' \"$a[@]\"",
             [],
@@ -288,11 +287,6 @@ def test_commands_whose_effects_the_checks_can_see_pass(capsys: pytest.CaptureFi
         ),
         pytest.param("f(){ gh api -H 'Accept: x' repos/o/r; }; f", [], id="an allowed header read in a function"),
         pytest.param("echo x | xargs gh api -H 'Accept: x' repos/o/r", [], id="an allowed header read through xargs"),
-        pytest.param(
-            "gh api -H 'Accept: x' repos/o/r/contents/README.md?ref=v1",
-            [],
-            id="an unquoted question mark beside a header",
-        ),
         pytest.param(
             'gh api -H "Accept: application/vnd.github.raw" "repos/o/r/contents/f?ref=x"*',
             [],

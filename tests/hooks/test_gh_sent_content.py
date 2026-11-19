@@ -376,13 +376,15 @@ def test_a_body_file_missing_when_the_guard_reads_it_asks() -> None:
 
 
 @pytest.mark.usefixtures("furedea_checkout")
-def test_a_run_time_body_path_asks_even_for_a_trusted_owner(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_a_run_time_body_path_is_scanned_only_when_the_hook_can_expand_it(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setenv("BODY_DIR", str(tmp_path))
     monkeypatch.delenv("NO_SUCH_BODY_DIR", raising=False)
     (tmp_path / "clean.md").write_text("No secrets.\n")
     (tmp_path / "locked.md").write_text("No secrets.\n")
     (tmp_path / "locked.md").chmod(0)
-    assert decide('gh pr comment 1 -R furedea/r --body-file "$BODY_DIR/clean.md"') == "ask"
+    assert decide('gh pr comment 1 -R furedea/r --body-file "$BODY_DIR/clean.md"') == "allow"
     assert decide('gh pr comment 1 -R furedea/r --body-file "$BODY_DIR/missing.md"') == "ask"
     assert decide('gh pr comment 1 -R furedea/r --body-file "$NO_SUCH_BODY_DIR/clean.md"') == "ask"
     assert decide('gh pr comment 1 -R furedea/r --body-file "${BODY_DIR%/}/clean.md"') == "ask"

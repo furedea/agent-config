@@ -47,6 +47,29 @@ def repository_words(words: tuple[Word, ...]) -> list[Word]:
     return found
 
 
+def names_repository_option(words: tuple[Word, ...]) -> bool:
+    """Whether a call names a github.com repository with a literal -R or --repo, so no working directory decides it.
+
+    An option the read table does not list could take the -R as its value, so an -R that directly
+    follows another option does not count.
+    """
+    for index, word in enumerate(words):
+        follows_option = index > 0 and words[index - 1].value.startswith("-")
+        if word.dynamic or follows_option:
+            continue
+        if word.value in REPOSITORY_OPTIONS:
+            named = words[index + 1 : index + 2]
+        elif word.value.startswith("--repo="):
+            named = [Word(word.value.removeprefix("--repo="), "")]
+        elif word.value.startswith("-R") and not word.value.startswith("--"):
+            named = [Word(word.value.removeprefix("-R"), "")]
+        else:
+            continue
+        if any(not value.dynamic and repository(value.value) for value in named):
+            return True
+    return False
+
+
 def repository(spec: str) -> Repository | None:
     """The github.com repository an OWNER/REPO, HOST/OWNER/REPO, or URL names; None for any other host."""
     if is_url(spec):

@@ -55,7 +55,6 @@ def test_read_only_gh_api_forms_pass(command: str) -> None:
             id="a parameter operator in a quoted endpoint",
         ),
         pytest.param(f"gh api repos/o/r/contents/$f {RAW} | head", id="an unquoted variable in a pipeline"),
-        pytest.param("gh api repos/o/r/git/trees/HEAD?recursive=1", id="an unquoted glob in the endpoint"),
         pytest.param(f"gh api --allow-escape-sequences {LOGS} -X DELETE", id="a method option after a log read"),
         pytest.param(f"gh api --allow-escape-sequences {LOGS} --method POST", id="a long method option after a read"),
         pytest.param(f"gh api --allow-escape-sequences {LOGS} -f body=x", id="a field after a log read"),

@@ -20,9 +20,10 @@ from gh_options import (
     OptionTable,
     UnclassifiableError,
     Word,
+    environment_files,
     has_parameter,
     is_one_substitution,
-    stays_one_word,
+    word_on_line,
 )
 from gh_repository import (
     GITHUB_HOST,
@@ -32,6 +33,7 @@ from gh_repository import (
     check_repository_arguments,
     is_unsafe_once_expanded,
     is_url,
+    names_repository_option,
     repository,
     repository_words,
 )
@@ -132,7 +134,7 @@ class ApiRequest:
 def classify(command: shell_syntax.Command, catalog: Catalog, *, single_call: bool) -> GhCall | Unclassified:
     """Classify a canonical gh call; `single_call` says the line is this one call and assigns nothing."""
     words = tuple(
-        Word(value, source, dynamic, spreading and not (single_call and stays_one_word(source)))
+        word_on_line(Word(value, source, dynamic, spreading), single_call)
         for value, source, dynamic, spreading in zip(
             command.arguments, command.words, command.dynamic, command.spreading, strict=True
         )
@@ -161,7 +163,7 @@ def _classify_words(words: tuple[Word, ...], catalog: Catalog, single_call: bool
         _check_read_repositories(words[2:])
         if spec.operation == "repo.view":
             check_repository_arguments(words[2:])
-        return GhCall((spec.operation,), spec.effect, reads_working_repository=True)
+        return GhCall((spec.operation,), spec.effect, reads_working_repository=not names_repository_option(words[2:]))
     if spec.effect is Effect.LOCAL:
         return _classify_local(words[2:], spec, single_call)
     return _classify_write(words[2:], spec, single_call)
@@ -240,7 +242,7 @@ def _classify_write(words: tuple[Word, ...], spec: CommandSpec, single_call: boo
         gh_options.require_new_subdirectory(
             scan.values_of(DOWNLOAD_DIRS)[-1:] if single_call else (), "a download's -D"
         )
-    files = scan.values_of(spec.files)
+    files = environment_files(scan.values_of(spec.files), single_call)
     if any("#" in word.value for word in scan.values_of(ATTACH_OPTIONS)):
         raise UnclassifiableError("an attachment names alt text after #, so gh sends another file than the word")
     paths = [sent_path(word.value) for word in files if not word.dynamic]
@@ -296,7 +298,7 @@ def _check_sent_values(words: tuple[Word, ...], single_call: bool, *, fields: bo
 
 
 def _classify_api(words: tuple[Word, ...], catalog: Catalog, single_call: bool) -> GhCall:
-    request = _api_request(words)
+    request = _api_request(words, single_call)
     texts = tuple(
         word for option, word in request.fields if option not in TYPED_FIELD_OPTIONS or not _names_file(word)
     )
@@ -346,7 +348,7 @@ def _check_read_files(request: ApiRequest) -> None:
         raise UnclassifiableError("a GitHub read sends a file named only at run time")
 
 
-def _api_request(words: tuple[Word, ...]) -> ApiRequest:
+def _api_request(words: tuple[Word, ...], single_call: bool) -> ApiRequest:
     if any(word.spreading for word in words):
         raise UnclassifiableError("a gh api argument may split into several words at run time")
     scan = gh_options.scan(words, OptionTable(API_VALUES, API_FLAGS))
@@ -372,9 +374,9 @@ def _api_request(words: tuple[Word, ...]) -> ApiRequest:
         methods[-1].value.upper() if methods else "POST" if sends_body else "GET",
         scan.positionals[0],
         fields,
-        _sent_files(scan),
-        tuple(_file_source(word) for word in _file_words(scan) if word.dynamic),
-        any(_file_path(word) == "-" for word in _file_words(scan)),
+        _sent_files(scan, single_call),
+        tuple(_file_source(word) for word in _file_words(scan, single_call) if word.dynamic),
+        any(_file_path(word) == "-" for word in _file_words(scan, single_call)),
         bool(scan.values_of(frozenset({"--input"}))),
     )
 
@@ -389,15 +391,15 @@ def _names_foreign_host(scan: OptionScan) -> bool:
     return endpoint.dynamic or parts.scheme != "https" or parts.hostname != "api." + GITHUB_HOST
 
 
-def _file_words(scan: OptionScan) -> tuple[Word, ...]:
+def _file_words(scan: OptionScan, single_call: bool) -> tuple[Word, ...]:
     """The words naming a file a gh api call sends: --input values and -F values read with @."""
     typed = tuple(word for word in scan.values_of(TYPED_FIELD_OPTIONS) if _names_file(word))
-    return scan.values_of(frozenset({"--input"})) + typed
+    return environment_files(scan.values_of(frozenset({"--input"})) + typed, single_call)
 
 
-def _sent_files(scan: OptionScan) -> tuple[str, ...]:
+def _sent_files(scan: OptionScan, single_call: bool) -> tuple[str, ...]:
     """Literal local files a gh api call sends; standard input is not a file."""
-    paths = (_file_path(word) for word in _file_words(scan) if not word.dynamic)
+    paths = (_file_path(word) for word in _file_words(scan, single_call) if not word.dynamic)
     return tuple(path for path in paths if path != "-")
 
 

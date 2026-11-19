@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.3.0](https://github.com/furedea/agent-config/compare/v0.2.0...v0.3.0) (2026-11-19)
+
+
+### Features
+
+* **lint:** fit the bash and yaml model rule cutoffs ([#243](https://github.com/furedea/agent-config/issues/243)) ([d5eab6b](https://github.com/furedea/agent-config/commit/d5eab6b8b35955976edeac24aeae4f428f403d7f))
+* **lint:** fit the Go model rules on eval fixtures ([#244](https://github.com/furedea/agent-config/issues/244)) ([cf87c36](https://github.com/furedea/agent-config/commit/cf87c365c812515842dde6178ac82c76945c1b25))
+* **lint:** fit the Rust model rules to eval fixtures ([#241](https://github.com/furedea/agent-config/issues/241)) ([3275ce2](https://github.com/furedea/agent-config/commit/3275ce23e3b2b92d44e6e877319c1bcf60704953))
+* **lint:** fit the TypeScript model rules on eval fixtures ([#242](https://github.com/furedea/agent-config/issues/242)) ([bb41bb7](https://github.com/furedea/agent-config/commit/bb41bb77b65828ea6388284084ae84859efac422))
+* **lint:** make bash_local_underscore_prefix an error ([#251](https://github.com/furedea/agent-config/issues/251)) ([cd8c5b8](https://github.com/furedea/agent-config/commit/cd8c5b81f437d47eb5d66b22d7eb0e9f9688401f))
+
+
+### Bug Fixes
+
+* **hooks:** let cleanup_worktrees remove worktrees left with only regenerable outputs ([#235](https://github.com/furedea/agent-config/issues/235)) ([a25ce5b](https://github.com/furedea/agent-config/commit/a25ce5b24f08cf6ab519e705a66b19a0d5559c50))
+* **hooks:** raise the model rules subject cap and keep cached findings under it ([#246](https://github.com/furedea/agent-config/issues/246)) ([a451e93](https://github.com/furedea/agent-config/commit/a451e93590b80e206b05f29a1a29d236056ee75f))
+* **hooks:** show each Stop model-rule finding once per session ([#252](https://github.com/furedea/agent-config/issues/252)) ([49cd6f9](https://github.com/furedea/agent-config/commit/49cd6f9abee01c215d86b999aea620298695b6e0))
+* **hooks:** skip commits already on the default branch in model rules ([#247](https://github.com/furedea/agent-config/issues/247)) ([3df49a2](https://github.com/furedea/agent-config/commit/3df49a2ece493a8595661b74ffc0aa37fd6bf82f))
+
 ## [0.2.0](https://github.com/furedea/agent-config/compare/v0.1.4...v0.2.0) (2026-11-18)
 
 

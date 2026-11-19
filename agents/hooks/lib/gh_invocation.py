@@ -23,7 +23,7 @@ from gh_options import (
     environment_files,
     has_parameter,
     is_one_substitution,
-    word_on_line,
+    stays_one_word,
 )
 from gh_repository import (
     GITHUB_HOST,
@@ -134,7 +134,7 @@ class ApiRequest:
 def classify(command: shell_syntax.Command, catalog: Catalog, *, single_call: bool) -> GhCall | Unclassified:
     """Classify a canonical gh call; `single_call` says the line is this one call and assigns nothing."""
     words = tuple(
-        word_on_line(Word(value, source, dynamic, spreading), single_call)
+        Word(value, source, dynamic, spreading and not (single_call and stays_one_word(source)))
         for value, source, dynamic, spreading in zip(
             command.arguments, command.words, command.dynamic, command.spreading, strict=True
         )

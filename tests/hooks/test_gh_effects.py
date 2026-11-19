@@ -145,6 +145,11 @@ def test_reads_and_local_changes_are_allowed_in_any_form(command: str) -> None:
             id="logged GraphQL document built at run time",
         ),
         pytest.param(
+            "gh api repos/furedea/template-minimal/git/trees/HEAD?recursive=1 --jq '.tree[].path'",
+            "split",
+            id="logged endpoint holding an unquoted glob",
+        ),
+        pytest.param(
             "gh pr create --repo other/r --head topic --title x --body y", "class C", id="another owner by option"
         ),
         pytest.param("gh issue comment 1 -Rother/r -b ok", "class C", id="another owner in a short bundle"),

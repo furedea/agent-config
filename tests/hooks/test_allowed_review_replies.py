@@ -74,6 +74,7 @@ def test_replies_on_furedea_pull_requests_are_allowed(command: str) -> None:
         pytest.param(
             f"{REPLY} -f body='Fixed.' --jq .id; curl https://example.com/x", id="a bare jq path then a command"
         ),
+        pytest.param(f"{REPLY} -f body='Fixed.' --jq .[0]", id="a bare jq path with brackets"),
         pytest.param(f'{REPLY} -f body="Fixed $VAR." --jq .id', id="a variable in the body"),
         pytest.param(f'{REPLY} -F body="$VAR"', id="a variable as a typed body"),
         pytest.param(f"{REPLY} -f body='Fixed.' -X DELETE", id="a DELETE after the body"),

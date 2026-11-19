@@ -1,20 +1,17 @@
 """A gh call whose target and arguments the hook can fix at hook time does not ask (#253).
 
-A repository named with -R decides the host, a glob that matches no file is the word as written, and a
-set environment variable expands to its value. A fact the hook cannot fix, such as a repository the
-working directory picks, a glob with a match, an assigned variable, or a substitution, still asks.
+A repository named with -R decides the host. A fact the hook cannot fix, such as a repository the
+working directory picks, or another command on the line, still asks. A glob stays a run-time word and asks (#181).
 Between the hook's check and gh's run the files and variables may change (TOCTOU); #181 closes that gap.
 """
 
 import subprocess
-from pathlib import Path
 
 import pytest
 from tests.runtime import load_script_module
 
 guard = load_script_module("agents/hooks/guard_command.py", "guard_command")
 pytestmark = pytest.mark.usefixtures("isolated_project", "plain_gh_environment")
-TREE = "gh api repos/furedea/reusable-workflows/contents/.github/workflows/adr-lint.yml?ref=0123abc -q .content"
 
 
 def decide(command: str) -> str:
@@ -70,47 +67,10 @@ def test_a_repository_option_does_not_override_a_host_set_in_the_environment(mon
 
 
 @pytest.mark.usefixtures("furedea_checkout")
-def test_a_glob_matching_no_file_is_the_argument_as_written() -> None:
-    assert decide(TREE) == "allow"
-    assert decide("gh api repos/furedea/agent-config/git/trees/HEAD?recursive=1 --jq '.tree[].path'") == "allow"
+def test_an_unquoted_glob_in_a_read_endpoint_still_asks() -> None:
+    assert decide("gh api repos/o/r/contents/f.yml?ref=0123abc -q .content") == "ask"
 
 
 @pytest.mark.usefixtures("furedea_checkout")
-@pytest.mark.parametrize(
-    "command",
-    [
-        pytest.param(f"mkdir -p x && {TREE}", id="another command on the line"),
-        pytest.param(f"touch a; {TREE}", id="a command before"),
-        pytest.param(f"{TREE} | head", id="a pipeline"),
-    ],
-)
-def test_a_glob_on_a_line_with_other_commands_still_asks(command: str) -> None:
-    assert decide(command) == "ask"
-
-
-@pytest.mark.usefixtures("furedea_checkout")
-def test_a_glob_matching_a_file_still_asks() -> None:
-    Path("repos").mkdir()
-    Path("repos/furedea").mkdir()
-    (Path("repos/furedea") / "x").write_text("")
-    assert decide("gh api repos/furedea/?  -q .id") == "ask"
-    assert decide("gh api repos/furedea/* -q .id") == "ask"
-    # a glob this narrow matches in the working directory too
-    (Path("repos/furedea") / "agent-config.git").write_text("")
-    assert decide("gh api repos/furedea/agent-config?git -q .id") == "ask"
-
-
-@pytest.mark.usefixtures("furedea_checkout")
-@pytest.mark.parametrize(
-    "command",
-    [
-        pytest.param("gh api repos/o/r/contents/~/x?y -q .id", id="a tilde"),
-        pytest.param("gh api repos/o/r/contents/{a,b}?x -q .id", id="a brace"),
-        pytest.param("gh api repos/o/r/contents/$X?y -q .id", id="a parameter"),
-        pytest.param("gh api repos/o/r/contents/*(.)?y -q .id", id="a zsh qualifier"),
-        pytest.param("gh api repos/o/r/contents/$(echo x)?y -q .id", id="a command substitution"),
-        pytest.param("gh api -X POST repos/o/r/issues/1/comments?x -f body=y", id="a write to another owner"),
-    ],
-)
-def test_a_glob_with_another_expansion_still_asks(command: str) -> None:
-    assert decide(command) == "ask"
+def test_a_repository_option_does_not_skip_a_command_that_may_plant_git_on_path() -> None:
+    assert decide("cp x later/git; gh pr list -R furedea/agent-config") == "ask"

@@ -6,8 +6,8 @@ positional arguments. A word the guard cannot read the way gh will makes the cal
 
 import os
 import re
-from dataclasses import dataclass, replace
-from pathlib import Path, PurePosixPath
+from dataclasses import dataclass
+from pathlib import PurePosixPath
 
 import shell_syntax
 import shell_words
@@ -36,8 +36,6 @@ SHELL_MANAGED = frozenset(
         "BASH_EXECUTION_STRING",
     }
 )
-# A word of plain characters and glob characters only: no quote, expansion, brace, tilde, or zsh glob qualifier.
-PLAIN_GLOB_WORD = re.compile(r"[A-Za-z0-9_./:@,%+-][A-Za-z0-9_./=:@,%+?*\[\]-]*")
 # The only variables whose hook value stands for the shell's own when a path is read: the temporary directory
 # and home, which the harness gives the hook and the sandboxed shell alike. Any other name may differ.
 PATH_VARIABLES = frozenset({"TMPDIR", "HOME"})
@@ -99,33 +97,9 @@ def stays_one_word(source: str) -> bool:
     return all(_is_whole_value(match[1] or match[2]) for match in NAMED_PARAMETER.finditer(unquoted))
 
 
-def word_on_line(word: Word, single_call: bool) -> Word:
-    """The word as a lone call passes it: an unmatched glob as written, and a plain parameter as one word."""
-    if not single_call:
-        return word
-    if word.dynamic and word.spreading and is_unmatched_glob(word.source):
-        return Word(word.source, word.source)
-    return replace(word, spreading=word.spreading and not stays_one_word(word.source))
-
-
 def environment_files(words: tuple[Word, ...], single_call: bool) -> tuple[Word, ...]:
     """File words with each run-time path expanded from the hook's environment, on a line that assigns nothing."""
     return tuple(expand_environment(word) if single_call else word for word in words)
-
-
-def is_unmatched_glob(source: str) -> bool:
-    """Whether a plain glob matches no file in the hook's working directory, so the shell passes it as written.
-
-    The caller must know nothing on the line creates a file first, and that the shell keeps an unmatched glob.
-    Path.glob also matches dotfiles, which the shell skips, so a doubt resolves to a match.
-    """
-    if not (PLAIN_GLOB_WORD.fullmatch(source) and re.search(r"[?*\[]", source)):
-        return False
-    base = Path("/") if source.startswith("/") else Path.cwd()
-    try:
-        return next(base.glob(source.lstrip("/")), None) is None
-    except NotImplementedError, ValueError, OSError:
-        return False
 
 
 def expand_environment(word: Word) -> Word:

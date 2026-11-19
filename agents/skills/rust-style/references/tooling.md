@@ -60,3 +60,16 @@ cargo test
 
 - In code, `clippy::allow_attributes_without_reason` requires a `reason` on every `#[allow]` and `#[expect]`, and `clippy::allow_attributes` prefers `#[expect]`.
 - Allow a lint in `Cargo.toml` only with a comment that gives the reason. A crate-wide `Cargo.toml` allow needs the user's approval, the same as a per-site suppression.
+
+A project not created from template-rust has no lint table, so these lints default to allow. Add the package-level guard:
+
+```toml
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+dbg_macro = "deny"
+todo = "deny"
+unimplemented = "deny"
+```

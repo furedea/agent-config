@@ -114,6 +114,33 @@ def test_a_line_that_may_plant_a_program_or_change_path_still_asks(command: str)
 
 
 @pytest.mark.usefixtures("furedea_checkout")
+def test_a_git_read_asks_while_the_repository_holds_a_hook() -> None:
+    assert decide("git status; gh pr list -R furedea/agent-config") == "allow"
+    hook = Path(".git/hooks/post-index-change")
+    hook.write_text("#!/bin/sh\n")
+    hook.chmod(0o755)
+    assert decide("git status; gh pr list -R furedea/agent-config") == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_git_read_asks_while_the_environment_injects_a_program_setting(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GIT_CONFIG_COUNT", "1")
+    monkeypatch.setenv("GIT_CONFIG_KEY_0", "core.fsmonitor")
+    monkeypatch.setenv("GIT_CONFIG_VALUE_0", "/tmp/x")
+    assert decide("git status; gh pr list -R furedea/agent-config") == "ask"
+    monkeypatch.setenv("GIT_CONFIG_VALUE_0", "false")
+    assert decide("git status; gh pr list -R furedea/agent-config") == "allow"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_git_read_after_a_cd_checks_the_configuration_where_it_runs(isolated_project: Path) -> None:
+    trusted = checkout(isolated_project / "trusted", TRUSTED)
+    assert decide(f"cd {trusted}; git diff; gh pr list -R furedea/agent-config") == "allow"
+    subprocess.run(["git", "config", "diff.external", "./x"], check=True, cwd=trusted)
+    assert decide(f"cd {trusted}; git diff; gh pr list -R furedea/agent-config") == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
 def test_a_git_read_asks_while_the_environment_names_an_external_diff(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("GIT_EXTERNAL_DIFF", "/tmp/x")
     assert decide("git diff; gh pr list -R furedea/agent-config") == "ask"

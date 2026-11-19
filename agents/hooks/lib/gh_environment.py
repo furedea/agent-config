@@ -54,7 +54,9 @@ READ_PROGRAM_SETTINGS = (
     r"^(diff\.external|diff\..*\.(textconv|command)|filter\..*\.(clean|smudge|process)"
     r"|core\.(fsmonitor|pager|hookspath)|pager\..*|interactive\.difffilter|gpg\.(.*\.)?program|log\.showsignature)$"
 )
-TRUSTED_SCOPES = frozenset({"global", "system", "command"})
+TRUSTED_SCOPES = frozenset({"global", "system"})
+# The only hook a status, diff, or other read may run, when it rewrites the index.
+READ_HOOK = "post-index-change"
 LFS_CLEAN = re.compile(r"filter\.lfs\.clean git-lfs clean -- %f")
 SAFE_HELPER = re.compile(r"[A-Za-z0-9_./ -]+")
 # The GIT_SSH_COMMAND the sandbox runtime sets: ssh through the proxy command the runtime itself provides.
@@ -195,12 +197,13 @@ def _stand_in_problem(name: str, line: CommandLine) -> str:
 
 
 def git_read_may_run_program() -> bool:
-    """Whether repository git configuration, or GIT_EXTERNAL_DIFF, names a program a git read may run.
+    """Whether the repository's configuration or hooks, or the environment, name a program a git read may run.
 
-    The user's global and system configuration, and the harness's command-line settings, are trusted; the
-    repository's own local and worktree configuration is the agent's to write.
+    The user's global and system configuration is trusted. The repository's own local and worktree
+    configuration and its hooks are the agent's to write, and settings injected through the environment
+    pass only when they run nothing, such as the sandbox's `core.fsmonitor=false`.
     """
-    if os.environ.get("GIT_EXTERNAL_DIFF"):
+    if os.environ.get("GIT_EXTERNAL_DIFF") or _has_repository_hook():
         return True
     output = git_output("config", "--show-scope", "-z", "--get-regexp", READ_PROGRAM_SETTINGS)
     if output is None:
@@ -212,6 +215,15 @@ def git_read_may_run_program() -> bool:
         if scope not in TRUSTED_SCOPES and not harmless:
             return True
     return False
+
+
+def _has_repository_hook() -> bool:
+    """Whether the repository holds the hook a read that refreshes the index runs; commit and push hooks do not run."""
+    output = git_output("rev-parse", "--git-common-dir")
+    if output is None:
+        return True
+    hook = Path(output.strip()) / "hooks" / READ_HOOK
+    return bool(output.strip()) and hook.exists()
 
 
 def _is_installed_lfs_filter(setting: str) -> bool:

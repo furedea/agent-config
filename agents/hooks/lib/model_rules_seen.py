@@ -6,6 +6,20 @@ from pathlib import Path
 from model_rules_outcome import Finding
 
 
+def keyed(root: Path, findings: tuple[Finding, ...]) -> list[tuple[str, Finding]]:
+    """Each finding with its key: the fingerprint, numbered when several findings of one run share it.
+
+    Identical subjects in one file, or subjects that cannot be read, share a fingerprint; the number keeps them apart.
+    """
+    seen: dict[str, int] = {}
+    keyed_findings = []
+    for finding in findings:
+        base = fingerprint(root, finding)
+        seen[base] = seen.get(base, 0) + 1
+        keyed_findings.append((f"{base}#{seen[base]}", finding))
+    return keyed_findings
+
+
 def fingerprint(root: Path, finding: Finding) -> str:
     """Identify a finding by rule, file and the text of its subject, so that a moved subject keeps its identity.
 

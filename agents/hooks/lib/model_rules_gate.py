@@ -77,8 +77,7 @@ def _advise(record: SessionRecord, stop_hook_active: bool, deadline: model_rules
     if resume is None:
         advice = stop.answered_from(receipt)
         if advice.blocking:
-            _remember(record, receipt.get("keys"))
-            _save(record, {**receipt, "outcome": SHOWN})
+            _save(record, {**receipt, "outcome": SHOWN}, receipt.get("keys"))
         return advice
     return stop.judged(resume)
 
@@ -104,14 +103,14 @@ class _Stop:
             return _skipped_advice(outcome)
         outcome = replace(outcome, seconds=time.monotonic() - started)
         known = _remembered(self.record)
-        keys = {model_rules_seen.fingerprint(self.record.root, item): item for item in outcome.findings}
-        fresh = replace(outcome, findings=tuple(item for key, item in keys.items() if key not in known))
+        keyed = model_rules_seen.keyed(self.record.root, outcome.findings)
+        fresh = replace(outcome, findings=tuple(item for key, item in keyed if key not in known))
         blocking = bool(fresh.findings) and not self.stop_hook_active
-        if blocking:
-            _remember(self.record, [*keys.keys() - known])
-        if not outcome.failed_reviews or outcome.resume:
-            _save(self.record, self._receipt(fresh, [*keys.keys() - known], blocking))
-        message = model_rules_report.describe_line(fresh, len(outcome.findings) - len(fresh.findings))
+        fresh_keys = [key for key, _ in keyed if key not in known]
+        receipt = self._receipt(fresh, fresh_keys, blocking) if not outcome.failed_reviews or outcome.resume else None
+        if receipt or blocking:
+            _save(self.record, receipt, fresh_keys if blocking else ())
+        message = model_rules_report.describe_line(fresh, len(keyed) - len(fresh_keys))
         return Advice(message, blocking, model_rules_report.describe_details(fresh) if blocking else "")
 
     def answered_from(self, receipt: dict) -> Advice:
@@ -158,13 +157,14 @@ def _remembered(record: SessionRecord) -> set[str]:
     return {key for key in keys if isinstance(key, str)} if isinstance(keys, list) else set()
 
 
-def _remember(record: SessionRecord, keys: object) -> None:
-    if isinstance(keys, list):
-        record.save_results({**record.results(), SHOWN_KEY: sorted(_remembered(record) | {*keys})})
-
-
-def _save(record: SessionRecord, receipt: dict) -> None:
-    record.save_results({**record.results(), RECEIPT_KEY: receipt})
+def _save(record: SessionRecord, receipt: dict | None, shown: object = ()) -> None:
+    """Save the receipt, when there is one, and the findings now shown, together in one write."""
+    results = record.results()
+    if receipt is not None:
+        results = {**results, RECEIPT_KEY: receipt}
+    if isinstance(shown, (list, tuple)) and shown:
+        results = {**results, SHOWN_KEY: sorted(_remembered(record) | {*shown})}
+    record.save_results(results)
 
 
 def _preconditions(record: SessionRecord) -> Prevented | None:

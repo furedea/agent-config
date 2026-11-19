@@ -9,6 +9,7 @@ from tests.hooks.model_rules_support import edit, install_fakes, register_sessio
 from tests.runtime import REPO_ROOT, StubWriter
 
 sys.path.insert(0, str(REPO_ROOT / "agents/hooks/lib"))
+import model_rules_gate
 import session_store
 
 SUBJECT = "def first():\n    return 1\n"
@@ -83,3 +84,37 @@ def test_a_new_session_shows_the_finding_again(record: session_store.SessionReco
     edit(later, SUBJECT + "other = 3\n")
 
     assert stop(later)["decision"] == "block"
+
+
+def test_findings_with_identical_subjects_are_all_listed_and_later_all_hidden(
+    record: session_store.SessionRecord, tools: Tools
+) -> None:
+    edit(record, "x = 1\nx = 1\n")
+    tools.write_report([finding(line=1), finding(line=2)])
+
+    first = stop(record)
+    edit(record, "x = 1\nx = 1\ny = 2\n")
+    second = stop(record)
+
+    assert first["reason"].count("command-query-naming") == 2
+    assert "decision" not in second
+    assert "2 already shown" in second["systemMessage"]
+
+
+def test_findings_are_not_remembered_when_saving_the_receipt_fails(
+    record: session_store.SessionRecord, tools: Tools, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    tools.write_report([spanning()])
+    save = session_store.SessionRecord.save_results
+
+    def failing_for_model_rules(self: session_store.SessionRecord, value: dict) -> None:
+        if model_rules_gate.RECEIPT_KEY in value:
+            raise OSError("disk full")
+        save(self, value)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(session_store.SessionRecord, "save_results", failing_for_model_rules)
+        stop(record)
+    edit(record, SUBJECT + "other = 2\n")
+
+    assert stop(record)["decision"] == "block"

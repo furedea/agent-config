@@ -28,6 +28,9 @@ rule:
           # An arithmetic command, `((count++))`.
           - kind: compound_statement
             regex: "^\\(\\("
+          # An assignment inside an arithmetic expansion, `: "$((count++))"` or `$((total += n))`.
+          - kind: arithmetic_expansion
+            regex: "(\\+\\+|--|[^=!<>]=([^=]|$))"
         stopBy: end
 ask: >-
   A variable that this function assigns is not declared with `local`, or is declared and assigned far above the place

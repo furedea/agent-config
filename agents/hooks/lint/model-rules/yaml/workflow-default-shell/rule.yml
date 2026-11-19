@@ -15,25 +15,41 @@ inconclusive: >-
   custom `bash -o pipefail` wrapper in a container step), and none is written yet.
 axis: file
 severity: warning
-# A step's `run:`, wherever the workflow sets (or fails to set) the shell for it.
+# A step's `run:`, wherever the workflow sets (or fails to set) the shell for it. A step written as a flow mapping
+# (`- {run: make}`, `steps: [{run: make}]`) is a subject too.
 rule:
-  all:
-    - kind: block_mapping_pair
-    - has: { field: key, regex: "^[\"']?run[\"']?$" }
-    # Only a GitHub Actions file: a rule cannot be scoped by path, so the document must carry a `runs-on` (a workflow job)
-    # or `using` (a composite action) key. A CircleCI or GitLab file with `run:` steps has neither.
-    - inside:
-        kind: document
+  any:
+    - all:
+        - kind: block_mapping_pair
+        - has: { field: key, regex: "^[\"']?run[\"']?$" }
+        - matches: github-actions-document
+        # A key of a step mapping itself, not of a nested `with:` or `env:` mapping.
+        - inside:
+            kind: block_mapping
+            stopBy: neighbor
+            inside: { kind: block_node, stopBy: neighbor, inside: { kind: block_sequence_item, stopBy: neighbor } }
+    - all:
+        - kind: flow_pair
+        - has: { field: key, regex: "^[\"']?run[\"']?$" }
+        - matches: github-actions-document
+        - inside:
+            kind: flow_mapping
+            stopBy: neighbor
+            inside:
+              kind: flow_node
+              stopBy: neighbor
+              inside: { any: [{ kind: block_sequence_item }, { kind: flow_sequence }], stopBy: neighbor }
+utils:
+  # Only a GitHub Actions file: a rule cannot be scoped by path, so the document must carry a `runs-on` (a workflow job)
+  # or `using` (a composite action) key. A CircleCI or GitLab file with `run:` steps has neither.
+  github-actions-document:
+    inside:
+      kind: document
+      stopBy: end
+      has:
         stopBy: end
-        has:
-          stopBy: end
-          kind: block_mapping_pair
-          has: { field: key, regex: "^[\"']?(runs-on|using)[\"']?$" }
-    # A key of a step mapping itself, not of a nested `with:` or `env:` mapping.
-    - inside:
-        kind: block_mapping
-        stopBy: neighbor
-        inside: { kind: block_node, stopBy: neighbor, inside: { kind: block_sequence_item, stopBy: neighbor } }
+        any: [{ kind: block_mapping_pair }, { kind: flow_pair }]
+        has: { field: key, regex: "^[\"']?(runs-on|using)[\"']?$" }
 ask: >-
   The shell that this `run:` step executes under does not enable `pipefail`.
 criteria:

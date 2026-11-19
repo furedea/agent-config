@@ -21,6 +21,10 @@ rule:
     - all:
         - kind: case_item
         - has: { kind: command, regex: "^usage\\b", stopBy: end }
+    # The bare `h` label of a `getopts` loop.
+    - all:
+        - kind: case_item
+        - has: { field: value, regex: "^h$" }
     # The catch-all and the empty-argument branches, which handle a missing or invalid argument.
     - all:
         - kind: case_item
@@ -28,6 +32,11 @@ rule:
     - all:
         - kind: if_statement
         - has: { field: condition, regex: "(--help|(^|[\\s\"'])-h([\\s\"'\\]]|$))", stopBy: end }
+        - not: { inside: { kind: if_statement, stopBy: end } }
+    # An `if` that tests the argument count, `(( $# == 0 ))` or `[[ $# -lt 1 ]]`, handles a missing argument.
+    - all:
+        - kind: if_statement
+        - has: { field: condition, regex: "\\$#", stopBy: end }
         - not: { inside: { kind: if_statement, stopBy: end } }
     - all:
         - kind: if_statement

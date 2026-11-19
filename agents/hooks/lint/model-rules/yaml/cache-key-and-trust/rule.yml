@@ -13,9 +13,10 @@ inconclusive: >-
   would argue over (a tool version pinned only by the lock file), and none is written yet.
 axis: file
 severity: warning
+# A cache step's `uses:`, in a block or a flow mapping (`- {uses: actions/cache@v4, ...}`).
 rule:
+  any: [{ kind: block_mapping_pair }, { kind: flow_pair }]
   all:
-    - kind: block_mapping_pair
     - has: { field: key, regex: "^[\"']?uses[\"']?$" }
     - has: { field: value, regex: "^[\"']?actions/cache(/(restore|save))?@" }
 ask: >-

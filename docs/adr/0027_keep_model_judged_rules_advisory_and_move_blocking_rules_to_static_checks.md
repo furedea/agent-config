@@ -26,9 +26,10 @@ rules block on edit, the Stop-time run, the cache, the trusted-owner gate, key h
 ## Decision Outcome
 
 Chosen option: "Keep every model-judged rule advisory, and move a rule that must stop work to a static check", because
-a probabilistic verdict backed by 7 to 10 fixtures cannot justify stopping the agent: a false positive pushes the agent
+a probabilistic verdict backed by a small fixture set cannot justify stopping the agent: a false positive pushes the agent
 to rewrite code to please the model's scoring, a missed finding costs little because the rules judge matters of
-judgement that PR review still catches, and a gate would let an API outage or delay stop all work.
+judgement that PR review still catches, and a gate that blocks every time would turn each wrong verdict into a standing stop. (A failed or timed-out run
+is already only a notice, so an outage is not the reason.)
 
 * A model-judged finding is shown to the agent at Stop and is never a gate that blocks every time. The one-time Stop
   block of ADR-0021's hook behaviour (findings on inputs not judged before block once, unchanged inputs never again)

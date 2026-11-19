@@ -133,7 +133,7 @@ def test_adding_a_baseline_changes_the_input_fingerprint(
 def advise_with(outcome: Judgement, monkeypatch: pytest.MonkeyPatch) -> dict:
     """The results a record holds after one Stop whose judgement was `outcome`."""
     saved: dict = {}
-    record = SimpleNamespace(results=lambda: saved, save_results=saved.update)
+    record = SimpleNamespace(root=Path("/nonexistent"), results=lambda: saved, save_results=saved.update)
     monkeypatch.setattr(model_rules_gate, "_inputs", lambda _record: "same-inputs")
     monkeypatch.setattr(model_rules_gate, "_judge", lambda _record, _deadline: outcome)
 

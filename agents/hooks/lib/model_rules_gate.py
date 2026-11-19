@@ -16,6 +16,7 @@ import model_rules_programs
 import model_rules_report
 import model_rules_resume
 import model_rules_run
+import model_rules_seen
 import trusted_owners
 from model_rules_files import ReviewedSpan, Selection, committed_paths, review_base, select
 from model_rules_outcome import Judgement, Prevented, Resume
@@ -28,6 +29,8 @@ RULES_DIRECTORY = HOOK_ROOT / "lint" / "model-rules"
 TRUSTED_OWNERS_FILE = HOOK_ROOT / "rules" / "trusted_owners.json"
 KILL_SWITCH = "AGENT_MODEL_RULES"
 RECEIPT_KEY = "model_rules"
+# The fingerprints of the findings the agent was shown in this session, kept beside the receipt in the session results.
+SHOWN_KEY = "model_rules_shown"
 # Receipt outcomes: no findings; findings the agent has been shown by a block; findings it has not been shown yet
 # because `stop_hook_active` kept them from blocking, which block once at the next Stop on the same inputs.
 CLEAN, SHOWN, UNSHOWN = "clean", "findings", "findings-unshown"
@@ -74,58 +77,60 @@ def _advise(record: SessionRecord, stop_hook_active: bool, deadline: model_rules
     if resume is None:
         advice = stop.answered_from(receipt)
         if advice.blocking:
-            _save(record, {**receipt, "outcome": SHOWN})
+            _save(record, {**receipt, "outcome": SHOWN}, receipt.get("keys"))
         return advice
-    return replace(stop, shown=_shown(receipt)).judged(resume)
+    return stop.judged(resume)
 
 
 @dataclass(frozen=True, slots=True)
 class _Stop:
-    """One Stop being advised: the session, the fingerprint of its inputs, and how many findings were shown before."""
+    """One Stop being advised: the session and the fingerprint of its inputs."""
 
     record: SessionRecord
     inputs: str
     stop_hook_active: bool
     deadline: model_rules_run.Deadline
-    shown: int = 0
 
     def judged(self, resume: Resume | None = None) -> Advice:
         """Run the reviews, or only those a failed run left, and save what a later Stop on the same inputs reuses.
 
-        A finding blocks once: those shown before a later review failed are not shown again, and a review that
-        failed is retried alone at the next Stop.
+        A finding blocks once per session: one shown before, by this Stop or an earlier one, is only counted, and a
+        review that failed is retried alone at the next Stop.
         """
         started = time.monotonic()
         outcome = _judge(self.record, self.deadline, resume) if resume else _judge(self.record, self.deadline)
         if isinstance(outcome, Prevented):
             return _skipped_advice(outcome)
         outcome = replace(outcome, seconds=time.monotonic() - started)
-        blocking = len(outcome.findings) > self.shown and not self.stop_hook_active
-        seen = len(outcome.findings) if blocking else self.shown
-        if not outcome.failed_reviews or outcome.resume:
-            _save(self.record, self._receipt(outcome, seen))
-        message = model_rules_report.describe_line(outcome)
-        unseen = replace(outcome, findings=outcome.findings[self.shown :])
-        return Advice(message, blocking, model_rules_report.describe_details(unseen) if blocking else "")
+        known = _remembered(self.record)
+        keyed = model_rules_seen.keyed(self.record.root, outcome.findings)
+        fresh = replace(outcome, findings=tuple(item for key, item in keyed if key not in known))
+        blocking = bool(fresh.findings) and not self.stop_hook_active
+        fresh_keys = [key for key, _ in keyed if key not in known]
+        receipt = self._receipt(fresh, fresh_keys, blocking) if not outcome.failed_reviews or outcome.resume else None
+        if receipt or blocking:
+            _save(self.record, receipt, fresh_keys if blocking else ())
+        message = model_rules_report.describe_line(fresh, len(keyed) - len(fresh_keys))
+        return Advice(message, blocking, model_rules_report.describe_details(fresh) if blocking else "")
 
     def answered_from(self, receipt: dict) -> Advice:
         """The advice a complete receipt for the same inputs gives; findings not shown yet block, once."""
         return _answer_from(receipt, self.stop_hook_active)
 
-    def _receipt(self, outcome: Judgement, seen: int) -> dict:
+    def _receipt(self, outcome: Judgement, keys: list[str], blocking: bool) -> dict:
         """What a later Stop on the same inputs reuses, and the measurements that let the timing be studied.
 
         A run that a later review cut short also holds the `resume` from which only that review is retried.
         """
-        state = CLEAN if not outcome.findings else SHOWN if seen == len(outcome.findings) else UNSHOWN
+        state = CLEAN if not outcome.findings else SHOWN if blocking else UNSHOWN
         resume = {"resume": model_rules_resume.dump(outcome.resume)} if outcome.resume else {}
         return {
             **resume,
             "input": self.inputs,
             "outcome": state,
-            "shown": seen,
+            "keys": keys,
             "findings": len(outcome.findings),
-            "details": model_rules_report.describe_details(replace(outcome, findings=outcome.findings[seen:])),
+            "details": model_rules_report.describe_details(outcome),
             "subjects": outcome.subjects,
             "judged": outcome.judged,
             "requests": outcome.requests,
@@ -133,14 +138,6 @@ class _Stop:
             "seconds": round(outcome.seconds, 3),
             "usd": outcome.usd,
         }
-
-
-def _shown(receipt: dict) -> int:
-    """How many of a receipt's findings the agent has been shown."""
-    shown = receipt.get("shown")
-    if isinstance(shown, int) and not isinstance(shown, bool):
-        return shown
-    return receipt["findings"] if receipt.get("outcome") == SHOWN else 0
 
 
 def _answer_from(receipt: dict, stop_hook_active: bool) -> Advice:
@@ -155,8 +152,19 @@ def _skipped_advice(prevented: Prevented) -> Advice:
     return Advice(model_rules_report.describe_skipped(prevented.reason))
 
 
-def _save(record: SessionRecord, receipt: dict) -> None:
-    record.save_results({**record.results(), RECEIPT_KEY: receipt})
+def _remembered(record: SessionRecord) -> set[str]:
+    keys = record.results().get(SHOWN_KEY)
+    return {key for key in keys if isinstance(key, str)} if isinstance(keys, list) else set()
+
+
+def _save(record: SessionRecord, receipt: dict | None, shown: object = ()) -> None:
+    """Save the receipt, when there is one, and the findings now shown, together in one write."""
+    results = record.results()
+    if receipt is not None:
+        results = {**results, RECEIPT_KEY: receipt}
+    if isinstance(shown, (list, tuple)) and shown:
+        results = {**results, SHOWN_KEY: sorted(_remembered(record) | {*shown})}
+    record.save_results(results)
 
 
 def _preconditions(record: SessionRecord) -> Prevented | None:

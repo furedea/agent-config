@@ -62,9 +62,10 @@ def test_the_same_findings_on_unchanged_inputs_only_notify(record: session_store
     assert len(tools.calls("op")) == 1
 
 
-def test_findings_on_changed_inputs_block_again(record: session_store.SessionRecord, tools: Tools) -> None:
+def test_new_findings_on_changed_inputs_block_again(record: session_store.SessionRecord, tools: Tools) -> None:
     stop(record)
     edit(record, "another edit\n")
+    tools.write_report([finding(rule="another-rule")])
 
     assert stop(record)["decision"] == "block"
     assert len(tools.calls("op")) == 2
@@ -439,7 +440,8 @@ def test_the_stop_hook_blocks_through_the_provider_entry_point(
 
 
 def test_findings_are_bounded_in_the_message(record: session_store.SessionRecord, tools: Tools) -> None:
-    tools.write_report([finding(line=number) for number in range(30)])
+    edit(record, "".join(f"line {number}\n" for number in range(31)))
+    tools.write_report([finding(line=number + 1) for number in range(30)])
 
     reason = stop(record)["reason"]
 

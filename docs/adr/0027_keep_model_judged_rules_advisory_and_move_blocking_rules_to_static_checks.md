@@ -10,9 +10,9 @@ related: [ADR-0020, ADR-0021]
 ## Context and Problem Statement
 
 ADR-0021 lets a model-judged (jev-lint) rule be promoted to a gate that blocks every time once its example tests show no
-false positive, and deletes the rule's prose when it is promoted. Since then the 74 rules and their cutoffs have been
-fitted (#240–#243), and the evidence is in: a rule has 7 to 10 fixtures and some are blind, the verdict is
-probabilistic, and PRs already end at the Codex and Claude reviews and the ban on merging with an unresolved thread.
+false positive, and deletes the rule's prose when it is promoted. Since then 74 rules exist and the cutoffs of those
+with fixtures have been fitted (#240–#244; the rest stay at the 0.5 starting value). The evidence is in: a fitted rule
+has 7 to 10 fixtures and some are blind, the verdict is probabilistic, and PRs already end at the Codex and Claude reviews and the ban on merging with an unresolved thread.
 Should any model-judged rule ever block?
 
 This decision replaces only ADR-0021's promotion decision (#249, #169). Everything else in ADR-0021 stands: static
@@ -30,15 +30,17 @@ a probabilistic verdict backed by 7 to 10 fixtures cannot justify stopping the a
 to rewrite code to please the model's scoring, a missed finding costs little because the rules judge matters of
 judgement that PR review still catches, and a gate would let an API outage or delay stop all work.
 
-- A model-judged finding is shown to the agent at Stop and never blocks as a gate. How it is shown (once per set of
-  inputs) is a delivery matter handled in #245. `severity: error` is not used for model rules.
-- A rule that must block is stated deterministically as an ast-grep error rule or as the language's own linter check
+* A model-judged finding is shown to the agent at Stop and is never a gate that blocks every time. The one-time Stop
+  block of ADR-0021's hook behaviour (findings on inputs not judged before block once, unchanged inputs never again)
+  stays in force until #245 decides how findings are shown; what this ADR removes is the repeating gate.
+  `severity: error` is not used for model rules.
+* A rule that must block is stated deterministically as an ast-grep error rule or as the language's own linter check
   (see ADR-0021, "Which rules ast-grep may block"). A rule that cannot be restated deterministically is not suited to
   blocking and stays advisory or prose.
-- The prose of a rule that has a model-judged check stays in `AGENTS.md` and the style skills. There is no promotion
+* The prose of a rule that has a model-judged check stays in `AGENTS.md` and the style skills. There is no promotion
   after which it could be deleted, and the check is a reminder, not the authority. ADR-0021's "prose is deleted, not
   kept" still applies to rules replaced by a static check or an existing linter.
-- The 74 rules and their fitted cutoffs are unchanged.
+* The 74 rules and their cutoffs, fitted or not, are unchanged.
 
 ### Consequences
 

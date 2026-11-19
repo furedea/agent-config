@@ -115,7 +115,8 @@ operation and subject M-21, known-defect markers with a removal condition M-60, 
 `no-reaching-through-collaborators`, `no-comment-restating-code`, `no-exposed-mutable-collection`); see
 [ADR-0021](adr/0021_enforce_prose_rules_with_each_tools_own_checks_that_report_before_they_block.md). The rules are
 advisory and are never promoted to a gate ([ADR-0027](adr/0027_keep_model_judged_rules_advisory_and_move_blocking_rules_to_static_checks.md)):
-a rule that must block is restated as an ast-grep error rule or a linter check. Five cutoffs are fitted on the rule's own fixtures (M-05 for Python, TypeScript and Rust, M-21 for
+a rule that must block is restated as an ast-grep error rule or a linter check. The one-time Stop block of the Delivery
+bullet below stays until #245 decides how findings are shown. Five cutoffs are fitted on the rule's own fixtures (M-05 for Python, TypeScript and Rust, M-21 for
 TypeScript, and M-60 for Rust); the others, including the five migrated from `AGENTS.md` (which have no fixtures yet), stay at the 0.5 starting value; the fixtures of the first three separate it with a wide margin. A fit on so
 few cases is not a calibration, so the prose of a model-judged rule stays in `AGENTS.md` and the style skills (ADR-0027).
 

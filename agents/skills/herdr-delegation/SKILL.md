@@ -78,8 +78,8 @@ complete. Supply:
 - **Input:** the exact plan text or plan file, or implementation scope. For
   uncommitted code, identify whether staged, unstaged, and untracked files are included, and
   provide a stable snapshot when the checkout may still change. For an implementation, first
-  check existing tools (the standard library, installed dependencies, a de facto external
-  tool) and state in the brief which one is used and why, or why none fits.
+  check existing tools (related code in the repository, platform features, the standard
+  library, installed dependencies, a de facto external tool) and state in the brief which one is used and why, or why none fits.
 - **Scope and focus:** the boundaries of the assignment and the review aspects that matter
   (for example correctness, boundaries, verification, or a specific risk), the list of what is
   out of scope, and the threat model: where the input comes from and what a wrong judgment

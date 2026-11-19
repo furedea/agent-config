@@ -17,9 +17,10 @@ inconclusive: >-
 axis: file
 severity: warning
 # Only functions (including function literals) that log are asked about; a function that never logs cannot log and
-# return the same error. A logger is any receiver, including one reached through `Default()`, whose call has an
-# argument (so `err.Error()` is not one); error constructors and test reporters are not loggers. A log call inside a
-# nested function literal selects only that literal, the function nearest to the call.
+# return the same error. A logger is any receiver, including one reached through `Default()`, whose call has an argument
+# (so `err.Error()` is not one) or starts an event chain (zerolog's `log.Error().Err(err).Msg(...)`); error constructors
+# and test reporters are not loggers. A log call inside a nested function literal selects only that literal, the
+# function nearest to the call.
 rule:
   all:
     - any:
@@ -30,7 +31,7 @@ rule:
         kind: call_expression
         stopBy:
           kind: func_literal
-        regex: ^(\w+(\(\))?\.)+((Debug|Info|Warn|Warning|Error|Log)(f|w|ln|Context|Attrs)?\(\s*[^)\s]|(Print|Printf|Println|Fatal|Fatalf|Fatalln|Panic|Panicf|Panicln|Output)\()
+        regex: ^(\w+(\(\))?\.)+((Debug|Info|Warn|Warning|Error|Log)(f|w|ln|Context|Attrs)?\(\s*[^)\s]|(Print|Printf|Println|Fatal|Fatalf|Fatalln|Panic|Panicf|Panicln|Output)\(|(Trace|Debug|Info|Warn|Error|Fatal|Panic)\(\)\.)
         not:
           regex: ^(fmt|errors|xerrors|status|t|b|tb|require|assert)\.
 ask: >-

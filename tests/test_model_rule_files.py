@@ -200,6 +200,8 @@ import (
 	"fmt"
 	"log"
 	"log/slog"
+
+	zlog "github.com/rs/zerolog/log"
 )
 
 func ViaDefault(err error) error {
@@ -222,6 +224,11 @@ func ViaShortReceiver(l *Logger, err error) error {
 	return err
 }
 
+func ViaZerolog(err error) error {
+	zlog.Error().Err(err).Msg("load")
+	return err
+}
+
 func OnlyWraps(err error) error {
 	return fmt.Errorf("load: %s", err.Error())
 }
@@ -241,9 +248,9 @@ def test_go_error_handled_once_selects_each_logger_form_and_only_the_closure_tha
 
     counts = subjects_by_rule(plan(repository))
 
-    # Four functions log through `Default()` or a logger of any receiver name; `OnlyWraps` only builds an error, and
-    # `Outer` does not log itself: only its closure `report` does.
-    assert counts["error-handled-once"] == 5
+    # Five functions log through `Default()`, a logger of any receiver name or a zerolog event builder; `OnlyWraps`
+    # only builds an error, and `Outer` does not log itself: only its closure `report` does.
+    assert counts["error-handled-once"] == 6
 
 
 GO_CONSTRUCTION_SOURCE = """\

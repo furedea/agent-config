@@ -2,7 +2,7 @@ id: bash_local_underscore_prefix
 language: bash
 severity: error
 message: "Prefix function-local variables with `_`."
-note: "Names starting with an uppercase letter are skipped: they localize special variables such as IFS, OPTIND, and LC_ALL, which cannot be renamed."
+note: "Rename it and every use in the function, e.g. `local src=\"$1\"` to `local _src=\"$1\"`. Names starting with an uppercase letter are skipped: they localize special variables such as IFS, OPTIND, and LC_ALL, which cannot be renamed."
 rule:
   any:
     - all:

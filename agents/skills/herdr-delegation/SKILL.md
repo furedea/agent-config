@@ -16,6 +16,8 @@ the request, evaluates the returned work, and reports the outcome to the user.
 - Apply this workflow to requested cross-session work and to the lanes of an approved plan,
   which `development-cycle` hands to task worktree sessions. Do not infer permission to delegate
   from an ordinary coding request, a local review, or an opportunity to work in parallel.
+  Run independent lanes of an approved plan in parallel, each in its own Herdr worktree, instead
+  of one after another; lanes that change the same lines are the exception and run in sequence.
 - Read the `herdr` skill before operating another session. It owns prerequisites, CLI discovery,
   agent identity, layout, prompting, waiting, approvals, and recovering complete output. Follow
   its environment check; if Herdr is unavailable, report the limitation without silently

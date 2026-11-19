@@ -6,8 +6,10 @@ language: Python
 kind: noul
 subject: node
 state: local
-# Cutoff 0.79: jev-lint's fitted midpoint on this folder's fixtures (4 violations, 3 conforming cases, 3 passes,
-# means), where the loudest conforming case scored 0.73 and the quietest violation 0.84 (baseline.json, 2026-11-18).
+# Cutoff 0.79: the midpoint between the loudest conforming case (0.72, a path on a settings record) and the quietest
+# violation that ends in a call (0.87) on this folder's fixtures (5 violations, 3 conforming cases, 3 passes, means;
+# baseline.json, 2026-11-19). Limits: a chain of property reads with no call (`order.customer.address.city`) scored
+# 0.68, between conforming cases at 0.67 and 0.72, so no cutoff separates it; it is selected but not found here.
 threshold: 0.79
 axis: file
 severity: warning

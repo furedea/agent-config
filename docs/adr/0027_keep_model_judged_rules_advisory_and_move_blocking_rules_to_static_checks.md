@@ -12,7 +12,7 @@ related: [ADR-0020, ADR-0021]
 ADR-0021 lets a model-judged (jev-lint) rule be promoted to a gate that blocks every time once its example tests show no
 false positive, and deletes the rule's prose when it is promoted. Since then 74 rules exist and the cutoffs of those
 with fixtures have been fitted (#240–#244; the rest stay at the 0.5 starting value). The evidence is in: a fitted rule
-has 7 to 10 fixtures and some are blind, the verdict is probabilistic, and PRs already end at the Codex and Claude reviews and the ban on merging with an unresolved thread.
+has a small fixture set (a handful to under twenty cases) and some are blind, the verdict is probabilistic, and PRs already end at the Codex and Claude reviews and the ban on merging with an unresolved thread.
 Should any model-judged rule ever block?
 
 This decision replaces only ADR-0021's promotion decision (#249, #169). Everything else in ADR-0021 stands: static
@@ -44,7 +44,8 @@ judgement that PR review still catches, and a gate would let an API outage or de
 
 ### Consequences
 
-* Good, because a model error or outage can no longer stop the agent or lead it to game the judge.
+* Good, because a model error or outage can no longer repeatedly gate or trap the agent or lead it to game the judge;
+  until #245 changes how findings are shown, a false positive on new inputs can still stop it once.
 * Good, because each rule has one clear route: deterministic and blocking, or advisory.
 * Bad, because an agent may ignore an advisory finding and only review catches it.
 * Bad, because the prose and the check of a model-judged rule both exist for good, so they can drift.

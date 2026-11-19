@@ -48,16 +48,6 @@ PAGER_FLAGS = re.compile(r"-[A-Za-z]+")
 LESS_PROGRAM_VARIABLES = ("LESSOPEN", "LESSCLOSE", "LESSKEY", "LESSKEYIN", "LESSKEY_SYSTEM", "LESSKEYIN_SYSTEM")
 LESS_FLAGS = re.compile(r"-?[A-Za-z]*")
 CREDENTIAL_HELPERS = r"^credential\..*helper$"
-# git settings naming a program a read such as status, diff, log, or show may run: a diff driver, a filter
-# that cleans worktree files, a file system monitor, a pager, a signature verifier, or a hook.
-READ_PROGRAM_SETTINGS = (
-    r"^(diff\.external|diff\..*\.(textconv|command)|filter\..*\.(clean|smudge|process)"
-    r"|core\.(fsmonitor|pager|hookspath)|pager\..*|interactive\.difffilter|gpg\.(.*\.)?program|log\.showsignature|hook\..*)$"
-)
-TRUSTED_SCOPES = frozenset({"global", "system"})
-# The only hook a status, diff, or other read may run, when it rewrites the index.
-READ_HOOK = "post-index-change"
-LFS_CLEAN = re.compile(r"filter\.lfs\.clean git-lfs clean -- %f")
 SAFE_HELPER = re.compile(r"[A-Za-z0-9_./ -]+")
 # The GIT_SSH_COMMAND the sandbox runtime sets: ssh through the proxy command the runtime itself provides.
 SANDBOX_SSH_COMMAND = (
@@ -71,8 +61,11 @@ GIT_OVERRIDE_VARIABLES += ("GIT_CONFIG_GLOBAL", "GIT_CONFIG_SYSTEM", "GIT_ALLOW_
 
 def environment_problem(line: CommandLine) -> str:
     """Why the environment may run something else than gh against github.com, or an empty string."""
-    if problem := _program_problem(line):
-        return problem
+    # gh runs git for clones, checkouts, and to find the working repository, and git runs ssh for SSH
+    # remotes, so both must be as safe as gh.
+    for name in (PROGRAM, "git", "ssh"):
+        if problem := _stand_in_problem(name, line):
+            return problem
     pagers = [os.environ.get("GH_PAGER", ""), os.environ.get("PAGER", ""), _gh_config_value("pager")]
     if os.environ.get("GH_FORCE_TTY") or not all(pager is not None and _is_locked_pager(pager) for pager in pagers):
         return "the environment forces a terminal or names a pager program gh may start"
@@ -84,18 +77,6 @@ def environment_problem(line: CommandLine) -> str:
     foreign_repository = configured_repository and gh_repository.repository(configured_repository) is None
     if os.environ.get("GH_HOST", GITHUB_HOST).lower() != GITHUB_HOST or foreign_repository:
         return "the environment sends gh to another host than github.com"
-    return ""
-
-
-def _program_problem(line: CommandLine) -> str:
-    """Why gh, a program it runs, or a git read beside it may run something the guard did not judge."""
-    # gh runs git for clones, checkouts, and to find the working repository, and git runs ssh for SSH
-    # remotes, so both must be as safe as gh.
-    for name in (PROGRAM, "git", "ssh"):
-        if problem := _stand_in_problem(name, line):
-            return problem
-    if line.reads_git and git_read_may_run_program():
-        return "the repository's git configuration names a program a git read on the line may run"
     return ""
 
 
@@ -194,44 +175,6 @@ def _stand_in_problem(name: str, line: CommandLine) -> str:
     if shutil.which(name) is not None and not is_system_program(name):
         return f"PATH finds a {name} that this account could replace"
     return ""
-
-
-def git_read_may_run_program() -> bool:
-    """Whether the repository's configuration or hooks, or the environment, name a program a git read may run.
-
-    The user's global and system configuration is trusted. The repository's own local and worktree
-    configuration and its hooks are the agent's to write, and settings injected through the environment
-    pass only when they run nothing, such as the sandbox's `core.fsmonitor=false`.
-    """
-    if os.environ.get("GIT_EXTERNAL_DIFF") or _has_repository_hook():
-        return True
-    output = git_output("config", "--show-scope", "-z", "--get-regexp", READ_PROGRAM_SETTINGS)
-    if output is None:
-        return True
-    fields = output.split("\0")
-    for scope, record in zip(fields[::2], fields[1::2], strict=False):
-        setting = record.replace("\n", " ", 1)
-        harmless = BOOLEAN_FSMONITOR.fullmatch(setting) or _is_installed_lfs_filter(setting)
-        if scope not in TRUSTED_SCOPES and not harmless:
-            return True
-    return False
-
-
-def _has_repository_hook() -> bool:
-    """Whether the repository holds the hook a read that refreshes the index runs, or submodules a read enters.
-
-    git names the hook's path itself, following core.hooksPath and worktrees; commit and push hooks never run
-    on a read. A submodule has its own configuration and hooks, so a repository with any asks.
-    """
-    hook = git_output("rev-parse", "--git-path", f"hooks/{READ_HOOK}")
-    top = git_output("rev-parse", "--show-toplevel")
-    if hook is None or top is None:
-        return True
-    return bool(hook.strip()) and (Path(hook.strip()).exists() or (Path(top.strip()) / ".gitmodules").exists())
-
-
-def _is_installed_lfs_filter(setting: str) -> bool:
-    return bool(LFS_FILTER.fullmatch(setting) or LFS_CLEAN.fullmatch(setting)) and is_system_program("git-lfs")
 
 
 def clone_may_run_code() -> bool:

@@ -12,11 +12,7 @@ FILTERS = frozenset(
     | {"tail", "tr", "true", "wc"}
 )
 # Programs whose options or program text decide whether they write a file or run a program.
-WORD_CHECKED = frozenset({"awk", "base64", "git", "sed", "sort", "uniq"})
-GIT_READS = frozenset({"cat-file", "describe", "diff", "log", "ls-files", "merge-base", "rev-list", "rev-parse"})
-GIT_READS |= {"shortlog", "show", "status"}
-# --output writes the diff to a file, and --ext-diff runs a configured diff program.
-GIT_WRITING_OPTION = re.compile(r"--(?:o|ou|out|outp|outpu|output)(?:=|$)|--output-|--ext")
+WORD_CHECKED = frozenset({"awk", "base64", "sed", "sort", "uniq"})
 # Short sort options taking no value; o and the long --output and --compress-program write or run.
 SORT_FLAGS = re.compile(r"-[bdfghiMnRrsuVcCz]+")
 SORT_VALUED = re.compile(r"-[kt]|--(?:key|field-separator|buffer-size|parallel|sort|batch-size)(?:=|$)")
@@ -44,7 +40,7 @@ def writes_nothing(arguments: Sequence[str], dynamic: Sequence[bool]) -> bool:
         return True
     if name not in WORD_CHECKED or any(dynamic):
         return False
-    checks = {"awk": _awk_reads, "git": _git_reads, "sed": _sed_prints, "sort": _sort_reads, "uniq": _uniq_reads}
+    checks = {"awk": _awk_reads, "sed": _sed_prints, "sort": _sort_reads, "uniq": _uniq_reads}
     checks["base64"] = _base64_decodes
     return checks[name](rest)
 
@@ -52,13 +48,6 @@ def writes_nothing(arguments: Sequence[str], dynamic: Sequence[bool]) -> bool:
 def _base64_decodes(arguments: list[str]) -> bool:
     """A base64 call decoding its standard input; macOS base64 writes to a file named with -o."""
     return set(arguments) <= BASE64_DECODE
-
-
-def _git_reads(arguments: list[str]) -> bool:
-    """A listed read subcommand with no global option before it and no option writing a file or running a diff."""
-    if not arguments or arguments[0] not in GIT_READS:
-        return False
-    return not any(GIT_WRITING_OPTION.match(argument) for argument in arguments)
 
 
 def _sort_reads(arguments: list[str]) -> bool:

@@ -9,12 +9,15 @@ still asks. Between the hook's check and the run the files may change (TOCTOU); 
 
 import os
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
 from tests.runtime import load_script_module
 
 guard = load_script_module("agents/hooks/guard_command.py", "guard_command")
+gh_command_line = sys.modules["gh_command_line"]
+shell_syntax = sys.modules["shell_syntax"]
 pytestmark = pytest.mark.usefixtures("plain_gh_environment", "writable_path_entry")
 TRUSTED = "https://github.com/furedea/agent-config.git"
 
@@ -52,8 +55,6 @@ def writable_path_entry(isolated_project: Path, monkeypatch: pytest.MonkeyPatch)
         pytest.param("ls docs; wc -l notes.txt; gh pr view 1 -R furedea/agent-config", id="ls and wc"),
         pytest.param("sed -n 1,5p notes.txt; gh pr view 1 -R furedea/agent-config", id="sed printing lines"),
         pytest.param("sed -n '/^## A/,/^## B/p' notes.txt; gh pr view 1 -R furedea/agent-config", id="sed by pattern"),
-        pytest.param("git status -sb; git log --oneline -3; gh pr view 1 -R furedea/agent-config", id="git reads"),
-        pytest.param("git diff --stat; gh pr view 1 -R furedea/agent-config", id="a git diff"),
         pytest.param("gh api repos/furedea/r/contents/f --jq .content | base64 -d | head", id="base64 decoding"),
         pytest.param("gh pr view 1 -R furedea/agent-config > notes.txt", id="output to a directory off PATH"),
     ],
@@ -64,9 +65,9 @@ def test_gh_beside_commands_that_write_nothing_is_judged_alone(command: str) -> 
 
 @pytest.mark.usefixtures("furedea_checkout")
 def test_a_read_of_the_working_repository_beside_read_only_commands_follows_its_remote() -> None:
-    assert decide("git status -sb; gh pr view 1 | head -3") == "allow"
+    assert decide("ls docs; gh pr view 1 | head -3") == "allow"
     subprocess.run(["git", "remote", "set-url", "origin", "https://evil.example/o/r"], check=True)
-    assert decide("git status -sb; gh pr view 1 | head -3") == "ask"
+    assert decide("ls docs; gh pr view 1 | head -3") == "ask"
 
 
 @pytest.mark.usefixtures("furedea_checkout")
@@ -103,72 +104,14 @@ def test_a_read_of_the_working_repository_beside_read_only_commands_follows_its_
         pytest.param("awk -f prog.awk x; gh pr list -R furedea/agent-config", id="awk reading its program"),
         pytest.param("sed -n 'w later/gh' x; gh pr list -R furedea/agent-config", id="sed writing"),
         pytest.param("sed -i s/a/b/ x; gh pr list -R furedea/agent-config", id="sed in place"),
-        pytest.param("git diff --output=later/gh; gh pr list -R furedea/agent-config", id="git diff --output"),
-        pytest.param("git -c core.pager=x log; gh pr list -R furedea/agent-config", id="git with a setting"),
+        pytest.param("git status -sb; gh pr list -R furedea/agent-config", id="a git read, left to #181"),
+        pytest.param("git log --oneline -3 | head; gh pr list -R furedea/agent-config", id="a git log"),
         pytest.param("git commit -m x; gh pr list -R furedea/agent-config", id="a git write"),
         pytest.param("python3 x.py; gh pr list -R furedea/agent-config", id="another program"),
     ],
 )
 def test_a_line_that_may_plant_a_program_or_change_path_still_asks(command: str) -> None:
     assert decide(command) == "ask"
-
-
-@pytest.mark.usefixtures("furedea_checkout")
-def test_a_git_read_asks_while_the_repository_holds_a_hook() -> None:
-    assert decide("git status; gh pr list -R furedea/agent-config") == "allow"
-    hook = Path(".git/hooks/post-index-change")
-    hook.write_text("#!/bin/sh\n")
-    hook.chmod(0o755)
-    assert decide("git status; gh pr list -R furedea/agent-config") == "ask"
-
-
-@pytest.mark.usefixtures("furedea_checkout")
-def test_a_git_read_asks_in_a_repository_with_submodules() -> None:
-    assert decide("git status; gh pr list -R furedea/agent-config") == "allow"
-    Path(".gitmodules").write_text('[submodule "x"]\n\tpath = x\n\turl = ./x\n')
-    assert decide("git status; gh pr list -R furedea/agent-config") == "ask"
-
-
-@pytest.mark.usefixtures("furedea_checkout")
-def test_a_git_read_asks_while_the_environment_injects_a_program_setting(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("GIT_CONFIG_COUNT", "1")
-    monkeypatch.setenv("GIT_CONFIG_KEY_0", "core.fsmonitor")
-    monkeypatch.setenv("GIT_CONFIG_VALUE_0", "/tmp/x")
-    assert decide("git status; gh pr list -R furedea/agent-config") == "ask"
-    monkeypatch.setenv("GIT_CONFIG_VALUE_0", "false")
-    assert decide("git status; gh pr list -R furedea/agent-config") == "allow"
-
-
-@pytest.mark.usefixtures("furedea_checkout")
-def test_a_git_read_after_a_cd_checks_the_configuration_where_it_runs(isolated_project: Path) -> None:
-    trusted = checkout(isolated_project / "trusted", TRUSTED)
-    assert decide(f"cd {trusted}; git diff; gh pr list -R furedea/agent-config") == "allow"
-    subprocess.run(["git", "config", "diff.external", "./x"], check=True, cwd=trusted)
-    assert decide(f"cd {trusted}; git diff; gh pr list -R furedea/agent-config") == "ask"
-
-
-@pytest.mark.usefixtures("furedea_checkout")
-def test_a_git_read_asks_while_the_environment_names_an_external_diff(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("GIT_EXTERNAL_DIFF", "/tmp/x")
-    assert decide("git diff; gh pr list -R furedea/agent-config") == "ask"
-
-
-@pytest.mark.usefixtures("furedea_checkout")
-@pytest.mark.parametrize(
-    "setting",
-    [
-        ("diff.x.textconv", "./x"),
-        ("diff.external", "./x"),
-        ("filter.x.clean", "./x"),
-        ("core.fsmonitor", "./x"),
-        ("gpg.program", "./x"),
-        ("hook.x.command", "./x"),
-    ],
-)
-def test_a_git_read_that_may_run_a_configured_program_still_asks(setting: tuple[str, str]) -> None:
-    assert decide("git diff; gh pr list -R furedea/agent-config") == "allow"
-    subprocess.run(["git", "config", *setting], check=True)
-    assert decide("git diff; gh pr list -R furedea/agent-config") == "ask"
 
 
 @pytest.mark.usefixtures("furedea_checkout")
@@ -213,6 +156,7 @@ def test_a_cd_also_judges_the_directory_gh_runs_in_when_the_cd_fails(isolated_pr
         pytest.param("cd $DIR; gh pr list", id="a directory named at run time"),
         pytest.param("cd -; gh pr list", id="the previous directory"),
         pytest.param("pushd trusted; gh pr list", id="pushd"),
+        pytest.param("cd -P trusted; gh pr list", id="an option"),
     ],
 )
 def test_a_cd_the_hook_cannot_follow_still_asks(command: str, isolated_project: Path) -> None:
@@ -229,3 +173,44 @@ def test_a_cd_asks_while_path_holds_a_relative_entry(
     assert decide(f"cd {trusted}; gh pr list -R furedea/agent-config") == "allow"
     monkeypatch.setenv("PATH", f"{os.environ['PATH']}:{entry}")
     assert decide(f"cd {trusted}; gh pr list -R furedea/agent-config") == "ask"
+
+
+@pytest.mark.usefixtures("isolated_project")
+def test_a_cd_up_from_a_symlink_judges_the_logical_parent(
+    isolated_project: Path, tmp_path_factory: pytest.TempPathFactory
+) -> None:
+    checkout(isolated_project, TRUSTED)
+    foreign = checkout(isolated_project / "foreign", "https://evil.example/o/r")
+    target = checkout(tmp_path_factory.mktemp("elsewhere") / "trusted", TRUSTED)
+    (foreign / "link").symlink_to(target)
+    assert decide("cd foreign/link; gh pr view 1") == "allow"
+    assert decide("cd foreign/link; cd ..; gh pr view 1") == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_relative_cd_asks_while_cdpath_may_send_it_elsewhere(
+    isolated_project: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    trusted = checkout(isolated_project / "trusted", TRUSTED)
+    assert decide("cd trusted; gh pr list") == "allow"
+    monkeypatch.setenv("CDPATH", str(isolated_project / "elsewhere"))
+    assert decide("cd trusted; gh pr list") == "ask"
+    assert decide(f"cd {trusted}; gh pr list") == "allow"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_cd_asks_while_the_environment_carries_a_cd_function(
+    isolated_project: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    trusted = checkout(isolated_project / "trusted", TRUSTED)
+    monkeypatch.setenv("BASH_FUNC_cd%%", "() {  builtin cd /\n}")
+    assert decide(f"cd {trusted}; gh pr list -R furedea/agent-config") == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_cd_to_a_name_after_a_double_dash_is_not_followed(isolated_project: Path) -> None:
+    checkout(isolated_project / "-foreign", "https://evil.example/o/r")
+    source = "cd -- -foreign; gh pr list"
+    line = gh_command_line.command_line(source, shell_syntax.parse(source))
+    assert line.changes_directory
+    assert decide(source) == "ask"

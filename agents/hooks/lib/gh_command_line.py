@@ -71,9 +71,8 @@ class CommandLine:
     `changes_directory` says another command on the line may write a file or run a program, so the
     directory or its remotes may differ from what the hook reads; otherwise gh runs in one of
     `directories`, the hook's own and each a literal cd may enter. `plants_nothing` says nothing on
-    the line but one gh call writes a file, and that gh writes into no PATH entry, and `reads_git` that
-    a git read on the line may run a program git's configuration names. `arguments` joins every
-    command's arguments as the shell passes them, substituted commands included, for the secret scan.
+    the line but one gh call writes a file, and that gh writes into no PATH entry. `arguments` joins
+    every command's arguments as the shell passes them, substituted commands included, for the secret scan.
     """
 
     source: str
@@ -84,7 +83,6 @@ class CommandLine:
     arguments: str = ""
     directories: tuple[Path, ...] = ()
     plants_nothing: bool = False
-    reads_git: bool = False
 
 
 def command_line(source: str, commands: tuple[shell_syntax.Command, ...]) -> CommandLine:
@@ -104,12 +102,10 @@ def command_line(source: str, commands: tuple[shell_syntax.Command, ...]) -> Com
     kept = {DEVICE_NULL} if plain else set()
     moves = not reads_only or any(target not in kept for item in others for target in item.writes)
     one_gh = len(commands) - len(others) == 1
-    # Only gh's own output may go to a file off PATH, and only on a line without a git read: any other written
-    # file may be configuration a git read runs, such as .git/config naming a file system monitor.
-    reads_git = any(item.arguments[0] == "git" for item in others)
+    # Only gh's own output may go to a file off PATH: another command's file may be configuration a program
+    # later on the line reads. gh's output lands only after every earlier command ran.
     writes = [target for item in commands if item not in others for target in item.writes]
-    kept_writes = not reads_git or all(target == DEVICE_NULL for target in writes)
-    plants = not (plain and not moves and one_gh and kept_writes)
+    plants = not (plain and not moves and one_gh)
     plants = plants or any(_may_plant(target, directories or ()) for target in writes)
     return CommandLine(
         source,
@@ -120,7 +116,6 @@ def command_line(source: str, commands: tuple[shell_syntax.Command, ...]) -> Com
         " ".join(argument for item in commands for argument in item.arguments),
         directories or (),
         not plants,
-        reads_git,
     )
 
 
@@ -161,17 +156,26 @@ def _directories(others: list[shell_syntax.Command]) -> tuple[Path, ...] | None:
         entered = [path for path in _entered(found, item) if path.is_dir()]
         if not entered:
             return None
-        found += [path.resolve() for path in entered if path.resolve() not in found]
+        found += [path for path in entered if path not in found]
     return tuple(found)
 
 
 def _entered(found: list[Path], item: shell_syntax.Command) -> list[Path]:
-    """Where a cd may lead from each directory found so far; CDPATH may send a relative one elsewhere."""
-    targets = [shell_syntax.changed_directory(directory, item) for directory in found]
-    if None in targets:
+    """Where a cd may lead from each directory found so far, by the logical path bash keeps and the physical one.
+
+    `..` after a symlink leaves the logical path in the link's parent, not the target's. An option, `--`
+    before a name starting with `-` included, and CDPATH for a relative name, are not followed.
+    """
+    operands = item.arguments[1:]
+    if any(argument.startswith("-") for argument in operands):
         return []
-    relative = any(not Path(argument).is_absolute() for argument in item.arguments[1:] if argument != "--")
-    return [] if relative and os.environ.get("CDPATH") else [path for path in targets if path is not None]
+    if os.environ.get("CDPATH") and any(not Path(argument).is_absolute() for argument in operands):
+        return []
+    targets = [shell_syntax.changed_directory(directory, item) for directory in found]
+    paths = [path for path in targets if path is not None]
+    if len(paths) != len(targets):
+        return []
+    return [*(Path(os.path.normpath(path)) for path in paths), *(path.resolve() for path in paths)]
 
 
 def _may_plant(target: str, directories: tuple[Path, ...]) -> bool:

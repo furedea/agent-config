@@ -1,5 +1,9 @@
 # bash-style: "keep it disabled by default for scripts handling secrets or user input" and "suppress tracing around noisy
-# or sensitive sections". Advisory; the prose stays until the rule is promoted (ADR-0021).
+# or sensitive sections".
+# Advisory; the prose stays until the rule is promoted (ADR-0021). The cutoff stays at the 0.5 starting value: the
+# fixtures do not separate. Limit: a `set -x` that turns tracing back on after a `set +x` and before a secret scored
+# 0.13 (bad_retraced_before_secret.bash:10), as low as the cleans (highest 0.17); the other three bad cases scored 0.96
+# or more.
 id: tracing-not-left-on-for-secrets
 language: Bash
 kind: noul
@@ -14,13 +18,16 @@ rule:
     - has: { field: name, regex: "^set$" }
     - regex: "^set\\s+(\\S+\\s+)*(-[a-zA-Z]*x|-o\\s+xtrace)\\b"
 ask: >-
-  This script turns on `set -x` and then runs commands that handle a secret (a token, a password, a key) or raw user
-  input while tracing is on.
+  While the tracing that this statement turns on is in effect, a command expands a secret (a token, a password, a
+  private key's contents) or a value the user typed.
 criteria:
   "true": >-
-    Tracing is enabled (`set -x` or `set -o xtrace`, unconditionally or behind a debug switch), and a later command in
-    the file expands a secret or user-supplied value into its arguments or environment with tracing still on, so the
-    value reaches standard error whenever tracing is on. A debug switch does not excuse this.
+    Look only at the commands that run after this `set -x` (or `set -o xtrace`, unconditionally or behind a debug
+    switch) and before the next `set +x` or `set +o xtrace` that turns it off, or to the end of the function or script
+    when nothing does. True when one of those commands expands a secret value or a value read from the user into its
+    arguments or environment, so the value is printed to standard error. A debug switch does not excuse this.
   "false": >-
-    Tracing is turned off (`set +x` or `set +o xtrace`) before every command that handles a secret or user input, or
-    the script handles neither.
+    No command in that range expands a secret or a value the user typed. Commands after tracing is turned off do not
+    count, even when a later, separate `set -x` turns it on again before a secret: that later statement is its own
+    subject. A path to a key or credentials file, a user name, a host or a URL is not a secret; only the value of a
+    token, password or key is.

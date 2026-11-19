@@ -1,0 +1,271 @@
+{
+  "schema": "jev-lint-eval-1",
+  "recorded": "2026-11-18T06:27:42.462Z",
+  "model": "jev-1.14.0",
+  "suite": "bash/function-variables-local-near-use",
+  "rules": [
+    {
+      "id": "function-variables-local-near-use",
+      "draft": "211a18c249ef",
+      "at": 0.5
+    }
+  ],
+  "cutoffs": {},
+  "passes": [
+    [
+      {
+        "rule": "function-variables-local-near-use",
+        "file": "agents/hooks/lint/model-rules/bash/function-variables-local-near-use/fixtures/violating.bash",
+        "line": 4,
+        "endLine": 7,
+        "kind": "noul",
+        "value": 0.99,
+        "confidence": null
+      },
+      {
+        "rule": "function-variables-local-near-use",
+        "file": "agents/hooks/lint/model-rules/bash/function-variables-local-near-use/fixtures/violating.bash",
+        "line": 9,
+        "endLine": 17,
+        "kind": "noul",
+        "value": 0.87,
+        "confidence": null
+      },
+      {
+        "rule": "function-variables-local-near-use",
+        "file": "agents/hooks/lint/model-rules/bash/function-variables-local-near-use/fixtures/violating.bash",
+        "line": 19,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "function-variables-local-near-use",
+        "file": "agents/hooks/lint/model-rules/bash/function-variables-local-near-use/fixtures/violating.bash",
+        "line": 24,
+        "endLine": 40,
+        "kind": "noul",
+        "value": 0.78,
+        "confidence": null
+      },
+      {
+        "rule": "function-variables-local-near-use",
+        "file": "agents/hooks/lint/model-rules/bash/function-variables-local-near-use/fixtures/conforming.bash",
+        "line": 4,
+        "endLine": 8,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "function-variables-local-near-use",
+        "file": "agents/hooks/lint/model-rules/bash/function-variables-local-near-use/fixtures/conforming.bash",
+        "line": 10,
+        "endLine": 19,
+        "kind": "noul",
+        "value": 0.17,
+        "confidence": null
+      },
+      {
+        "rule": "function-variables-local-near-use",
+        "file": "agents/hooks/lint/model-rules/bash/function-variables-local-near-use/fixtures/conforming.bash",
+        "line": 22,
+        "endLine": 24,
+        "kind": "noul",
+        "value": 0.15,
+        "confidence": null
+      },
+      {
+        "rule": "function-variables-local-near-use",
+        "file": "agents/hooks/lint/model-rules/bash/function-variables-local-near-use/fixtures/conforming.bash",
+        "line": 26,
+        "endLine": 29,
+        "kind": "noul",
+        "value": 0.16,
+        "confidence": null
+      },
+      {
+        "rule": "function-variables-local-near-use",
+        "file": "agents/hooks/lint/model-rules/bash/function-variables-local-near-use/fixtures/conforming.bash",
+        "line": 32,
+        "endLine": 39,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "function-variables-local-near-use",
+        "file": "agents/hooks/lint/model-rules/bash/function-variables-local-near-use/fixtures/violating.bash",
+        "line": 4,
+        "endLine": 7,
+        "kind": "noul",
+        "value": 0.99,
+        "confidence": null
+      },
+      {
+        "rule": "function-variables-local-near-use",
+        "file": "agents/hooks/lint/model-rules/bash/function-variables-local-near-use/fixtures/violating.bash",
+        "line": 9,
+        "endLine": 17,
+        "kind": "noul",
+        "value": 0.88,
+        "confidence": null
+      },
+      {
+        "rule": "function-variables-local-near-use",
+        "file": "agents/hooks/lint/model-rules/bash/function-variables-local-near-use/fixtures/violating.bash",
+        "line": 19,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "function-variables-local-near-use",
+        "file": "agents/hooks/lint/model-rules/bash/function-variables-local-near-use/fixtures/violating.bash",
+        "line": 24,
+        "endLine": 40,
+        "kind": "noul",
+        "value": 0.81,
+        "confidence": null
+      },
+      {
+        "rule": "function-variables-local-near-use",
+        "file": "agents/hooks/lint/model-rules/bash/function-variables-local-near-use/fixtures/conforming.bash",
+        "line": 4,
+        "endLine": 8,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "function-variables-local-near-use",
+        "file": "agents/hooks/lint/model-rules/bash/function-variables-local-near-use/fixtures/conforming.bash",
+        "line": 10,
+        "endLine": 19,
+        "kind": "noul",
+        "value": 0.17,
+        "confidence": null
+      },
+      {
+        "rule": "function-variables-local-near-use",
+        "file": "agents/hooks/lint/model-rules/bash/function-variables-local-near-use/fixtures/conforming.bash",
+        "line": 22,
+        "endLine": 24,
+        "kind": "noul",
+        "value": 0.16,
+        "confidence": null
+      },
+      {
+        "rule": "function-variables-local-near-use",
+        "file": "agents/hooks/lint/model-rules/bash/function-variables-local-near-use/fixtures/conforming.bash",
+        "line": 26,
+        "endLine": 29,
+        "kind": "noul",
+        "value": 0.09,
+        "confidence": null
+      },
+      {
+        "rule": "function-variables-local-near-use",
+        "file": "agents/hooks/lint/model-rules/bash/function-variables-local-near-use/fixtures/conforming.bash",
+        "line": 32,
+        "endLine": 39,
+        "kind": "noul",
+        "value": 0.07,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "function-variables-local-near-use",
+        "file": "agents/hooks/lint/model-rules/bash/function-variables-local-near-use/fixtures/conforming.bash",
+        "line": 4,
+        "endLine": 8,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "function-variables-local-near-use",
+        "file": "agents/hooks/lint/model-rules/bash/function-variables-local-near-use/fixtures/conforming.bash",
+        "line": 10,
+        "endLine": 19,
+        "kind": "noul",
+        "value": 0.19,
+        "confidence": null
+      },
+      {
+        "rule": "function-variables-local-near-use",
+        "file": "agents/hooks/lint/model-rules/bash/function-variables-local-near-use/fixtures/conforming.bash",
+        "line": 22,
+        "endLine": 24,
+        "kind": "noul",
+        "value": 0.14,
+        "confidence": null
+      },
+      {
+        "rule": "function-variables-local-near-use",
+        "file": "agents/hooks/lint/model-rules/bash/function-variables-local-near-use/fixtures/conforming.bash",
+        "line": 26,
+        "endLine": 29,
+        "kind": "noul",
+        "value": 0.09,
+        "confidence": null
+      },
+      {
+        "rule": "function-variables-local-near-use",
+        "file": "agents/hooks/lint/model-rules/bash/function-variables-local-near-use/fixtures/conforming.bash",
+        "line": 32,
+        "endLine": 39,
+        "kind": "noul",
+        "value": 0.07,
+        "confidence": null
+      },
+      {
+        "rule": "function-variables-local-near-use",
+        "file": "agents/hooks/lint/model-rules/bash/function-variables-local-near-use/fixtures/violating.bash",
+        "line": 4,
+        "endLine": 7,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "function-variables-local-near-use",
+        "file": "agents/hooks/lint/model-rules/bash/function-variables-local-near-use/fixtures/violating.bash",
+        "line": 9,
+        "endLine": 17,
+        "kind": "noul",
+        "value": 0.89,
+        "confidence": null
+      },
+      {
+        "rule": "function-variables-local-near-use",
+        "file": "agents/hooks/lint/model-rules/bash/function-variables-local-near-use/fixtures/violating.bash",
+        "line": 19,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "function-variables-local-near-use",
+        "file": "agents/hooks/lint/model-rules/bash/function-variables-local-near-use/fixtures/violating.bash",
+        "line": 24,
+        "endLine": 40,
+        "kind": "noul",
+        "value": 0.8,
+        "confidence": null
+      }
+    ]
+  ],
+  "spent": {
+    "calls": 6,
+    "inputTokens": 16500,
+    "usd": 0.000693,
+    "ms": 248
+  }
+}

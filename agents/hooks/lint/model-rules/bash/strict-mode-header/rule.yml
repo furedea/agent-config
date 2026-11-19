@@ -1,12 +1,17 @@
 # bash-style: every executable script enables `set -euo pipefail` before its first command. Advisory; it was a blocking
 # ast-grep rule (bash_strict_mode_header) until review showed the many equivalent spellings and the execution order of
 # `set` cannot be judged from syntax alone (ADR-0021).
+# The cutoff is jev-lint's fitted midpoint, 0.56: on this folder's fixtures (4 bad, 4 clean, 3 passes) the highest
+# clean case scored 0.15 and the lowest bad one 0.97. Eight cases are not a calibration, so the rule stays advisory.
 id: strict-mode-header
 language: Bash
 kind: noul
 subject: node
 state: located
-threshold: 0.5
+threshold: 0.56
+inconclusive: >-
+  Blind: every fixture sits 0.35 or more from the cutoff; a boundary case needs a header a reader would argue over,
+  such as `set -e` followed by `shopt -so pipefail`, and none is written yet.
 axis: file
 severity: warning
 # The whole script, since the header's position relative to the first command is the question. Only a script whose first

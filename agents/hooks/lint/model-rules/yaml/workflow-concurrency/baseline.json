@@ -1,0 +1,244 @@
+{
+  "schema": "jev-lint-eval-1",
+  "recorded": "2026-11-18T06:23:48.314Z",
+  "model": "jev-1.14.0",
+  "suite": "yaml/workflow-concurrency",
+  "rules": [
+    {
+      "id": "workflow-concurrency",
+      "draft": "0283105dedac",
+      "at": 0.5
+    }
+  ],
+  "cutoffs": {},
+  "passes": [
+    [
+      {
+        "rule": "workflow-concurrency",
+        "file": "agents/hooks/lint/model-rules/yaml/workflow-concurrency/fixtures/bad_quoted_block_sequence.yml",
+        "line": 3,
+        "endLine": 5,
+        "kind": "noul",
+        "value": 0.91,
+        "confidence": null
+      },
+      {
+        "rule": "workflow-concurrency",
+        "file": "agents/hooks/lint/model-rules/yaml/workflow-concurrency/fixtures/bad_flow_sequence_trigger.yml",
+        "line": 3,
+        "endLine": 3,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "workflow-concurrency",
+        "file": "agents/hooks/lint/model-rules/yaml/workflow-concurrency/fixtures/clean_issue_event.yml",
+        "line": 3,
+        "endLine": 5,
+        "kind": "noul",
+        "value": 0.03,
+        "confidence": null
+      },
+      {
+        "rule": "workflow-concurrency",
+        "file": "agents/hooks/lint/model-rules/yaml/workflow-concurrency/fixtures/bad_scalar_trigger.yml",
+        "line": 3,
+        "endLine": 3,
+        "kind": "noul",
+        "value": 0.9,
+        "confidence": null
+      },
+      {
+        "rule": "workflow-concurrency",
+        "file": "agents/hooks/lint/model-rules/yaml/workflow-concurrency/fixtures/clean_real_release_in_order.yml",
+        "line": 3,
+        "endLine": 6,
+        "kind": "noul",
+        "value": 0.03,
+        "confidence": null
+      },
+      {
+        "rule": "workflow-concurrency",
+        "file": "agents/hooks/lint/model-rules/yaml/workflow-concurrency/fixtures/clean_real_ci_concurrency.yml",
+        "line": 3,
+        "endLine": 7,
+        "kind": "noul",
+        "value": 0.03,
+        "confidence": null
+      },
+      {
+        "rule": "workflow-concurrency",
+        "file": "agents/hooks/lint/model-rules/yaml/workflow-concurrency/fixtures/bad_group_without_cancel.yml",
+        "line": 3,
+        "endLine": 6,
+        "kind": "noul",
+        "value": 0.78,
+        "confidence": null
+      },
+      {
+        "rule": "workflow-concurrency",
+        "file": "agents/hooks/lint/model-rules/yaml/workflow-concurrency/fixtures/clean_schedule_only.yml",
+        "line": 3,
+        "endLine": 6,
+        "kind": "noul",
+        "value": 0.02,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "workflow-concurrency",
+        "file": "agents/hooks/lint/model-rules/yaml/workflow-concurrency/fixtures/bad_group_without_cancel.yml",
+        "line": 3,
+        "endLine": 6,
+        "kind": "noul",
+        "value": 0.75,
+        "confidence": null
+      },
+      {
+        "rule": "workflow-concurrency",
+        "file": "agents/hooks/lint/model-rules/yaml/workflow-concurrency/fixtures/bad_scalar_trigger.yml",
+        "line": 3,
+        "endLine": 3,
+        "kind": "noul",
+        "value": 0.78,
+        "confidence": null
+      },
+      {
+        "rule": "workflow-concurrency",
+        "file": "agents/hooks/lint/model-rules/yaml/workflow-concurrency/fixtures/bad_flow_sequence_trigger.yml",
+        "line": 3,
+        "endLine": 3,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "workflow-concurrency",
+        "file": "agents/hooks/lint/model-rules/yaml/workflow-concurrency/fixtures/clean_real_release_in_order.yml",
+        "line": 3,
+        "endLine": 6,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "workflow-concurrency",
+        "file": "agents/hooks/lint/model-rules/yaml/workflow-concurrency/fixtures/clean_schedule_only.yml",
+        "line": 3,
+        "endLine": 6,
+        "kind": "noul",
+        "value": 0.02,
+        "confidence": null
+      },
+      {
+        "rule": "workflow-concurrency",
+        "file": "agents/hooks/lint/model-rules/yaml/workflow-concurrency/fixtures/clean_issue_event.yml",
+        "line": 3,
+        "endLine": 5,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "workflow-concurrency",
+        "file": "agents/hooks/lint/model-rules/yaml/workflow-concurrency/fixtures/bad_quoted_block_sequence.yml",
+        "line": 3,
+        "endLine": 5,
+        "kind": "noul",
+        "value": 0.89,
+        "confidence": null
+      },
+      {
+        "rule": "workflow-concurrency",
+        "file": "agents/hooks/lint/model-rules/yaml/workflow-concurrency/fixtures/clean_real_ci_concurrency.yml",
+        "line": 3,
+        "endLine": 7,
+        "kind": "noul",
+        "value": 0.03,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "workflow-concurrency",
+        "file": "agents/hooks/lint/model-rules/yaml/workflow-concurrency/fixtures/clean_real_ci_concurrency.yml",
+        "line": 3,
+        "endLine": 7,
+        "kind": "noul",
+        "value": 0.03,
+        "confidence": null
+      },
+      {
+        "rule": "workflow-concurrency",
+        "file": "agents/hooks/lint/model-rules/yaml/workflow-concurrency/fixtures/clean_schedule_only.yml",
+        "line": 3,
+        "endLine": 6,
+        "kind": "noul",
+        "value": 0.02,
+        "confidence": null
+      },
+      {
+        "rule": "workflow-concurrency",
+        "file": "agents/hooks/lint/model-rules/yaml/workflow-concurrency/fixtures/clean_real_release_in_order.yml",
+        "line": 3,
+        "endLine": 6,
+        "kind": "noul",
+        "value": 0.03,
+        "confidence": null
+      },
+      {
+        "rule": "workflow-concurrency",
+        "file": "agents/hooks/lint/model-rules/yaml/workflow-concurrency/fixtures/bad_group_without_cancel.yml",
+        "line": 3,
+        "endLine": 6,
+        "kind": "noul",
+        "value": 0.76,
+        "confidence": null
+      },
+      {
+        "rule": "workflow-concurrency",
+        "file": "agents/hooks/lint/model-rules/yaml/workflow-concurrency/fixtures/bad_quoted_block_sequence.yml",
+        "line": 3,
+        "endLine": 5,
+        "kind": "noul",
+        "value": 0.91,
+        "confidence": null
+      },
+      {
+        "rule": "workflow-concurrency",
+        "file": "agents/hooks/lint/model-rules/yaml/workflow-concurrency/fixtures/bad_flow_sequence_trigger.yml",
+        "line": 3,
+        "endLine": 3,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "workflow-concurrency",
+        "file": "agents/hooks/lint/model-rules/yaml/workflow-concurrency/fixtures/bad_scalar_trigger.yml",
+        "line": 3,
+        "endLine": 3,
+        "kind": "noul",
+        "value": 0.88,
+        "confidence": null
+      },
+      {
+        "rule": "workflow-concurrency",
+        "file": "agents/hooks/lint/model-rules/yaml/workflow-concurrency/fixtures/clean_issue_event.yml",
+        "line": 3,
+        "endLine": 5,
+        "kind": "noul",
+        "value": 0.03,
+        "confidence": null
+      }
+    ]
+  ],
+  "spent": {
+    "calls": 24,
+    "inputTokens": 19299,
+    "usd": 0.0008105580000000001,
+    "ms": 249
+  }
+}

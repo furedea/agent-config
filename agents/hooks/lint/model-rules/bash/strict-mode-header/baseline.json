@@ -1,0 +1,244 @@
+{
+  "schema": "jev-lint-eval-1",
+  "recorded": "2026-11-18T06:23:46.748Z",
+  "model": "jev-1.14.0",
+  "suite": "bash/strict-mode-header",
+  "rules": [
+    {
+      "id": "strict-mode-header",
+      "draft": "301071404351",
+      "at": 0.5
+    }
+  ],
+  "cutoffs": {},
+  "passes": [
+    [
+      {
+        "rule": "strict-mode-header",
+        "file": "agents/hooks/lint/model-rules/bash/strict-mode-header/fixtures/clean_euo_pipefail.bash",
+        "line": 1,
+        "endLine": 9,
+        "kind": "noul",
+        "value": 0.02,
+        "confidence": null
+      },
+      {
+        "rule": "strict-mode-header",
+        "file": "agents/hooks/lint/model-rules/bash/strict-mode-header/fixtures/bad_set_after_first_command.bash",
+        "line": 1,
+        "endLine": 10,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "strict-mode-header",
+        "file": "agents/hooks/lint/model-rules/bash/strict-mode-header/fixtures/clean_errexit_restored.bash",
+        "line": 1,
+        "endLine": 15,
+        "kind": "noul",
+        "value": 0.16,
+        "confidence": null
+      },
+      {
+        "rule": "strict-mode-header",
+        "file": "agents/hooks/lint/model-rules/bash/strict-mode-header/fixtures/bad_no_strict_mode.bash",
+        "line": 1,
+        "endLine": 9,
+        "kind": "noul",
+        "value": 0.99,
+        "confidence": null
+      },
+      {
+        "rule": "strict-mode-header",
+        "file": "agents/hooks/lint/model-rules/bash/strict-mode-header/fixtures/bad_errexit_disabled_for_rest.bash",
+        "line": 1,
+        "endLine": 11,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "strict-mode-header",
+        "file": "agents/hooks/lint/model-rules/bash/strict-mode-header/fixtures/bad_errexit_only.bash",
+        "line": 1,
+        "endLine": 9,
+        "kind": "noul",
+        "value": 0.99,
+        "confidence": null
+      },
+      {
+        "rule": "strict-mode-header",
+        "file": "agents/hooks/lint/model-rules/bash/strict-mode-header/fixtures/clean_long_option_spelling.bash",
+        "line": 1,
+        "endLine": 8,
+        "kind": "noul",
+        "value": 0.03,
+        "confidence": null
+      },
+      {
+        "rule": "strict-mode-header",
+        "file": "agents/hooks/lint/model-rules/bash/strict-mode-header/fixtures/clean_real_bootstrap_header.bash",
+        "line": 1,
+        "endLine": 19,
+        "kind": "noul",
+        "value": 0.15,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "strict-mode-header",
+        "file": "agents/hooks/lint/model-rules/bash/strict-mode-header/fixtures/bad_errexit_disabled_for_rest.bash",
+        "line": 1,
+        "endLine": 11,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "strict-mode-header",
+        "file": "agents/hooks/lint/model-rules/bash/strict-mode-header/fixtures/bad_no_strict_mode.bash",
+        "line": 1,
+        "endLine": 9,
+        "kind": "noul",
+        "value": 0.99,
+        "confidence": null
+      },
+      {
+        "rule": "strict-mode-header",
+        "file": "agents/hooks/lint/model-rules/bash/strict-mode-header/fixtures/clean_euo_pipefail.bash",
+        "line": 1,
+        "endLine": 9,
+        "kind": "noul",
+        "value": 0.02,
+        "confidence": null
+      },
+      {
+        "rule": "strict-mode-header",
+        "file": "agents/hooks/lint/model-rules/bash/strict-mode-header/fixtures/bad_set_after_first_command.bash",
+        "line": 1,
+        "endLine": 10,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "strict-mode-header",
+        "file": "agents/hooks/lint/model-rules/bash/strict-mode-header/fixtures/bad_errexit_only.bash",
+        "line": 1,
+        "endLine": 9,
+        "kind": "noul",
+        "value": 0.99,
+        "confidence": null
+      },
+      {
+        "rule": "strict-mode-header",
+        "file": "agents/hooks/lint/model-rules/bash/strict-mode-header/fixtures/clean_real_bootstrap_header.bash",
+        "line": 1,
+        "endLine": 19,
+        "kind": "noul",
+        "value": 0.14,
+        "confidence": null
+      },
+      {
+        "rule": "strict-mode-header",
+        "file": "agents/hooks/lint/model-rules/bash/strict-mode-header/fixtures/clean_long_option_spelling.bash",
+        "line": 1,
+        "endLine": 8,
+        "kind": "noul",
+        "value": 0.03,
+        "confidence": null
+      },
+      {
+        "rule": "strict-mode-header",
+        "file": "agents/hooks/lint/model-rules/bash/strict-mode-header/fixtures/clean_errexit_restored.bash",
+        "line": 1,
+        "endLine": 15,
+        "kind": "noul",
+        "value": 0.14,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "strict-mode-header",
+        "file": "agents/hooks/lint/model-rules/bash/strict-mode-header/fixtures/clean_errexit_restored.bash",
+        "line": 1,
+        "endLine": 15,
+        "kind": "noul",
+        "value": 0.12,
+        "confidence": null
+      },
+      {
+        "rule": "strict-mode-header",
+        "file": "agents/hooks/lint/model-rules/bash/strict-mode-header/fixtures/bad_errexit_only.bash",
+        "line": 1,
+        "endLine": 9,
+        "kind": "noul",
+        "value": 0.99,
+        "confidence": null
+      },
+      {
+        "rule": "strict-mode-header",
+        "file": "agents/hooks/lint/model-rules/bash/strict-mode-header/fixtures/clean_euo_pipefail.bash",
+        "line": 1,
+        "endLine": 9,
+        "kind": "noul",
+        "value": 0.03,
+        "confidence": null
+      },
+      {
+        "rule": "strict-mode-header",
+        "file": "agents/hooks/lint/model-rules/bash/strict-mode-header/fixtures/clean_real_bootstrap_header.bash",
+        "line": 1,
+        "endLine": 19,
+        "kind": "noul",
+        "value": 0.16,
+        "confidence": null
+      },
+      {
+        "rule": "strict-mode-header",
+        "file": "agents/hooks/lint/model-rules/bash/strict-mode-header/fixtures/bad_no_strict_mode.bash",
+        "line": 1,
+        "endLine": 9,
+        "kind": "noul",
+        "value": 0.99,
+        "confidence": null
+      },
+      {
+        "rule": "strict-mode-header",
+        "file": "agents/hooks/lint/model-rules/bash/strict-mode-header/fixtures/clean_long_option_spelling.bash",
+        "line": 1,
+        "endLine": 8,
+        "kind": "noul",
+        "value": 0.03,
+        "confidence": null
+      },
+      {
+        "rule": "strict-mode-header",
+        "file": "agents/hooks/lint/model-rules/bash/strict-mode-header/fixtures/bad_errexit_disabled_for_rest.bash",
+        "line": 1,
+        "endLine": 11,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "strict-mode-header",
+        "file": "agents/hooks/lint/model-rules/bash/strict-mode-header/fixtures/bad_set_after_first_command.bash",
+        "line": 1,
+        "endLine": 10,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      }
+    ]
+  ],
+  "spent": {
+    "calls": 24,
+    "inputTokens": 19497,
+    "usd": 0.000818874,
+    "ms": 240
+  }
+}

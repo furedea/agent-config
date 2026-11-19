@@ -1,0 +1,20 @@
+default: clean
+# The subject is each step's `run:`. clean_real_nix_shell.yml keeps the default shell and the shell-lint job of
+# .github/workflows/ci.yml.
+fixtures/bad_no_defaults.yml:
+  - { line: 14, label: bad, window: 1, why: "no shell anywhere; the pipe hides npm's status" }
+fixtures/bad_job_default_sh.yml:
+  - { line: 17, label: bad, window: 1, why: "the job default is sh, which has no pipefail" }
+fixtures/bad_custom_shell_names_pipefail.yml:
+  - { line: 17, label: bad, window: 1, why: "the custom shell only names pipefail in a variable" }
+fixtures/bad_composite_step_sh.yml:
+  - { line: 8, label: bad, window: 1, why: "a composite step under sh" }
+fixtures/clean_workflow_defaults_bash.yml:
+  - { line: 17, label: clean, window: 1 }
+fixtures/clean_job_and_step_shell.yml:
+  - { line: 17, label: clean, window: 1, why: "job-level defaults" }
+  - { line: 28, label: clean, window: 1, why: "the step sets shell: bash" }
+fixtures/clean_real_nix_shell.yml:
+  - { line: 20, label: clean, window: 1, why: "a custom shell that runs bash -eo pipefail" }
+fixtures/clean_windows_pwsh.yml:
+  - { line: 17, label: clean, window: 1, why: "a Windows job under PowerShell" }

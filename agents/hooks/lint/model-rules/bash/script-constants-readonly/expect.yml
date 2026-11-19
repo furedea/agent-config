@@ -1,0 +1,14 @@
+default: clean
+# violating.bash: three values assigned once and never changed, none declared `readonly`; OUTPUT_DIR is readonly and
+# is not a subject.
+# conforming.bash: the hard cleans are the two-step `NAME=$(cmd)` then `readonly NAME`, an accumulator, a flag set by
+# getopts, and an array that the loop appends to.
+fixtures/violating.bash:
+  - { line: 4, label: bad, window: 1, why: "path constant never reassigned" }
+  - { line: 5, label: bad, window: 1, why: "numeric constant never reassigned" }
+  - { line: 17, label: bad, window: 1, why: "URL constant assigned below a function, never reassigned" }
+fixtures/conforming.bash:
+  - { line: 4, label: clean, window: 1, why: "two-step assignment then readonly" }
+  - { line: 8, label: clean, window: 1, why: "accumulator" }
+  - { line: 9, label: clean, window: 1, why: "flag set by getopts" }
+  - { line: 10, label: clean, window: 1, why: "array appended to in the loop" }

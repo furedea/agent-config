@@ -1,0 +1,8 @@
+name: Collect logs
+description: Archive the logs of the job.
+runs:
+  using: composite
+  steps:
+    - name: Archive logs
+      shell: sh
+      run: find logs -name '*.log' | tar -czf logs.tar.gz -T -

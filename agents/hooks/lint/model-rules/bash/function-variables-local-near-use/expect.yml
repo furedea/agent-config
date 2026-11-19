@@ -1,0 +1,16 @@
+default: clean
+# violating.bash: a temporary without `local`, a loop variable without `local`, a `read` target without `local`, and a
+# tag computed many unrelated lines before its first use.
+# conforming.bash: the hard cleans are a documented output variable for the caller and an environment assignment for one
+# command; host_config_file is real code from scripts/bootstrap_server.sh.
+fixtures/violating.bash:
+  - { line: 4, label: bad, window: 1, why: "temporary assigned without local" }
+  - { line: 9, label: bad, window: 1, why: "loop variable without local" }
+  - { line: 19, label: bad, window: 1, why: "read target without local" }
+  - { line: 24, label: bad, window: 1, why: "tag declared far above its first use" }
+fixtures/conforming.bash:
+  - { line: 4, label: clean, window: 1 }
+  - { line: 10, label: clean, window: 1 }
+  - { line: 22, label: clean, window: 1, why: "documented output variable for the caller" }
+  - { line: 26, label: clean, window: 1, why: "environment assignment for one command" }
+  - { line: 32, label: clean, window: 1, why: "real code from scripts/bootstrap_server.sh" }

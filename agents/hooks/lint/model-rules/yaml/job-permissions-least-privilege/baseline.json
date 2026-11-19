@@ -1,0 +1,244 @@
+{
+  "schema": "jev-lint-eval-1",
+  "recorded": "2026-11-18T06:23:48.029Z",
+  "model": "jev-1.14.0",
+  "suite": "yaml/job-permissions-least-privilege",
+  "rules": [
+    {
+      "id": "job-permissions-least-privilege",
+      "draft": "7d0e37881d7d",
+      "at": 0.5
+    }
+  ],
+  "cutoffs": {},
+  "passes": [
+    [
+      {
+        "rule": "job-permissions-least-privilege",
+        "file": "agents/hooks/lint/model-rules/yaml/job-permissions-least-privilege/fixtures/bad_unused_scopes.yml",
+        "line": 8,
+        "endLine": 12,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "job-permissions-least-privilege",
+        "file": "agents/hooks/lint/model-rules/yaml/job-permissions-least-privilege/fixtures/bad_write_where_read_suffices.yml",
+        "line": 8,
+        "endLine": 9,
+        "kind": "noul",
+        "value": 0.93,
+        "confidence": null
+      },
+      {
+        "rule": "job-permissions-least-privilege",
+        "file": "agents/hooks/lint/model-rules/yaml/job-permissions-least-privilege/fixtures/clean_each_scope_used.yml",
+        "line": 8,
+        "endLine": 10,
+        "kind": "noul",
+        "value": 0.18,
+        "confidence": null
+      },
+      {
+        "rule": "job-permissions-least-privilege",
+        "file": "agents/hooks/lint/model-rules/yaml/job-permissions-least-privilege/fixtures/clean_read_for_checkout.yml",
+        "line": 8,
+        "endLine": 9,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "job-permissions-least-privilege",
+        "file": "agents/hooks/lint/model-rules/yaml/job-permissions-least-privilege/fixtures/clean_real_reusable_review.yml",
+        "line": 8,
+        "endLine": 10,
+        "kind": "noul",
+        "value": 0.27,
+        "confidence": null
+      },
+      {
+        "rule": "job-permissions-least-privilege",
+        "file": "agents/hooks/lint/model-rules/yaml/job-permissions-least-privilege/fixtures/clean_real_reusable_review.yml",
+        "line": 14,
+        "endLine": 16,
+        "kind": "noul",
+        "value": 0.36,
+        "confidence": null
+      },
+      {
+        "rule": "job-permissions-least-privilege",
+        "file": "agents/hooks/lint/model-rules/yaml/job-permissions-least-privilege/fixtures/bad_workflow_write_all.yml",
+        "line": 5,
+        "endLine": 5,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "job-permissions-least-privilege",
+        "file": "agents/hooks/lint/model-rules/yaml/job-permissions-least-privilege/fixtures/clean_oidc_deploy.yml",
+        "line": 10,
+        "endLine": 12,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "job-permissions-least-privilege",
+        "file": "agents/hooks/lint/model-rules/yaml/job-permissions-least-privilege/fixtures/clean_oidc_deploy.yml",
+        "line": 10,
+        "endLine": 12,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "job-permissions-least-privilege",
+        "file": "agents/hooks/lint/model-rules/yaml/job-permissions-least-privilege/fixtures/clean_real_reusable_review.yml",
+        "line": 8,
+        "endLine": 10,
+        "kind": "noul",
+        "value": 0.23,
+        "confidence": null
+      },
+      {
+        "rule": "job-permissions-least-privilege",
+        "file": "agents/hooks/lint/model-rules/yaml/job-permissions-least-privilege/fixtures/clean_real_reusable_review.yml",
+        "line": 14,
+        "endLine": 16,
+        "kind": "noul",
+        "value": 0.37,
+        "confidence": null
+      },
+      {
+        "rule": "job-permissions-least-privilege",
+        "file": "agents/hooks/lint/model-rules/yaml/job-permissions-least-privilege/fixtures/clean_each_scope_used.yml",
+        "line": 8,
+        "endLine": 10,
+        "kind": "noul",
+        "value": 0.21,
+        "confidence": null
+      },
+      {
+        "rule": "job-permissions-least-privilege",
+        "file": "agents/hooks/lint/model-rules/yaml/job-permissions-least-privilege/fixtures/clean_read_for_checkout.yml",
+        "line": 8,
+        "endLine": 9,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "job-permissions-least-privilege",
+        "file": "agents/hooks/lint/model-rules/yaml/job-permissions-least-privilege/fixtures/bad_unused_scopes.yml",
+        "line": 8,
+        "endLine": 12,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "job-permissions-least-privilege",
+        "file": "agents/hooks/lint/model-rules/yaml/job-permissions-least-privilege/fixtures/bad_write_where_read_suffices.yml",
+        "line": 8,
+        "endLine": 9,
+        "kind": "noul",
+        "value": 0.91,
+        "confidence": null
+      },
+      {
+        "rule": "job-permissions-least-privilege",
+        "file": "agents/hooks/lint/model-rules/yaml/job-permissions-least-privilege/fixtures/bad_workflow_write_all.yml",
+        "line": 5,
+        "endLine": 5,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "job-permissions-least-privilege",
+        "file": "agents/hooks/lint/model-rules/yaml/job-permissions-least-privilege/fixtures/bad_workflow_write_all.yml",
+        "line": 5,
+        "endLine": 5,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "job-permissions-least-privilege",
+        "file": "agents/hooks/lint/model-rules/yaml/job-permissions-least-privilege/fixtures/clean_real_reusable_review.yml",
+        "line": 8,
+        "endLine": 10,
+        "kind": "noul",
+        "value": 0.27,
+        "confidence": null
+      },
+      {
+        "rule": "job-permissions-least-privilege",
+        "file": "agents/hooks/lint/model-rules/yaml/job-permissions-least-privilege/fixtures/clean_real_reusable_review.yml",
+        "line": 14,
+        "endLine": 16,
+        "kind": "noul",
+        "value": 0.35,
+        "confidence": null
+      },
+      {
+        "rule": "job-permissions-least-privilege",
+        "file": "agents/hooks/lint/model-rules/yaml/job-permissions-least-privilege/fixtures/bad_unused_scopes.yml",
+        "line": 8,
+        "endLine": 12,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "job-permissions-least-privilege",
+        "file": "agents/hooks/lint/model-rules/yaml/job-permissions-least-privilege/fixtures/clean_each_scope_used.yml",
+        "line": 8,
+        "endLine": 10,
+        "kind": "noul",
+        "value": 0.19,
+        "confidence": null
+      },
+      {
+        "rule": "job-permissions-least-privilege",
+        "file": "agents/hooks/lint/model-rules/yaml/job-permissions-least-privilege/fixtures/clean_oidc_deploy.yml",
+        "line": 10,
+        "endLine": 12,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "job-permissions-least-privilege",
+        "file": "agents/hooks/lint/model-rules/yaml/job-permissions-least-privilege/fixtures/clean_read_for_checkout.yml",
+        "line": 8,
+        "endLine": 9,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "job-permissions-least-privilege",
+        "file": "agents/hooks/lint/model-rules/yaml/job-permissions-least-privilege/fixtures/bad_write_where_read_suffices.yml",
+        "line": 8,
+        "endLine": 9,
+        "kind": "noul",
+        "value": 0.92,
+        "confidence": null
+      }
+    ]
+  ],
+  "spent": {
+    "calls": 21,
+    "inputTokens": 18402,
+    "usd": 0.0007728840000000002,
+    "ms": 198
+  }
+}

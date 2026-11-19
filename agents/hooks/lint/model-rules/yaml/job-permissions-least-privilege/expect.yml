@@ -1,0 +1,18 @@
+default: clean
+# The subject is each `permissions:` that grants something. clean_real_reusable_review.yml is two jobs of
+# .github/workflows/ci.yml whose grants are needed by the reusable workflows they call.
+fixtures/bad_write_where_read_suffices.yml:
+  - { line: 8, label: bad, window: 1, why: "contents: write for a job that only checks out and tests" }
+fixtures/bad_unused_scopes.yml:
+  - { line: 8, label: bad, window: 1, why: "pull-requests, issues and id-token are never used" }
+fixtures/bad_workflow_write_all.yml:
+  - { line: 5, label: bad, window: 1, why: "write-all for a docs build" }
+fixtures/clean_read_for_checkout.yml:
+  - { line: 8, label: clean, window: 1 }
+fixtures/clean_each_scope_used.yml:
+  - { line: 8, label: clean, window: 1, why: "pull-requests: write used by gh pr comment" }
+fixtures/clean_oidc_deploy.yml:
+  - { line: 10, label: clean, window: 1, why: "id-token: write used by the OIDC credentials step" }
+fixtures/clean_real_reusable_review.yml:
+  - { line: 8, label: clean, window: 1, why: "needed by the reusable workflow the job names" }
+  - { line: 14, label: clean, window: 1, why: "needed by the reusable workflow the job names" }

@@ -1,0 +1,18 @@
+# The subject is the workflow's `on:` key. clean_real_* keep the triggers and concurrency of .github/workflows/ci.yml
+# and release-please.yml.
+fixtures/bad_scalar_trigger.yml:
+  - { line: 3, label: bad, window: 1, why: "pull_request as a scalar, no concurrency" }
+fixtures/bad_flow_sequence_trigger.yml:
+  - { line: 3, label: bad, window: 1, why: "push in a flow sequence, no concurrency" }
+fixtures/bad_group_without_cancel.yml:
+  - { line: 3, label: bad, window: 1, why: "a group without cancel-in-progress" }
+fixtures/bad_quoted_block_sequence.yml:
+  - { line: 3, label: bad, window: 1, why: "a quoted key and a block sequence that includes push" }
+fixtures/clean_real_ci_concurrency.yml:
+  - { line: 3, label: clean, window: 1 }
+fixtures/clean_schedule_only.yml:
+  - { line: 3, label: clean, window: 1, why: "only schedule and workflow_dispatch" }
+fixtures/clean_real_release_in_order.yml:
+  - { line: 3, label: clean, window: 1, why: "a release workflow that must run in order" }
+fixtures/clean_issue_event.yml:
+  - { line: 3, label: clean, window: 1, why: "an issue event, not push or pull_request" }

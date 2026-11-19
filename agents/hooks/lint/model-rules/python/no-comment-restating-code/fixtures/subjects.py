@@ -58,7 +58,7 @@ def total_weight(items):
 
 
 # Return the sum of the prices.
-def total_price(items):
+def _total_price(items):
     return sum(item.price for item in items)
 
 

@@ -39,7 +39,7 @@ rule:
               kind: comment
               not: { regex: "^#\\s*(TODO|FIXME|XXX|HACK|SAFETY|noqa|type:|pragma|pylint|ruff|nosec|nolint|clippy|rustfmt|eslint|oxlint|ts-|prettier|biome|@ts|go:|#!)" }
 ask: >-
-  A comment in this function restates what the code beside it already says.
+  A comment in this function, or just above it, restates what the code beside it already says.
 criteria:
   "true": >-
     A comment only paraphrases the statement it precedes ("increment the counter", "loop over users"), narrates the

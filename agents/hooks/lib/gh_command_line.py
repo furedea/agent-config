@@ -71,7 +71,7 @@ class CommandLine:
     `changes_directory` says another command on the line may write a file or run a program, so the
     directory or its remotes may differ from what the hook reads; otherwise gh runs in one of
     `directories`, the hook's own and each a literal cd may enter. `plants_nothing` says nothing on
-    the line but one gh call can write a program into a PATH entry before gh runs, and `reads_git` that
+    the line but one gh call writes a file, and that gh writes into no PATH entry, and `reads_git` that
     a git read on the line may run a program git's configuration names. `arguments` joins every
     command's arguments as the shell passes them, substituted commands included, for the secret scan.
     """
@@ -104,8 +104,10 @@ def command_line(source: str, commands: tuple[shell_syntax.Command, ...]) -> Com
     kept = {DEVICE_NULL} if plain else set()
     moves = not reads_only or any(target not in kept for item in others for target in item.writes)
     one_gh = len(commands) - len(others) == 1
-    writes = [target for item in commands for target in item.writes]
-    plants = not (plain and reads_only and one_gh) or any(_may_plant(target, directories or ()) for target in writes)
+    # Another command may write only to /dev/null: any other file may be configuration a later git read runs,
+    # such as .git/config or .gitattributes. gh's own output lands only after every earlier command ran.
+    writes = [target for item in commands if item not in others for target in item.writes]
+    plants = not (plain and not moves and one_gh) or any(_may_plant(target, directories or ()) for target in writes)
     return CommandLine(
         source,
         _is_single_call(source, commands),

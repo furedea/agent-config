@@ -83,6 +83,13 @@ def test_a_read_of_the_working_repository_beside_read_only_commands_follows_its_
         pytest.param("echo x > later/gh; gh pr list -R furedea/agent-config", id="a redirect into a PATH entry"),
         pytest.param("gh pr list -R furedea/agent-config > later/gh; echo done", id="gh output into a PATH entry"),
         pytest.param("echo x > $DIR/gh; gh pr list -R furedea/agent-config", id="a redirect named at run time"),
+        pytest.param(
+            "echo '[diff] external = ./x' >> .git/config; git diff; gh api repos/furedea/agent-config/pulls",
+            id="a write to git configuration a later git read runs",
+        ),
+        pytest.param(
+            "echo x > notes.txt; gh api repos/furedea/agent-config/pulls", id="another command writing a file"
+        ),
         pytest.param("sort -o later/gh x; gh pr list -R furedea/agent-config", id="sort -o"),
         pytest.param("sort -uo later/gh x; gh pr list -R furedea/agent-config", id="sort -o in a bundle"),
         pytest.param("sort --compress-program=x y; gh pr list -R furedea/agent-config", id="sort running a program"),

@@ -7,10 +7,11 @@ INSTRUCTION = "Fix each one, or say why it does not apply."
 PREFIX = "jev-lint"
 
 
-def describe_line(judgement: Judgement) -> str:
-    """The result line: findings, subjects judged, the state, the cost and the seconds taken."""
+def describe_line(judgement: Judgement, already_shown: int = 0) -> str:
+    """The result line: findings, those hidden as already shown, subjects judged, the state, the cost and the time."""
     parts = [
         _counted(len(judgement.findings), "finding"),
+        *([f"{already_shown} already shown"] if already_shown else []),
         _subjects(judgement),
         _incomplete(judgement) if judgement.failed_reviews else ("advisory" if judgement.findings else "passed"),
         f"${judgement.usd:.4f}",

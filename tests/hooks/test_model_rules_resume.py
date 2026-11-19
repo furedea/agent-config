@@ -155,7 +155,9 @@ class Stops:
         self.saved: dict = {}
         self.resumes: list[Resume | None] = []
         self._outcomes = list(outcomes)
-        self._record = SimpleNamespace(results=lambda: self.saved, save_results=self.saved.update)
+        self._record = SimpleNamespace(
+            root=Path("/nonexistent"), results=lambda: self.saved, save_results=self.saved.update
+        )
         monkeypatch.setattr(model_rules_gate, "_inputs", lambda _record: "same-inputs")
         monkeypatch.setattr(model_rules_gate, "_judge", self._judge)
 

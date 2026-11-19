@@ -20,6 +20,8 @@ class Finding:
     message: str
     score: float | None = None
     cutoff: float | None = None
+    rule_key: str = ""
+    end_line: int = 0
 
 
 @dataclass(frozen=True, slots=True)

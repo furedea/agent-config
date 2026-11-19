@@ -337,8 +337,18 @@ def _finding(item: dict) -> Finding:
     message = item.get("message") or item.get("ask") or ""
     if not isinstance(item["rule"], str) or not isinstance(item["file"], str) or not isinstance(message, str):
         raise TypeError("finding fields must be strings")
+    rule_key = item.get("ruleKey", "")
+    if not isinstance(rule_key, str):
+        raise TypeError("finding fields must be strings")
     return Finding(
-        item["rule"], item["file"], _count(item, "line"), message, _number(item.get("value")), _number(item.get("at"))
+        item["rule"],
+        item["file"],
+        _count(item, "line"),
+        message,
+        _number(item.get("value")),
+        _number(item.get("at")),
+        rule_key,
+        _count(item, "endLine"),
     )
 
 

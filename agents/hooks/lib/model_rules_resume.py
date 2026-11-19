@@ -49,7 +49,10 @@ def _finding(item: dict) -> Finding:
     if not all(isinstance(text, str) for text in (rule, file, message)):
         raise TypeError("reading a resume from the receipt: finding fields must be strings")
     scores = tuple(None if item[key] is None else _number(item[key]) for key in ("score", "cutoff"))
-    return Finding(rule, file, _integer(item["line"]), message, *scores)
+    rule_key = item.get("rule_key", "")
+    if not isinstance(rule_key, str):
+        raise TypeError("reading a resume from the receipt: finding fields must be strings")
+    return Finding(rule, file, _integer(item["line"]), message, *scores, rule_key, _integer(item.get("end_line", 0)))
 
 
 def _integer(value: object) -> int:

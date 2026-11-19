@@ -16,6 +16,8 @@ the request, evaluates the returned work, and reports the outcome to the user.
 - Apply this workflow to requested cross-session work and to the lanes of an approved plan,
   which `development-cycle` hands to task worktree sessions. Do not infer permission to delegate
   from an ordinary coding request, a local review, or an opportunity to work in parallel.
+  Run independent lanes of an approved plan in parallel, each in its own Herdr worktree, instead
+  of one after another; lanes that change the same lines are the exception and run in sequence.
 - Read the `herdr` skill before operating another session. It owns prerequisites, CLI discovery,
   agent identity, layout, prompting, waiting, approvals, and recovering complete output. Follow
   its environment check; if Herdr is unavailable, report the limitation without silently
@@ -75,11 +77,14 @@ complete. Supply:
 - **Issue:** the Issue body itself, not only its number, so the recipient need not read it again.
 - **Input:** the exact plan text or plan file, or implementation scope. For
   uncommitted code, identify whether staged, unstaged, and untracked files are included, and
-  provide a stable snapshot when the checkout may still change.
+  provide a stable snapshot when the checkout may still change. For an implementation, first
+  check existing tools (related code in the repository, platform features, the standard
+  library, installed dependencies, a de facto external tool) and state in the brief which one is used and why, or why none fits.
 - **Scope and focus:** the boundaries of the assignment and the review aspects that matter
-  (for example correctness, boundaries, verification, or a specific risk), and the threat model:
-  which input is trusted and which edge cases are out of scope, so out-of-scope review findings
-  can be answered by citing it.
+  (for example correctness, boundaries, verification, or a specific risk), the list of what is
+  out of scope, and the threat model: where the input comes from and what a wrong judgment
+  costs. Decide both when writing the brief; the lane answers P2 and P3 findings outside it by
+  citing the list, and still fixes every P0 and P1 finding.
 - **Authority:** permitted edits, excluded files or tasks, and any existing delivery authorization.
 - **Completion:** observable acceptance conditions, relevant verification, and the expected
   response described below.

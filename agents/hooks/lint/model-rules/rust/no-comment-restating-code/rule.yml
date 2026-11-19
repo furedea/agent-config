@@ -7,7 +7,16 @@ language: Rust
 kind: noul
 subject: node
 state: local
-threshold: 0.5
+# Fitted by `jev-lint eval` on this rule's own fixtures (10 cases, 5 bad and 5 clean, over 3 passes; baseline of
+# 2026-11-18): the highest clean case scored 0.22 (conforming.rs:1) and the lowest violation 0.93 (violating.rs:20); the
+# cutoff is jev-lint's fitted midpoint of that gap. A fit on so few cases is a starting point, not a calibration
+# (ADR-0020), so the rule stays advisory.
+threshold: 0.58
+# Every clean case answers far below the cutoff and every bad case far above it, so this corpus cannot see the rule
+# drift; boundary cases need code a reviewer would argue over.
+inconclusive: >-
+  Blind: the fixtures are clearly clean or clearly defective (the gap runs from 0.22 to 0.93), and no
+  boundary fixture exists yet.
 axis: file
 severity: warning
 rule:

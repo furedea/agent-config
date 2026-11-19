@@ -3,10 +3,25 @@
 # reference; the criteria require the collection to be the object's own state.
 id: no-exposed-mutable-collection
 language: Rust
+divergent: >-
+  Fitted on Rust fixtures (#220), the criteria require a rule the type keeps over the collection and exempt free
+  functions, because a Rust `&mut` return is otherwise read as exposed state.
 kind: noul
 subject: node
-state: local
-threshold: 0.5
+# The struct that owns the field, its documentation and its other methods sit outside the method's `impl` block, so the
+# whole file is sent: under `local` every `&mut` collection looked like protected state (4 of 4 clean cases flagged).
+state: located
+# Fitted by `jev-lint eval` on this rule's own fixtures (8 cases, 4 bad and 4 clean, over 3 passes; baseline of
+# 2026-11-18): the highest clean case scored 0.06 (conforming.rs:19) and the lowest violation 0.96 (violating.rs:52);
+# the cutoff is jev-lint's fitted midpoint of that gap. Under `state: local` and the old criteria every clean case
+# scored 0.69 to 0.96. A fit on so few cases is a starting point, not a calibration (ADR-0020), so the rule stays
+# advisory.
+threshold: 0.51
+# Every clean case answers far below the cutoff and every bad case far above it, so this corpus cannot see the rule
+# drift; boundary cases need code a reviewer would argue over.
+inconclusive: >-
+  Blind: the fixtures are clearly clean or clearly defective (the gap runs from 0.06 to 0.96), and no
+  boundary fixture exists yet.
 axis: file
 severity: warning
 rule:
@@ -20,10 +35,10 @@ ask: >-
   object noticing.
 criteria:
   "true": >-
-    The function returns a list, dict, set, map, slice, array or Vec that is the object's own field or an internal
-    buffer, by reference or as the same mutable instance, so the caller can add or remove elements without going
-    through the object's methods.
+    The function is a method that returns `&mut` access to a collection held in a private field of its own type, and
+    the type keeps a rule over that collection (sorted, unique, bounded, in step with another field, only partly
+    valid), stated in its documentation or enforced by its other methods, which the caller can now break.
   "false": >-
-    The function returns a copy, a read-only or immutable view (tuple, frozenset, shared reference, iterator, readonly
-    type), or a value the function built itself. Returning a collection from a plain data record that has no
-    invariants is not a violation.
+    The type keeps no rule over the collection: its fields are public anyway, or it is a plain data record or a
+    newtype over raw values documented as accepting any content. Also not a violation: a free function (not a method)
+    that returns a reference into a collection the caller passed in, or into an element it has just created there.

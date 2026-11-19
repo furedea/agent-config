@@ -7,7 +7,11 @@ language: Rust
 kind: noul
 subject: node
 state: local
-threshold: 0.5
+# Fitted by `jev-lint eval` on this rule's own fixtures (9 cases, 4 bad and 5 clean, over 3 passes; baseline of
+# 2026-11-18): the highest clean case scored 0.25 (conforming.rs:33) and the lowest violation 0.71 (violating.rs:5); the
+# cutoff is jev-lint's fitted midpoint of that gap. A fit on so few cases is a starting point, not a calibration
+# (ADR-0020), so the rule stays advisory.
+threshold: 0.48
 axis: file
 severity: warning
 rule:

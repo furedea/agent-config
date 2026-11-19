@@ -1,12 +1,20 @@
 # rust-style/references/types.md (Enums): fixed states, modes, providers and policy decisions are enums, parsed at the
-# boundary, matched exhaustively. Advisory and not fitted: no fixtures or baseline yet (deferred), so the cutoff is the
-# 0.5 starting value.
+# boundary, matched exhaustively. Advisory.
 id: domain-states-are-enums
 language: Rust
 kind: noul
 subject: node
 state: local
-threshold: 0.5
+# Fitted by `jev-lint eval` on this rule's own fixtures (10 cases, 5 bad and 5 clean, over 3 passes; baseline of
+# 2026-11-18): the highest clean case scored 0.27 (conforming.rs:29) and the lowest violation 0.88 (violating.rs:36);
+# the cutoff is jev-lint's fitted midpoint of that gap. A fit on so few cases is a starting point, not a calibration
+# (ADR-0020), so the rule stays advisory.
+threshold: 0.57
+# Every clean case answers far below the cutoff and every bad case far above it, so this corpus cannot see the rule
+# drift; boundary cases need code a reviewer would argue over.
+inconclusive: >-
+  Blind: the fixtures are clearly clean or clearly defective (the gap runs from 0.27 to 0.88), and no
+  boundary fixture exists yet.
 axis: file
 severity: warning
 # Functions that take a closed set of values as a string, or that match with a wildcard arm. A wildcard over an integer
@@ -40,9 +48,10 @@ ask: >-
 criteria:
   "true": >-
     A parameter or value named for a closed set (a mode, kind, state, provider, policy) is a `&str` or `String` that is
-    compared or matched against string literals past the boundary that read it, or a `match` over a domain enum ends in
-    a `_` arm that hides new variants.
+    compared or matched against string literals past the boundary that read it, or a `match` over the project's own
+    domain enum ends in a `_` arm that hides its other variants.
   "false": >-
-    The function is the boundary that parses a string into an enum, the string is free text or an open set (a path, a
-    name, a message), or the `_` arm covers an open domain such as integers, strings or an error type's non-exhaustive
-    variants.
+    The function is the boundary that turns a string into an enum (`FromStr::from_str`, `TryFrom`, a `parse_*`
+    function), whose `_` arm returns an error for unknown input; the string is free text or an open set (a path, a
+    name, a message) that is only displayed, not compared; or the `_` arm covers an open domain: integers, strings, or
+    an enum from another crate such as `std::io::ErrorKind`, which is `#[non_exhaustive]` and requires a wildcard.

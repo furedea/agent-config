@@ -1,0 +1,298 @@
+{
+  "schema": "jev-lint-eval-1",
+  "recorded": "2026-11-18T06:25:02.827Z",
+  "model": "jev-1.14.0",
+  "suite": "rust/filesystem-code-keeps-paths-and-symlinks-safe",
+  "rules": [
+    {
+      "id": "filesystem-code-keeps-paths-and-symlinks-safe",
+      "draft": "d6f7e7ed8012",
+      "at": 0.5
+    }
+  ],
+  "cutoffs": {},
+  "passes": [
+    [
+      {
+        "rule": "filesystem-code-keeps-paths-and-symlinks-safe",
+        "file": "agents/hooks/lint/model-rules/rust/filesystem-code-keeps-paths-and-symlinks-safe/fixtures/violating.rs",
+        "line": 6,
+        "endLine": 8,
+        "kind": "noul",
+        "value": 0.9,
+        "confidence": null
+      },
+      {
+        "rule": "filesystem-code-keeps-paths-and-symlinks-safe",
+        "file": "agents/hooks/lint/model-rules/rust/filesystem-code-keeps-paths-and-symlinks-safe/fixtures/violating.rs",
+        "line": 10,
+        "endLine": 20,
+        "kind": "noul",
+        "value": 0.9,
+        "confidence": null
+      },
+      {
+        "rule": "filesystem-code-keeps-paths-and-symlinks-safe",
+        "file": "agents/hooks/lint/model-rules/rust/filesystem-code-keeps-paths-and-symlinks-safe/fixtures/violating.rs",
+        "line": 22,
+        "endLine": 26,
+        "kind": "noul",
+        "value": 0.85,
+        "confidence": null
+      },
+      {
+        "rule": "filesystem-code-keeps-paths-and-symlinks-safe",
+        "file": "agents/hooks/lint/model-rules/rust/filesystem-code-keeps-paths-and-symlinks-safe/fixtures/violating.rs",
+        "line": 28,
+        "endLine": 30,
+        "kind": "noul",
+        "value": 0.89,
+        "confidence": null
+      },
+      {
+        "rule": "filesystem-code-keeps-paths-and-symlinks-safe",
+        "file": "agents/hooks/lint/model-rules/rust/filesystem-code-keeps-paths-and-symlinks-safe/fixtures/conforming.rs",
+        "line": 6,
+        "endLine": 23,
+        "kind": "noul",
+        "value": 0.07,
+        "confidence": null
+      },
+      {
+        "rule": "filesystem-code-keeps-paths-and-symlinks-safe",
+        "file": "agents/hooks/lint/model-rules/rust/filesystem-code-keeps-paths-and-symlinks-safe/fixtures/conforming.rs",
+        "line": 25,
+        "endLine": 29,
+        "kind": "noul",
+        "value": 0.2,
+        "confidence": null
+      },
+      {
+        "rule": "filesystem-code-keeps-paths-and-symlinks-safe",
+        "file": "agents/hooks/lint/model-rules/rust/filesystem-code-keeps-paths-and-symlinks-safe/fixtures/conforming.rs",
+        "line": 31,
+        "endLine": 36,
+        "kind": "noul",
+        "value": 0.09,
+        "confidence": null
+      },
+      {
+        "rule": "filesystem-code-keeps-paths-and-symlinks-safe",
+        "file": "agents/hooks/lint/model-rules/rust/filesystem-code-keeps-paths-and-symlinks-safe/fixtures/conforming.rs",
+        "line": 39,
+        "endLine": 41,
+        "kind": "noul",
+        "value": 0.13,
+        "confidence": null
+      },
+      {
+        "rule": "filesystem-code-keeps-paths-and-symlinks-safe",
+        "file": "agents/hooks/lint/model-rules/rust/filesystem-code-keeps-paths-and-symlinks-safe/fixtures/conforming.rs",
+        "line": 43,
+        "endLine": 45,
+        "kind": "noul",
+        "value": 0.07,
+        "confidence": null
+      },
+      {
+        "rule": "filesystem-code-keeps-paths-and-symlinks-safe",
+        "file": "agents/hooks/lint/model-rules/rust/filesystem-code-keeps-paths-and-symlinks-safe/fixtures/conforming.rs",
+        "line": 47,
+        "endLine": 49,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "filesystem-code-keeps-paths-and-symlinks-safe",
+        "file": "agents/hooks/lint/model-rules/rust/filesystem-code-keeps-paths-and-symlinks-safe/fixtures/violating.rs",
+        "line": 6,
+        "endLine": 8,
+        "kind": "noul",
+        "value": 0.9,
+        "confidence": null
+      },
+      {
+        "rule": "filesystem-code-keeps-paths-and-symlinks-safe",
+        "file": "agents/hooks/lint/model-rules/rust/filesystem-code-keeps-paths-and-symlinks-safe/fixtures/violating.rs",
+        "line": 10,
+        "endLine": 20,
+        "kind": "noul",
+        "value": 0.9,
+        "confidence": null
+      },
+      {
+        "rule": "filesystem-code-keeps-paths-and-symlinks-safe",
+        "file": "agents/hooks/lint/model-rules/rust/filesystem-code-keeps-paths-and-symlinks-safe/fixtures/violating.rs",
+        "line": 22,
+        "endLine": 26,
+        "kind": "noul",
+        "value": 0.88,
+        "confidence": null
+      },
+      {
+        "rule": "filesystem-code-keeps-paths-and-symlinks-safe",
+        "file": "agents/hooks/lint/model-rules/rust/filesystem-code-keeps-paths-and-symlinks-safe/fixtures/violating.rs",
+        "line": 28,
+        "endLine": 30,
+        "kind": "noul",
+        "value": 0.91,
+        "confidence": null
+      },
+      {
+        "rule": "filesystem-code-keeps-paths-and-symlinks-safe",
+        "file": "agents/hooks/lint/model-rules/rust/filesystem-code-keeps-paths-and-symlinks-safe/fixtures/conforming.rs",
+        "line": 6,
+        "endLine": 23,
+        "kind": "noul",
+        "value": 0.07,
+        "confidence": null
+      },
+      {
+        "rule": "filesystem-code-keeps-paths-and-symlinks-safe",
+        "file": "agents/hooks/lint/model-rules/rust/filesystem-code-keeps-paths-and-symlinks-safe/fixtures/conforming.rs",
+        "line": 25,
+        "endLine": 29,
+        "kind": "noul",
+        "value": 0.17,
+        "confidence": null
+      },
+      {
+        "rule": "filesystem-code-keeps-paths-and-symlinks-safe",
+        "file": "agents/hooks/lint/model-rules/rust/filesystem-code-keeps-paths-and-symlinks-safe/fixtures/conforming.rs",
+        "line": 31,
+        "endLine": 36,
+        "kind": "noul",
+        "value": 0.1,
+        "confidence": null
+      },
+      {
+        "rule": "filesystem-code-keeps-paths-and-symlinks-safe",
+        "file": "agents/hooks/lint/model-rules/rust/filesystem-code-keeps-paths-and-symlinks-safe/fixtures/conforming.rs",
+        "line": 39,
+        "endLine": 41,
+        "kind": "noul",
+        "value": 0.15,
+        "confidence": null
+      },
+      {
+        "rule": "filesystem-code-keeps-paths-and-symlinks-safe",
+        "file": "agents/hooks/lint/model-rules/rust/filesystem-code-keeps-paths-and-symlinks-safe/fixtures/conforming.rs",
+        "line": 43,
+        "endLine": 45,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "filesystem-code-keeps-paths-and-symlinks-safe",
+        "file": "agents/hooks/lint/model-rules/rust/filesystem-code-keeps-paths-and-symlinks-safe/fixtures/conforming.rs",
+        "line": 47,
+        "endLine": 49,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "filesystem-code-keeps-paths-and-symlinks-safe",
+        "file": "agents/hooks/lint/model-rules/rust/filesystem-code-keeps-paths-and-symlinks-safe/fixtures/conforming.rs",
+        "line": 6,
+        "endLine": 23,
+        "kind": "noul",
+        "value": 0.07,
+        "confidence": null
+      },
+      {
+        "rule": "filesystem-code-keeps-paths-and-symlinks-safe",
+        "file": "agents/hooks/lint/model-rules/rust/filesystem-code-keeps-paths-and-symlinks-safe/fixtures/conforming.rs",
+        "line": 25,
+        "endLine": 29,
+        "kind": "noul",
+        "value": 0.19,
+        "confidence": null
+      },
+      {
+        "rule": "filesystem-code-keeps-paths-and-symlinks-safe",
+        "file": "agents/hooks/lint/model-rules/rust/filesystem-code-keeps-paths-and-symlinks-safe/fixtures/conforming.rs",
+        "line": 31,
+        "endLine": 36,
+        "kind": "noul",
+        "value": 0.08,
+        "confidence": null
+      },
+      {
+        "rule": "filesystem-code-keeps-paths-and-symlinks-safe",
+        "file": "agents/hooks/lint/model-rules/rust/filesystem-code-keeps-paths-and-symlinks-safe/fixtures/conforming.rs",
+        "line": 39,
+        "endLine": 41,
+        "kind": "noul",
+        "value": 0.17,
+        "confidence": null
+      },
+      {
+        "rule": "filesystem-code-keeps-paths-and-symlinks-safe",
+        "file": "agents/hooks/lint/model-rules/rust/filesystem-code-keeps-paths-and-symlinks-safe/fixtures/conforming.rs",
+        "line": 43,
+        "endLine": 45,
+        "kind": "noul",
+        "value": 0.07,
+        "confidence": null
+      },
+      {
+        "rule": "filesystem-code-keeps-paths-and-symlinks-safe",
+        "file": "agents/hooks/lint/model-rules/rust/filesystem-code-keeps-paths-and-symlinks-safe/fixtures/conforming.rs",
+        "line": 47,
+        "endLine": 49,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "filesystem-code-keeps-paths-and-symlinks-safe",
+        "file": "agents/hooks/lint/model-rules/rust/filesystem-code-keeps-paths-and-symlinks-safe/fixtures/violating.rs",
+        "line": 6,
+        "endLine": 8,
+        "kind": "noul",
+        "value": 0.89,
+        "confidence": null
+      },
+      {
+        "rule": "filesystem-code-keeps-paths-and-symlinks-safe",
+        "file": "agents/hooks/lint/model-rules/rust/filesystem-code-keeps-paths-and-symlinks-safe/fixtures/violating.rs",
+        "line": 10,
+        "endLine": 20,
+        "kind": "noul",
+        "value": 0.9,
+        "confidence": null
+      },
+      {
+        "rule": "filesystem-code-keeps-paths-and-symlinks-safe",
+        "file": "agents/hooks/lint/model-rules/rust/filesystem-code-keeps-paths-and-symlinks-safe/fixtures/violating.rs",
+        "line": 22,
+        "endLine": 26,
+        "kind": "noul",
+        "value": 0.88,
+        "confidence": null
+      },
+      {
+        "rule": "filesystem-code-keeps-paths-and-symlinks-safe",
+        "file": "agents/hooks/lint/model-rules/rust/filesystem-code-keeps-paths-and-symlinks-safe/fixtures/violating.rs",
+        "line": 28,
+        "endLine": 30,
+        "kind": "noul",
+        "value": 0.91,
+        "confidence": null
+      }
+    ]
+  ],
+  "spent": {
+    "calls": 6,
+    "inputTokens": 17643,
+    "usd": 0.000741006,
+    "ms": 221
+  }
+}

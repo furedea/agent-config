@@ -1,0 +1,16 @@
+default: clean
+# Lines are the struct line; a window of 1 keeps neighbouring subjects apart.
+# violating.rs: every subject breaks the rule. conforming.rs: every subject keeps it, and most sit near the boundary
+# that the criteria's false side names.
+fixtures/violating.rs:
+  - { line: 4, label: bad, window: 1 }
+  - { line: 16, label: bad, window: 1 }
+  - { line: 33, label: bad, window: 1 }
+  - { line: 48, label: bad, window: 1 }
+  - { line: 61, label: bad, window: 1 }
+fixtures/conforming.rs:
+  - { line: 4, label: clean, window: 1 }
+  - { line: 10, label: clean, window: 1 }
+  - { line: 17, label: clean, window: 1 }
+  - { line: 23, label: clean, window: 1 }
+  - { line: 28, label: clean, window: 1 }

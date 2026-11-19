@@ -5,6 +5,7 @@ judgement is advisory (ADR-0021) and is not tested here.
 """
 
 import json
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -286,8 +287,13 @@ def test_each_rule_selects_the_functions_it_asks_about(language: str, repository
     assert {rule: counts.get(rule, 0) for rule in RULE_IDS} == expected
 
 
-def test_the_tiers_together_plan_the_same_subjects_as_the_whole_directory(repository: Path) -> None:
+def test_the_tiers_together_plan_the_same_subjects_as_the_whole_directory(repository: Path, tmp_path: Path) -> None:
     (repository / "sample.py").write_text(SAMPLES["python"][1])
+    # Every shipped rule has a baseline, so the Python rules lose theirs in a copy to make an untuned tier.
+    rules = tmp_path / "model-rules"
+    shutil.copytree(RULES, rules)
+    for baseline in (rules / "python").glob("*/baseline.json"):
+        baseline.unlink()
 
     def subjects(rules: tuple[Path, ...]) -> int:
         arguments = [word for path in rules for word in ("-R", str(path))]
@@ -301,7 +307,7 @@ def test_the_tiers_together_plan_the_same_subjects_as_the_whole_directory(reposi
         )
         return json.loads(result.stdout)["subjects"]
 
-    tiers = model_rules_gate.rule_tiers(RULES)
+    tiers = model_rules_gate.rule_tiers(rules)
 
     assert len(tiers) == 2
-    assert sum(subjects(tier) for tier in tiers) == subjects((RULES,))
+    assert sum(subjects(tier) for tier in tiers) == subjects((rules,))

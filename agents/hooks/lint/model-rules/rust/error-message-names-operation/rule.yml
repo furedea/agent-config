@@ -1,6 +1,5 @@
 # M-21 error messages name the operation and the subject (agents/skills/rust-style/references/errors.md: an error
-# "must include the operation and path"); see go/error-message-names-operation. Advisory. The cutoff is the
-# 0.5 starting value, not fitted: on this folder's fixtures the highest conforming case scored 0.12.
+# "must include the operation and path"); see go/error-message-names-operation. Advisory.
 id: error-message-names-operation
 language: Rust
 divergent: Rust builds an error with Err, bail! or anyhow! where Python raises and TypeScript throws.
@@ -9,7 +8,11 @@ subject: node
 # The file is sent whole: an `Err(ConcreteError::Variant)` takes its message from the error type, defined elsewhere in
 # the file, and `located` measured no false positive for the same cause in the Python rule.
 state: located
-threshold: 0.5
+# Fitted by `jev-lint eval` on this rule's own fixtures (15 cases, 8 bad and 7 clean, over 3 passes; baseline of
+# 2026-11-18): the highest clean case scored 0.15 (conforming.rs:28) and the lowest violation 0.56 (violating.rs:39);
+# the cutoff is jev-lint's fitted midpoint of that gap. A fit on so few cases is a starting point, not a calibration
+# (ADR-0020), so the rule stays advisory.
+threshold: 0.36
 axis: file
 severity: warning
 # Only functions that build an error are asked about; a function that merely propagates one with `?` is not a subject.

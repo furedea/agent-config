@@ -4,10 +4,22 @@
 # about, to spare the shared Stop subject budget; errors, standard collections and value objects are not selected.
 id: construction-separate-from-execution
 language: Rust
+divergent: >-
+  Fitted on Rust fixtures (#220), the criteria name the composition root that hands control to one call such as
+  `app.run()`, which the Rust model otherwise flagged.
 kind: noul
 subject: node
 state: local
-threshold: 0.5
+# Fitted by `jev-lint eval` on this rule's own fixtures (10 cases, 5 bad and 5 clean, over 3 passes; baseline of
+# 2026-11-18): the highest clean case scored 0.36 (conforming.rs:20) and the lowest violation 0.88 (violating.rs:55);
+# the cutoff is jev-lint's fitted midpoint of that gap. Before the criteria named the composition root, conforming.rs:13
+# scored 0.89. A fit on so few cases is a starting point, not a calibration (ADR-0020), so the rule stays advisory.
+threshold: 0.62
+# Every clean case answers far below the cutoff and every bad case far above it, so this corpus cannot see the rule
+# drift; boundary cases need code a reviewer would argue over.
+inconclusive: >-
+  Blind: the fixtures are clearly clean or clearly defective (the gap runs from 0.36 to 0.88), and no
+  boundary fixture exists yet.
 axis: file
 severity: warning
 rule:
@@ -22,9 +34,11 @@ ask: >-
 criteria:
   "true": >-
     The body constructs a service, client, connection, repository, parser or similar collaborator, configures it
-    (options, credentials, wiring), and then drives the business logic with it, so that testing the logic requires
-    building the collaborator inside this function.
+    (options, credentials, wiring), and then itself performs the business logic with it: it loops, branches, filters
+    or calculates over what the collaborator returns, so that testing that logic requires building the collaborator
+    inside this function.
   "false": >-
-    The collaborator is passed in, or the function only constructs and returns (a factory, a builder, a composition
-    root), or only executes with what it was given. Creating plain data, value objects, local collections or
-    short-lived helpers is not a violation.
+    The collaborator is passed in; or the function only constructs and returns it (a factory, a builder, a `new`); or
+    it is a composition root that wires collaborators together and hands control to one call such as `app.run()`,
+    doing no business logic of its own. Creating plain data, value objects, local collections or a short-lived helper
+    over in-memory data is not a violation.

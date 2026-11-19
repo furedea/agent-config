@@ -1,12 +1,21 @@
 # rust-style/references/filesystem.md: build paths with Path/PathBuf, do not follow symlinks while traversing unless
 # required and tested, use DirEntry::file_type() where symlink behaviour matters, and write through a temporary file
-# when a partial write would be harmful. Advisory and not fitted.
+# when a partial write would be harmful. Advisory.
 id: filesystem-code-keeps-paths-and-symlinks-safe
 language: Rust
 kind: noul
 subject: node
 state: local
-threshold: 0.5
+# Fitted by `jev-lint eval` on this rule's own fixtures (10 cases, 4 bad and 6 clean, over 3 passes; baseline of
+# 2026-11-18): the highest clean case scored 0.2 (conforming.rs:25) and the lowest violation 0.85 (violating.rs:22); the
+# cutoff is jev-lint's fitted midpoint of that gap. A fit on so few cases is a starting point, not a calibration
+# (ADR-0020), so the rule stays advisory.
+threshold: 0.53
+# Every clean case answers far below the cutoff and every bad case far above it, so this corpus cannot see the rule
+# drift; boundary cases need code a reviewer would argue over.
+inconclusive: >-
+  Blind: the fixtures are clearly clean or clearly defective (the gap runs from 0.2 to 0.85), and no
+  boundary fixture exists yet.
 axis: file
 severity: warning
 # Calls that traverse, test a path's kind, or replace file content; a plain read is not selected here.
@@ -22,10 +31,14 @@ ask: >-
   or partial writes.
 criteria:
   "true": >-
-    It follows symlinks while walking a source tree without a stated and tested need, branches with `Path::is_dir`,
-    `is_file` or `exists` where a symlink changes the answer (instead of `DirEntry::file_type()`), builds a path by
-    string concatenation or formatting, or overwrites a file in place where a partial write would leave it unusable
-    (instead of writing a temporary file and replacing the target).
+    Any one of these holds. It follows symlinks while walking a source tree without a stated and tested need. It
+    recurses or skips on `Path::is_dir`, `is_file` or `exists` while walking a tree, where a symlink would lead it out
+    of the tree or into a loop (instead of `DirEntry::file_type()`). It builds a path by string concatenation or
+    formatting. It overwrites in place a file that must stay readable, such as a lockfile, a settings file or user
+    data, so that a partial write would leave it unusable (instead of writing a temporary file and replacing the
+    target).
   "false": >-
-    Traversal does not follow symlinks, the kind check does not depend on symlink behaviour, paths are built with
-    `Path::join` or `PathBuf::push`, and a write that can be partial is either harmless or goes through a temporary file.
+    Traversal reads `DirEntry::file_type()` and does not follow symlinks; a single kind check on one known path that
+    is not part of a traversal (`dir.join("Cargo.toml").is_file()`, `exists()` before `create_dir_all`), where a
+    symlink to the right kind of file is as good as the file; creating a symlink on purpose; and a write whose partial
+    result is harmless, such as a cache regenerated when it cannot be read, or one that goes through a temporary file.

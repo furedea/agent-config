@@ -38,6 +38,9 @@ SHELL_MANAGED = frozenset(
 )
 # A word of plain characters and glob characters only: no quote, expansion, brace, tilde, or zsh glob qualifier.
 PLAIN_GLOB_WORD = re.compile(r"[A-Za-z0-9_./:@,%+-][A-Za-z0-9_./=:@,%+?*\[\]-]*")
+# The only variables whose hook value stands for the shell's own when a path is read: the temporary directory
+# and home, which the harness gives the hook and the sandboxed shell alike. Any other name may differ.
+PATH_VARIABLES = frozenset({"TMPDIR", "HOME"})
 # A run-time word starting with one of these cannot start with a dash.
 LITERAL_START = re.compile(r"[\"']?[A-Za-z0-9_./:@=,+%#]")
 
@@ -133,7 +136,7 @@ def expand_environment(word: Word) -> Word:
     if not word.dynamic or not stays_one_word(word.source):
         return word
     names = [match[1] or match[2] for match in NAMED_PARAMETER.finditer(re.sub(r"'[^']*'", "", word.source))]
-    if not all(os.environ.get(name) for name in names):
+    if not names or not all(name in PATH_VARIABLES and os.environ.get(name) for name in names):
         return word
     parts = re.findall(r"""'[^']*'|"[^"]*"|[^'"]+""", word.source)
     expand = lambda part: NAMED_PARAMETER.sub(lambda match: os.environ[match[1] or match[2]], part)  # noqa: E731

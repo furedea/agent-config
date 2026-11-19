@@ -32,28 +32,21 @@ def verdict(command: str) -> tuple[str, str]:
         ),
         pytest.param("gh pr edit 188 --body-file $TMPDIR/body.md", id="logged PR edit in the working repository"),
         pytest.param(
-            'gh issue create --title "test: lint test targets with clippy in CI" '
-            "--body-file $S/briefs/issue_clippy.md",
-            id="logged issue creation with a body file under a harness variable",
-        ),
-        pytest.param("gh issue comment 242 --body-file $S/plan242.md", id="logged plan comment"),
-        pytest.param(
             "gh issue create --repo furedea/agent-harness --title "
             '"test: report the failing element in collapsed all() assertions" --body-file $TMPDIR/issue_all_msg.md',
             id="logged issue creation in another furedea repository",
-        ),
-        pytest.param(
-            "gh api -X PATCH repos/furedea/skills-human-intervention/issues/comments/6845899920 "
-            '-F body=@"$f.new" -q .html_url',
-            id="logged comment edit from a quoted run-time file",
         ),
         pytest.param(
             "gh api -X POST repos/furedea/agent-config/issues/74/comments -F body=@$TMPDIR/plan74.md "
             "--jq '\"\\(.id) \\(.html_url)\"'",
             id="logged plan comment through the REST API",
         ),
-        pytest.param('gh pr create --head topic -t x --body-file "$D/pr.md"', id="a quoted run-time body file"),
-        pytest.param("gh issue comment 1 -R furedea/r -F ${S}/body.md", id="a braced parameter"),
+        pytest.param('gh pr create --head topic -t x --body-file "$TMPDIR/pr.md"', id="a quoted body file"),
+        pytest.param("gh issue comment 1 -R furedea/r -F ${TMPDIR}/body.md", id="a braced parameter"),
+        pytest.param(
+            'gh api -X PATCH repos/furedea/r/issues/comments/1 -F body=@"$TMPDIR/comment.new" -q .html_url',
+            id="a quoted REST file field",
+        ),
     ],
 )
 @pytest.mark.usefixtures("logged_body_files")
@@ -65,6 +58,11 @@ def test_a_clean_existing_body_file_named_by_set_environment_variables_is_scanne
     "command",
     [
         pytest.param('gh issue edit 242 --title x --body-file "$f" >/dev/null', id="a lone variable may be any word"),
+        pytest.param("gh issue comment 242 --body-file $S/plan242.md", id="a variable other than TMPDIR and HOME"),
+        pytest.param('gh pr create --head topic -t x --body-file "$D/pr.md"', id="a quoted other variable"),
+        pytest.param(
+            'gh api -X PATCH repos/furedea/r/issues/comments/1 -F body=@"$f.new"', id="an other REST variable"
+        ),
         pytest.param('gh issue comment 1 -R furedea/r -F - < "$S/body.md"', id="standard input from a run-time file"),
         pytest.param("gh issue comment 1 -R furedea/r -F $UNSET_BODY_DIR/body.md", id="a variable the hook lacks"),
         pytest.param("gh issue comment 1 -R furedea/r -F $TMPDIR/missing.md", id="a file that does not exist"),

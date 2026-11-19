@@ -1,0 +1,17 @@
+default: clean
+note: >-
+  Defects change a locked setting directly, through an intermediate class in the same file, or in a file that
+  imports FrozenBaseModel. Hard clean cases set only other keys, repeat a locked setting with the base value, or do
+  not descend from FrozenBaseModel. A descendant through a base defined in another file is not covered: the file axis
+  cannot show that chain.
+fixtures/schemas.py:
+  - { line: 5, label: clean, window: 1, why: "FrozenBaseModel itself" }
+  - { line: 11, label: bad, window: 1, why: "extra=allow on a direct subclass" }
+  - { line: 16, label: clean, window: 1, why: "sets only alias settings" }
+  - { line: 27, label: bad, window: 1, why: "frozen=False through an intermediate base in the same file" }
+  - { line: 33, label: clean, window: 1, why: "strict=True repeats the base value" }
+  - { line: 37, label: bad, window: 1, why: "revalidate_instances=never beside an unrelated key" }
+  - { line: 43, label: clean, window: 1, why: "does not descend from FrozenBaseModel" }
+fixtures/webhooks.py:
+  - { line: 6, label: bad, window: 1, why: "extra=ignore on a subclass of the imported base" }
+  - { line: 11, label: clean, window: 1, why: "sets only an alias generator" }

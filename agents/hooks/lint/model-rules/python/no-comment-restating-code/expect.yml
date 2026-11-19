@@ -1,0 +1,14 @@
+default: clean
+note: >-
+  Defects paraphrase the next statement or mark sections a named function would replace. Hard clean cases state a
+  unit conversion reason, a rate-limit constraint, an upstream workaround with its issue, a stable-sort reason, and a
+  public docstring.
+fixtures/subjects.py:
+  - { line: 4, label: bad, window: 1, why: "every comment paraphrases its statement" }
+  - { line: 15, label: bad, window: 1, why: "the comment restates the arithmetic" }
+  - { line: 20, label: bad, window: 1, why: "section markers a named function would replace" }
+  - { line: 29, label: clean, window: 1, why: "states why the conversion exists" }
+  - { line: 34, label: clean, window: 1, why: "states the constraint behind the backoff" }
+  - { line: 44, label: clean, window: 1, why: "a workaround with its upstream issue" }
+  - { line: 50, label: clean, window: 1, why: "states why the sort is two-pass" }
+  - { line: 55, label: clean, window: 1, why: "a docstring of a public function" }

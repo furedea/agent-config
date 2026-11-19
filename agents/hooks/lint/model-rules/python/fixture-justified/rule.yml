@@ -1,12 +1,18 @@
 # agents/skills/python-style/references/testing.md: a fixture is for setup shared across two or more tests, external
 # resources, or teardown via yield; otherwise a helper function, and a wider scope only for expensive setup. The
-# whole file is sent so the model can count the tests that use the fixture. Advisory and unfitted (ADR-0021).
+# whole file is sent so the model can count the tests that use the fixture. Advisory (ADR-0021).
 id: fixture-justified
 language: Python
 kind: noul
 subject: node
 state: located
-threshold: 0.5
+# Cutoff 0.54: jev-lint's fitted midpoint on this folder's fixtures (4 violations, 4 conforming cases, 3 passes,
+# means), where the loudest conforming case scored 0.13 and the quietest violation 0.94 (baseline.json, 2026-11-18).
+threshold: 0.54
+inconclusive: >-
+  Blind: the conforming cases score at most 0.13 and the violations at least 0.94, both a quarter of the scale or more
+  from the cutoff, so this corpus cannot see the rule drift. The hard conforming cases written for it still answered
+  far below the cutoff; a boundary case needs real code that reviewers argue over, and none has been found yet.
 axis: file
 severity: warning
 rule:
@@ -20,12 +26,11 @@ ask: >-
   cost needs.
 criteria:
   "true": >-
-    Fewer than two tests use the fixture (a fixture used by two or more tests is never a violation, whatever its cost or
-    scope). The file defines the tests, only one of them uses the fixture, and it has no teardown after `yield` and no
-    external resource; or the setup is
-    lightweight, or the tests need to pass arguments to it, so a helper function would do; or its scope is `module` or
-    `session` although the setup is cheap; none of this applies to a fixture defined in `conftest.py`.
+    Fewer than two tests in this file use the fixture, it is not defined in `conftest.py`, and it neither manages an
+    external resource nor tears anything down after `yield`; and within that case its setup is lightweight or the
+    test needs to pass arguments to it, so a helper function would do, or its scope is `module` or `session` although
+    its setup is cheap.
   "false": >-
-    Two or more tests use the fixture, or the fixture is defined in `conftest.py` (its users are in other files that
-    are not shown), or it manages an external resource or
-    teardown, or it needs a wider scope because its setup is expensive.
+    Two or more tests use the fixture, whatever its cost or scope; or the fixture is defined in `conftest.py` (its
+    users are in other files that are not shown); or it manages an external resource or tears down after `yield`; or
+    it needs a wider scope because its setup is expensive.

@@ -7,7 +7,9 @@ language: Python
 kind: noul
 subject: node
 state: local
-threshold: 0.5
+# Cutoff 0.81: jev-lint's fitted midpoint on this folder's fixtures (4 violations, 4 conforming cases, 3 passes,
+# means), where the loudest conforming case scored 0.67 and the quietest violation 0.92 (baseline.json, 2026-11-18).
+threshold: 0.81
 axis: file
 severity: warning
 rule:

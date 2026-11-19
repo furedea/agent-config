@@ -26,6 +26,8 @@ build/
 .uv-cache/
 
 # Testing
+# jev-lint eval writes its latest run beside each rule's baseline.json; only the accepted baseline is kept.
+agents/hooks/lint/model-rules/*/*/last.json
 .coverage
 .coverage.*
 *.cover

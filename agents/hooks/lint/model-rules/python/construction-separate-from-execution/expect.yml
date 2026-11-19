@@ -1,0 +1,14 @@
+default: clean
+note: >-
+  Defects build and configure a client, server, reader or store and then drive the logic with it. Hard clean cases
+  are a composition root, an argument parser used once, a test that builds fakes for the code under test, and a
+  factory method.
+fixtures/subjects.py:
+  - { line: 10, label: bad, window: 1, why: "builds a client and a repository, then syncs orders with them" }
+  - { line: 18, label: bad, window: 1, why: "builds and logs in a mail server, then sends the digest" }
+  - { line: 26, label: bad, window: 1, why: "builds a reader and a store, then imports rows with them" }
+  - { line: 43, label: bad, window: 1, why: "a method that builds and configures its client, then compares prices" }
+  - { line: 49, label: clean, window: 1, why: "a composition root that only constructs and returns" }
+  - { line: 62, label: clean, window: 1, why: "a short-lived argument parser, configured and used once" }
+  - { line: 68, label: clean, window: 1, why: "a test builds the fakes that the code under test receives" }
+  - { line: 81, label: clean, window: 1, why: "a factory method that only constructs and returns" }

@@ -1,0 +1,21 @@
+default: clean
+note: >-
+  One fixture per file, so the model counts the users of that fixture only. Defects are fixtures used by fewer than
+  two tests with cheap setup and no teardown. Clean cases include a conftest fixture with no visible user and a
+  module-scoped fixture whose setup is expensive.
+fixtures/test_single_use.py:
+  - { line: 6, label: bad, window: 1, why: "one test uses a one-line fixture; a helper would do" }
+fixtures/test_shared.py:
+  - { line: 6, label: clean, window: 1, why: "two tests use the fixture" }
+fixtures/test_teardown.py:
+  - { line: 8, label: clean, window: 1, why: "one user, but it closes a connection after yield" }
+fixtures/test_session_scope.py:
+  - { line: 6, label: bad, window: 1, why: "session scope for a literal dict, used by one test" }
+fixtures/test_needs_arguments.py:
+  - { line: 6, label: bad, window: 1, why: "one user; the siblings need other quantities, so a helper with an argument fits" }
+fixtures/conftest.py:
+  - { line: 6, label: clean, window: 1, why: "a conftest fixture whose users are in other files" }
+fixtures/test_expensive_module_scope.py:
+  - { line: 6, label: clean, window: 1, why: "two users, and module scope for an expensive index build" }
+fixtures/test_unused.py:
+  - { line: 6, label: bad, window: 1, why: "no test uses the fixture" }

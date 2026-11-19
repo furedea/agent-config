@@ -16,6 +16,8 @@ markers = [
 
 [tool.deptry]
 ignore_notebooks = true
+# Model-rule eval fixtures import the made-up packages of the code they plant; see tool.ruff.extend-exclude.
+extend_exclude = ["agents/hooks/lint/model-rules/[^/]+/[^/]+/fixtures"]
 
 # Standalone hooks import these adjacent repository modules after trusted path setup.
 known_first_party = [

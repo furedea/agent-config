@@ -1,11 +1,18 @@
 # agents/skills/python-style/references/code_style.md: avoid `from ... import ...` unless the name is self-explanatory
-# or the module path is too long, and avoid `as` aliases unless clarity needs them. Advisory and unfitted (ADR-0021).
+# or the module path is too long, and avoid `as` aliases unless clarity needs them. Advisory (ADR-0021).
 id: import-name-self-explanatory
 language: Python
 kind: noul
 subject: node
-state: local
-threshold: 0.5
+# The whole file: whether an alias resolves a clash, and how the name reads at its call sites, are outside the import.
+state: located
+# Cutoff 0.57: jev-lint's fitted midpoint on this folder's fixtures (5 violations, 5 conforming cases, 3 passes,
+# means), where the loudest conforming case scored 0.30 and the quietest violation 0.82 (baseline.json, 2026-11-18).
+threshold: 0.57
+inconclusive: >-
+  Blind: the conforming cases score at most 0.30 and the violations at least 0.82, both a quarter of the scale or more
+  from the cutoff, so this corpus cannot see the rule drift. The hard conforming cases written for it still answered
+  far below the cutoff; a boundary case needs real code that reviewers argue over, and none has been found yet.
 axis: file
 severity: warning
 rule:
@@ -28,10 +35,12 @@ ask: >-
   This import brings in a name that is not clear without its module at the call site, or aliases a name without need.
 criteria:
   "true": >-
-    A from-import brings in a generic or ambiguous name (`load`, `run`, `parse`, `get`, `main`, `Config`) whose origin a
-    reader cannot see at the call site, and the module path is short enough to import the module instead; or an `as`
-    alias renames an import for no clarity gain.
+    A from-import brings in a generic name (`load`, `run`, `parse`, `get`, `main`, `Config`) from a module path of one
+    or two parts (`json`, `yaml`, `shop.settings`), so `module.name` would be short and would show the origin at
+    every call site; or an `as` alias renames a module or name to something no clearer, such as a one- or two-letter
+    abbreviation (`requests as r`) that is not a community convention and resolves no clash in this file.
   "false": >-
     The imported name is self-explanatory on its own (`Enum`, `Path`, `Self`, a distinctive class name); the module
-    path is so long that `module.name` at call sites would be unwieldy; or the alias resolves a real name clash or is
-    a conventional one (`numpy as np`, `pandas as pd`).
+    path has three or more parts, so `module.name` at call sites would be unwieldy, even when the name is generic; or
+    the alias resolves a clash with another import of the same name in this file, or is a community convention
+    (`numpy as np`, `pandas as pd`, `matplotlib.pyplot as plt`).

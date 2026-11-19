@@ -1,0 +1,14 @@
+default: clean
+note: >-
+  Defects are values (amount, email, range, policy) declared mutable. Clean cases are frozen, or are accumulators,
+  entities and builders whose fields change after construction.
+fixtures/subjects.py:
+  - { line: 7, label: bad, window: 1, why: "a money value in a mutable dataclass" }
+  - { line: 13, label: bad, window: 1, why: "an email value with an invariant, not frozen" }
+  - { line: 21, label: bad, window: 1, why: "a range as a mutable pydantic model" }
+  - { line: 27, label: bad, window: 1, why: "a configuration value, not frozen" }
+  - { line: 33, label: clean, window: 1, why: "frozen" }
+  - { line: 38, label: clean, window: 1, why: "an accumulator mutated by add" }
+  - { line: 45, label: clean, window: 1, why: "an entity whose balance changes" }
+  - { line: 53, label: clean, window: 1, why: "frozen through model_config" }
+  - { line: 61, label: clean, window: 1, why: "a builder mutated by where" }

@@ -1,0 +1,3 @@
+# Model-rule eval fixtures plant the defects that the static rules report. The CI ast-grep scan walks the tree and
+# honours this file; the hooks already skip the fixtures (model_rule_fixtures), and jev-lint eval names them directly.
+agents/hooks/lint/model-rules/*/*/fixtures/

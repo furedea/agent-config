@@ -1,0 +1,13 @@
+default: clean
+note: >-
+  Defects have no comment, or one that names no removal condition. Clean cases name a fixed issue, a released
+  dependency version, a merged rewrite, or a published data set; the last one sits inside the marker's arguments.
+fixtures/test_subjects.py:
+  - { line: 8, label: bad, window: 1, why: "no comment; the reason names no removal condition" }
+  - { line: 14, label: bad, window: 1, why: "the comment only says to fix it later" }
+  - { line: 20, label: clean, window: 1, why: "names the issue whose fix removes the marker" }
+  - { line: 26, label: bad, window: 1, why: "the comment says to investigate, not when to remove" }
+  - { line: 32, label: clean, window: 1, why: "names the dependency release that removes the marker" }
+  - { line: 38, label: clean, window: 1, why: "names the merged rewrite that removes the marker" }
+  - { line: 43, label: bad, window: 1, why: "no comment at all" }
+  - { line: 48, label: clean, window: 1, why: "a comment inside the marker names the condition" }

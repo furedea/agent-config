@@ -1,13 +1,18 @@
 # M-21 error messages name the operation and the subject (agents/skills/python-style: error messages state what was
-# being done and to what). Advisory. The cutoff stays 0.5: on this folder's fixtures the highest
-# conforming case scored 0.28 and the lowest violation is well above 0.5 (jev-lint's fitted midpoint is 0.61).
+# being done and to what). Advisory (ADR-0021).
 id: error-message-names-operation
 language: Python
 kind: noul
 subject: node
 # The whole file: the message is often built by a helper beside the raise, and a reader must see that helper.
 state: located
-threshold: 0.5
+# Cutoff 0.61: jev-lint's fitted midpoint on this folder's fixtures (4 violations, 5 conforming cases, 3 passes,
+# means), where the loudest conforming case scored 0.20 and the quietest violation 0.95 (baseline.json, 2026-11-18).
+threshold: 0.61
+inconclusive: >-
+  Blind: the conforming cases score at most 0.20 and the violations at least 0.95, both a quarter of the scale or more
+  from the cutoff, so this corpus cannot see the rule drift. The hard conforming cases written for it still answered
+  far below the cutoff; a boundary case needs real code that reviewers argue over, and none has been found yet.
 axis: file
 severity: warning
 # Only functions that raise are asked about; a function that merely lets an error pass is not a subject.

@@ -1,11 +1,13 @@
 # agents/skills/python-style/references/models.md: pure construction is a classmethod alternative constructor;
-# construction that does I/O is a module-level function. Advisory and unfitted (ADR-0021).
+# construction that does I/O is a module-level function. Advisory (ADR-0021).
 id: construction-placement-by-purity
 language: Python
 kind: noul
 subject: node
 state: located
-threshold: 0.5
+# Cutoff 0.68: jev-lint's fitted midpoint on this folder's fixtures (5 violations, 5 conforming cases, 3 passes,
+# means), where the loudest conforming case scored 0.41 and the quietest violation 0.91 (baseline.json, 2026-11-18).
+threshold: 0.68
 axis: file
 severity: warning
 rule:

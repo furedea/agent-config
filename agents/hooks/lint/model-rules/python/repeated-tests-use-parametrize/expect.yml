@@ -1,0 +1,16 @@
+default: clean
+note: >-
+  One module per file, since the subject is the module. Defects repeat one body with other literals. Clean cases are
+  already parametrized, test different behavior, or differ in setup and assertions.
+fixtures/test_repeated_literals.py:
+  - { line: 1, label: bad, window: 1, why: "three tests differ only in literals" }
+fixtures/test_repeated_pair.py:
+  - { line: 1, label: bad, window: 1, why: "two tests differ only in literals" }
+fixtures/test_parametrized.py:
+  - { line: 1, label: clean, window: 1, why: "already parametrized; the other test checks an error" }
+fixtures/test_different_behaviour.py:
+  - { line: 1, label: clean, window: 1, why: "each test exercises different behavior" }
+fixtures/test_setup_differs.py:
+  - { line: 1, label: clean, window: 1, why: "setup and assertions differ" }
+fixtures/test_mixed.py:
+  - { line: 1, label: bad, window: 1, why: "three formatting tests differ only in literals" }

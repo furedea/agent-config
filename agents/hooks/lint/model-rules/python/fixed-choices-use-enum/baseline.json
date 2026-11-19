@@ -1,0 +1,271 @@
+{
+  "schema": "jev-lint-eval-1",
+  "recorded": "2026-11-18T06:21:55.975Z",
+  "model": "jev-1.14.0",
+  "suite": "python/fixed-choices-use-enum",
+  "rules": [
+    {
+      "id": "fixed-choices-use-enum",
+      "draft": "861fd42ec3b0",
+      "at": 0.5
+    }
+  ],
+  "cutoffs": {},
+  "passes": [
+    [
+      {
+        "rule": "fixed-choices-use-enum",
+        "file": "agents/hooks/lint/model-rules/python/fixed-choices-use-enum/fixtures/subjects.py",
+        "line": 9,
+        "endLine": 16,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "fixed-choices-use-enum",
+        "file": "agents/hooks/lint/model-rules/python/fixed-choices-use-enum/fixtures/subjects.py",
+        "line": 19,
+        "endLine": 27,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "fixed-choices-use-enum",
+        "file": "agents/hooks/lint/model-rules/python/fixed-choices-use-enum/fixtures/subjects.py",
+        "line": 30,
+        "endLine": 32,
+        "kind": "noul",
+        "value": 0.93,
+        "confidence": null
+      },
+      {
+        "rule": "fixed-choices-use-enum",
+        "file": "agents/hooks/lint/model-rules/python/fixed-choices-use-enum/fixtures/subjects.py",
+        "line": 35,
+        "endLine": 36,
+        "kind": "noul",
+        "value": 0.93,
+        "confidence": null
+      },
+      {
+        "rule": "fixed-choices-use-enum",
+        "file": "agents/hooks/lint/model-rules/python/fixed-choices-use-enum/fixtures/subjects.py",
+        "line": 39,
+        "endLine": 44,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "fixed-choices-use-enum",
+        "file": "agents/hooks/lint/model-rules/python/fixed-choices-use-enum/fixtures/subjects.py",
+        "line": 47,
+        "endLine": 50,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "fixed-choices-use-enum",
+        "file": "agents/hooks/lint/model-rules/python/fixed-choices-use-enum/fixtures/subjects.py",
+        "line": 53,
+        "endLine": 54,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "fixed-choices-use-enum",
+        "file": "agents/hooks/lint/model-rules/python/fixed-choices-use-enum/fixtures/subjects.py",
+        "line": 57,
+        "endLine": 59,
+        "kind": "noul",
+        "value": 0.08,
+        "confidence": null
+      },
+      {
+        "rule": "fixed-choices-use-enum",
+        "file": "agents/hooks/lint/model-rules/python/fixed-choices-use-enum/fixtures/subjects.py",
+        "line": 62,
+        "endLine": 63,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "fixed-choices-use-enum",
+        "file": "agents/hooks/lint/model-rules/python/fixed-choices-use-enum/fixtures/subjects.py",
+        "line": 9,
+        "endLine": 16,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "fixed-choices-use-enum",
+        "file": "agents/hooks/lint/model-rules/python/fixed-choices-use-enum/fixtures/subjects.py",
+        "line": 19,
+        "endLine": 27,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "fixed-choices-use-enum",
+        "file": "agents/hooks/lint/model-rules/python/fixed-choices-use-enum/fixtures/subjects.py",
+        "line": 30,
+        "endLine": 32,
+        "kind": "noul",
+        "value": 0.93,
+        "confidence": null
+      },
+      {
+        "rule": "fixed-choices-use-enum",
+        "file": "agents/hooks/lint/model-rules/python/fixed-choices-use-enum/fixtures/subjects.py",
+        "line": 35,
+        "endLine": 36,
+        "kind": "noul",
+        "value": 0.92,
+        "confidence": null
+      },
+      {
+        "rule": "fixed-choices-use-enum",
+        "file": "agents/hooks/lint/model-rules/python/fixed-choices-use-enum/fixtures/subjects.py",
+        "line": 39,
+        "endLine": 44,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "fixed-choices-use-enum",
+        "file": "agents/hooks/lint/model-rules/python/fixed-choices-use-enum/fixtures/subjects.py",
+        "line": 47,
+        "endLine": 50,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "fixed-choices-use-enum",
+        "file": "agents/hooks/lint/model-rules/python/fixed-choices-use-enum/fixtures/subjects.py",
+        "line": 53,
+        "endLine": 54,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "fixed-choices-use-enum",
+        "file": "agents/hooks/lint/model-rules/python/fixed-choices-use-enum/fixtures/subjects.py",
+        "line": 57,
+        "endLine": 59,
+        "kind": "noul",
+        "value": 0.08,
+        "confidence": null
+      },
+      {
+        "rule": "fixed-choices-use-enum",
+        "file": "agents/hooks/lint/model-rules/python/fixed-choices-use-enum/fixtures/subjects.py",
+        "line": 62,
+        "endLine": 63,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "fixed-choices-use-enum",
+        "file": "agents/hooks/lint/model-rules/python/fixed-choices-use-enum/fixtures/subjects.py",
+        "line": 9,
+        "endLine": 16,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "fixed-choices-use-enum",
+        "file": "agents/hooks/lint/model-rules/python/fixed-choices-use-enum/fixtures/subjects.py",
+        "line": 19,
+        "endLine": 27,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "fixed-choices-use-enum",
+        "file": "agents/hooks/lint/model-rules/python/fixed-choices-use-enum/fixtures/subjects.py",
+        "line": 30,
+        "endLine": 32,
+        "kind": "noul",
+        "value": 0.94,
+        "confidence": null
+      },
+      {
+        "rule": "fixed-choices-use-enum",
+        "file": "agents/hooks/lint/model-rules/python/fixed-choices-use-enum/fixtures/subjects.py",
+        "line": 35,
+        "endLine": 36,
+        "kind": "noul",
+        "value": 0.92,
+        "confidence": null
+      },
+      {
+        "rule": "fixed-choices-use-enum",
+        "file": "agents/hooks/lint/model-rules/python/fixed-choices-use-enum/fixtures/subjects.py",
+        "line": 39,
+        "endLine": 44,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "fixed-choices-use-enum",
+        "file": "agents/hooks/lint/model-rules/python/fixed-choices-use-enum/fixtures/subjects.py",
+        "line": 47,
+        "endLine": 50,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "fixed-choices-use-enum",
+        "file": "agents/hooks/lint/model-rules/python/fixed-choices-use-enum/fixtures/subjects.py",
+        "line": 53,
+        "endLine": 54,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "fixed-choices-use-enum",
+        "file": "agents/hooks/lint/model-rules/python/fixed-choices-use-enum/fixtures/subjects.py",
+        "line": 57,
+        "endLine": 59,
+        "kind": "noul",
+        "value": 0.08,
+        "confidence": null
+      },
+      {
+        "rule": "fixed-choices-use-enum",
+        "file": "agents/hooks/lint/model-rules/python/fixed-choices-use-enum/fixtures/subjects.py",
+        "line": 62,
+        "endLine": 63,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      }
+    ]
+  ],
+  "spent": {
+    "calls": 3,
+    "inputTokens": 10356,
+    "usd": 0.00043495200000000006,
+    "ms": 187
+  }
+}

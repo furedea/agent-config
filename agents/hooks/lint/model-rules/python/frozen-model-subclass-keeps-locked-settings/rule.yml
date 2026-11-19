@@ -1,13 +1,19 @@
 # agents/skills/python-style/references/models.md: boundary schemas inherit one shared `FrozenBaseModel`, whose five
 # settings (`frozen`, `extra`, `strict`, `validate_default`, `revalidate_instances`) a subclass must not change. A class
 # that passes class keywords or sets `model_config` is sent, so the model can follow the hierarchy across classes and
-# files. Advisory and unfitted (ADR-0021).
+# files. Advisory (ADR-0021).
 id: frozen-model-subclass-keeps-locked-settings
 language: Python
 kind: noul
 subject: node
 state: located
+# Cutoff 0.5: jev-lint's fitted midpoint on this folder's fixtures (4 violations, 5 conforming cases, 3 passes,
+# means), where the loudest conforming case scored 0.06 and the quietest violation 0.94 (baseline.json, 2026-11-18).
 threshold: 0.5
+inconclusive: >-
+  Blind: the conforming cases score at most 0.06 and the violations at least 0.94, both a quarter of the scale or more
+  from the cutoff, so this corpus cannot see the rule drift. The hard conforming cases written for it still answered
+  far below the cutoff; a boundary case needs real code that reviewers argue over, and none has been found yet.
 axis: file
 severity: warning
 rule:
@@ -30,7 +36,8 @@ ask: >-
 criteria:
   "true": >-
     The class descends from `FrozenBaseModel` and sets `frozen`, `extra`, `strict`, `validate_default` or
-    `revalidate_instances` to anything other than the base value, in class keywords or in `model_config`.
+    `revalidate_instances` to a value that differs from the base value (`frozen=True`, `extra="forbid"`,
+    `strict=True`, `validate_default=True`, `revalidate_instances="always"`), in class keywords or in `model_config`.
   "false": >-
-    The class does not descend from `FrozenBaseModel`, sets only other keys (such as `alias_generator`), or is
-    `FrozenBaseModel` itself.
+    The class does not descend from `FrozenBaseModel`, sets only other keys (such as `alias_generator`), repeats a
+    locked setting with exactly the base value (`strict=True`), or is `FrozenBaseModel` itself.

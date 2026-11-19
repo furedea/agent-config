@@ -2,6 +2,7 @@
 status: proposed
 date: 2026-11-10
 supersedes: [ADR-0020]
+partly-superseded-by: [ADR-0027]
 amended:
   - "2026-11-11: the hook behaviour, the two reviews, the Keychain"
   - "2026-11-15: static rules block on edit; suppression; shared rules only in trusted repositories"

@@ -1,0 +1,244 @@
+{
+  "schema": "jev-lint-eval-1",
+  "recorded": "2026-11-18T06:27:57.904Z",
+  "model": "jev-1.14.0",
+  "suite": "typescript/inject-time-and-randomness",
+  "rules": [
+    {
+      "id": "inject-time-and-randomness",
+      "draft": "9c0dda7ee094",
+      "at": 0.5
+    }
+  ],
+  "cutoffs": {},
+  "passes": [
+    [
+      {
+        "rule": "inject-time-and-randomness",
+        "file": "agents/hooks/lint/model-rules/typescript/inject-time-and-randomness/fixtures/violating.ts",
+        "line": 5,
+        "endLine": 7,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "inject-time-and-randomness",
+        "file": "agents/hooks/lint/model-rules/typescript/inject-time-and-randomness/fixtures/violating.ts",
+        "line": 9,
+        "endLine": 11,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "inject-time-and-randomness",
+        "file": "agents/hooks/lint/model-rules/typescript/inject-time-and-randomness/fixtures/violating.ts",
+        "line": 13,
+        "endLine": 14,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "inject-time-and-randomness",
+        "file": "agents/hooks/lint/model-rules/typescript/inject-time-and-randomness/fixtures/violating.ts",
+        "line": 16,
+        "endLine": 19,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "inject-time-and-randomness",
+        "file": "agents/hooks/lint/model-rules/typescript/inject-time-and-randomness/fixtures/conforming.ts",
+        "line": 6,
+        "endLine": 6,
+        "kind": "noul",
+        "value": 0.13,
+        "confidence": null
+      },
+      {
+        "rule": "inject-time-and-randomness",
+        "file": "agents/hooks/lint/model-rules/typescript/inject-time-and-randomness/fixtures/conforming.ts",
+        "line": 9,
+        "endLine": 14,
+        "kind": "noul",
+        "value": 0.33,
+        "confidence": null
+      },
+      {
+        "rule": "inject-time-and-randomness",
+        "file": "agents/hooks/lint/model-rules/typescript/inject-time-and-randomness/fixtures/conforming.ts",
+        "line": 16,
+        "endLine": 23,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "inject-time-and-randomness",
+        "file": "agents/hooks/lint/model-rules/typescript/inject-time-and-randomness/fixtures/conforming.ts",
+        "line": 26,
+        "endLine": 26,
+        "kind": "noul",
+        "value": 0.61,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "inject-time-and-randomness",
+        "file": "agents/hooks/lint/model-rules/typescript/inject-time-and-randomness/fixtures/violating.ts",
+        "line": 5,
+        "endLine": 7,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "inject-time-and-randomness",
+        "file": "agents/hooks/lint/model-rules/typescript/inject-time-and-randomness/fixtures/violating.ts",
+        "line": 9,
+        "endLine": 11,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "inject-time-and-randomness",
+        "file": "agents/hooks/lint/model-rules/typescript/inject-time-and-randomness/fixtures/violating.ts",
+        "line": 13,
+        "endLine": 14,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "inject-time-and-randomness",
+        "file": "agents/hooks/lint/model-rules/typescript/inject-time-and-randomness/fixtures/violating.ts",
+        "line": 16,
+        "endLine": 19,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "inject-time-and-randomness",
+        "file": "agents/hooks/lint/model-rules/typescript/inject-time-and-randomness/fixtures/conforming.ts",
+        "line": 6,
+        "endLine": 6,
+        "kind": "noul",
+        "value": 0.13,
+        "confidence": null
+      },
+      {
+        "rule": "inject-time-and-randomness",
+        "file": "agents/hooks/lint/model-rules/typescript/inject-time-and-randomness/fixtures/conforming.ts",
+        "line": 9,
+        "endLine": 14,
+        "kind": "noul",
+        "value": 0.31,
+        "confidence": null
+      },
+      {
+        "rule": "inject-time-and-randomness",
+        "file": "agents/hooks/lint/model-rules/typescript/inject-time-and-randomness/fixtures/conforming.ts",
+        "line": 16,
+        "endLine": 23,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "inject-time-and-randomness",
+        "file": "agents/hooks/lint/model-rules/typescript/inject-time-and-randomness/fixtures/conforming.ts",
+        "line": 26,
+        "endLine": 26,
+        "kind": "noul",
+        "value": 0.64,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "inject-time-and-randomness",
+        "file": "agents/hooks/lint/model-rules/typescript/inject-time-and-randomness/fixtures/conforming.ts",
+        "line": 6,
+        "endLine": 6,
+        "kind": "noul",
+        "value": 0.09,
+        "confidence": null
+      },
+      {
+        "rule": "inject-time-and-randomness",
+        "file": "agents/hooks/lint/model-rules/typescript/inject-time-and-randomness/fixtures/conforming.ts",
+        "line": 9,
+        "endLine": 14,
+        "kind": "noul",
+        "value": 0.33,
+        "confidence": null
+      },
+      {
+        "rule": "inject-time-and-randomness",
+        "file": "agents/hooks/lint/model-rules/typescript/inject-time-and-randomness/fixtures/conforming.ts",
+        "line": 16,
+        "endLine": 23,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "inject-time-and-randomness",
+        "file": "agents/hooks/lint/model-rules/typescript/inject-time-and-randomness/fixtures/conforming.ts",
+        "line": 26,
+        "endLine": 26,
+        "kind": "noul",
+        "value": 0.61,
+        "confidence": null
+      },
+      {
+        "rule": "inject-time-and-randomness",
+        "file": "agents/hooks/lint/model-rules/typescript/inject-time-and-randomness/fixtures/violating.ts",
+        "line": 5,
+        "endLine": 7,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "inject-time-and-randomness",
+        "file": "agents/hooks/lint/model-rules/typescript/inject-time-and-randomness/fixtures/violating.ts",
+        "line": 9,
+        "endLine": 11,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "inject-time-and-randomness",
+        "file": "agents/hooks/lint/model-rules/typescript/inject-time-and-randomness/fixtures/violating.ts",
+        "line": 13,
+        "endLine": 14,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "inject-time-and-randomness",
+        "file": "agents/hooks/lint/model-rules/typescript/inject-time-and-randomness/fixtures/violating.ts",
+        "line": 16,
+        "endLine": 19,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      }
+    ]
+  ],
+  "spent": {
+    "calls": 6,
+    "inputTokens": 13032,
+    "usd": 0.0005473440000000001,
+    "ms": 163
+  }
+}

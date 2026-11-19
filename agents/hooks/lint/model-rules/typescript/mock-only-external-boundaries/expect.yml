@@ -1,0 +1,14 @@
+default: clean
+note: >-
+  Mocks and spies on the project's own modules and objects, against the file system, a third-party SDK, the
+  global fetch and the console.
+fixtures/violating.test.ts:
+  - { line: 3, label: bad, window: 1, why: "mocks a sibling module the project owns" }
+  - { line: 7, label: bad, window: 1, why: "spies on a project object the test could build as a fake" }
+  - { line: 12, label: bad, window: 1, why: "mocks the project's own repository module" }
+  - { line: 15, label: bad, window: 1, why: "replaces a project formatter module" }
+fixtures/conforming.test.ts:
+  - { line: 3, label: clean, window: 1, why: "mocks the file system at its module boundary" }
+  - { line: 5, label: clean, window: 1, why: "mocks a third-party SDK at its module boundary" }
+  - { line: 8, label: clean, window: 1, why: "replaces the global network call" }
+  - { line: 13, label: clean, window: 1, why: "silences the console, an external global" }

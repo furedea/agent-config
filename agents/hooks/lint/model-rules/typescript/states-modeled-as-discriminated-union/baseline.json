@@ -1,0 +1,244 @@
+{
+  "schema": "jev-lint-eval-1",
+  "recorded": "2026-11-18T06:27:59.318Z",
+  "model": "jev-1.14.0",
+  "suite": "typescript/states-modeled-as-discriminated-union",
+  "rules": [
+    {
+      "id": "states-modeled-as-discriminated-union",
+      "draft": "dcbc262af4db",
+      "at": 0.5
+    }
+  ],
+  "cutoffs": {},
+  "passes": [
+    [
+      {
+        "rule": "states-modeled-as-discriminated-union",
+        "file": "agents/hooks/lint/model-rules/typescript/states-modeled-as-discriminated-union/fixtures/violating.ts",
+        "line": 3,
+        "endLine": 7,
+        "kind": "noul",
+        "value": 0.84,
+        "confidence": null
+      },
+      {
+        "rule": "states-modeled-as-discriminated-union",
+        "file": "agents/hooks/lint/model-rules/typescript/states-modeled-as-discriminated-union/fixtures/violating.ts",
+        "line": 9,
+        "endLine": 13,
+        "kind": "noul",
+        "value": 0.63,
+        "confidence": null
+      },
+      {
+        "rule": "states-modeled-as-discriminated-union",
+        "file": "agents/hooks/lint/model-rules/typescript/states-modeled-as-discriminated-union/fixtures/violating.ts",
+        "line": 15,
+        "endLine": 20,
+        "kind": "noul",
+        "value": 0.77,
+        "confidence": null
+      },
+      {
+        "rule": "states-modeled-as-discriminated-union",
+        "file": "agents/hooks/lint/model-rules/typescript/states-modeled-as-discriminated-union/fixtures/violating.ts",
+        "line": 22,
+        "endLine": 26,
+        "kind": "noul",
+        "value": 0.62,
+        "confidence": null
+      },
+      {
+        "rule": "states-modeled-as-discriminated-union",
+        "file": "agents/hooks/lint/model-rules/typescript/states-modeled-as-discriminated-union/fixtures/conforming.ts",
+        "line": 3,
+        "endLine": 7,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "states-modeled-as-discriminated-union",
+        "file": "agents/hooks/lint/model-rules/typescript/states-modeled-as-discriminated-union/fixtures/conforming.ts",
+        "line": 9,
+        "endLine": 13,
+        "kind": "noul",
+        "value": 0.1,
+        "confidence": null
+      },
+      {
+        "rule": "states-modeled-as-discriminated-union",
+        "file": "agents/hooks/lint/model-rules/typescript/states-modeled-as-discriminated-union/fixtures/conforming.ts",
+        "line": 15,
+        "endLine": 18,
+        "kind": "noul",
+        "value": 0.08,
+        "confidence": null
+      },
+      {
+        "rule": "states-modeled-as-discriminated-union",
+        "file": "agents/hooks/lint/model-rules/typescript/states-modeled-as-discriminated-union/fixtures/conforming.ts",
+        "line": 20,
+        "endLine": 27,
+        "kind": "noul",
+        "value": 0.09,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "states-modeled-as-discriminated-union",
+        "file": "agents/hooks/lint/model-rules/typescript/states-modeled-as-discriminated-union/fixtures/violating.ts",
+        "line": 3,
+        "endLine": 7,
+        "kind": "noul",
+        "value": 0.83,
+        "confidence": null
+      },
+      {
+        "rule": "states-modeled-as-discriminated-union",
+        "file": "agents/hooks/lint/model-rules/typescript/states-modeled-as-discriminated-union/fixtures/violating.ts",
+        "line": 9,
+        "endLine": 13,
+        "kind": "noul",
+        "value": 0.62,
+        "confidence": null
+      },
+      {
+        "rule": "states-modeled-as-discriminated-union",
+        "file": "agents/hooks/lint/model-rules/typescript/states-modeled-as-discriminated-union/fixtures/violating.ts",
+        "line": 15,
+        "endLine": 20,
+        "kind": "noul",
+        "value": 0.78,
+        "confidence": null
+      },
+      {
+        "rule": "states-modeled-as-discriminated-union",
+        "file": "agents/hooks/lint/model-rules/typescript/states-modeled-as-discriminated-union/fixtures/violating.ts",
+        "line": 22,
+        "endLine": 26,
+        "kind": "noul",
+        "value": 0.61,
+        "confidence": null
+      },
+      {
+        "rule": "states-modeled-as-discriminated-union",
+        "file": "agents/hooks/lint/model-rules/typescript/states-modeled-as-discriminated-union/fixtures/conforming.ts",
+        "line": 3,
+        "endLine": 7,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "states-modeled-as-discriminated-union",
+        "file": "agents/hooks/lint/model-rules/typescript/states-modeled-as-discriminated-union/fixtures/conforming.ts",
+        "line": 9,
+        "endLine": 13,
+        "kind": "noul",
+        "value": 0.09,
+        "confidence": null
+      },
+      {
+        "rule": "states-modeled-as-discriminated-union",
+        "file": "agents/hooks/lint/model-rules/typescript/states-modeled-as-discriminated-union/fixtures/conforming.ts",
+        "line": 15,
+        "endLine": 18,
+        "kind": "noul",
+        "value": 0.09,
+        "confidence": null
+      },
+      {
+        "rule": "states-modeled-as-discriminated-union",
+        "file": "agents/hooks/lint/model-rules/typescript/states-modeled-as-discriminated-union/fixtures/conforming.ts",
+        "line": 20,
+        "endLine": 27,
+        "kind": "noul",
+        "value": 0.08,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "states-modeled-as-discriminated-union",
+        "file": "agents/hooks/lint/model-rules/typescript/states-modeled-as-discriminated-union/fixtures/conforming.ts",
+        "line": 3,
+        "endLine": 7,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "states-modeled-as-discriminated-union",
+        "file": "agents/hooks/lint/model-rules/typescript/states-modeled-as-discriminated-union/fixtures/conforming.ts",
+        "line": 9,
+        "endLine": 13,
+        "kind": "noul",
+        "value": 0.08,
+        "confidence": null
+      },
+      {
+        "rule": "states-modeled-as-discriminated-union",
+        "file": "agents/hooks/lint/model-rules/typescript/states-modeled-as-discriminated-union/fixtures/conforming.ts",
+        "line": 15,
+        "endLine": 18,
+        "kind": "noul",
+        "value": 0.09,
+        "confidence": null
+      },
+      {
+        "rule": "states-modeled-as-discriminated-union",
+        "file": "agents/hooks/lint/model-rules/typescript/states-modeled-as-discriminated-union/fixtures/conforming.ts",
+        "line": 20,
+        "endLine": 27,
+        "kind": "noul",
+        "value": 0.1,
+        "confidence": null
+      },
+      {
+        "rule": "states-modeled-as-discriminated-union",
+        "file": "agents/hooks/lint/model-rules/typescript/states-modeled-as-discriminated-union/fixtures/violating.ts",
+        "line": 3,
+        "endLine": 7,
+        "kind": "noul",
+        "value": 0.85,
+        "confidence": null
+      },
+      {
+        "rule": "states-modeled-as-discriminated-union",
+        "file": "agents/hooks/lint/model-rules/typescript/states-modeled-as-discriminated-union/fixtures/violating.ts",
+        "line": 9,
+        "endLine": 13,
+        "kind": "noul",
+        "value": 0.59,
+        "confidence": null
+      },
+      {
+        "rule": "states-modeled-as-discriminated-union",
+        "file": "agents/hooks/lint/model-rules/typescript/states-modeled-as-discriminated-union/fixtures/violating.ts",
+        "line": 15,
+        "endLine": 20,
+        "kind": "noul",
+        "value": 0.76,
+        "confidence": null
+      },
+      {
+        "rule": "states-modeled-as-discriminated-union",
+        "file": "agents/hooks/lint/model-rules/typescript/states-modeled-as-discriminated-union/fixtures/violating.ts",
+        "line": 22,
+        "endLine": 26,
+        "kind": "noul",
+        "value": 0.62,
+        "confidence": null
+      }
+    ]
+  ],
+  "spent": {
+    "calls": 6,
+    "inputTokens": 10689,
+    "usd": 0.00044893800000000007,
+    "ms": 162
+  }
+}

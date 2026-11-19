@@ -1,17 +1,20 @@
-# Repeated cases of one behaviour use it.each (agents/skills/typescript-style/references/testing.md). Advisory and unfitted.
+# Repeated cases of one behaviour use it.each (agents/skills/typescript-style/references/testing.md). Advisory.
 id: repeated-cases-use-it-each
 languages: [ TypeScript, Tsx ]
 kind: noul
 subject: node
 state: local
-threshold: 0.5
+# The cutoff is jev-lint's fitted midpoint on this folder's fixtures (4 violations, 4 conforming cases, 3 passes,
+# means, #220): the highest conforming case scored 0.08 (0.09 in its worst pass) and the lowest violation 0.43 (0.41
+# in its worst pass). A fit on so few cases is not a calibration, so the rule stays advisory (ADR-0021).
+threshold: 0.25
 axis: file
 severity: warning
 rule:
   any:
     - all:
         - kind: call_expression
-        - has: { field: function, regex: '^describe(\.|$)' }
+        - has: { field: function, regex: '^(describe|suite)(\.|$)' }
         - not:
             has: { field: function, kind: member_expression, regex: '\.each$' }
     - all:

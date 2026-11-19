@@ -1,0 +1,244 @@
+{
+  "schema": "jev-lint-eval-1",
+  "recorded": "2026-11-18T06:27:59.517Z",
+  "model": "jev-1.14.0",
+  "suite": "typescript/type-assertion-follows-validation",
+  "rules": [
+    {
+      "id": "type-assertion-follows-validation",
+      "draft": "ebf458e19de3",
+      "at": 0.5
+    }
+  ],
+  "cutoffs": {},
+  "passes": [
+    [
+      {
+        "rule": "type-assertion-follows-validation",
+        "file": "agents/hooks/lint/model-rules/typescript/type-assertion-follows-validation/fixtures/conforming.ts",
+        "line": 31,
+        "endLine": 31,
+        "kind": "noul",
+        "value": 0.19,
+        "confidence": null
+      },
+      {
+        "rule": "type-assertion-follows-validation",
+        "file": "agents/hooks/lint/model-rules/typescript/type-assertion-follows-validation/fixtures/conforming.ts",
+        "line": 39,
+        "endLine": 39,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "type-assertion-follows-validation",
+        "file": "agents/hooks/lint/model-rules/typescript/type-assertion-follows-validation/fixtures/conforming.ts",
+        "line": 46,
+        "endLine": 46,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "type-assertion-follows-validation",
+        "file": "agents/hooks/lint/model-rules/typescript/type-assertion-follows-validation/fixtures/conforming.ts",
+        "line": 50,
+        "endLine": 50,
+        "kind": "noul",
+        "value": 0.15,
+        "confidence": null
+      },
+      {
+        "rule": "type-assertion-follows-validation",
+        "file": "agents/hooks/lint/model-rules/typescript/type-assertion-follows-validation/fixtures/violating.ts",
+        "line": 28,
+        "endLine": 28,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "type-assertion-follows-validation",
+        "file": "agents/hooks/lint/model-rules/typescript/type-assertion-follows-validation/fixtures/violating.ts",
+        "line": 32,
+        "endLine": 32,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "type-assertion-follows-validation",
+        "file": "agents/hooks/lint/model-rules/typescript/type-assertion-follows-validation/fixtures/violating.ts",
+        "line": 38,
+        "endLine": 38,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "type-assertion-follows-validation",
+        "file": "agents/hooks/lint/model-rules/typescript/type-assertion-follows-validation/fixtures/violating.ts",
+        "line": 45,
+        "endLine": 45,
+        "kind": "noul",
+        "value": 0.86,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "type-assertion-follows-validation",
+        "file": "agents/hooks/lint/model-rules/typescript/type-assertion-follows-validation/fixtures/conforming.ts",
+        "line": 31,
+        "endLine": 31,
+        "kind": "noul",
+        "value": 0.21,
+        "confidence": null
+      },
+      {
+        "rule": "type-assertion-follows-validation",
+        "file": "agents/hooks/lint/model-rules/typescript/type-assertion-follows-validation/fixtures/conforming.ts",
+        "line": 39,
+        "endLine": 39,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "type-assertion-follows-validation",
+        "file": "agents/hooks/lint/model-rules/typescript/type-assertion-follows-validation/fixtures/conforming.ts",
+        "line": 46,
+        "endLine": 46,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "type-assertion-follows-validation",
+        "file": "agents/hooks/lint/model-rules/typescript/type-assertion-follows-validation/fixtures/conforming.ts",
+        "line": 50,
+        "endLine": 50,
+        "kind": "noul",
+        "value": 0.18,
+        "confidence": null
+      },
+      {
+        "rule": "type-assertion-follows-validation",
+        "file": "agents/hooks/lint/model-rules/typescript/type-assertion-follows-validation/fixtures/violating.ts",
+        "line": 28,
+        "endLine": 28,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "type-assertion-follows-validation",
+        "file": "agents/hooks/lint/model-rules/typescript/type-assertion-follows-validation/fixtures/violating.ts",
+        "line": 32,
+        "endLine": 32,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "type-assertion-follows-validation",
+        "file": "agents/hooks/lint/model-rules/typescript/type-assertion-follows-validation/fixtures/violating.ts",
+        "line": 38,
+        "endLine": 38,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "type-assertion-follows-validation",
+        "file": "agents/hooks/lint/model-rules/typescript/type-assertion-follows-validation/fixtures/violating.ts",
+        "line": 45,
+        "endLine": 45,
+        "kind": "noul",
+        "value": 0.87,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "type-assertion-follows-validation",
+        "file": "agents/hooks/lint/model-rules/typescript/type-assertion-follows-validation/fixtures/violating.ts",
+        "line": 28,
+        "endLine": 28,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "type-assertion-follows-validation",
+        "file": "agents/hooks/lint/model-rules/typescript/type-assertion-follows-validation/fixtures/violating.ts",
+        "line": 32,
+        "endLine": 32,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "type-assertion-follows-validation",
+        "file": "agents/hooks/lint/model-rules/typescript/type-assertion-follows-validation/fixtures/violating.ts",
+        "line": 38,
+        "endLine": 38,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "type-assertion-follows-validation",
+        "file": "agents/hooks/lint/model-rules/typescript/type-assertion-follows-validation/fixtures/violating.ts",
+        "line": 45,
+        "endLine": 45,
+        "kind": "noul",
+        "value": 0.88,
+        "confidence": null
+      },
+      {
+        "rule": "type-assertion-follows-validation",
+        "file": "agents/hooks/lint/model-rules/typescript/type-assertion-follows-validation/fixtures/conforming.ts",
+        "line": 31,
+        "endLine": 31,
+        "kind": "noul",
+        "value": 0.22,
+        "confidence": null
+      },
+      {
+        "rule": "type-assertion-follows-validation",
+        "file": "agents/hooks/lint/model-rules/typescript/type-assertion-follows-validation/fixtures/conforming.ts",
+        "line": 39,
+        "endLine": 39,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "type-assertion-follows-validation",
+        "file": "agents/hooks/lint/model-rules/typescript/type-assertion-follows-validation/fixtures/conforming.ts",
+        "line": 46,
+        "endLine": 46,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "type-assertion-follows-validation",
+        "file": "agents/hooks/lint/model-rules/typescript/type-assertion-follows-validation/fixtures/conforming.ts",
+        "line": 50,
+        "endLine": 50,
+        "kind": "noul",
+        "value": 0.16,
+        "confidence": null
+      }
+    ]
+  ],
+  "spent": {
+    "calls": 6,
+    "inputTokens": 11688,
+    "usd": 0.000490896,
+    "ms": 188
+  }
+}

@@ -144,18 +144,21 @@ def test_typescript_rules_select_the_functions_they_ask_about(repository: Path) 
     # still counts both outer functions because it looks at every nested `throw`; the `describe`,
     # `describe.each(..)(..)` and `describe.concurrent` blocks (not the bare table call inside `describe.each`)
     # and the top level of the file, which holds two `it.concurrent` calls, are the groups of tests; `vi.mock`
-    # and `vi.doMock` are both mocks.
+    # and `vi.doMock` are both mocks. Whatever holds an arrow function, it is a subject (#196): the default export
+    # throws and `handlers.reject` returns a rejected promise; `handlers.open` reads `Date()` and `startedAt`
+    # `new Date` without parentheses; the arrow function in the conditional holds a comment; `suite` is a group
+    # of tests, and the class `LoadState` keeps its state in a flag and an optional field.
     assert counts == {
         "angle-bracket-assertion-follows-validation": 1,
         "command-query-naming": 6,
-        "comment-explains-why": 2,
+        "comment-explains-why": 3,
         "error-message-names-operation": 3,
-        "expected-failure-returned-as-value": 6,
-        "inject-time-and-randomness": 3,
+        "expected-failure-returned-as-value": 8,
+        "inject-time-and-randomness": 5,
         "known-defect-marker-names-removal": 1,
         "mock-only-external-boundaries": 2,
-        "repeated-cases-use-it-each": 4,
-        "states-modeled-as-discriminated-union": 1,
+        "repeated-cases-use-it-each": 5,
+        "states-modeled-as-discriminated-union": 2,
         "type-assertion-follows-validation": 1,
     }
 

@@ -1,0 +1,14 @@
+default: clean
+note: >-
+  Casts of unchecked JSON, `any` and response bodies, and one cast after a check that proves less than the
+  asserted type, against casts that end a validating parse or follow a full type guard.
+fixtures/violating.ts:
+  - { line: 28, label: bad, window: 1, why: "casts parsed JSON that nothing checked" }
+  - { line: 32, label: bad, window: 1, why: "casts an `any` payload to a shape it never tested" }
+  - { line: 37, label: bad, window: 1, why: "casts a response body to a list of orders without a check" }
+  - { line: 44, label: bad, window: 1, why: "the check above proves only an object, not a User" }
+fixtures/conforming.ts:
+  - { line: 31, label: clean, window: 1, why: "the last step of a validating parse that creates a brand" }
+  - { line: 39, label: clean, window: 1, why: "follows a range check that makes the brand true" }
+  - { line: 46, label: clean, window: 1, why: "follows the type guard that checks every field" }
+  - { line: 50, label: clean, window: 1, why: "a widening to unknown cannot be wrong" }

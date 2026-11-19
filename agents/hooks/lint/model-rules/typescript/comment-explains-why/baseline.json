@@ -1,0 +1,244 @@
+{
+  "schema": "jev-lint-eval-1",
+  "recorded": "2026-11-18T06:27:56.896Z",
+  "model": "jev-1.14.0",
+  "suite": "typescript/comment-explains-why",
+  "rules": [
+    {
+      "id": "comment-explains-why",
+      "draft": "e14795c2adca",
+      "at": 0.5
+    }
+  ],
+  "cutoffs": {},
+  "passes": [
+    [
+      {
+        "rule": "comment-explains-why",
+        "file": "agents/hooks/lint/model-rules/typescript/comment-explains-why/fixtures/violating.ts",
+        "line": 3,
+        "endLine": 12,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "comment-explains-why",
+        "file": "agents/hooks/lint/model-rules/typescript/comment-explains-why/fixtures/violating.ts",
+        "line": 14,
+        "endLine": 17,
+        "kind": "noul",
+        "value": 0.73,
+        "confidence": null
+      },
+      {
+        "rule": "comment-explains-why",
+        "file": "agents/hooks/lint/model-rules/typescript/comment-explains-why/fixtures/violating.ts",
+        "line": 19,
+        "endLine": 19,
+        "kind": "noul",
+        "value": 0.81,
+        "confidence": null
+      },
+      {
+        "rule": "comment-explains-why",
+        "file": "agents/hooks/lint/model-rules/typescript/comment-explains-why/fixtures/violating.ts",
+        "line": 23,
+        "endLine": 26,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "comment-explains-why",
+        "file": "agents/hooks/lint/model-rules/typescript/comment-explains-why/fixtures/conforming.ts",
+        "line": 3,
+        "endLine": 6,
+        "kind": "noul",
+        "value": 0.11,
+        "confidence": null
+      },
+      {
+        "rule": "comment-explains-why",
+        "file": "agents/hooks/lint/model-rules/typescript/comment-explains-why/fixtures/conforming.ts",
+        "line": 8,
+        "endLine": 8,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "comment-explains-why",
+        "file": "agents/hooks/lint/model-rules/typescript/comment-explains-why/fixtures/conforming.ts",
+        "line": 11,
+        "endLine": 15,
+        "kind": "noul",
+        "value": 0.08,
+        "confidence": null
+      },
+      {
+        "rule": "comment-explains-why",
+        "file": "agents/hooks/lint/model-rules/typescript/comment-explains-why/fixtures/conforming.ts",
+        "line": 17,
+        "endLine": 20,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "comment-explains-why",
+        "file": "agents/hooks/lint/model-rules/typescript/comment-explains-why/fixtures/violating.ts",
+        "line": 3,
+        "endLine": 12,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "comment-explains-why",
+        "file": "agents/hooks/lint/model-rules/typescript/comment-explains-why/fixtures/violating.ts",
+        "line": 14,
+        "endLine": 17,
+        "kind": "noul",
+        "value": 0.8,
+        "confidence": null
+      },
+      {
+        "rule": "comment-explains-why",
+        "file": "agents/hooks/lint/model-rules/typescript/comment-explains-why/fixtures/violating.ts",
+        "line": 19,
+        "endLine": 19,
+        "kind": "noul",
+        "value": 0.75,
+        "confidence": null
+      },
+      {
+        "rule": "comment-explains-why",
+        "file": "agents/hooks/lint/model-rules/typescript/comment-explains-why/fixtures/violating.ts",
+        "line": 23,
+        "endLine": 26,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "comment-explains-why",
+        "file": "agents/hooks/lint/model-rules/typescript/comment-explains-why/fixtures/conforming.ts",
+        "line": 3,
+        "endLine": 6,
+        "kind": "noul",
+        "value": 0.1,
+        "confidence": null
+      },
+      {
+        "rule": "comment-explains-why",
+        "file": "agents/hooks/lint/model-rules/typescript/comment-explains-why/fixtures/conforming.ts",
+        "line": 8,
+        "endLine": 8,
+        "kind": "noul",
+        "value": 0.07,
+        "confidence": null
+      },
+      {
+        "rule": "comment-explains-why",
+        "file": "agents/hooks/lint/model-rules/typescript/comment-explains-why/fixtures/conforming.ts",
+        "line": 11,
+        "endLine": 15,
+        "kind": "noul",
+        "value": 0.08,
+        "confidence": null
+      },
+      {
+        "rule": "comment-explains-why",
+        "file": "agents/hooks/lint/model-rules/typescript/comment-explains-why/fixtures/conforming.ts",
+        "line": 17,
+        "endLine": 20,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "comment-explains-why",
+        "file": "agents/hooks/lint/model-rules/typescript/comment-explains-why/fixtures/conforming.ts",
+        "line": 3,
+        "endLine": 6,
+        "kind": "noul",
+        "value": 0.1,
+        "confidence": null
+      },
+      {
+        "rule": "comment-explains-why",
+        "file": "agents/hooks/lint/model-rules/typescript/comment-explains-why/fixtures/conforming.ts",
+        "line": 8,
+        "endLine": 8,
+        "kind": "noul",
+        "value": 0.07,
+        "confidence": null
+      },
+      {
+        "rule": "comment-explains-why",
+        "file": "agents/hooks/lint/model-rules/typescript/comment-explains-why/fixtures/conforming.ts",
+        "line": 11,
+        "endLine": 15,
+        "kind": "noul",
+        "value": 0.08,
+        "confidence": null
+      },
+      {
+        "rule": "comment-explains-why",
+        "file": "agents/hooks/lint/model-rules/typescript/comment-explains-why/fixtures/conforming.ts",
+        "line": 17,
+        "endLine": 20,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "comment-explains-why",
+        "file": "agents/hooks/lint/model-rules/typescript/comment-explains-why/fixtures/violating.ts",
+        "line": 3,
+        "endLine": 12,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "comment-explains-why",
+        "file": "agents/hooks/lint/model-rules/typescript/comment-explains-why/fixtures/violating.ts",
+        "line": 14,
+        "endLine": 17,
+        "kind": "noul",
+        "value": 0.73,
+        "confidence": null
+      },
+      {
+        "rule": "comment-explains-why",
+        "file": "agents/hooks/lint/model-rules/typescript/comment-explains-why/fixtures/violating.ts",
+        "line": 19,
+        "endLine": 19,
+        "kind": "noul",
+        "value": 0.81,
+        "confidence": null
+      },
+      {
+        "rule": "comment-explains-why",
+        "file": "agents/hooks/lint/model-rules/typescript/comment-explains-why/fixtures/violating.ts",
+        "line": 23,
+        "endLine": 26,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      }
+    ]
+  ],
+  "spent": {
+    "calls": 6,
+    "inputTokens": 12033,
+    "usd": 0.000505386,
+    "ms": 168
+  }
+}

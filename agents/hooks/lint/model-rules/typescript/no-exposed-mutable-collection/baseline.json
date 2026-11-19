@@ -1,0 +1,244 @@
+{
+  "schema": "jev-lint-eval-1",
+  "recorded": "2026-11-18T06:27:58.723Z",
+  "model": "jev-1.14.0",
+  "suite": "typescript/no-exposed-mutable-collection",
+  "rules": [
+    {
+      "id": "no-exposed-mutable-collection",
+      "draft": "713338322d02",
+      "at": 0.5
+    }
+  ],
+  "cutoffs": {},
+  "passes": [
+    [
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "agents/hooks/lint/model-rules/typescript/no-exposed-mutable-collection/fixtures/violating.ts",
+        "line": 12,
+        "endLine": 14,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "agents/hooks/lint/model-rules/typescript/no-exposed-mutable-collection/fixtures/violating.ts",
+        "line": 20,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "agents/hooks/lint/model-rules/typescript/no-exposed-mutable-collection/fixtures/violating.ts",
+        "line": 34,
+        "endLine": 36,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "agents/hooks/lint/model-rules/typescript/no-exposed-mutable-collection/fixtures/violating.ts",
+        "line": 42,
+        "endLine": 44,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "agents/hooks/lint/model-rules/typescript/no-exposed-mutable-collection/fixtures/conforming.ts",
+        "line": 6,
+        "endLine": 8,
+        "kind": "noul",
+        "value": 0.29,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "agents/hooks/lint/model-rules/typescript/no-exposed-mutable-collection/fixtures/conforming.ts",
+        "line": 14,
+        "endLine": 16,
+        "kind": "noul",
+        "value": 0.49,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "agents/hooks/lint/model-rules/typescript/no-exposed-mutable-collection/fixtures/conforming.ts",
+        "line": 22,
+        "endLine": 24,
+        "kind": "noul",
+        "value": 0.38,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "agents/hooks/lint/model-rules/typescript/no-exposed-mutable-collection/fixtures/conforming.ts",
+        "line": 30,
+        "endLine": 32,
+        "kind": "noul",
+        "value": 0.89,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "agents/hooks/lint/model-rules/typescript/no-exposed-mutable-collection/fixtures/violating.ts",
+        "line": 12,
+        "endLine": 14,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "agents/hooks/lint/model-rules/typescript/no-exposed-mutable-collection/fixtures/violating.ts",
+        "line": 20,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "agents/hooks/lint/model-rules/typescript/no-exposed-mutable-collection/fixtures/violating.ts",
+        "line": 34,
+        "endLine": 36,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "agents/hooks/lint/model-rules/typescript/no-exposed-mutable-collection/fixtures/violating.ts",
+        "line": 42,
+        "endLine": 44,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "agents/hooks/lint/model-rules/typescript/no-exposed-mutable-collection/fixtures/conforming.ts",
+        "line": 6,
+        "endLine": 8,
+        "kind": "noul",
+        "value": 0.24,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "agents/hooks/lint/model-rules/typescript/no-exposed-mutable-collection/fixtures/conforming.ts",
+        "line": 14,
+        "endLine": 16,
+        "kind": "noul",
+        "value": 0.47,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "agents/hooks/lint/model-rules/typescript/no-exposed-mutable-collection/fixtures/conforming.ts",
+        "line": 22,
+        "endLine": 24,
+        "kind": "noul",
+        "value": 0.45,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "agents/hooks/lint/model-rules/typescript/no-exposed-mutable-collection/fixtures/conforming.ts",
+        "line": 30,
+        "endLine": 32,
+        "kind": "noul",
+        "value": 0.91,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "agents/hooks/lint/model-rules/typescript/no-exposed-mutable-collection/fixtures/conforming.ts",
+        "line": 6,
+        "endLine": 8,
+        "kind": "noul",
+        "value": 0.29,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "agents/hooks/lint/model-rules/typescript/no-exposed-mutable-collection/fixtures/conforming.ts",
+        "line": 14,
+        "endLine": 16,
+        "kind": "noul",
+        "value": 0.38,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "agents/hooks/lint/model-rules/typescript/no-exposed-mutable-collection/fixtures/conforming.ts",
+        "line": 22,
+        "endLine": 24,
+        "kind": "noul",
+        "value": 0.48,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "agents/hooks/lint/model-rules/typescript/no-exposed-mutable-collection/fixtures/conforming.ts",
+        "line": 30,
+        "endLine": 32,
+        "kind": "noul",
+        "value": 0.88,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "agents/hooks/lint/model-rules/typescript/no-exposed-mutable-collection/fixtures/violating.ts",
+        "line": 12,
+        "endLine": 14,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "agents/hooks/lint/model-rules/typescript/no-exposed-mutable-collection/fixtures/violating.ts",
+        "line": 20,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "agents/hooks/lint/model-rules/typescript/no-exposed-mutable-collection/fixtures/violating.ts",
+        "line": 34,
+        "endLine": 36,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "agents/hooks/lint/model-rules/typescript/no-exposed-mutable-collection/fixtures/violating.ts",
+        "line": 42,
+        "endLine": 44,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      }
+    ]
+  ],
+  "spent": {
+    "calls": 6,
+    "inputTokens": 11373,
+    "usd": 0.000477666,
+    "ms": 164
+  }
+}

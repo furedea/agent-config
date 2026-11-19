@@ -1,11 +1,15 @@
 # Time and randomness are arguments, not read inside logic (agents/skills/typescript-style/references/testing.md).
-# Advisory and unfitted.
+# Advisory.
 id: inject-time-and-randomness
 languages: [ TypeScript, Tsx ]
 kind: noul
 subject: node
-state: local
-threshold: 0.5
+# The whole file: a bare `randomInt(..)` is the crypto API only when the file imports it from there (#196).
+state: located
+# The cutoff is jev-lint's fitted midpoint on this folder's fixtures (4 violations, 4 conforming cases, 3 passes,
+# means, #220): the highest conforming case scored 0.62 (0.64 in its worst pass) and the lowest violation 0.96 (0.96
+# in its worst pass). A fit on so few cases is not a calibration, so the rule stays advisory (ADR-0021).
+threshold: 0.8
 axis: file
 severity: warning
 rule:
@@ -19,18 +23,13 @@ rule:
                 - kind: arrow_function
                 - kind: function_expression
                 - kind: generator_function
-            - inside:
-                any:
-                  - kind: variable_declarator
-                  - kind: public_field_definition
-                  - kind: arguments
-                  - kind: pair
-                  - kind: return_statement
     - has:
         stopBy: { any: [ { kind: generator_function_declaration }, { kind: generator_function }, { kind: function_declaration }, { kind: function_expression }, { kind: arrow_function }, { kind: method_definition } ] }
         any:
           - pattern: Date.now()
+          - pattern: Date()
           - pattern: new Date()
+          - pattern: new Date
           - pattern: Math.random()
           - pattern: $OBJ.randomUUID()
           - pattern: randomUUID()
@@ -51,4 +50,6 @@ criteria:
     of receiving the time or a random function (for example an `Rng`) as an argument or a dependency.
   "false": >-
     The function is a thin entry point or composition root that supplies the clock or random source to the logic, or it only
-    measures elapsed time for logging, or it already receives them as arguments.
+    measures elapsed time for logging, or it already receives them as arguments. A call named like a random API that
+    the file does not import from `node:crypto` or the Web Crypto API (a project helper or an injected `rng`) is not a
+    violation.

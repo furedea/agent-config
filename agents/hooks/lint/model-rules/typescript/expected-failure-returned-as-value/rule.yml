@@ -1,43 +1,39 @@
 # Expected failures are returned as values; throw is for programmer errors and unrecoverable states
-# (agents/skills/typescript-style/references/errors.md). Advisory and unfitted.
+# (agents/skills/typescript-style/references/errors.md). Advisory.
 id: expected-failure-returned-as-value
 languages: [ TypeScript, Tsx ]
 kind: noul
 subject: node
 state: local
-threshold: 0.5
+# The cutoff is jev-lint's fitted midpoint on this folder's fixtures (4 violations, 4 conforming cases, 3 passes,
+# means, #220): the highest conforming case scored 0.72 (0.77 in its worst pass) and the lowest violation 0.94 (0.94
+# in its worst pass). A fit on so few cases is not a calibration, so the rule stays advisory (ADR-0021).
+threshold: 0.86
 axis: file
 severity: warning
 rule:
   any:
     - all:
         - any: [ { kind: function_declaration }, { kind: generator_function_declaration } ]
-        - has: { kind: throw_statement, stopBy: { any: [ { kind: generator_function_declaration }, { kind: generator_function }, { kind: function_declaration }, { kind: function_expression }, { kind: arrow_function }, { kind: method_definition } ] } }
+        - has: { any: [ { kind: throw_statement }, { pattern: Promise.reject($$$) } ], stopBy: { any: [ { kind: generator_function_declaration }, { kind: generator_function }, { kind: function_declaration }, { kind: function_expression }, { kind: arrow_function }, { kind: method_definition } ] } }
     - all:
         - kind: method_definition
-        - has: { kind: throw_statement, stopBy: { any: [ { kind: generator_function_declaration }, { kind: generator_function }, { kind: function_declaration }, { kind: function_expression }, { kind: arrow_function }, { kind: method_definition } ] } }
+        - has: { any: [ { kind: throw_statement }, { pattern: Promise.reject($$$) } ], stopBy: { any: [ { kind: generator_function_declaration }, { kind: generator_function }, { kind: function_declaration }, { kind: function_expression }, { kind: arrow_function }, { kind: method_definition } ] } }
     - all:
         - any:
             - kind: arrow_function
             - kind: function_expression
             - kind: generator_function
-        - inside:
-            any:
-              - kind: variable_declarator
-              - kind: public_field_definition
-              - kind: arguments
-              - kind: pair
-              - kind: return_statement
-        - has: { kind: throw_statement, stopBy: { any: [ { kind: generator_function_declaration }, { kind: generator_function }, { kind: function_declaration }, { kind: function_expression }, { kind: arrow_function }, { kind: method_definition } ] } }
+        - has: { any: [ { kind: throw_statement }, { pattern: Promise.reject($$$) } ], stopBy: { any: [ { kind: generator_function_declaration }, { kind: generator_function }, { kind: function_declaration }, { kind: function_expression }, { kind: arrow_function }, { kind: method_definition } ] } }
 ask: >-
-  This function throws for a failure that its caller can legitimately expect, such as invalid input, a missing item, or a
+  This function throws, or returns a rejected promise, for a failure that its caller can legitimately expect, such as invalid input, a missing item, or a
   failed lookup, instead of returning the failure as a value.
 criteria:
   "true": >-
-    A throw reports a condition that depends on the data or environment and that a caller would reasonably handle, such as
+    A throw or a rejected promise (`Promise.reject`) reports a condition that depends on the data or environment and that a caller would reasonably handle, such as
     a validation failure, a record that may not exist, or a file that may be unreadable, and the function returns no
     `Result`-like value for it.
   "false": >-
-    Every throw reports a programmer error or an unrecoverable state, such as a violated precondition, an impossible
+    Every throw or rejection reports a programmer error or an unrecoverable state, such as a violated precondition, an impossible
     branch, or an invariant that the program's own code must keep. Rethrowing or wrapping a caught error with a cause, and
     a function that already returns its expected failures as values, are not violations.

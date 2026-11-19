@@ -1,0 +1,14 @@
+default: clean
+note: >-
+  Types, an interface and a class whose optional fields depend on a flag or a kind, against independent options
+  and facts, a discriminated union and a class with independent settings.
+fixtures/violating.ts:
+  - { line: 3, label: bad, window: 1, why: "a loading flag decides which optional fields are meaningful" }
+  - { line: 9, label: bad, window: 1, why: "the card fields exist only for one method" }
+  - { line: 15, label: bad, window: 1, why: "a class keeps its state in flags and optional fields" }
+  - { line: 22, label: bad, window: 1, why: "the socket and retry time depend on the connected flag" }
+fixtures/conforming.ts:
+  - { line: 3, label: clean, window: 1, why: "independent options with defaults" }
+  - { line: 9, label: clean, window: 1, why: "independent boolean facts" }
+  - { line: 15, label: clean, window: 1, why: "already a discriminated union with a tag" }
+  - { line: 20, label: clean, window: 1, why: "a class whose flag and optional field are independent settings" }

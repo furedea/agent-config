@@ -1,11 +1,18 @@
 # The angle-bracket form `<T>value` of the same rule; it does not exist in Tsx, so this rule is TypeScript only.
-# `as` is used only immediately after validation (agents/skills/typescript-style/references/types.md). Advisory and unfitted.
+# `as` is used only immediately after validation (agents/skills/typescript-style/references/types.md). Advisory.
 id: angle-bracket-assertion-follows-validation
 language: TypeScript
 kind: noul
 subject: node
-state: local
-threshold: 0.5
+# The whole file: the check that justifies the assertion is often in another function of the file (#196).
+state: located
+# The cutoff is jev-lint's fitted midpoint on this folder's fixtures (4 violations, 4 conforming cases, 3 passes,
+# means, #220): the highest conforming case scored 0.23 (0.25 in its worst pass) and the lowest violation 0.86 (0.85
+# in its worst pass). A fit on so few cases is not a calibration, so the rule stays advisory (ADR-0021).
+threshold: 0.55
+inconclusive: >-
+  Blind: every fixture is clearly clean or clearly defective (margins of 0.31 or more from the cutoff), and no
+  boundary fixture exists yet; eight cases are too few to find one.
 axis: file
 severity: warning
 rule:

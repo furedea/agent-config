@@ -1,0 +1,14 @@
+default: clean
+note: >-
+  Markers with no comment, a 'broken' or 'fix later' comment, or a symptom, against comments that name a fixed
+  defect, a dependency release or a finished feature, one of them trailing the marker.
+fixtures/violating.test.ts:
+  - { line: 3, label: bad, window: 1, why: "no comment next to the marker" }
+  - { line: 8, label: bad, window: 1, why: "the comment only says it is broken" }
+  - { line: 13, label: bad, window: 1, why: "the comment says to fix it later without a condition" }
+  - { line: 18, label: bad, window: 1, why: "the comment gives a symptom, not a removal condition" }
+fixtures/conforming.test.ts:
+  - { line: 4, label: clean, window: 1, why: "names the fixed defect that removes the marker" }
+  - { line: 9, label: clean, window: 1, why: "names the dependency release that removes the marker" }
+  - { line: 14, label: clean, window: 1, why: "names the feature whose change deletes the marker" }
+  - { line: 18, label: clean, window: 1, why: "a trailing comment on the marker names the condition" }

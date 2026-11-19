@@ -1,0 +1,244 @@
+{
+  "schema": "jev-lint-eval-1",
+  "recorded": "2026-11-18T06:27:57.090Z",
+  "model": "jev-1.14.0",
+  "suite": "typescript/construction-separate-from-execution",
+  "rules": [
+    {
+      "id": "construction-separate-from-execution",
+      "draft": "fb567434f68a",
+      "at": 0.5
+    }
+  ],
+  "cutoffs": {},
+  "passes": [
+    [
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/typescript/construction-separate-from-execution/fixtures/violating.ts",
+        "line": 3,
+        "endLine": 14,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/typescript/construction-separate-from-execution/fixtures/violating.ts",
+        "line": 17,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/typescript/construction-separate-from-execution/fixtures/violating.ts",
+        "line": 25,
+        "endLine": 36,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/typescript/construction-separate-from-execution/fixtures/violating.ts",
+        "line": 38,
+        "endLine": 42,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/typescript/construction-separate-from-execution/fixtures/conforming.ts",
+        "line": 3,
+        "endLine": 7,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/typescript/construction-separate-from-execution/fixtures/conforming.ts",
+        "line": 9,
+        "endLine": 15,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/typescript/construction-separate-from-execution/fixtures/conforming.ts",
+        "line": 20,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/typescript/construction-separate-from-execution/fixtures/conforming.ts",
+        "line": 25,
+        "endLine": 32,
+        "kind": "noul",
+        "value": 0.36,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/typescript/construction-separate-from-execution/fixtures/conforming.ts",
+        "line": 3,
+        "endLine": 7,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/typescript/construction-separate-from-execution/fixtures/conforming.ts",
+        "line": 9,
+        "endLine": 15,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/typescript/construction-separate-from-execution/fixtures/conforming.ts",
+        "line": 20,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/typescript/construction-separate-from-execution/fixtures/conforming.ts",
+        "line": 25,
+        "endLine": 32,
+        "kind": "noul",
+        "value": 0.3,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/typescript/construction-separate-from-execution/fixtures/violating.ts",
+        "line": 3,
+        "endLine": 14,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/typescript/construction-separate-from-execution/fixtures/violating.ts",
+        "line": 17,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/typescript/construction-separate-from-execution/fixtures/violating.ts",
+        "line": 25,
+        "endLine": 36,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/typescript/construction-separate-from-execution/fixtures/violating.ts",
+        "line": 38,
+        "endLine": 42,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/typescript/construction-separate-from-execution/fixtures/violating.ts",
+        "line": 3,
+        "endLine": 14,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/typescript/construction-separate-from-execution/fixtures/violating.ts",
+        "line": 17,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/typescript/construction-separate-from-execution/fixtures/violating.ts",
+        "line": 25,
+        "endLine": 36,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/typescript/construction-separate-from-execution/fixtures/violating.ts",
+        "line": 38,
+        "endLine": 42,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/typescript/construction-separate-from-execution/fixtures/conforming.ts",
+        "line": 3,
+        "endLine": 7,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/typescript/construction-separate-from-execution/fixtures/conforming.ts",
+        "line": 9,
+        "endLine": 15,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/typescript/construction-separate-from-execution/fixtures/conforming.ts",
+        "line": 20,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.04,
+        "confidence": null
+      },
+      {
+        "rule": "construction-separate-from-execution",
+        "file": "agents/hooks/lint/model-rules/typescript/construction-separate-from-execution/fixtures/conforming.ts",
+        "line": 25,
+        "endLine": 32,
+        "kind": "noul",
+        "value": 0.3,
+        "confidence": null
+      }
+    ]
+  ],
+  "spent": {
+    "calls": 6,
+    "inputTokens": 12201,
+    "usd": 0.000512442,
+    "ms": 167
+  }
+}

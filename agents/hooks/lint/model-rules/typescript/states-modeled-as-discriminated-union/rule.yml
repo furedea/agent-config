@@ -1,24 +1,38 @@
 # States and kinds are discriminated unions with a tag field, not optional fields or flags
-# (agents/skills/typescript-style/references/types.md). Advisory and unfitted.
+# (agents/skills/typescript-style/references/types.md). Advisory.
 id: states-modeled-as-discriminated-union
 languages: [ TypeScript, Tsx ]
 kind: noul
 subject: node
 state: local
-threshold: 0.5
+# The cutoff is jev-lint's fitted midpoint on this folder's fixtures (4 violations, 4 conforming cases, 3 passes,
+# means, #220): the highest conforming case scored 0.09 (0.10 in its worst pass) and the lowest violation 0.61 (0.59
+# in its worst pass). A fit on so few cases is not a calibration, so the rule stays advisory (ADR-0021).
+threshold: 0.35
+inconclusive: >-
+  Blind: every fixture is clearly clean or clearly defective (margins of 0.26 or more from the cutoff), and no
+  boundary fixture exists yet; eight cases are too few to find one.
 axis: file
 severity: warning
 rule:
-  all:
-    - any:
-        - kind: type_alias_declaration
-        - kind: interface_declaration
-    - has:
-        kind: property_signature
-        regex: '\?:|:\s*boolean\b'
-        stopBy: end
+  any:
+    - all:
+        - any:
+            - kind: type_alias_declaration
+            - kind: interface_declaration
+        - has:
+            kind: property_signature
+            regex: '\?:|:\s*boolean\b'
+            stopBy: end
+    # A class that holds its state in fields (#196): an optional field, or a boolean one by type or initial value.
+    - all:
+        - kind: class_declaration
+        - has:
+            kind: public_field_definition
+            regex: '\?:|:\s*boolean\b|=\s*(true|false)\b'
+            stopBy: end
 ask: >-
-  This type describes several states or kinds of one thing with optional fields or boolean flags, where the fields that
+  This type or class describes several states or kinds of one thing with optional fields or boolean flags, where the fields that
   exist depend on which state it is in.
 criteria:
   "true": >-
@@ -26,5 +40,5 @@ criteria:
     `hasError` that decides which other fields are meaningful), so an impossible combination can be written, and a
     discriminated union with a tag field would rule it out.
   "false": >-
-    The optional fields are independent options with sensible defaults, the booleans are independent facts, or the type
+    The optional fields (of a type or of a class) are independent options with sensible defaults, the booleans are independent facts, or the type
     already is, or is a member of, a discriminated union with a tag field.

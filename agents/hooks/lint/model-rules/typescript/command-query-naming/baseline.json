@@ -1,6 +1,6 @@
 {
   "schema": "jev-lint-eval-1",
-  "recorded": "2026-11-11T16:48:22.302Z",
+  "recorded": "2026-11-18T06:27:56.707Z",
   "model": "jev-1.14.0",
   "suite": "typescript/command-query-naming",
   "rules": [
@@ -19,7 +19,7 @@
         "line": 7,
         "endLine": 22,
         "kind": "noul",
-        "value": 0.62,
+        "value": 0.71,
         "confidence": null
       },
       {
@@ -37,7 +37,7 @@
         "line": 28,
         "endLine": 31,
         "kind": "noul",
-        "value": 0.44,
+        "value": 0.43,
         "confidence": null
       },
       {
@@ -46,7 +46,7 @@
         "line": 35,
         "endLine": 39,
         "kind": "noul",
-        "value": 0.05,
+        "value": 0.06,
         "confidence": null
       },
       {
@@ -55,7 +55,7 @@
         "line": 42,
         "endLine": 47,
         "kind": "noul",
-        "value": 0.29,
+        "value": 0.25,
         "confidence": null
       },
       {
@@ -82,7 +82,7 @@
         "line": 60,
         "endLine": 63,
         "kind": "noul",
-        "value": 0.91,
+        "value": 0.9,
         "confidence": null
       },
       {
@@ -100,7 +100,7 @@
         "line": 71,
         "endLine": 77,
         "kind": "noul",
-        "value": 0.97,
+        "value": 0.96,
         "confidence": null
       },
       {
@@ -127,7 +127,7 @@
         "line": 92,
         "endLine": 98,
         "kind": "noul",
-        "value": 0.94,
+        "value": 0.93,
         "confidence": null
       },
       {
@@ -154,7 +154,162 @@
         "line": 111,
         "endLine": 113,
         "kind": "noul",
-        "value": 0.7,
+        "value": 0.72,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 116,
+        "endLine": 118,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 7,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.71,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 26,
+        "endLine": 26,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 28,
+        "endLine": 31,
+        "kind": "noul",
+        "value": 0.43,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 35,
+        "endLine": 39,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 42,
+        "endLine": 47,
+        "kind": "noul",
+        "value": 0.31,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 50,
+        "endLine": 52,
+        "kind": "noul",
+        "value": 0.03,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 55,
+        "endLine": 57,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 60,
+        "endLine": 63,
+        "kind": "noul",
+        "value": 0.92,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 66,
+        "endLine": 68,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 71,
+        "endLine": 77,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 80,
+        "endLine": 82,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 85,
+        "endLine": 89,
+        "kind": "noul",
+        "value": 0.94,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 92,
+        "endLine": 98,
+        "kind": "noul",
+        "value": 0.94,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 101,
+        "endLine": 103,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 106,
+        "endLine": 108,
+        "kind": "noul",
+        "value": 0.9,
+        "confidence": null
+      },
+      {
+        "rule": "command-query-naming",
+        "file": "agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
+        "line": 111,
+        "endLine": 113,
+        "kind": "noul",
+        "value": 0.66,
         "confidence": null
       },
       {
@@ -192,7 +347,7 @@
         "line": 28,
         "endLine": 31,
         "kind": "noul",
-        "value": 0.44,
+        "value": 0.45,
         "confidence": null
       },
       {
@@ -201,7 +356,7 @@
         "line": 35,
         "endLine": 39,
         "kind": "noul",
-        "value": 0.05,
+        "value": 0.06,
         "confidence": null
       },
       {
@@ -210,7 +365,7 @@
         "line": 42,
         "endLine": 47,
         "kind": "noul",
-        "value": 0.25,
+        "value": 0.27,
         "confidence": null
       },
       {
@@ -273,7 +428,7 @@
         "line": 85,
         "endLine": 89,
         "kind": "noul",
-        "value": 0.92,
+        "value": 0.94,
         "confidence": null
       },
       {
@@ -282,7 +437,7 @@
         "line": 92,
         "endLine": 98,
         "kind": "noul",
-        "value": 0.93,
+        "value": 0.94,
         "confidence": null
       },
       {
@@ -309,161 +464,6 @@
         "line": 111,
         "endLine": 113,
         "kind": "noul",
-        "value": 0.64,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
-        "line": 116,
-        "endLine": 118,
-        "kind": "noul",
-        "value": 0.05,
-        "confidence": null
-      }
-    ],
-    [
-      {
-        "rule": "command-query-naming",
-        "file": "agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
-        "line": 7,
-        "endLine": 22,
-        "kind": "noul",
-        "value": 0.67,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
-        "line": 26,
-        "endLine": 26,
-        "kind": "noul",
-        "value": 0.06,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
-        "line": 28,
-        "endLine": 31,
-        "kind": "noul",
-        "value": 0.44,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
-        "line": 35,
-        "endLine": 39,
-        "kind": "noul",
-        "value": 0.05,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
-        "line": 42,
-        "endLine": 47,
-        "kind": "noul",
-        "value": 0.31,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
-        "line": 50,
-        "endLine": 52,
-        "kind": "noul",
-        "value": 0.05,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
-        "line": 55,
-        "endLine": 57,
-        "kind": "noul",
-        "value": 0.05,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
-        "line": 60,
-        "endLine": 63,
-        "kind": "noul",
-        "value": 0.9,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
-        "line": 66,
-        "endLine": 68,
-        "kind": "noul",
-        "value": 0.96,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
-        "line": 71,
-        "endLine": 77,
-        "kind": "noul",
-        "value": 0.96,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
-        "line": 80,
-        "endLine": 82,
-        "kind": "noul",
-        "value": 0.96,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
-        "line": 85,
-        "endLine": 89,
-        "kind": "noul",
-        "value": 0.92,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
-        "line": 92,
-        "endLine": 98,
-        "kind": "noul",
-        "value": 0.94,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
-        "line": 101,
-        "endLine": 103,
-        "kind": "noul",
-        "value": 0.95,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
-        "line": 106,
-        "endLine": 108,
-        "kind": "noul",
-        "value": 0.92,
-        "confidence": null
-      },
-      {
-        "rule": "command-query-naming",
-        "file": "agents/hooks/lint/model-rules/typescript/command-query-naming/fixtures/subjects.ts",
-        "line": 111,
-        "endLine": 113,
-        "kind": "noul",
         "value": 0.68,
         "confidence": null
       },
@@ -473,7 +473,7 @@
         "line": 116,
         "endLine": 118,
         "kind": "noul",
-        "value": 0.06,
+        "value": 0.05,
         "confidence": null
       }
     ]
@@ -482,6 +482,6 @@
     "calls": 3,
     "inputTokens": 24582,
     "usd": 0.001032444,
-    "ms": 201
+    "ms": 196
   }
 }

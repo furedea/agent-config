@@ -1,6 +1,6 @@
 # Go errors (agents/skills/go-style/references/errors.md: "Do not log and return the same error; handle it at one
-# level, usually the outermost"). Advisory (ADR-0021). The cutoff 0.37 is jev-lint's fitted midpoint on this folder's
-# fixtures (eval of 2026-11-18, 3 passes): the highest clean case scored 0.06 and the lowest bad one 0.67 (a retry
+# level, usually the outermost"). Advisory (ADR-0021). The cutoff 0.41 is jev-lint's fitted midpoint on this folder's
+# fixtures (eval of 2026-11-19, 3 passes): the highest clean case scored 0.06 and the lowest bad one 0.75 (a retry
 # loop that logs each attempt's error at debug level and returns the last one wrapped, which the model scores lower
 # than a plain log-and-return).
 id: error-handled-once
@@ -8,7 +8,7 @@ language: Go
 kind: noul
 subject: node
 state: local
-threshold: 0.37
+threshold: 0.41
 # The fixtures sit far from the cutoff on both sides, so replay calls the suite blind; a boundary fixture would
 # need a case a reviewer would argue over.
 inconclusive: >-

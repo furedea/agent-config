@@ -3,8 +3,8 @@
 # Repository, Connection and the like) are asked about, to spare the shared Stop subject budget; errors, standard
 # collections and value objects are not selected. The first criteria scored a composition root as a violation (0.93
 # against 0.95 for the lowest bad case); the criteria now exclude it. The cutoff 0.6 is jev-lint's fitted midpoint on
-# this folder's fixtures (eval of 2026-11-18, 3 passes, after the criteria rewrite): the highest clean case scored
-# 0.24 (a short-lived reader over an injected client) and the lowest bad one 0.95.
+# this folder's fixtures (eval of 2026-11-19, 3 passes): the highest clean case scored 0.24 (a short-lived reader over
+# an injected client) and the lowest bad one 0.96.
 id: construction-separate-from-execution
 language: Go
 kind: noul

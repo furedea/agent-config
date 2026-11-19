@@ -16,7 +16,8 @@ rule:
   all:
     - kind: command
     - has: { field: name, regex: "^set$" }
-    - regex: "^set\\s+(\\S+\\s+)*(-[a-zA-Z]*x|-o\\s+xtrace)\\b"
+    # `x` anywhere in a cluster of flags: `set -x`, `set -xe`, `set -euxo pipefail`.
+    - regex: "^set\\s+(\\S+\\s+)*(-[a-zA-Z]*x[a-zA-Z]*|-o\\s+xtrace)\\b"
 ask: >-
   While the tracing that this statement turns on is in effect, a command expands a secret (a token, a password, a
   private key's contents) or a value the user typed.

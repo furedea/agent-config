@@ -146,6 +146,13 @@ def write(root: Path, name: str, source: str) -> None:
             id="usage-unrelated-case",
         ),
         pytest.param(
+            "tracing-not-left-on-for-secrets",
+            "deploy.sh",
+            "#!/usr/bin/env bash\nset -euxo pipefail\nset -xe\nset -x\nset -o xtrace\nset +x\nset -eu\n",
+            4,
+            id="tracing-x-among-other-flags",
+        ),
+        pytest.param(
             "function-variables-local-near-use",
             "lib.sh",
             '#!/usr/bin/env bash\ncount_up() {\n  : "$((count++))"\n}\n',

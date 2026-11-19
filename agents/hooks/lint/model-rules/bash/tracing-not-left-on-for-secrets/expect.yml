@@ -7,6 +7,8 @@ fixtures/bad_debug_switch_password.bash:
   - { line: 3, label: bad, window: 1, why: "a debug switch does not excuse tracing the password" }
 fixtures/bad_user_input_traced.bash:
   - { line: 9, label: bad, window: 1, why: "a password read from the user is traced" }
+fixtures/bad_flag_cluster_traces_token.bash:
+  - { line: 2, label: bad, window: 1, why: "`-euxo` turns tracing on, and the password is expanded into printf" }
 fixtures/bad_retraced_before_secret.bash:
   - { line: 3, label: clean, window: 1, why: "the first trace ends before anything sensitive" }
   - { line: 10, label: bad, window: 1, why: "tracing comes back on before the password is expanded" }

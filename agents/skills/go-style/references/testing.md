@@ -32,6 +32,7 @@ testing; it is pre-1.0, so flags and configuration can change between minor rele
 
 ```go
 func TestNewPort(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name    string
 		value   int
@@ -42,6 +43,7 @@ func TestNewPort(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			_, err := foo.NewPort(tt.value)
 			assert.Equal(t, tt.wantErr, err != nil)
 		})

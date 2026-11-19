@@ -24,7 +24,8 @@ severity: warning
 # Limits: the logger matcher is broad on purpose and the criteria decide. It also selects calls shaped like a log that
 # are not one (`http.Error(w, msg, code)`, `cmd.Output()`, a framework `c.Error(err)`, `s.t.Fatal(...)`), and it
 # misses a log inside a closure the function runs itself (`defer func() { log.Error(err) }()`): only the literal is
-# asked about there.
+# asked about there. A call on a derived logger with arguments (`slog.With("k", v).Error(...)`, logrus
+# `log.WithError(err).Error(...)`) is not matched, because the receiver prefix allows only argument-free calls.
 rule:
   all:
     - any:

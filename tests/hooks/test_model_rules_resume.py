@@ -30,6 +30,10 @@ class Review:
         self.offered: list[int] = []
         self.judged = False
 
+    @property
+    def scope(self) -> str:
+        return repr(self.paths)
+
     def plan(self, _deadline: object, cap: int) -> Plan:
         self.offered.append(cap)
         return Plan((), self.cost, self.cost)
@@ -69,10 +73,19 @@ def test_a_failed_later_review_leaves_the_part_that_completed_to_resume_from() -
     assert outcome.resume.judgement.failed_reviews == 0
 
 
+def resume_after_failing(reviews: tuple[Review, ...]) -> Resume:
+    """The resume that a run of reviews shaped like `reviews`, whose second review fails, leaves behind."""
+    first, second = reviews[0].paths, reviews[1].paths
+    outcome = run((Review(Judgement((FINDING,), 3), paths=first), Review(Prevented("x"), paths=second)))
+    assert isinstance(outcome, Judgement)
+    assert outcome.resume is not None
+    return outcome.resume
+
+
 def test_a_resumed_run_judges_only_the_reviews_that_did_not_complete() -> None:
     first, second = Review(Judgement((FINDING,), 3)), Review(Judgement((LATER,), 3))
 
-    outcome = run((first, second), Resume(1, 3, Judgement((FINDING,), 3)))
+    outcome = run((first, second), resume_after_failing((first, second)))
 
     assert isinstance(outcome, Judgement)
     assert not first.judged
@@ -85,12 +98,25 @@ def test_a_resumed_run_judges_only_the_reviews_that_did_not_complete() -> None:
 def test_a_resumed_run_that_fails_again_resumes_from_the_same_place() -> None:
     reviews = (Review(Judgement((FINDING,), 3)), Review(Prevented("again")))
 
-    outcome = run(reviews, Resume(1, 3, Judgement((FINDING,), 3)))
+    outcome = run(reviews, resume_after_failing(reviews))
 
     assert isinstance(outcome, Judgement)
     assert outcome.resume is not None
     assert outcome.resume.completed == 1
     assert outcome.findings == (FINDING,)
+
+
+def test_a_resume_left_by_other_reviews_starts_the_run_over() -> None:
+    """Moving commits after a failure (`git reset --soft`) regroups the same files into other reviews."""
+    resume = resume_after_failing((Review(Judgement(())), Review(Judgement(()))))
+    first, second = Review(Judgement((), 3), paths=("a.py", "b.py")), Review(Judgement((LATER,), 3))
+
+    outcome = run((first, second), resume)
+
+    assert isinstance(outcome, Judgement)
+    assert first.judged
+    assert first.offered == [model_rules_run.SUBJECT_CAP]
+    assert outcome.findings == (LATER,)
 
 
 def test_the_failure_reason_is_in_the_result_line() -> None:
@@ -104,7 +130,7 @@ def test_the_failure_reason_is_in_the_result_line() -> None:
 
 
 def test_a_resume_survives_the_receipt_file() -> None:
-    resume = Resume(1, 3, Judgement((FINDING,), 3, 1, 2, 4, 5, usd=0.25))
+    resume = Resume(1, 3, Judgement((FINDING,), 3, 1, 2, 4, 5, usd=0.25), layout="reviews")
 
     assert model_rules_resume.load(model_rules_resume.dump(resume)) == resume
 

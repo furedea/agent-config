@@ -61,6 +61,8 @@ class FakeReview:
     def __init__(self, cost: int, offered: list[int]) -> None:
         self.cost = cost
         self.offered = offered
+        self.paths = ("a.py",)
+        self.scope = "a.py"
 
     def plan(self, _deadline: object, cap: int) -> Plan:
         self.offered.append(cap)
@@ -83,6 +85,7 @@ class FailingReview:
     def __init__(self, cost: int) -> None:
         self.cost = cost
         self.paths = ("a.py",)
+        self.scope = "b.py"
 
     def plan(self, _deadline: object, cap: int) -> Plan:
         return Plan((), self.cost, min(self.cost, cap))

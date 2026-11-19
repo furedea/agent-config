@@ -88,8 +88,12 @@ class Judgement:
 
 @dataclass(frozen=True, slots=True)
 class Resume:
-    """Where a run that a later review cut short continues: the reviews done, the cap they spent, and their result."""
+    """Where a run that a later review cut short continues: the reviews done, the cap they spent, and their result.
+
+    `layout` names the reviews the run was made of; only a run of the same reviews may continue from here.
+    """
 
     completed: int
     spent: int
     judgement: Judgement
+    layout: str = ""

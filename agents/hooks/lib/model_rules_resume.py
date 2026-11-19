@@ -13,6 +13,7 @@ def dump(resume: Resume) -> dict:
     return {
         "completed": resume.completed,
         "spent": resume.spent,
+        "layout": resume.layout,
         "part": {
             "findings": [asdict(finding) for finding in part.findings],
             "usd": part.usd,
@@ -37,7 +38,8 @@ def load(record: object) -> Resume | None:
             _integer(part["cached"]),
             usd=_number(part["usd"]),
         )
-        return Resume(_integer(record["completed"]), _integer(record["spent"]), judgement)
+        layout = _text(record.get("layout", ""))
+        return Resume(_integer(record["completed"]), _integer(record["spent"]), judgement, layout)
     except KeyError, TypeError, ValueError:
         return None
 
@@ -53,6 +55,12 @@ def _finding(item: dict) -> Finding:
     if not isinstance(rule_key, str):
         raise TypeError("reading a resume from the receipt: finding fields must be strings")
     return Finding(rule, file, _integer(item["line"]), message, *scores, rule_key, _integer(item.get("end_line", 0)))
+
+
+def _text(value: object) -> str:
+    if not isinstance(value, str):
+        raise TypeError(f"reading a resume from the receipt: expected a string, got {value!r}")
+    return value
 
 
 def _integer(value: object) -> int:

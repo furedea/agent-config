@@ -5,6 +5,7 @@ so the hook handles only the service-account token, and only in the environment 
 are started by the trusted absolute paths of `model_rules_programs`, with a PATH that holds nothing else.
 """
 
+import hashlib
 import json
 import os
 import signal
@@ -76,6 +77,11 @@ class Review:
     cache: Path
     programs: Programs
     paths: tuple[str, ...] = ()
+
+    @property
+    def scope(self) -> str:
+        """What this review judges: the commits it starts from, its rules and its files."""
+        return json.dumps([self.base, [str(path) for path in self.rules], list(self.paths)])
 
     def plan(self, deadline: Deadline, cap: int) -> Plan | Prevented:
         """Count the subjects without asking the model, and keep the files whose subjects fit `cap`."""
@@ -176,9 +182,14 @@ class Reviews:
     resume: Resume | None = None
 
     def judge(self, credentials: Credentials, deadline: Deadline) -> Judgement | Prevented:
-        """Judge each review in turn; a later review that fails is reported with where to resume from."""
-        progress = self._start()
-        for position in range(self.resume.completed if self.resume else 0, len(self.reviews)):
+        """Judge each review in turn; a later review that fails is reported with where to resume from.
+
+        A resume left by other reviews, such as those of a commit layout that changed after the failure, starts the
+        run over: its positions would point at different reviews.
+        """
+        resume = self.resume if self.resume and self.resume.layout == self._layout() else None
+        progress = _Progress.start(resume)
+        for position in range(resume.completed if resume else 0, len(self.reviews)):
             review = self.reviews[position]
             plan = review.plan(deadline, progress.cap)
             if isinstance(plan, Prevented):
@@ -189,10 +200,12 @@ class Reviews:
             progress = progress.after(plan, outcome)
         return progress.combined
 
-    def _start(self) -> _Progress:
-        if self.resume is None:
-            return _Progress(Judgement(()), SUBJECT_CAP)
-        return _Progress(self.resume.judgement, max(0, SUBJECT_CAP - self.resume.spent))
+    def _layout(self) -> str:
+        digest = hashlib.sha256()
+        for review in self.reviews:
+            digest.update(review.scope.encode())
+            digest.update(b"\0")
+        return digest.hexdigest()
 
     def _cut_short(self, position: int, prevented: Prevented, progress: _Progress) -> Judgement | Prevented:
         """The first review failing prevents the run; a later one keeps the earlier findings and is retried alone."""
@@ -203,7 +216,7 @@ class Reviews:
             skipped_files=len(self.reviews[position].paths) or 1,
             failed_reviews=1,
             failure_reason=prevented.reason,
-            resume=Resume(position, SUBJECT_CAP - progress.cap, progress.combined),
+            resume=Resume(position, SUBJECT_CAP - progress.cap, progress.combined, self._layout()),
         )
         return progress.combined.combined(failure)
 
@@ -214,6 +227,13 @@ class _Progress:
 
     combined: Judgement
     cap: int
+
+    @classmethod
+    def start(cls, resume: Resume | None) -> _Progress:
+        """The progress before the first review is judged, or where `resume` left off."""
+        if resume is None:
+            return cls(Judgement(()), SUBJECT_CAP)
+        return cls(resume.judgement, max(0, SUBJECT_CAP - resume.spent))
 
     def after(self, plan: Plan, outcome: Judgement) -> _Progress:
         """The progress once a review that cost `plan.cost` subjects has produced `outcome`."""

@@ -11,3 +11,4 @@ fixtures/subjects.py:
   - { line: 69, label: clean, window: 1, why: "returns a copy" }
   - { line: 72, label: clean, window: 1, why: "returns one element, not the collection" }
   - { line: 80, label: clean, window: 1, why: "a plain record with no invariants" }
+  - { line: 95, label: bad, window: 1, why: "returns the guarded member list through a public field" }

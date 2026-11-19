@@ -10,3 +10,4 @@ fixtures/subjects.py:
   - { line: 30, label: clean, window: 1, why: "a standard-library module path" }
   - { line: 35, label: clean, window: 1, why: "data access on a webhook payload DTO" }
   - { line: 39, label: clean, window: 1, why: "a path on a plain settings record" }
+  - { line: 48, label: bad, window: 1, why: "reads through the customer into the address without a call" }

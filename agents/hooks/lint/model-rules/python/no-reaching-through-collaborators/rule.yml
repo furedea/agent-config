@@ -1,6 +1,6 @@
 # M-32 Law of Demeter (agents/AGENTS.md: "prefer DRY, YAGNI, and Law of Demeter"). Advisory: the Stop hook reports
-# findings and never promotes this rule to a gate (ADR-0021). Selected by a call chain of three member accesses or
-# more; the criteria exempt fluent builders and standard libraries.
+# findings and never promotes this rule to a gate (ADR-0021). Selected by a chain of three member accesses or more,
+# whether a call ends it or not; the criteria exempt fluent builders and standard libraries.
 id: no-reaching-through-collaborators
 language: Python
 kind: noul
@@ -14,7 +14,7 @@ severity: warning
 rule:
   all:
     - kind: function_definition
-    - has: { pattern: $A.$B.$C.$D($$$), stopBy: end }
+    - has: { pattern: $A.$B.$C.$D, stopBy: end }
 ask: >-
   This function reaches through one collaborator into another's internals instead of asking its direct collaborator.
 criteria:

@@ -21,9 +21,12 @@ from model_rules_programs import Programs
 from session_store import LockTimeoutError, StateError, file_lock, private_directory
 
 REVIEWER = "jev-lint"
-# Measured: the largest merged PR of this repository plans 104 subjects in 10 requests (about 0.0025 USD), and real
-# Stop runs took 3 to 8 seconds whatever the subject count, because requests run concurrently. Twice that fits whole.
-SUBJECT_CAP = 250
+# Measured once (2026-11-18, jev-lint 0.7.0, model jev-1.14.0, fresh cache): #201, the largest merged PR, is 988
+# subjects in 60 requests, all answered, none retried or rate limited; `op run` plus `jev-lint review` took 3.41 s
+# (0.97 s of it asking, concurrency 32) and 0.025 USD. The cap holds twice that whole; at about 590 input tokens a
+# subject it is about 98% of jev-lint's 1.2M-token burst, so pacing at 200k tokens a second adds at most about 6 s, and
+# even ten times the measured time is far below 70% of BUDGET_SECONDS.
+SUBJECT_CAP = 2000
 PLAN_TIMEOUT_SECONDS = 20.0
 JUDGE_TIMEOUT_SECONDS = 60.0
 LOCK_TIMEOUT_SECONDS = 30.0
@@ -80,7 +83,7 @@ class Review:
         if isinstance(report, Prevented):
             return report
         try:
-            return _capped_plan(report, cap)
+            return _capped_plan(report, cap, self.paths)
         except ValueError, KeyError, TypeError, AttributeError:
             return Prevented(f"{REVIEWER} printed a plan that cannot be read")
 
@@ -296,20 +299,28 @@ def _unjudged(plan: Plan) -> Judgement:
     return Judgement((), plan.subjects, plan.skipped_files, plan.skipped_subjects)
 
 
-def _capped_plan(report: dict, cap: int) -> Plan:
+def _capped_plan(report: dict, cap: int, paths: tuple[str, ...]) -> Plan:
+    """Keep the files whose uncached subjects fit `cap`, and every file that asks the model nothing.
+
+    The dry run plans batches only for the subjects the verdict cache cannot answer, so a file of `paths` with no batch
+    costs nothing: it is kept, and its cached verdicts are still reported.
+    """
     subjects, cached = _count(report, "subjects"), _count(report, "cached")
     if subjects - cached <= cap:
         return Plan((), subjects, subjects - cached)
     per_file: dict[str, int] = {}
     for batch in report["batches"]:
         per_file[batch["file"]] = per_file.get(batch["file"], 0) + _count(batch, "subjects")
-    chosen: list[str] = []
+    chosen = [path for path in paths if path not in per_file]
     total = 0
     for file, count in per_file.items():
         if not file.startswith("-") and total + count <= cap:
             chosen.append(file)
             total += count
     skipped = {file for file in per_file if file not in chosen}
+    if not chosen:
+        # No paths would mean the whole diff, so a plan that keeps nothing judges nothing.
+        return Plan((), subjects, 0, len(skipped), subjects)
     return Plan(tuple(chosen), subjects, total, len(skipped), sum(per_file[file] for file in skipped))
 
 

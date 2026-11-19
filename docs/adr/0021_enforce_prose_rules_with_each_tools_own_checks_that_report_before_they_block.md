@@ -6,6 +6,7 @@ partly-superseded-by: [ADR-0027]
 amended:
   - "2026-11-11: the hook behaviour, the two reviews, the Keychain"
   - "2026-11-15: static rules block on edit; suppression; shared rules only in trusted repositories"
+  - "2026-11-19: the subject cap and the files it keeps; the run's time"
 ---
 
 # ADR-0021: Enforce prose rules with each tool's own checks that report before they block
@@ -85,11 +86,18 @@ own repositories get model judgement and the shared static rules.
 - **Subjects and context.** `jev-lint` selects the subjects with each rule's ast-grep matcher and judges per function
     (the rule's `subject:`). Each subject is judged with the function plus the same file's imports and enclosing
     declarations (state arm `local`); no other file is sent. Only functions changed in the session are judged, at most
-    250 per Stop, and the hook reports how many were skipped. The value comes from measurement: over this
-    repository's merged PRs, `jev-lint review --dry-run` planned at most 104 subjects in 10 requests (about 0.0025
-    USD), and 30 recorded Stop runs took 2.7 to 7.9 seconds for 1 to 8 requests, because requests run concurrently
-    and wall time follows the request count, not the subject count. 250 holds twice the largest measured session
-    whole, costs about 0.006 USD per Stop at the cap, and leaves the 90-second Stop budget a wide margin.
+    2000 per Stop, and the hook reports how many were skipped. The cap counts only subjects the verdict cache cannot
+    answer, since the dry run plans requests for those alone; when the cap leaves files out, a file whose subjects
+    are all cached is still passed, so its cached findings are still reported, and a plan that keeps no file sends
+    nothing rather than the whole diff. The value comes from measurement: with
+    every model rule fitted in #240-#244, `jev-lint review --dry-run` over this repository's merged PRs planned up to
+    988 subjects in 60 requests (#201). One uncached run of that diff (2026-11-18, `jev-lint` 0.7.0, model
+    `jev-1.14.0`) sent the 60 requests, got an answer for all 988 subjects with no retry or rate limit, and took 3.41
+    seconds through `op run` (0.97 seconds of it asking, at the default concurrency of 32) for 0.025 USD. 2000 holds
+    twice that session whole, costs about 0.05 USD per Stop at the cap, uses about 98% of `jev-lint`'s token burst so
+    that pacing adds at most about 6 seconds, and leaves the run far inside 70% of its 90-second budget. It was measured once, so the
+    margin, not the single number, carries the decision. The previous cap of 250 came from 104 subjects at most,
+    measured before those rules existed.
 - **Cache.** The hook does not keep a cache of its own. It passes `jev-lint` its verdict cache (`-c <path>`) stored
     outside the repository, under the agent state directory, because `jev-lint` documents the cache as trusted input
     that can silence rules, and a file inside the repository could be committed. Keeping it under the state directory
@@ -124,7 +132,9 @@ own repositories get model judgement and the shared static rules.
     token as `OP_SERVICE_ACCOUNT_TOKEN` only to the `op` child process, never to the agent, and to `jev-lint` only
     through what `op` injects. Child processes get only an allowlist of environment variables, so a variable such as
     `TYPESAFE_BASE_URL` cannot redirect the request, and their standard error is discarded.
-- **Failure behaviour.** A run has 60 seconds and never ends in a block for a reason other than a finding. When it
+- **Failure behaviour.** A run has at most 90 seconds of a Stop, less what the verification has used, and each
+    child in it at most 60 seconds (20 for a planning dry run); it never ends in a block for a reason other than a
+    finding. When it
     is skipped (untrusted repository, kill switch, missing Keychain item, missing `op` or `jev-lint`) or fails
     (timeout, non-zero exit, unparsable output, errors reported by `jev-lint`), the hook returns a one-line message
     instead of staying silent, and does not store a receipt, so the next Stop tries again.

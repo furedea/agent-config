@@ -124,7 +124,7 @@ few cases is not a calibration, so the prose of a model-judged rule stays in `AG
     Stop once, so the agent sees them. The same inputs only notify (`jev-lint: 2 findings · unchanged; not rerun`) and
     never block again. The Stop message is one line, shaped like the test lines:
     `jev-lint: 0 findings · 74 subjects · passed · $0.0004 · 4.3s`. With findings the state reads `advisory`; when the
-    cap skipped subjects the count reads `judged/total` (`250/310 subjects`); a review that did not run reads
+    cap skipped subjects the count reads `judged/total` (`2000/2400 subjects`); a review that did not run reads
     `jev-lint: skipped · <reason>`. The cost is `spent.usd` of the review JSON, summed over the two reviews. The
     findings (`- rule · file:line`, without the rule's text) and the instruction "Fix each one, or say why it does not
     apply." appear only in the block reason. The receipt also stores the requests, cached count, seconds and cost so
@@ -151,11 +151,11 @@ few cases is not a calibration, so the prose of a model-judged rule stays in `AG
     and the files git does not track yet (limited here to the files the session changed since registration, so
     files that were already dirty and untouched are not sent; the rule fixtures under
     `agents/hooks/lint/model-rules/**/fixtures/**` hold violations on purpose and are never sent). The hook runs both: the first with the commit `HEAD` named at session start
-    (recorded in `baseline.json`; an older record has none and only the second runs), the second always. At most 250
+    (recorded in `baseline.json`; an older record has none and only the second runs), the second always. At most 2000
     subjects are judged per Stop, whole files at a time; the rest is reported as skipped. The cap comes from
-    measurement: the largest merged PR planned 104 subjects in 10 requests, and recorded Stop runs took 2.7 to 7.9
-    seconds whatever the subject count (ADR-0021). Subjects already in the
-    verdict cache are not counted. A repository whose owner `trusted_owners.json` does not trust is never sent to the
+    measurement: the largest merged PR, #201, plans 988 subjects in 60 requests, and one uncached run of it took 3.41
+    seconds (ADR-0021). Subjects already in the verdict cache are not counted, a file whose subjects are all cached is
+    always kept, and when no file fits nothing is sent. A repository whose owner `trusted_owners.json` does not trust is never sent to the
     model. `AGENT_MODEL_RULES=off` turns the rules off.
 - **Process boundary.** `jev-lint review --json --no-config --fail-on error -R <rules> -c <cache> [--base <commit>]`
     runs under `op run --environment <id> --`, which injects the key; `--no-config` keeps a repository's

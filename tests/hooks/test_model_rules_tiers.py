@@ -159,9 +159,10 @@ def test_a_run_with_a_failed_review_is_reported_as_incomplete_not_passed() -> No
     assert "passed" not in line
 
 
-# Measured with `jev-lint review --dry-run` over this repository's merged PRs: the largest session planned 104
-# subjects in 10 requests. The cap must hold such a session whole, and the requests must fit the Stop budget.
-LARGEST_MEASURED_SESSION_SUBJECTS = 104
+# Measured with `jev-lint review --dry-run` over this repository's merged PRs with every model rule of #240-#244: the
+# largest, #201, planned 988 subjects in 60 requests. The cap must hold such a session whole, and the requests must fit
+# the Stop budget.
+LARGEST_MEASURED_SESSION_SUBJECTS = 988
 
 
 def test_the_subject_cap_holds_the_largest_measured_session_whole() -> None:

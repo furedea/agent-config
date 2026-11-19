@@ -1,9 +1,9 @@
 # bash-style: "keep it disabled by default for scripts handling secrets or user input" and "suppress tracing around noisy
 # or sensitive sections".
 # Advisory; the prose stays until the rule is promoted (ADR-0021). The cutoff stays at the 0.5 starting value: the
-# fixtures do not separate. Limit: a `set -x` that turns tracing back on after a `set +x` and before a secret scored
-# 0.13 (bad_retraced_before_secret.bash:10), as low as the cleans (highest 0.17); the other three bad cases scored 0.96
-# or more.
+# fixtures do not separate (eval of 2026-11-19, 5 bad, 6 clean, 3 passes). Limit: a `set -x` that turns tracing back
+# on after a `set +x` and before a secret scored 0.16 (bad_retraced_before_secret.bash:10), as low as the cleans
+# (highest 0.16); the other four bad cases, the `set -euxo pipefail` cluster among them, scored 0.94 or more.
 id: tracing-not-left-on-for-secrets
 language: Bash
 kind: noul

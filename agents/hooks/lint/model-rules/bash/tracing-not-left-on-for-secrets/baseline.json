@@ -1,12 +1,12 @@
 {
   "schema": "jev-lint-eval-1",
-  "recorded": "2026-11-18T06:27:42.898Z",
+  "recorded": "2026-11-19T12:20:16.754Z",
   "model": "jev-1.14.0",
   "suite": "bash/tracing-not-left-on-for-secrets",
   "rules": [
     {
       "id": "tracing-not-left-on-for-secrets",
-      "draft": "296b6ffc40e2",
+      "draft": "9a71ca2c42cb",
       "at": 0.5
     }
   ],
@@ -15,11 +15,20 @@
     [
       {
         "rule": "tracing-not-left-on-for-secrets",
+        "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/bad_user_input_traced.bash",
+        "line": 9,
+        "endLine": 9,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "tracing-not-left-on-for-secrets",
         "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/bad_debug_switch_password.bash",
         "line": 3,
         "endLine": 3,
         "kind": "noul",
-        "value": 0.97,
+        "value": 0.96,
         "confidence": null
       },
       {
@@ -33,7 +42,126 @@
       },
       {
         "rule": "tracing-not-left-on-for-secrets",
+        "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/bad_token_in_header.bash",
+        "line": 3,
+        "endLine": 3,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "tracing-not-left-on-for-secrets",
+        "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/bad_flag_cluster_traces_token.bash",
+        "line": 2,
+        "endLine": 2,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "tracing-not-left-on-for-secrets",
+        "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/clean_trace_scoped_to_build.bash",
+        "line": 7,
+        "endLine": 7,
+        "kind": "noul",
+        "value": 0.07,
+        "confidence": null
+      },
+      {
+        "rule": "tracing-not-left-on-for-secrets",
         "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/bad_retraced_before_secret.bash",
+        "line": 3,
+        "endLine": 3,
+        "kind": "noul",
+        "value": 0.12,
+        "confidence": null
+      },
+      {
+        "rule": "tracing-not-left-on-for-secrets",
+        "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/bad_retraced_before_secret.bash",
+        "line": 10,
+        "endLine": 10,
+        "kind": "noul",
+        "value": 0.12,
+        "confidence": null
+      },
+      {
+        "rule": "tracing-not-left-on-for-secrets",
+        "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/clean_off_around_secret.bash",
+        "line": 3,
+        "endLine": 3,
+        "kind": "noul",
+        "value": 0.16,
+        "confidence": null
+      },
+      {
+        "rule": "tracing-not-left-on-for-secrets",
+        "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/clean_off_around_secret.bash",
+        "line": 10,
+        "endLine": 10,
+        "kind": "noul",
+        "value": 0.16,
+        "confidence": null
+      },
+      {
+        "rule": "tracing-not-left-on-for-secrets",
+        "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/clean_secret_file_not_expanded.bash",
+        "line": 3,
+        "endLine": 3,
+        "kind": "noul",
+        "value": 0.11,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "tracing-not-left-on-for-secrets",
+        "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/bad_retraced_before_secret.bash",
+        "line": 3,
+        "endLine": 3,
+        "kind": "noul",
+        "value": 0.16,
+        "confidence": null
+      },
+      {
+        "rule": "tracing-not-left-on-for-secrets",
+        "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/bad_retraced_before_secret.bash",
+        "line": 10,
+        "endLine": 10,
+        "kind": "noul",
+        "value": 0.16,
+        "confidence": null
+      },
+      {
+        "rule": "tracing-not-left-on-for-secrets",
+        "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/bad_debug_switch_password.bash",
+        "line": 3,
+        "endLine": 3,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "tracing-not-left-on-for-secrets",
+        "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/bad_flag_cluster_traces_token.bash",
+        "line": 2,
+        "endLine": 2,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "tracing-not-left-on-for-secrets",
+        "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/clean_trace_scoped_to_build.bash",
+        "line": 7,
+        "endLine": 7,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "tracing-not-left-on-for-secrets",
+        "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/clean_off_around_secret.bash",
         "line": 3,
         "endLine": 3,
         "kind": "noul",
@@ -42,7 +170,7 @@
       },
       {
         "rule": "tracing-not-left-on-for-secrets",
-        "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/bad_retraced_before_secret.bash",
+        "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/clean_off_around_secret.bash",
         "line": 10,
         "endLine": 10,
         "kind": "noul",
@@ -60,11 +188,85 @@
       },
       {
         "rule": "tracing-not-left-on-for-secrets",
+        "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/clean_no_secret.bash",
+        "line": 3,
+        "endLine": 3,
+        "kind": "noul",
+        "value": 0.03,
+        "confidence": null
+      },
+      {
+        "rule": "tracing-not-left-on-for-secrets",
+        "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/bad_token_in_header.bash",
+        "line": 3,
+        "endLine": 3,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "tracing-not-left-on-for-secrets",
+        "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/clean_secret_file_not_expanded.bash",
+        "line": 3,
+        "endLine": 3,
+        "kind": "noul",
+        "value": 0.13,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "tracing-not-left-on-for-secrets",
+        "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/bad_debug_switch_password.bash",
+        "line": 3,
+        "endLine": 3,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "tracing-not-left-on-for-secrets",
+        "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/clean_trace_scoped_to_build.bash",
+        "line": 7,
+        "endLine": 7,
+        "kind": "noul",
+        "value": 0.07,
+        "confidence": null
+      },
+      {
+        "rule": "tracing-not-left-on-for-secrets",
+        "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/clean_no_secret.bash",
+        "line": 3,
+        "endLine": 3,
+        "kind": "noul",
+        "value": 0.03,
+        "confidence": null
+      },
+      {
+        "rule": "tracing-not-left-on-for-secrets",
+        "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/bad_token_in_header.bash",
+        "line": 3,
+        "endLine": 3,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "tracing-not-left-on-for-secrets",
+        "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/bad_flag_cluster_traces_token.bash",
+        "line": 2,
+        "endLine": 2,
+        "kind": "noul",
+        "value": 0.94,
+        "confidence": null
+      },
+      {
+        "rule": "tracing-not-left-on-for-secrets",
         "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/clean_off_around_secret.bash",
         "line": 3,
         "endLine": 3,
         "kind": "noul",
-        "value": 0.19,
+        "value": 0.21,
         "confidence": null
       },
       {
@@ -73,14 +275,14 @@
         "line": 10,
         "endLine": 10,
         "kind": "noul",
-        "value": 0.19,
+        "value": 0.21,
         "confidence": null
       },
       {
         "rule": "tracing-not-left-on-for-secrets",
-        "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/bad_token_in_header.bash",
-        "line": 3,
-        "endLine": 3,
+        "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/bad_user_input_traced.bash",
+        "line": 9,
+        "endLine": 9,
         "kind": "noul",
         "value": 0.98,
         "confidence": null
@@ -96,54 +298,7 @@
       },
       {
         "rule": "tracing-not-left-on-for-secrets",
-        "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/clean_trace_scoped_to_build.bash",
-        "line": 7,
-        "endLine": 7,
-        "kind": "noul",
-        "value": 0.07,
-        "confidence": null
-      }
-    ],
-    [
-      {
-        "rule": "tracing-not-left-on-for-secrets",
-        "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/bad_user_input_traced.bash",
-        "line": 9,
-        "endLine": 9,
-        "kind": "noul",
-        "value": 0.98,
-        "confidence": null
-      },
-      {
-        "rule": "tracing-not-left-on-for-secrets",
-        "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/clean_no_secret.bash",
-        "line": 3,
-        "endLine": 3,
-        "kind": "noul",
-        "value": 0.03,
-        "confidence": null
-      },
-      {
-        "rule": "tracing-not-left-on-for-secrets",
-        "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/bad_token_in_header.bash",
-        "line": 3,
-        "endLine": 3,
-        "kind": "noul",
-        "value": 0.96,
-        "confidence": null
-      },
-      {
-        "rule": "tracing-not-left-on-for-secrets",
-        "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/bad_debug_switch_password.bash",
-        "line": 3,
-        "endLine": 3,
-        "kind": "noul",
-        "value": 0.96,
-        "confidence": null
-      },
-      {
-        "rule": "tracing-not-left-on-for-secrets",
-        "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/clean_off_around_secret.bash",
+        "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/bad_retraced_before_secret.bash",
         "line": 3,
         "endLine": 3,
         "kind": "noul",
@@ -152,147 +307,19 @@
       },
       {
         "rule": "tracing-not-left-on-for-secrets",
-        "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/clean_off_around_secret.bash",
+        "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/bad_retraced_before_secret.bash",
         "line": 10,
         "endLine": 10,
         "kind": "noul",
         "value": 0.16,
-        "confidence": null
-      },
-      {
-        "rule": "tracing-not-left-on-for-secrets",
-        "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/clean_trace_scoped_to_build.bash",
-        "line": 7,
-        "endLine": 7,
-        "kind": "noul",
-        "value": 0.07,
-        "confidence": null
-      },
-      {
-        "rule": "tracing-not-left-on-for-secrets",
-        "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/clean_secret_file_not_expanded.bash",
-        "line": 3,
-        "endLine": 3,
-        "kind": "noul",
-        "value": 0.11,
-        "confidence": null
-      },
-      {
-        "rule": "tracing-not-left-on-for-secrets",
-        "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/bad_retraced_before_secret.bash",
-        "line": 3,
-        "endLine": 3,
-        "kind": "noul",
-        "value": 0.12,
-        "confidence": null
-      },
-      {
-        "rule": "tracing-not-left-on-for-secrets",
-        "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/bad_retraced_before_secret.bash",
-        "line": 10,
-        "endLine": 10,
-        "kind": "noul",
-        "value": 0.12,
-        "confidence": null
-      }
-    ],
-    [
-      {
-        "rule": "tracing-not-left-on-for-secrets",
-        "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/clean_secret_file_not_expanded.bash",
-        "line": 3,
-        "endLine": 3,
-        "kind": "noul",
-        "value": 0.12,
-        "confidence": null
-      },
-      {
-        "rule": "tracing-not-left-on-for-secrets",
-        "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/clean_trace_scoped_to_build.bash",
-        "line": 7,
-        "endLine": 7,
-        "kind": "noul",
-        "value": 0.07,
-        "confidence": null
-      },
-      {
-        "rule": "tracing-not-left-on-for-secrets",
-        "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/bad_user_input_traced.bash",
-        "line": 9,
-        "endLine": 9,
-        "kind": "noul",
-        "value": 0.98,
-        "confidence": null
-      },
-      {
-        "rule": "tracing-not-left-on-for-secrets",
-        "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/bad_token_in_header.bash",
-        "line": 3,
-        "endLine": 3,
-        "kind": "noul",
-        "value": 0.96,
-        "confidence": null
-      },
-      {
-        "rule": "tracing-not-left-on-for-secrets",
-        "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/bad_debug_switch_password.bash",
-        "line": 3,
-        "endLine": 3,
-        "kind": "noul",
-        "value": 0.96,
-        "confidence": null
-      },
-      {
-        "rule": "tracing-not-left-on-for-secrets",
-        "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/clean_off_around_secret.bash",
-        "line": 3,
-        "endLine": 3,
-        "kind": "noul",
-        "value": 0.15,
-        "confidence": null
-      },
-      {
-        "rule": "tracing-not-left-on-for-secrets",
-        "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/clean_off_around_secret.bash",
-        "line": 10,
-        "endLine": 10,
-        "kind": "noul",
-        "value": 0.15,
-        "confidence": null
-      },
-      {
-        "rule": "tracing-not-left-on-for-secrets",
-        "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/clean_no_secret.bash",
-        "line": 3,
-        "endLine": 3,
-        "kind": "noul",
-        "value": 0.03,
-        "confidence": null
-      },
-      {
-        "rule": "tracing-not-left-on-for-secrets",
-        "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/bad_retraced_before_secret.bash",
-        "line": 3,
-        "endLine": 3,
-        "kind": "noul",
-        "value": 0.12,
-        "confidence": null
-      },
-      {
-        "rule": "tracing-not-left-on-for-secrets",
-        "file": "agents/hooks/lint/model-rules/bash/tracing-not-left-on-for-secrets/fixtures/bad_retraced_before_secret.bash",
-        "line": 10,
-        "endLine": 10,
-        "kind": "noul",
-        "value": 0.12,
         "confidence": null
       }
     ]
   ],
   "spent": {
-    "calls": 24,
-    "inputTokens": 20079,
-    "usd": 0.000843318,
-    "ms": 254
+    "calls": 27,
+    "inputTokens": 22554,
+    "usd": 0.0009472680000000001,
+    "ms": 244
   }
 }

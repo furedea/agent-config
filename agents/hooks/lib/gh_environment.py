@@ -49,10 +49,10 @@ LESS_PROGRAM_VARIABLES = ("LESSOPEN", "LESSCLOSE", "LESSKEY", "LESSKEYIN", "LESS
 LESS_FLAGS = re.compile(r"-?[A-Za-z]*")
 CREDENTIAL_HELPERS = r"^credential\..*helper$"
 # git settings naming a program a read such as status, diff, log, or show may run: a diff driver, a filter
-# that cleans worktree files, a file system monitor, a pager, or a signature verifier.
+# that cleans worktree files, a file system monitor, a pager, a signature verifier, or a hook.
 READ_PROGRAM_SETTINGS = (
     r"^(diff\.external|diff\..*\.(textconv|command)|filter\..*\.(clean|smudge|process)"
-    r"|core\.(fsmonitor|pager|hookspath)|pager\..*|interactive\.difffilter|gpg\.(.*\.)?program|log\.showsignature)$"
+    r"|core\.(fsmonitor|pager|hookspath)|pager\..*|interactive\.difffilter|gpg\.(.*\.)?program|log\.showsignature|hook\..*)$"
 )
 TRUSTED_SCOPES = frozenset({"global", "system"})
 # The only hook a status, diff, or other read may run, when it rewrites the index.
@@ -218,12 +218,16 @@ def git_read_may_run_program() -> bool:
 
 
 def _has_repository_hook() -> bool:
-    """Whether the repository holds the hook a read that refreshes the index runs; commit and push hooks do not run."""
-    output = git_output("rev-parse", "--git-common-dir")
-    if output is None:
+    """Whether the repository holds the hook a read that refreshes the index runs, or submodules a read enters.
+
+    git names the hook's path itself, following core.hooksPath and worktrees; commit and push hooks never run
+    on a read. A submodule has its own configuration and hooks, so a repository with any asks.
+    """
+    hook = git_output("rev-parse", "--git-path", f"hooks/{READ_HOOK}")
+    top = git_output("rev-parse", "--show-toplevel")
+    if hook is None or top is None:
         return True
-    hook = Path(output.strip()) / "hooks" / READ_HOOK
-    return bool(output.strip()) and hook.exists()
+    return bool(hook.strip()) and (Path(hook.strip()).exists() or (Path(top.strip()) / ".gitmodules").exists())
 
 
 def _is_installed_lfs_filter(setting: str) -> bool:

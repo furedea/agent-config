@@ -123,6 +123,13 @@ def test_a_git_read_asks_while_the_repository_holds_a_hook() -> None:
 
 
 @pytest.mark.usefixtures("furedea_checkout")
+def test_a_git_read_asks_in_a_repository_with_submodules() -> None:
+    assert decide("git status; gh pr list -R furedea/agent-config") == "allow"
+    Path(".gitmodules").write_text('[submodule "x"]\n\tpath = x\n\turl = ./x\n')
+    assert decide("git status; gh pr list -R furedea/agent-config") == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
 def test_a_git_read_asks_while_the_environment_injects_a_program_setting(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("GIT_CONFIG_COUNT", "1")
     monkeypatch.setenv("GIT_CONFIG_KEY_0", "core.fsmonitor")
@@ -155,6 +162,7 @@ def test_a_git_read_asks_while_the_environment_names_an_external_diff(monkeypatc
         ("filter.x.clean", "./x"),
         ("core.fsmonitor", "./x"),
         ("gpg.program", "./x"),
+        ("hook.x.command", "./x"),
     ],
 )
 def test_a_git_read_that_may_run_a_configured_program_still_asks(setting: tuple[str, str]) -> None:

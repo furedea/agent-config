@@ -8,11 +8,12 @@ kind: noul
 subject: node
 # A comment written just before the function lies outside its node, so the whole file is sent (#196).
 state: located
-# Fitted by `jev-lint eval` on this rule's own fixtures (10 cases, 5 bad and 5 clean, over 3 passes; baseline of
-# 2026-11-18): the highest clean case scored 0.22 (conforming.rs:1) and the lowest violation 0.93 (violating.rs:20); the
-# cutoff is jev-lint's fitted midpoint of that gap. A fit on so few cases is a starting point, not a calibration
-# (ADR-0020), so the rule stays advisory.
-threshold: 0.58
+# Fitted by `jev-lint eval` on this rule's own fixtures (12 cases, 6 bad and 6 clean, over 3 passes; baseline of
+# 2026-11-19): the highest clean case scored 0.5 (conforming.rs:30) and the lowest violation 0.62 (violating.rs:44);
+# the cutoff is jev-lint's fitted midpoint of that gap. Both are the cases added for #196: the doc comment of a public
+# function and the plain comment before a function that restates its body, which scored 0.23 to 0.30 under `state:
+# local`. A fit on so few cases is a starting point, not a calibration (ADR-0020), so the rule stays advisory.
+threshold: 0.56
 axis: file
 severity: warning
 rule:

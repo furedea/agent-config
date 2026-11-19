@@ -8,10 +8,16 @@ kind: noul
 subject: node
 # A comment written just before the function lies outside its node, so the whole file is sent (#196).
 state: located
-# The cutoff is jev-lint's fitted midpoint on this folder's fixtures (4 violations, 4 conforming cases, 3 passes,
-# means, #220): the highest conforming case scored 0.13 (0.15 in its worst pass) and the lowest violation 0.92 (0.91
-# in its worst pass). A fit on so few cases is not a calibration, so the rule stays advisory (ADR-0021).
-threshold: 0.53
+# The cutoff is jev-lint's fitted midpoint on this folder's fixtures (5 violations, 5 conforming cases, 3 passes,
+# baseline of 2026-11-19): the highest conforming case scored 0.2 (conforming.ts:8) and the lowest violation 0.87
+# (violating.ts:38, the comment before a function added for #196, which scored 0.09 to 0.10 under `state: local`). A
+# fit on so few cases is not a calibration, so the rule stays advisory (ADR-0021).
+threshold: 0.54
+# Every clean case answers far below the cutoff and every bad case far above it, so this corpus cannot see the rule
+# drift; boundary cases need code a reviewer would argue over.
+inconclusive: >-
+  Blind: every fixture sits 0.33 or more from the cutoff (the gap runs from 0.2 to 0.87), and no boundary fixture
+  exists yet; ten cases are too few to find one.
 axis: file
 severity: warning
 rule:

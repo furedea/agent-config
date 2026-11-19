@@ -1,12 +1,12 @@
 {
   "schema": "jev-lint-eval-1",
-  "recorded": "2026-11-19T11:35:22.938Z",
+  "recorded": "2026-11-19T12:19:59.565Z",
   "model": "jev-1.14.0",
   "suite": "rust/no-comment-restating-code",
   "rules": [
     {
       "id": "no-comment-restating-code",
-      "draft": "db879dcdfd4d",
+      "draft": "e533f190c806",
       "at": 0.58
     }
   ],
@@ -37,7 +37,7 @@
         "line": 20,
         "endLine": 23,
         "kind": "noul",
-        "value": 0.93,
+        "value": 0.95,
         "confidence": null
       },
       {
@@ -64,7 +64,7 @@
         "line": 44,
         "endLine": 46,
         "kind": "noul",
-        "value": 0.23,
+        "value": 0.62,
         "confidence": null
       },
       {
@@ -73,7 +73,63 @@
         "line": 1,
         "endLine": 5,
         "kind": "noul",
-        "value": 0.2,
+        "value": 0.26,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/conforming.rs",
+        "line": 7,
+        "endLine": 10,
+        "kind": "noul",
+        "value": 0.08,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/conforming.rs",
+        "line": 12,
+        "endLine": 17,
+        "kind": "noul",
+        "value": 0.1,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/conforming.rs",
+        "line": 19,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.23,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/conforming.rs",
+        "line": 24,
+        "endLine": 27,
+        "kind": "noul",
+        "value": 0.24,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/conforming.rs",
+        "line": 30,
+        "endLine": 32,
+        "kind": "noul",
+        "value": 0.44,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/conforming.rs",
+        "line": 1,
+        "endLine": 5,
+        "kind": "noul",
+        "value": 0.25,
         "confidence": null
       },
       {
@@ -100,7 +156,7 @@
         "line": 19,
         "endLine": 22,
         "kind": "noul",
-        "value": 0.16,
+        "value": 0.21,
         "confidence": null
       },
       {
@@ -109,7 +165,7 @@
         "line": 24,
         "endLine": 27,
         "kind": "noul",
-        "value": 0.16,
+        "value": 0.25,
         "confidence": null
       },
       {
@@ -118,18 +174,16 @@
         "line": 30,
         "endLine": 32,
         "kind": "noul",
-        "value": 0.2,
+        "value": 0.5,
         "confidence": null
-      }
-    ],
-    [
+      },
       {
         "rule": "no-comment-restating-code",
         "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/violating.rs",
         "line": 1,
         "endLine": 11,
         "kind": "noul",
-        "value": 0.99,
+        "value": 0.98,
         "confidence": null
       },
       {
@@ -147,7 +201,7 @@
         "line": 20,
         "endLine": 23,
         "kind": "noul",
-        "value": 0.93,
+        "value": 0.96,
         "confidence": null
       },
       {
@@ -156,7 +210,7 @@
         "line": 25,
         "endLine": 36,
         "kind": "noul",
-        "value": 0.93,
+        "value": 0.94,
         "confidence": null
       },
       {
@@ -165,7 +219,7 @@
         "line": 38,
         "endLine": 41,
         "kind": "noul",
-        "value": 0.96,
+        "value": 0.94,
         "confidence": null
       },
       {
@@ -174,7 +228,63 @@
         "line": 44,
         "endLine": 46,
         "kind": "noul",
-        "value": 0.27,
+        "value": 0.66,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/violating.rs",
+        "line": 1,
+        "endLine": 11,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/violating.rs",
+        "line": 13,
+        "endLine": 18,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/violating.rs",
+        "line": 20,
+        "endLine": 23,
+        "kind": "noul",
+        "value": 0.95,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/violating.rs",
+        "line": 25,
+        "endLine": 36,
+        "kind": "noul",
+        "value": 0.94,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/violating.rs",
+        "line": 38,
+        "endLine": 41,
+        "kind": "noul",
+        "value": 0.94,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/violating.rs",
+        "line": 44,
+        "endLine": 46,
+        "kind": "noul",
+        "value": 0.66,
         "confidence": null
       },
       {
@@ -192,62 +302,6 @@
         "line": 7,
         "endLine": 10,
         "kind": "noul",
-        "value": 0.05,
-        "confidence": null
-      },
-      {
-        "rule": "no-comment-restating-code",
-        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/conforming.rs",
-        "line": 12,
-        "endLine": 17,
-        "kind": "noul",
-        "value": 0.09,
-        "confidence": null
-      },
-      {
-        "rule": "no-comment-restating-code",
-        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/conforming.rs",
-        "line": 19,
-        "endLine": 22,
-        "kind": "noul",
-        "value": 0.15,
-        "confidence": null
-      },
-      {
-        "rule": "no-comment-restating-code",
-        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/conforming.rs",
-        "line": 24,
-        "endLine": 27,
-        "kind": "noul",
-        "value": 0.15,
-        "confidence": null
-      },
-      {
-        "rule": "no-comment-restating-code",
-        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/conforming.rs",
-        "line": 30,
-        "endLine": 32,
-        "kind": "noul",
-        "value": 0.14,
-        "confidence": null
-      }
-    ],
-    [
-      {
-        "rule": "no-comment-restating-code",
-        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/conforming.rs",
-        "line": 1,
-        "endLine": 5,
-        "kind": "noul",
-        "value": 0.21,
-        "confidence": null
-      },
-      {
-        "rule": "no-comment-restating-code",
-        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/conforming.rs",
-        "line": 7,
-        "endLine": 10,
-        "kind": "noul",
         "value": 0.06,
         "confidence": null
       },
@@ -266,7 +320,7 @@
         "line": 19,
         "endLine": 22,
         "kind": "noul",
-        "value": 0.15,
+        "value": 0.22,
         "confidence": null
       },
       {
@@ -275,7 +329,7 @@
         "line": 24,
         "endLine": 27,
         "kind": "noul",
-        "value": 0.16,
+        "value": 0.22,
         "confidence": null
       },
       {
@@ -284,69 +338,15 @@
         "line": 30,
         "endLine": 32,
         "kind": "noul",
-        "value": 0.14,
-        "confidence": null
-      },
-      {
-        "rule": "no-comment-restating-code",
-        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/violating.rs",
-        "line": 1,
-        "endLine": 11,
-        "kind": "noul",
-        "value": 0.99,
-        "confidence": null
-      },
-      {
-        "rule": "no-comment-restating-code",
-        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/violating.rs",
-        "line": 13,
-        "endLine": 18,
-        "kind": "noul",
-        "value": 0.97,
-        "confidence": null
-      },
-      {
-        "rule": "no-comment-restating-code",
-        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/violating.rs",
-        "line": 20,
-        "endLine": 23,
-        "kind": "noul",
-        "value": 0.93,
-        "confidence": null
-      },
-      {
-        "rule": "no-comment-restating-code",
-        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/violating.rs",
-        "line": 25,
-        "endLine": 36,
-        "kind": "noul",
-        "value": 0.93,
-        "confidence": null
-      },
-      {
-        "rule": "no-comment-restating-code",
-        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/violating.rs",
-        "line": 38,
-        "endLine": 41,
-        "kind": "noul",
-        "value": 0.96,
-        "confidence": null
-      },
-      {
-        "rule": "no-comment-restating-code",
-        "file": "agents/hooks/lint/model-rules/rust/no-comment-restating-code/fixtures/violating.rs",
-        "line": 44,
-        "endLine": 46,
-        "kind": "noul",
-        "value": 0.3,
+        "value": 0.45,
         "confidence": null
       }
     ]
   ],
   "spent": {
     "calls": 6,
-    "inputTokens": 14952,
-    "usd": 0.000627984,
-    "ms": 176
+    "inputTokens": 18135,
+    "usd": 0.00076167,
+    "ms": 582
   }
 }

@@ -137,7 +137,9 @@ def _ask(reason: str, preview: str, operation: str = "") -> Verdict:
 
 def _ungranted(call: GhCall, line: CommandLine, rules: GhRules) -> str:
     """Why no grant allows the call where it acts, or an empty string when one does."""
-    if call.reads_working_repository and (line.changes_directory or not _remotes_on_github()):
+    if call.reads_working_repository and (
+        line.changes_directory or not (call.names_repository or _remotes_on_github())
+    ):
         return "reads a repository whose host the working directory's remotes may not keep on github.com"
     target = _target(call, line, rules.trusted)
     granted = rules.listed or all(rules.catalog.grant(target, operation, call.effect) for operation in call.operations)
@@ -152,8 +154,8 @@ def _file_problem(call: GhCall, line: CommandLine) -> str:
     """Why the files a call sends cannot be scanned as they will be sent, or an empty string."""
     if (call.files or call.unscanned_files) and not line.single_call:
         return "sends a file another command on the line may write after the guard reads it"
-    # The hook may not share the sandboxed shell's environment, so expanding a path here could scan another
-    # file than gh sends. A path named at run time asks until the GitHub Gateway (#181) judges the request.
+    # gh_options expands only TMPDIR and HOME, which the hook shares with the sandboxed shell. Any other path
+    # named at run time may name another file than the hook scans, so it asks until the GitHub Gateway (#181).
     if call.unscanned_files:
         return "sends a file named at run time, which the guard cannot scan as gh will read it"
     return _scan_problem([Path(name) for name in call.files])

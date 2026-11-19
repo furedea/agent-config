@@ -36,6 +36,9 @@ SHELL_MANAGED = frozenset(
         "BASH_EXECUTION_STRING",
     }
 )
+# The only variables whose hook value stands for the shell's own when a path is read: the temporary directory
+# and home, which the harness gives the hook and the sandboxed shell alike. Any other name may differ.
+PATH_VARIABLES = frozenset({"TMPDIR", "HOME"})
 # A run-time word starting with one of these cannot start with a dash.
 LITERAL_START = re.compile(r"[\"']?[A-Za-z0-9_./:@=,+%#]")
 
@@ -92,6 +95,27 @@ def stays_one_word(source: str) -> bool:
         return False
     unquoted = re.sub(r'"[^"]*"' + "|'[^']*'", "", source)
     return all(_is_whole_value(match[1] or match[2]) for match in NAMED_PARAMETER.finditer(unquoted))
+
+
+def environment_files(words: tuple[Word, ...], single_call: bool) -> tuple[Word, ...]:
+    """File words with each run-time path expanded from the hook's environment, on a line that assigns nothing."""
+    return tuple(expand_environment(word) if single_call else word for word in words)
+
+
+def expand_environment(word: Word) -> Word:
+    """The word as one literal when each parameter in it is set in the hook's environment, else the word itself.
+
+    The caller must know nothing on the line assigns a variable; the word then holds the harness's values.
+    """
+    if not word.dynamic or not stays_one_word(word.source):
+        return word
+    names = [match[1] or match[2] for match in NAMED_PARAMETER.finditer(re.sub(r"'[^']*'", "", word.source))]
+    if not names or not all(name in PATH_VARIABLES and os.environ.get(name) for name in names):
+        return word
+    parts = re.findall(r"""'[^']*'|"[^"]*"|[^'"]+""", word.source)
+    expand = lambda part: NAMED_PARAMETER.sub(lambda match: os.environ[match[1] or match[2]], part)  # noqa: E731
+    value = "".join(part[1:-1] if part.startswith("'") else expand(part.strip('"')) for part in parts)
+    return Word(value, word.source)
 
 
 def _is_whole_value(name: str) -> bool:

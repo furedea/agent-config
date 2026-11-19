@@ -104,10 +104,13 @@ def command_line(source: str, commands: tuple[shell_syntax.Command, ...]) -> Com
     kept = {DEVICE_NULL} if plain else set()
     moves = not reads_only or any(target not in kept for item in others for target in item.writes)
     one_gh = len(commands) - len(others) == 1
-    # Another command may write only to /dev/null: any other file may be configuration a later git read runs,
-    # such as .git/config or .gitattributes. gh's own output lands only after every earlier command ran.
+    # Only gh's own output may go to a file off PATH, and only on a line without a git read: any other written
+    # file may be configuration a git read runs, such as .git/config naming a file system monitor.
+    reads_git = any(item.arguments[0] == "git" for item in others)
     writes = [target for item in commands if item not in others for target in item.writes]
-    plants = not (plain and not moves and one_gh) or any(_may_plant(target, directories or ()) for target in writes)
+    kept_writes = not reads_git or all(target == DEVICE_NULL for target in writes)
+    plants = not (plain and not moves and one_gh and kept_writes)
+    plants = plants or any(_may_plant(target, directories or ()) for target in writes)
     return CommandLine(
         source,
         _is_single_call(source, commands),
@@ -117,7 +120,7 @@ def command_line(source: str, commands: tuple[shell_syntax.Command, ...]) -> Com
         " ".join(argument for item in commands for argument in item.arguments),
         directories or (),
         not plants,
-        any(item.arguments[0] == "git" for item in others),
+        reads_git,
     )
 
 

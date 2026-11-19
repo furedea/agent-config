@@ -90,6 +90,9 @@ def test_a_read_of_the_working_repository_beside_read_only_commands_follows_its_
         pytest.param(
             "echo x > notes.txt; gh api repos/furedea/agent-config/pulls", id="another command writing a file"
         ),
+        pytest.param(
+            "gh api repos/furedea/agent-config/contents/x > .git/config; git status", id="gh writing what git reads"
+        ),
         pytest.param("sort -o later/gh x; gh pr list -R furedea/agent-config", id="sort -o"),
         pytest.param("sort -uo later/gh x; gh pr list -R furedea/agent-config", id="sort -o in a bundle"),
         pytest.param("sort --compress-program=x y; gh pr list -R furedea/agent-config", id="sort running a program"),
@@ -108,6 +111,12 @@ def test_a_read_of_the_working_repository_beside_read_only_commands_follows_its_
 )
 def test_a_line_that_may_plant_a_program_or_change_path_still_asks(command: str) -> None:
     assert decide(command) == "ask"
+
+
+@pytest.mark.usefixtures("furedea_checkout")
+def test_a_git_read_asks_while_the_environment_names_an_external_diff(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GIT_EXTERNAL_DIFF", "/tmp/x")
+    assert decide("git diff; gh pr list -R furedea/agent-config") == "ask"
 
 
 @pytest.mark.usefixtures("furedea_checkout")

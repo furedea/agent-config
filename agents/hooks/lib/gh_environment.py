@@ -195,11 +195,13 @@ def _stand_in_problem(name: str, line: CommandLine) -> str:
 
 
 def git_read_may_run_program() -> bool:
-    """Whether repository git configuration names a program a git read may run.
+    """Whether repository git configuration, or GIT_EXTERNAL_DIFF, names a program a git read may run.
 
     The user's global and system configuration, and the harness's command-line settings, are trusted; the
     repository's own local and worktree configuration is the agent's to write.
     """
+    if os.environ.get("GIT_EXTERNAL_DIFF"):
+        return True
     output = git_output("config", "--show-scope", "-z", "--get-regexp", READ_PROGRAM_SETTINGS)
     if output is None:
         return True

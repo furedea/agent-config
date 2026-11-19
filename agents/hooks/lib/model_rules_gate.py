@@ -17,7 +17,7 @@ import model_rules_report
 import model_rules_resume
 import model_rules_run
 import trusted_owners
-from model_rules_files import ReviewedSpan, Selection, committed_paths, select
+from model_rules_files import ReviewedSpan, Selection, committed_paths, review_base, select
 from model_rules_outcome import Judgement, Prevented, Resume
 from model_rules_programs import Programs
 from session_snapshot import capture, head_commit
@@ -194,6 +194,7 @@ class _Changes:
 
     committed: Selection
     uncommitted: Selection
+    base: str | None = None
 
     @classmethod
     def of(cls, record: SessionRecord) -> _Changes:
@@ -201,13 +202,12 @@ class _Changes:
 
         Files that were already there when the session started and that it never touched are not sent.
         """
+        base = review_base(record.root, record.head) if record.head is not None else None
         committed = Selection()
-        if record.head is not None and head_commit(record.root) != record.head:
-            committed = select(
-                record.root, committed_paths(record.root, record.head), ReviewedSpan(record.head, "HEAD")
-            )
+        if base is not None and head_commit(record.root) != base:
+            committed = select(record.root, committed_paths(record.root, base), ReviewedSpan(base, "HEAD"))
         changed = record.baseline.changed_paths(capture(record.root))
-        return cls(committed, select(record.root, changed, ReviewedSpan("HEAD")))
+        return cls(committed, select(record.root, changed, ReviewedSpan("HEAD")), base)
 
     @property
     def withheld(self) -> frozenset[str]:
@@ -226,7 +226,7 @@ class _Changes:
         for rules in rule_tiers(RULES_DIRECTORY):
             if self.committed.sendable:
                 reviews.append(
-                    model_rules_run.Review(record.root, record.head, rules, cache, programs, self.committed.sendable)
+                    model_rules_run.Review(record.root, self.base, rules, cache, programs, self.committed.sendable)
                 )
             if self.uncommitted.sendable:
                 reviews.append(
@@ -235,7 +235,7 @@ class _Changes:
         adr_folders = adr_rules(RULES_DIRECTORY)
         if adr_folders and self.committed.adrs:
             reviews.append(
-                model_rules_run.Review(record.root, record.head, adr_folders, cache, programs, self.committed.adrs)
+                model_rules_run.Review(record.root, self.base, adr_folders, cache, programs, self.committed.adrs)
             )
         if adr_folders and self.uncommitted.adrs:
             reviews.append(
@@ -280,9 +280,9 @@ def _repository_gate(root: Path) -> Prevented | None:
 
 
 def _inputs(record: SessionRecord) -> str:
-    """A fingerprint of everything a review depends on: the files, the base commit, and the rules."""
+    """A fingerprint of everything a review depends on: the files, the commit the review starts from, and the rules."""
     digest = hashlib.sha256(capture(record.root).digest.encode())
-    digest.update((record.head or "").encode())
+    digest.update((review_base(record.root, record.head) if record.head else "").encode())
     for path in sorted(RULES_DIRECTORY.rglob("*.yml")):
         digest.update(os.fsencode(path.relative_to(RULES_DIRECTORY)))
         digest.update(path.read_bytes())

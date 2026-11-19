@@ -24,6 +24,7 @@ from model_rule_fixtures import is_model_rule_fixture
 # MADR files are `docs/adr/NNNN_words.md`; the index, a template and nested folders are not decisions.
 _ADR_PATTERN = "docs/adr/[0-9]*.md"
 _FRONT_MATTER_FENCE = "---"
+_REMOTE_DEFAULT_BRANCH = "refs/remotes/origin/HEAD"
 
 
 @dataclass(frozen=True, slots=True)
@@ -65,6 +66,31 @@ def select(root: Path, paths: Iterable[str], span: ReviewedSpan) -> Selection:
             withheld.add(path)
     adrs = tuple(path for path in sendable if _is_changed_adr(root, path, span))
     return Selection(tuple(sendable), frozenset(withheld), adrs)
+
+
+def review_base(root: Path, session_head: str) -> str:
+    """The commit the review of a session's commits starts from.
+
+    Commits that reached the remote default branch are other work or already reviewed, so the base moves up to where
+    HEAD left that branch, but only when that point descends from `session_head`. Without a remote default branch the
+    session's own starting commit stays.
+    """
+    merged = _git_output(root, "merge-base", "HEAD", _REMOTE_DEFAULT_BRANCH)
+    if merged and _git_output(root, "merge-base", "--is-ancestor", session_head, merged) is not None:
+        return merged
+    return session_head
+
+
+def _git_output(root: Path, *arguments: str) -> str | None:
+    try:
+        output = subprocess.check_output(
+            ["git", "-c", "core.fsmonitor=false", "-C", str(root), *arguments],
+            stderr=subprocess.DEVNULL,
+            text=True,
+        )
+    except OSError, subprocess.CalledProcessError:
+        return None
+    return output.strip()
 
 
 def committed_paths(root: Path, base: str) -> tuple[str, ...]:

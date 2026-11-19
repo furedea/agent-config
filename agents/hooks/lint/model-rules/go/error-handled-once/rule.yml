@@ -21,6 +21,10 @@ severity: warning
 # (so `err.Error()` is not one) or starts an event chain (zerolog's `log.Error().Err(err).Msg(...)`); error constructors
 # and test reporters are not loggers. A log call inside a nested function literal selects only that literal, the
 # function nearest to the call.
+# Limits: the logger matcher is broad on purpose and the criteria decide. It also selects calls shaped like a log that
+# are not one (`http.Error(w, msg, code)`, `cmd.Output()`, a framework `c.Error(err)`, `s.t.Fatal(...)`), and it
+# misses a log inside a closure the function runs itself (`defer func() { log.Error(err) }()`): only the literal is
+# asked about there.
 rule:
   all:
     - any:

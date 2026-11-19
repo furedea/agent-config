@@ -16,6 +16,9 @@ inconclusive: >-
   add is a getter on a type whose only invariant is set by its constructor.
 axis: file
 severity: warning
+# Limits: a named collection type is matched only as the single result declared in the same file; `(Items, error)`
+# and a type declared in another file are missed. A result whose text merely contains `[]` or `map[` (`*[]T`,
+# `chan []byte`, `func() []string`) is also selected and left to the criteria.
 rule:
   all:
     - any:

@@ -77,8 +77,7 @@ class GhCall:
     body read from standard input. `related` are repositories of issues the write links to, which must
     be trusted beside the target, whether that target is named or the working directory's.
     `reads_working_repository` marks a read or local change, whose working-directory remotes must keep
-    gh on github.com even when an option seems to name a repository, since the guard does not parse
-    every read option.
+    gh on github.com unless `names_repository` says a literal -R gives the host.
     """
 
     operations: tuple[str, ...]
@@ -91,6 +90,7 @@ class GhCall:
     reads_stdin: bool = False
     related: tuple[Repository, ...] = ()
     reads_working_repository: bool = False
+    names_repository: bool = False
 
     @property
     def label(self) -> str:
@@ -163,7 +163,12 @@ def _classify_words(words: tuple[Word, ...], catalog: Catalog, single_call: bool
         _check_read_repositories(words[2:])
         if spec.operation == "repo.view":
             check_repository_arguments(words[2:])
-        return GhCall((spec.operation,), spec.effect, reads_working_repository=not names_repository_option(words[2:]))
+        return GhCall(
+            (spec.operation,),
+            spec.effect,
+            reads_working_repository=True,
+            names_repository=names_repository_option(words[2:]),
+        )
     if spec.effect is Effect.LOCAL:
         return _classify_local(words[2:], spec, single_call)
     return _classify_write(words[2:], spec, single_call)

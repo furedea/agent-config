@@ -137,7 +137,9 @@ def _ask(reason: str, preview: str, operation: str = "") -> Verdict:
 
 def _ungranted(call: GhCall, line: CommandLine, rules: GhRules) -> str:
     """Why no grant allows the call where it acts, or an empty string when one does."""
-    if call.reads_working_repository and (line.changes_directory or not _remotes_on_github()):
+    if call.reads_working_repository and (
+        line.changes_directory or not (call.names_repository or _remotes_on_github())
+    ):
         return "reads a repository whose host the working directory's remotes may not keep on github.com"
     target = _target(call, line, rules.trusted)
     granted = rules.listed or all(rules.catalog.grant(target, operation, call.effect) for operation in call.operations)

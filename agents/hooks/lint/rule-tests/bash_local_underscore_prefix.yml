@@ -17,6 +17,20 @@ valid:
       local OPTIND OPTARG
       local LC_ALL=C
     }
+  - |
+    collect() {
+      local -a _items=(a b)
+      local -n _ref=_items
+      local -i _count=0
+      local -A _index=([key]=value)
+      local _first=1 _second
+    }
+  - |
+    run_command() {
+      local _output="local value=1"
+      local _status
+      _status=$(local_helper)
+    }
 invalid:
   - |
     build_output() {
@@ -27,4 +41,12 @@ invalid:
     build_output() {
       local dst
       cp in "$dst"
+    }
+  - |
+    build_output() {
+      local -r src="$1"
+    }
+  - |
+    build_output() {
+      local _src="$1" dst
     }

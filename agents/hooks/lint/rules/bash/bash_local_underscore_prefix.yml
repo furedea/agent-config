@@ -1,6 +1,6 @@
 id: bash_local_underscore_prefix
 language: bash
-severity: warning
+severity: error
 message: "Prefix function-local variables with `_`."
 note: "Names starting with an uppercase letter are skipped: they localize special variables such as IFS, OPTIND, and LC_ALL, which cannot be renamed."
 rule:

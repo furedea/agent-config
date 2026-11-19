@@ -38,3 +38,7 @@ impl Port {
         std::env::var("PORT").ok()?.parse().ok().map(Self)
     }
 }
+
+pub trait Catalog {
+    fn as_entries(&self) -> &[Entry];
+}

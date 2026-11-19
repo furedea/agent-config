@@ -34,4 +34,5 @@ criteria:
     (`/` or `\`) or joins a directory and a name, where `Path::join` or `PathBuf::push` would handle the separator.
   "false": >-
     The formatted or concatenated string is a single file name or suffix with no separator (`{stem}.rs`), or the path is
-    already built with `Path::join` or `PathBuf::push`.
+    already built with `Path::join` or `PathBuf::push`. An escape sequence (`\x2e`) is not a separator, and neither is
+    a `/` that only appears as an argument of a nested call whose result has none (`name.replace("/", "_")`).

@@ -29,3 +29,7 @@ impl Label {
 pub fn parse_port(raw: &str) -> u16 {
     raw.trim().parse().unwrap_or(0)
 }
+
+pub trait Archive {
+    fn into_entries(&self) -> &[Entry];
+}

@@ -15,8 +15,13 @@ threshold: 0.48
 axis: file
 severity: warning
 rule:
-  all:
+  any:
     - kind: function_item
+    # A closure with a block body bound to a name: `let work = || { .. };`
+    - all:
+        - kind: closure_expression
+        - inside: { kind: let_declaration }
+        - has: { field: body, kind: block }
 ask: >-
   This function does more than one job, or mixes high-level steps with low-level details in one body.
 criteria:

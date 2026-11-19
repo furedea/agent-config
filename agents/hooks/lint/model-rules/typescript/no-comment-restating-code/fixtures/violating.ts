@@ -33,3 +33,8 @@ export class Counter {
     this.value += 1;
   }
 }
+
+// Add the tax to the price.
+export function withTax(price: number): number {
+  return price * 1.1;
+}

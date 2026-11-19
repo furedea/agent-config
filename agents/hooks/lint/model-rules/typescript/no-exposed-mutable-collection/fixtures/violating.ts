@@ -43,3 +43,18 @@ export class Scheduler {
     return this.queue;
   }
 }
+
+export class Backlog {
+  private readonly pending: string[] = [];
+
+  enqueue(job: string): void {
+    if (this.pending.length >= 100) {
+      throw new Error(`enqueue ${job}: backlog is full`);
+    }
+    this.pending.push(job);
+  }
+
+  getPending() {
+    return this.pending;
+  }
+}

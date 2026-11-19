@@ -1,11 +1,12 @@
 # M-34 collection objects (agents/AGENTS.md: "do not expose mutable raw collections"). Advisory: the Stop hook reports
 # findings and never promotes this rule to a gate (ADR-0021). Selected by a function that returns a field or a mutable
-# reference; the criteria require the collection to be the object's own state.
+# reference; the criteria require the collection to be the object's own state. A `readonly` or `Readonly*` return type
+# is not selected; a method without a return type is, and the class beside it shows the field's type.
 id: no-exposed-mutable-collection
 languages: [ TypeScript, Tsx ]
 kind: noul
 subject: node
-state: local
+state: located
 # The cutoff is jev-lint's fitted midpoint on this folder's fixtures (4 violations, 4 conforming cases, 3 passes,
 # means, #220): the highest conforming case scored 0.89 (0.91 in its worst pass) and the lowest violation 0.95 (0.95
 # in its worst pass). A fit on so few cases is not a calibration, so the rule stays advisory (ADR-0021).
@@ -22,9 +23,16 @@ rule:
         - all:
             - kind: arrow_function
             - inside: { kind: variable_declarator }
-    - has:
-        field: return_type
-        regex: "(\\[\\]|Array<|Map<|Set<|Record<)"
+    - any:
+        - all:
+            - has:
+                field: return_type
+                regex: "(\\[\\]|\\bArray<|\\bMap<|\\bSet<|\\bRecord<)"
+            - not:
+                has: { field: return_type, regex: "^:\\s*(readonly\\s|Readonly<)" }
+        - all:
+            - has: { pattern: return this.$F, stopBy: end }
+            - not: { has: { field: return_type, kind: type_annotation } }
     - has: { pattern: return this.$F, stopBy: end }
 ask: >-
   This function hands the caller the object's own mutable collection, so the caller can change its state without the

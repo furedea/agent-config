@@ -63,3 +63,18 @@ pub fn archive_stale_sessions(redis_url: &str, max_idle_secs: u64) -> Result<u32
     }
     Ok(archived)
 }
+
+pub fn count_known(ids: &[u32]) -> usize {
+    let client = ApiClient::<Json>::new("https://api.example.invalid");
+    ids.iter().filter(|id| client.exists(**id)).count()
+}
+
+pub fn active_names(endpoint: String, token: String) -> Vec<String> {
+    let repository = UserRepository { endpoint, token };
+    repository
+        .all()
+        .into_iter()
+        .filter(|user| user.active)
+        .map(|user| user.name)
+        .collect()
+}

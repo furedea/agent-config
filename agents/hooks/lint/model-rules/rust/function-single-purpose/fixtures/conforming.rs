@@ -54,3 +54,11 @@ pub fn median(values: &mut [f64]) -> Option<f64> {
         Some(values[middle])
     }
 }
+
+pub fn total_cents(items: &[Item]) -> u64 {
+    let discounted = |item: &Item| {
+        let cents = item.price_cents * u64::from(item.quantity);
+        cents - cents * u64::from(item.discount_percent) / 100
+    };
+    items.iter().map(discounted).sum()
+}

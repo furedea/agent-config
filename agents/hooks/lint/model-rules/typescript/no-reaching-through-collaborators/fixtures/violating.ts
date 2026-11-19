@@ -15,3 +15,7 @@ export class SignupHandler {
     await context.app.services.mailer.send(email, "welcome");
   }
 }
+
+export function canRetry(worker: Worker): boolean {
+  return worker.client.transport.policy.maxRetries > 0;
+}

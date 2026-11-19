@@ -213,6 +213,119 @@ def test_rust_rules_select_the_functions_they_ask_about(repository: Path) -> Non
     }
 
 
+# Forms that a Rust or TypeScript matcher missed or wrongly selected (#196): (file, source, rule, subject count).
+MATCHER_CASES = [
+    pytest.param(
+        "sample.rs",
+        "fn sync(ids: &[u32]) -> usize {\n"
+        '    let client = ApiClient::<Config>::new("https://example.invalid");\n'
+        "    ids.iter().filter(|id| client.exists(**id)).count()\n"
+        "}\n",
+        "construction-separate-from-execution",
+        1,
+        id="rust-construction-by-turbofish",
+    ),
+    pytest.param(
+        "sample.rs",
+        "fn sync(ids: &[u32], endpoint: String, token: String) -> usize {\n"
+        "    let client = ApiClient { endpoint, token };\n"
+        "    ids.iter().filter(|id| client.exists(**id)).count()\n"
+        "}\n",
+        "construction-separate-from-execution",
+        1,
+        id="rust-construction-by-struct-literal",
+    ),
+    pytest.param(
+        "sample.rs",
+        "impl Cart {\n    fn items<'a>(&'a mut self) -> &'a mut Vec<Item> {\n        &mut self.items\n    }\n}\n",
+        "no-exposed-mutable-collection",
+        1,
+        id="rust-mutable-collection-with-lifetime",
+    ),
+    pytest.param(
+        "sample.rs",
+        "fn run() {\n    let work = || {\n        step();\n    };\n    work();\n}\n",
+        "function-single-purpose",
+        2,
+        id="rust-closure-bound-by-let",
+    ),
+    pytest.param(
+        "sample.rs",
+        "trait View {\n    fn into_inner(&self) -> &Inner;\n}\n",
+        "conversion-and-query-names-follow-rust-convention",
+        1,
+        id="rust-conversion-trait-method-declaration",
+    ),
+    pytest.param(
+        "sample.rs",
+        "#[derive(Deserialize)]\n/* Read from config.toml. */\nstruct Config {\n    name: String,\n}\n",
+        "serde-types-follow-config-conventions",
+        1,
+        id="rust-serde-type-after-block-comment",
+    ),
+    pytest.param(
+        "sample.rs",
+        "// Add one to the value.\n#[must_use]\nfn increment(value: u32) -> u32 {\n    value + 1\n}\n"
+        "// clippy: kept for the lint table.\nfn decrement(value: u32) -> u32 {\n    value - 1\n}\n",
+        "no-comment-restating-code",
+        1,
+        id="rust-comment-before-function",
+    ),
+    pytest.param(
+        "sample.rs",
+        "fn city(order: &Order) -> &str {\n    &order.customer.address.city\n}\n",
+        "no-reaching-through-collaborators",
+        1,
+        id="rust-field-chain-without-call",
+    ),
+    pytest.param(
+        "sample.ts",
+        "class Bag {\n  private items: string[] = [];\n  private tags = new Set<string>();\n"
+        "  list(): ReadonlyArray<string> {\n    return this.items;\n  }\n"
+        "  view(): readonly string[] {\n    return this.items;\n  }\n"
+        "  tagSet(): ReadonlySet<string> {\n    return this.tags;\n  }\n"
+        "  frozen(): Readonly<Record<string, number>> {\n    return this.counts;\n  }\n}\n",
+        "no-exposed-mutable-collection",
+        0,
+        id="typescript-readonly-collection-is-not-exposed",
+    ),
+    pytest.param(
+        "sample.ts",
+        "class Bag {\n  private items: string[] = [];\n  getItems() {\n    return this.items;\n  }\n}\n",
+        "no-exposed-mutable-collection",
+        1,
+        id="typescript-field-returned-without-return-type",
+    ),
+    pytest.param(
+        "sample.ts",
+        "// Add one to the value.\nfunction increment(value: number): number {\n  return value + 1;\n}\n"
+        "// Subtract one from the value.\nexport const decrement = (value: number): number => value - 1;\n"
+        "// eslint-disable-next-line no-console\nfunction log(): void {}\n",
+        "no-comment-restating-code",
+        2,
+        id="typescript-comment-before-function",
+    ),
+    pytest.param(
+        "sample.ts",
+        "function city(order: Order): string {\n  return order.customer.address.city;\n}\n",
+        "no-reaching-through-collaborators",
+        1,
+        id="typescript-property-chain-without-call",
+    ),
+]
+
+
+@pytest.mark.parametrize(("name", "source", "rule", "expected"), MATCHER_CASES)
+def test_rule_selects_each_form_recorded_for_it(
+    repository: Path, name: str, source: str, rule: str, expected: int
+) -> None:
+    (repository / name).write_text(source)
+
+    counts = {entry["rule"]: entry["subjects"] for entry in plan(repository)["byRule"]}
+
+    assert counts.get(rule, 0) == expected
+
+
 # The rules that must ship an eval suite: every Go and every Rust rule (None).
 SUITE_RULE_IDS: dict[str, set[str] | None] = {"go": None, "rust": None}
 

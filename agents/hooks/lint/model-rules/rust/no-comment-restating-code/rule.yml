@@ -31,6 +31,18 @@ rule:
             kind: block_comment
             stopBy: end
             not: { regex: "^/\\*\\s*(TODO|FIXME|XXX|HACK|SAFETY|noqa|type:|pragma|pylint|ruff|nosec|nolint|clippy|rustfmt|eslint|oxlint|ts-|prettier|biome|@ts|go:|#!)" }
+        # A comment written just before the function, with its attributes in between.
+        - follows:
+            any:
+              - kind: line_comment
+              - kind: block_comment
+            not: { regex: "^(//|/\\*)\\s*(TODO|FIXME|XXX|HACK|SAFETY|noqa|type:|pragma|pylint|ruff|nosec|nolint|clippy|rustfmt|eslint|oxlint|ts-|prettier|biome|@ts|go:|#!)" }
+            stopBy:
+              not:
+                any:
+                  - kind: attribute_item
+                  - kind: line_comment
+                  - kind: block_comment
 ask: >-
   A comment in this function restates what the code beside it already says.
 criteria:

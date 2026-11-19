@@ -17,7 +17,10 @@ axis: file
 severity: warning
 rule:
   all:
-    - kind: function_item
+    - any:
+        - kind: function_item
+        # A trait method declaration without a body: `fn into_inner(&self) -> &Inner;`
+        - kind: function_signature_item
     - any:
         - has:
             field: return_type

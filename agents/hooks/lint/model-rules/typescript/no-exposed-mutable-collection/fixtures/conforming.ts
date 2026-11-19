@@ -31,3 +31,11 @@ export class CsvRow {
     return this.cells;
   }
 }
+
+export class Polyline {
+  constructor(public readonly points: number[]) {}
+
+  vertices() {
+    return this.points;
+  }
+}

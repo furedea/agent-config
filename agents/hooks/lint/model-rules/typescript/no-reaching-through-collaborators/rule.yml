@@ -20,7 +20,12 @@ rule:
         - all:
             - kind: arrow_function
             - inside: { kind: variable_declarator }
-    - has: { pattern: $A.$B.$C.$D($$$), stopBy: end }
+    - has:
+        stopBy: end
+        any:
+          - pattern: $A.$B.$C.$D($$$)
+          # A property chain that ends without a call: `order.customer.address.city`
+          - pattern: $A.$B.$C.$D
 ask: >-
   This function reaches through one collaborator into another's internals instead of asking its direct collaborator.
 criteria:

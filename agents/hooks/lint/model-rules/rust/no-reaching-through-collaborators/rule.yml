@@ -25,6 +25,8 @@ rule:
           - pattern: $A.$B($$$).$C.$D($$$)
           - pattern: $A.$B.$C($$$).$D($$$)
           - pattern: $A.$B($$$).$C($$$).$D($$$)
+          # A field chain that ends without a call: `order.customer.address.city`
+          - pattern: $A.$B.$C.$D
 ask: >-
   This function reaches through one collaborator into another's internals instead of asking its direct collaborator.
 criteria:

@@ -22,9 +22,21 @@ rule:
     - any:
         - kind: function_declaration
         - kind: method_declaration
-    - has:
-        field: result
-        regex: "^(\\[\\]|map\\[)"
+    # A result that is a slice or map, alone or among several results, or a type this file declares as one.
+    - any:
+        - has:
+            field: result
+            regex: "\\[\\]|map\\["
+        - all:
+            - has: { field: result, pattern: $TYPE }
+            - inside:
+                kind: source_file
+                has:
+                  kind: type_spec
+                  stopBy: end
+                  all:
+                    - has: { field: name, pattern: $TYPE }
+                    - has: { field: type, regex: "^(\\[\\]|map\\[)" }
     - has: { pattern: return $R.$F, stopBy: end }
 ask: >-
   This function hands the caller an object's own private mutable collection, so the caller can change that object's

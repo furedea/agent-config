@@ -21,7 +21,14 @@ rule:
     - has:
         kind: call_expression
         stopBy: end
-        regex: "^([A-Za-z_]\\w*\\.)?New\\w*(Client|Service|Repository|Connection|Session|Parser|Engine|Manager|Adapter|Gateway|Store|Factory|Handler|Loader|Reader|Writer|Server|Pool|Provider|Runner)\\("
+        any:
+          - regex: "^([A-Za-z_]\\w*\\.)?New\\w*(Client|Service|Repository|Connection|Session|Parser|Engine|Manager|Adapter|Gateway|Store|Factory|Handler|Loader|Reader|Writer|Server|Pool|Provider|Runner)\\("
+          # A package named for its collaborator (`client.New(...)`); standard errors, IDs, hashes and containers are
+          # not collaborators.
+          - all:
+              - regex: "^[a-z]\\w*\\.New\\("
+              - not:
+                  regex: "^(errors|xerrors|uuid|list|ring|heap|template|rand|sha1|sha256|sha512|md5|hmac|fnv|crc32|crc64|adler32)\\.New\\("
 ask: >-
   This function creates and configures its own collaborators and then, in the same body, runs the logic that uses
   them.

@@ -193,6 +193,130 @@ def test_main_is_thin_selects_func_main_of_package_main(repository: Path) -> Non
     assert counts["main-is-thin"] == 1
 
 
+GO_LOGGING_SOURCE = """\
+package sample
+
+import (
+	"fmt"
+	"log"
+	"log/slog"
+)
+
+func ViaDefault(err error) error {
+	slog.Default().Error("load", "err", err)
+	return err
+}
+
+func ViaStdDefault(err error) error {
+	log.Default().Printf("load: %v", err)
+	return err
+}
+
+func ViaAuditLogger(audit *Auditor, err error) error {
+	audit.Warn("load", "err", err)
+	return err
+}
+
+func ViaShortReceiver(l *Logger, err error) error {
+	l.Output(2, err.Error())
+	return err
+}
+
+func OnlyWraps(err error) error {
+	return fmt.Errorf("load: %s", err.Error())
+}
+
+func Outer(items []string) error {
+	report := func(err error) {
+		log.Println(err)
+	}
+	report(nil)
+	return nil
+}
+"""
+
+
+def test_go_error_handled_once_selects_each_logger_form_and_only_the_closure_that_logs(repository: Path) -> None:
+    (repository / "logging.go").write_text(GO_LOGGING_SOURCE)
+
+    counts = subjects_by_rule(plan(repository))
+
+    # Four functions log through `Default()` or a logger of any receiver name; `OnlyWraps` only builds an error, and
+    # `Outer` does not log itself: only its closure `report` does.
+    assert counts["error-handled-once"] == 5
+
+
+GO_CONSTRUCTION_SOURCE = """\
+package sample
+
+import (
+	"errors"
+	"example.com/payments/client"
+	"github.com/google/uuid"
+)
+
+func Settle(orders []Order) error {
+	payments := client.New(client.WithToken("t"))
+	for _, order := range orders {
+		payments.Charge(order)
+	}
+	return nil
+}
+
+func Validate(order Order) error {
+	if order.ID == uuid.New() {
+		return errors.New("bad")
+	}
+	return nil
+}
+"""
+
+
+def test_go_construction_rule_selects_a_package_level_new_but_not_errors_or_ids(repository: Path) -> None:
+    (repository / "settle.go").write_text(GO_CONSTRUCTION_SOURCE)
+
+    counts = subjects_by_rule(plan(repository))
+
+    assert counts["construction-separate-from-execution"] == 1
+
+
+GO_COLLECTION_SOURCE = """\
+package sample
+
+type Items []string
+
+type (
+	Index map[string]int
+	Count int
+)
+
+func (c *Cart) Items() Items {
+	return c.items
+}
+
+func (c *Cart) Index() Index {
+	return c.index
+}
+
+func (c *Cart) Names() ([]string, error) {
+	return c.names, nil
+}
+
+func (c *Cart) Count() Count {
+	return c.count
+}
+"""
+
+
+def test_go_collection_rule_selects_named_collection_types_and_multiple_results(repository: Path) -> None:
+    (repository / "cart.go").write_text(GO_COLLECTION_SOURCE)
+
+    counts = subjects_by_rule(plan(repository))
+
+    # `Count` returns a named scalar type, so only the three collection getters are asked about.
+    assert counts["no-exposed-mutable-collection"] == 3
+
+
 def test_rust_rules_select_the_functions_they_ask_about(repository: Path) -> None:
     (repository / "sample.rs").write_text(RUST_SOURCE)
 

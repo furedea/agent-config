@@ -1,19 +1,17 @@
 # M-33 minimal comments (agents/AGENTS.md: "minimize comments and docstrings; use them for public APIs, TODOs,
 # non-obvious constraints, and intent that code cannot express"). Advisory: the Stop hook reports findings and never
-# promotes this rule to a gate (ADR-0021). Selected by a comment or docstring inside the function that is not a tool
+# promotes this rule to a gate (ADR-0021). Selected by a comment inside or just before the function that is not a tool
 # directive or TODO; a comment that restates the next line is the violation.
 id: no-comment-restating-code
 languages: [ TypeScript, Tsx ]
 kind: noul
 subject: node
-state: local
+# A comment written just before the function lies outside its node, so the whole file is sent (#196).
+state: located
 # The cutoff is jev-lint's fitted midpoint on this folder's fixtures (4 violations, 4 conforming cases, 3 passes,
 # means, #220): the highest conforming case scored 0.13 (0.15 in its worst pass) and the lowest violation 0.92 (0.91
 # in its worst pass). A fit on so few cases is not a calibration, so the rule stays advisory (ADR-0021).
 threshold: 0.53
-inconclusive: >-
-  Blind: every fixture is clearly clean or clearly defective (margins of 0.39 or more from the cutoff), and no
-  boundary fixture exists yet; eight cases are too few to find one.
 axis: file
 severity: warning
 rule:
@@ -40,13 +38,14 @@ rule:
                 - follows: { kind: comment, not: { regex: "^(//|/\\*)\\s*(TODO|FIXME|XXX|HACK|SAFETY|noqa|type:|pragma|pylint|ruff|nosec|nolint|clippy|rustfmt|eslint|oxlint|ts-|prettier|biome|@ts|go:|#!)" } }
                 - inside: { kind: export_statement, follows: { kind: comment, not: { regex: "^(//|/\\*)\\s*(TODO|FIXME|XXX|HACK|SAFETY|noqa|type:|pragma|pylint|ruff|nosec|nolint|clippy|rustfmt|eslint|oxlint|ts-|prettier|biome|@ts|go:|#!)" } } }
 ask: >-
-  A comment in this function restates what the code beside it already says.
+  A comment in this function, or written just before it, restates what the code beside it already says.
 criteria:
   "true": >-
     A comment only paraphrases the statement it precedes ("increment the counter", "loop over users"), narrates the
     control flow, or marks a section that a named function would make unnecessary, and it states no reason, constraint
-    or intent.
+    or intent. A plain comment (not a doc comment) written just before the function that only paraphrases its body
+    counts too.
   "false": >-
     Every comment states a reason, a non-obvious constraint, a workaround, a link or an issue number, a TODO, or an
-    intent the code cannot express; directives to tools (lint, type, license, build tags) and the documentation of a
+    intent the code cannot express; directives to tools (lint, type, license, build tags) and the doc comment of a
     public function, class or module API are not violations.

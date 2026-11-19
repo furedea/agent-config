@@ -11,17 +11,16 @@ subject: node
 # The struct that owns the field, its documentation and its other methods sit outside the method's `impl` block, so the
 # whole file is sent: under `local` every `&mut` collection looked like protected state (4 of 4 clean cases flagged).
 state: located
-# Fitted by `jev-lint eval` on this rule's own fixtures (8 cases, 4 bad and 4 clean, over 3 passes; baseline of
-# 2026-11-18): the highest clean case scored 0.06 (conforming.rs:19) and the lowest violation 0.96 (violating.rs:52);
-# the cutoff is jev-lint's fitted midpoint of that gap. Under `state: local` and the old criteria every clean case
-# scored 0.69 to 0.96. A fit on so few cases is a starting point, not a calibration (ADR-0020), so the rule stays
-# advisory.
-threshold: 0.51
+# Fitted by `jev-lint eval` on this rule's own fixtures (9 cases, 5 bad and 4 clean, over 3 passes; baseline of
+# 2026-11-19): the highest clean case scored 0.05 (conforming.rs:31) and the lowest violation 0.83 (violating.rs:68);
+# the cutoff is jev-lint's fitted midpoint of that gap. The `&'a mut` case (#196) is that lowest violation. A fit on
+# so few cases is a starting point, not a calibration (ADR-0020), so the rule stays advisory.
+threshold: 0.44
 # Every clean case answers far below the cutoff and every bad case far above it, so this corpus cannot see the rule
 # drift; boundary cases need code a reviewer would argue over.
 inconclusive: >-
-  Blind: the fixtures are clearly clean or clearly defective (the gap runs from 0.06 to 0.96), and no
-  boundary fixture exists yet.
+  Blind: the fixtures are clearly clean or clearly defective (the gap runs from 0.05 to 0.83), and no boundary fixture
+  exists yet.
 axis: file
 severity: warning
 rule:

@@ -7,11 +7,12 @@ language: Rust
 kind: noul
 subject: node
 state: local
-# Fitted by `jev-lint eval` on this rule's own fixtures (9 cases, 4 bad and 5 clean, over 3 passes; baseline of
-# 2026-11-18): the highest clean case scored 0.25 (conforming.rs:33) and the lowest violation 0.71 (violating.rs:5); the
-# cutoff is jev-lint's fitted midpoint of that gap. A fit on so few cases is a starting point, not a calibration
-# (ADR-0020), so the rule stays advisory.
-threshold: 0.48
+# Fitted by `jev-lint eval` on this rule's own fixtures (13 cases, 6 bad and 7 clean, over 3 passes; baseline of
+# 2026-11-19): the highest clean case scored 0.34 (conforming.rs:33) and the lowest violation 0.7 (violating.rs:52);
+# the cutoff is jev-lint's fitted midpoint of that gap. Closures bound by `let` (#196) are subjects of their own; the
+# mixed closure at violating.rs:66 scored 0.77 or more and the function holding it 0.7 or more. A fit on so few cases
+# is a starting point, not a calibration (ADR-0020), so the rule stays advisory.
+threshold: 0.52
 axis: file
 severity: warning
 rule:

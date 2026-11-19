@@ -7,12 +7,17 @@ languages: [ TypeScript, Tsx ]
 kind: noul
 subject: node
 state: located
-# The cutoff is jev-lint's fitted midpoint on this folder's fixtures (4 violations, 4 conforming cases, 3 passes,
-# means, #220): the highest conforming case scored 0.89 (0.91 in its worst pass) and the lowest violation 0.95 (0.95
-# in its worst pass). A fit on so few cases is not a calibration, so the rule stays advisory (ADR-0021).
-# Provisional: the worst passes leave about 0.02 on each side, so a re-run can flip the plain-data-record case
-# (CsvRow). The criteria's exception for plain data records needs tightening and a refit before this value is relied on.
+# The cutoff is jev-lint's fitted midpoint on this folder's fixtures (5 violations, 2 conforming cases, 3 passes,
+# baseline of 2026-11-19, the file sent with each method since #196): the highest conforming case scored 0.92
+# (conforming.ts:30, 0.91 to 0.92) and the lowest violation 0.92 (violating.ts:12, 0.92 to 0.96). A fit on so few
+# cases is not a calibration, so the rule stays advisory (ADR-0021).
 threshold: 0.93
+# The worst passes of the weakest violation and the plain-data-record case (CsvRow) overlap, so a run, not the rule,
+# decides whether violating.ts:12 is reported.
+inconclusive: >-
+  Unstable: the team's member array at violating.ts:12 spreads 0.04 between passes (0.92 to 0.96), wider than its 0.01
+  margin over the cutoff, and the plain data record at conforming.ts:30 scores 0.91 to 0.92; the criteria's exception
+  for plain data records needs tightening and a refit before this cutoff is relied on.
 axis: file
 severity: warning
 rule:

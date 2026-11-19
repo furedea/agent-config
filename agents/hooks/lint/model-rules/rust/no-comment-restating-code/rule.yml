@@ -1,22 +1,18 @@
 # M-33 minimal comments (agents/AGENTS.md: "minimize comments and docstrings; use them for public APIs, TODOs,
 # non-obvious constraints, and intent that code cannot express"). Advisory: the Stop hook reports findings and never
-# promotes this rule to a gate (ADR-0021). Selected by a comment or docstring inside the function that is not a tool
+# promotes this rule to a gate (ADR-0021). Selected by a comment inside or just before the function that is not a tool
 # directive or TODO; a comment that restates the next line is the violation.
 id: no-comment-restating-code
 language: Rust
 kind: noul
 subject: node
-state: local
+# A comment written just before the function lies outside its node, so the whole file is sent (#196).
+state: located
 # Fitted by `jev-lint eval` on this rule's own fixtures (10 cases, 5 bad and 5 clean, over 3 passes; baseline of
 # 2026-11-18): the highest clean case scored 0.22 (conforming.rs:1) and the lowest violation 0.93 (violating.rs:20); the
 # cutoff is jev-lint's fitted midpoint of that gap. A fit on so few cases is a starting point, not a calibration
 # (ADR-0020), so the rule stays advisory.
 threshold: 0.58
-# Every clean case answers far below the cutoff and every bad case far above it, so this corpus cannot see the rule
-# drift; boundary cases need code a reviewer would argue over.
-inconclusive: >-
-  Blind: the fixtures are clearly clean or clearly defective (the gap runs from 0.22 to 0.93), and no
-  boundary fixture exists yet.
 axis: file
 severity: warning
 rule:
@@ -44,13 +40,14 @@ rule:
                   - kind: line_comment
                   - kind: block_comment
 ask: >-
-  A comment in this function restates what the code beside it already says.
+  A comment in this function, or written just before it, restates what the code beside it already says.
 criteria:
   "true": >-
     A comment only paraphrases the statement it precedes ("increment the counter", "loop over users"), narrates the
     control flow, or marks a section that a named function would make unnecessary, and it states no reason, constraint
-    or intent.
+    or intent. A plain comment (not a doc comment) written just before the function that only paraphrases its body
+    counts too.
   "false": >-
     Every comment states a reason, a non-obvious constraint, a workaround, a link or an issue number, a TODO, or an
-    intent the code cannot express; directives to tools (lint, type, license, build tags) and the documentation of a
+    intent the code cannot express; directives to tools (lint, type, license, build tags) and the doc comment of a
     public function, class or module API are not violations.

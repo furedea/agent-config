@@ -1,13 +1,13 @@
 {
   "schema": "jev-lint-eval-1",
-  "recorded": "2026-11-18T06:25:04.386Z",
+  "recorded": "2026-11-19T11:35:22.744Z",
   "model": "jev-1.14.0",
   "suite": "rust/serde-types-follow-config-conventions",
   "rules": [
     {
       "id": "serde-types-follow-config-conventions",
-      "draft": "8ddfa972689e",
-      "at": 0.5
+      "draft": "69722ef9e51f",
+      "at": 0.21
     }
   ],
   "cutoffs": {},
@@ -15,11 +15,148 @@
     [
       {
         "rule": "serde-types-follow-config-conventions",
+        "file": "agents/hooks/lint/model-rules/rust/serde-types-follow-config-conventions/fixtures/violating.rs",
+        "line": 6,
+        "endLine": 9,
+        "kind": "noul",
+        "value": 0.74,
+        "confidence": null
+      },
+      {
+        "rule": "serde-types-follow-config-conventions",
+        "file": "agents/hooks/lint/model-rules/rust/serde-types-follow-config-conventions/fixtures/violating.rs",
+        "line": 14,
+        "endLine": 20,
+        "kind": "noul",
+        "value": 0.69,
+        "confidence": null
+      },
+      {
+        "rule": "serde-types-follow-config-conventions",
+        "file": "agents/hooks/lint/model-rules/rust/serde-types-follow-config-conventions/fixtures/violating.rs",
+        "line": 26,
+        "endLine": 29,
+        "kind": "noul",
+        "value": 0.29,
+        "confidence": null
+      },
+      {
+        "rule": "serde-types-follow-config-conventions",
+        "file": "agents/hooks/lint/model-rules/rust/serde-types-follow-config-conventions/fixtures/violating.rs",
+        "line": 34,
+        "endLine": 38,
+        "kind": "noul",
+        "value": 0.89,
+        "confidence": null
+      },
+      {
+        "rule": "serde-types-follow-config-conventions",
+        "file": "agents/hooks/lint/model-rules/rust/serde-types-follow-config-conventions/fixtures/violating.rs",
+        "line": 42,
+        "endLine": 47,
+        "kind": "noul",
+        "value": 0.64,
+        "confidence": null
+      },
+      {
+        "rule": "serde-types-follow-config-conventions",
         "file": "agents/hooks/lint/model-rules/rust/serde-types-follow-config-conventions/fixtures/conforming.rs",
         "line": 6,
         "endLine": 11,
         "kind": "noul",
         "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "serde-types-follow-config-conventions",
+        "file": "agents/hooks/lint/model-rules/rust/serde-types-follow-config-conventions/fixtures/conforming.rs",
+        "line": 16,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "serde-types-follow-config-conventions",
+        "file": "agents/hooks/lint/model-rules/rust/serde-types-follow-config-conventions/fixtures/conforming.rs",
+        "line": 26,
+        "endLine": 31,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "serde-types-follow-config-conventions",
+        "file": "agents/hooks/lint/model-rules/rust/serde-types-follow-config-conventions/fixtures/conforming.rs",
+        "line": 35,
+        "endLine": 39,
+        "kind": "noul",
+        "value": 0.17,
+        "confidence": null
+      },
+      {
+        "rule": "serde-types-follow-config-conventions",
+        "file": "agents/hooks/lint/model-rules/rust/serde-types-follow-config-conventions/fixtures/conforming.rs",
+        "line": 43,
+        "endLine": 47,
+        "kind": "noul",
+        "value": 0.08,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "serde-types-follow-config-conventions",
+        "file": "agents/hooks/lint/model-rules/rust/serde-types-follow-config-conventions/fixtures/violating.rs",
+        "line": 6,
+        "endLine": 9,
+        "kind": "noul",
+        "value": 0.68,
+        "confidence": null
+      },
+      {
+        "rule": "serde-types-follow-config-conventions",
+        "file": "agents/hooks/lint/model-rules/rust/serde-types-follow-config-conventions/fixtures/violating.rs",
+        "line": 14,
+        "endLine": 20,
+        "kind": "noul",
+        "value": 0.64,
+        "confidence": null
+      },
+      {
+        "rule": "serde-types-follow-config-conventions",
+        "file": "agents/hooks/lint/model-rules/rust/serde-types-follow-config-conventions/fixtures/violating.rs",
+        "line": 26,
+        "endLine": 29,
+        "kind": "noul",
+        "value": 0.43,
+        "confidence": null
+      },
+      {
+        "rule": "serde-types-follow-config-conventions",
+        "file": "agents/hooks/lint/model-rules/rust/serde-types-follow-config-conventions/fixtures/violating.rs",
+        "line": 34,
+        "endLine": 38,
+        "kind": "noul",
+        "value": 0.87,
+        "confidence": null
+      },
+      {
+        "rule": "serde-types-follow-config-conventions",
+        "file": "agents/hooks/lint/model-rules/rust/serde-types-follow-config-conventions/fixtures/violating.rs",
+        "line": 42,
+        "endLine": 47,
+        "kind": "noul",
+        "value": 0.57,
+        "confidence": null
+      },
+      {
+        "rule": "serde-types-follow-config-conventions",
+        "file": "agents/hooks/lint/model-rules/rust/serde-types-follow-config-conventions/fixtures/conforming.rs",
+        "line": 6,
+        "endLine": 11,
+        "kind": "noul",
+        "value": 0.06,
         "confidence": null
       },
       {
@@ -46,7 +183,7 @@
         "line": 35,
         "endLine": 39,
         "kind": "noul",
-        "value": 0.17,
+        "value": 0.13,
         "confidence": null
       },
       {
@@ -55,43 +192,7 @@
         "line": 43,
         "endLine": 47,
         "kind": "noul",
-        "value": 0.1,
-        "confidence": null
-      },
-      {
-        "rule": "serde-types-follow-config-conventions",
-        "file": "agents/hooks/lint/model-rules/rust/serde-types-follow-config-conventions/fixtures/violating.rs",
-        "line": 6,
-        "endLine": 9,
-        "kind": "noul",
-        "value": 0.71,
-        "confidence": null
-      },
-      {
-        "rule": "serde-types-follow-config-conventions",
-        "file": "agents/hooks/lint/model-rules/rust/serde-types-follow-config-conventions/fixtures/violating.rs",
-        "line": 14,
-        "endLine": 20,
-        "kind": "noul",
-        "value": 0.74,
-        "confidence": null
-      },
-      {
-        "rule": "serde-types-follow-config-conventions",
-        "file": "agents/hooks/lint/model-rules/rust/serde-types-follow-config-conventions/fixtures/violating.rs",
-        "line": 26,
-        "endLine": 29,
-        "kind": "noul",
-        "value": 0.42,
-        "confidence": null
-      },
-      {
-        "rule": "serde-types-follow-config-conventions",
-        "file": "agents/hooks/lint/model-rules/rust/serde-types-follow-config-conventions/fixtures/violating.rs",
-        "line": 34,
-        "endLine": 38,
-        "kind": "noul",
-        "value": 0.9,
+        "value": 0.11,
         "confidence": null
       }
     ],
@@ -111,7 +212,7 @@
         "line": 16,
         "endLine": 22,
         "kind": "noul",
-        "value": 0.06,
+        "value": 0.07,
         "confidence": null
       },
       {
@@ -129,7 +230,7 @@
         "line": 35,
         "endLine": 39,
         "kind": "noul",
-        "value": 0.18,
+        "value": 0.19,
         "confidence": null
       },
       {
@@ -147,7 +248,7 @@
         "line": 6,
         "endLine": 9,
         "kind": "noul",
-        "value": 0.75,
+        "value": 0.74,
         "confidence": null
       },
       {
@@ -156,7 +257,7 @@
         "line": 14,
         "endLine": 20,
         "kind": "noul",
-        "value": 0.73,
+        "value": 0.68,
         "confidence": null
       },
       {
@@ -165,7 +266,7 @@
         "line": 26,
         "endLine": 29,
         "kind": "noul",
-        "value": 0.3,
+        "value": 0.41,
         "confidence": null
       },
       {
@@ -174,98 +275,24 @@
         "line": 34,
         "endLine": 38,
         "kind": "noul",
-        "value": 0.91,
-        "confidence": null
-      }
-    ],
-    [
-      {
-        "rule": "serde-types-follow-config-conventions",
-        "file": "agents/hooks/lint/model-rules/rust/serde-types-follow-config-conventions/fixtures/conforming.rs",
-        "line": 6,
-        "endLine": 11,
-        "kind": "noul",
-        "value": 0.05,
+        "value": 0.89,
         "confidence": null
       },
       {
         "rule": "serde-types-follow-config-conventions",
-        "file": "agents/hooks/lint/model-rules/rust/serde-types-follow-config-conventions/fixtures/conforming.rs",
-        "line": 16,
-        "endLine": 22,
-        "kind": "noul",
-        "value": 0.07,
-        "confidence": null
-      },
-      {
-        "rule": "serde-types-follow-config-conventions",
-        "file": "agents/hooks/lint/model-rules/rust/serde-types-follow-config-conventions/fixtures/conforming.rs",
-        "line": 26,
-        "endLine": 31,
-        "kind": "noul",
-        "value": 0.07,
-        "confidence": null
-      },
-      {
-        "rule": "serde-types-follow-config-conventions",
-        "file": "agents/hooks/lint/model-rules/rust/serde-types-follow-config-conventions/fixtures/conforming.rs",
-        "line": 35,
-        "endLine": 39,
-        "kind": "noul",
-        "value": 0.17,
-        "confidence": null
-      },
-      {
-        "rule": "serde-types-follow-config-conventions",
-        "file": "agents/hooks/lint/model-rules/rust/serde-types-follow-config-conventions/fixtures/conforming.rs",
-        "line": 43,
+        "file": "agents/hooks/lint/model-rules/rust/serde-types-follow-config-conventions/fixtures/violating.rs",
+        "line": 42,
         "endLine": 47,
         "kind": "noul",
-        "value": 0.09,
-        "confidence": null
-      },
-      {
-        "rule": "serde-types-follow-config-conventions",
-        "file": "agents/hooks/lint/model-rules/rust/serde-types-follow-config-conventions/fixtures/violating.rs",
-        "line": 6,
-        "endLine": 9,
-        "kind": "noul",
-        "value": 0.73,
-        "confidence": null
-      },
-      {
-        "rule": "serde-types-follow-config-conventions",
-        "file": "agents/hooks/lint/model-rules/rust/serde-types-follow-config-conventions/fixtures/violating.rs",
-        "line": 14,
-        "endLine": 20,
-        "kind": "noul",
-        "value": 0.76,
-        "confidence": null
-      },
-      {
-        "rule": "serde-types-follow-config-conventions",
-        "file": "agents/hooks/lint/model-rules/rust/serde-types-follow-config-conventions/fixtures/violating.rs",
-        "line": 26,
-        "endLine": 29,
-        "kind": "noul",
-        "value": 0.24,
-        "confidence": null
-      },
-      {
-        "rule": "serde-types-follow-config-conventions",
-        "file": "agents/hooks/lint/model-rules/rust/serde-types-follow-config-conventions/fixtures/violating.rs",
-        "line": 34,
-        "endLine": 38,
-        "kind": "noul",
-        "value": 0.92,
+        "value": 0.59,
         "confidence": null
       }
     ]
   ],
   "spent": {
     "calls": 6,
-    "inputTokens": 15576,
-    "usd": 0.0006541920000000001,
-    "ms": 208
+    "inputTokens": 17037,
+    "usd": 0.0007155540000000001,
+    "ms": 246
   }
 }

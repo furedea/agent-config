@@ -7,12 +7,11 @@ language: Rust
 kind: noul
 subject: node
 state: local
-# Fitted by `jev-lint eval` on this rule's own fixtures (13 cases, 6 bad and 7 clean, over 3 passes; baseline of
-# 2026-11-18): the highest clean case scored 0.1 (conforming.rs:33) and the lowest violation 0.46 (violating.rs:29); the
-# cutoff is jev-lint's fitted midpoint of that gap. At the 0.5 starting value the swallowed parse at violating.rs:29
-# (0.46 to 0.52) passed in one pass of three. A fit on so few cases is a starting point, not a calibration (ADR-0020),
-# so the rule stays advisory.
-threshold: 0.28
+# Fitted by `jev-lint eval` on this rule's own fixtures (15 cases, 7 bad and 8 clean, over 3 passes; baseline of
+# 2026-11-19): the highest clean case scored 0.12 (conforming.rs:37) and the lowest violation 0.46 (violating.rs:20);
+# the cutoff is jev-lint's fitted midpoint of that gap. The trait method declarations (#196) are judged by signature
+# alone. A fit on so few cases is a starting point, not a calibration (ADR-0020), so the rule stays advisory.
+threshold: 0.29
 axis: file
 severity: warning
 rule:

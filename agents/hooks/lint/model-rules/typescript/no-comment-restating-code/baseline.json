@@ -1,13 +1,13 @@
 {
   "schema": "jev-lint-eval-1",
-  "recorded": "2026-11-18T06:27:58.530Z",
+  "recorded": "2026-11-19T11:35:23.985Z",
   "model": "jev-1.14.0",
   "suite": "typescript/no-comment-restating-code",
   "rules": [
     {
       "id": "no-comment-restating-code",
-      "draft": "78d3c8801323",
-      "at": 0.5
+      "draft": "2fd1dbd10ac6",
+      "at": 0.53
     }
   ],
   "cutoffs": {},
@@ -15,6 +15,51 @@
     [
       {
         "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/typescript/no-comment-restating-code/fixtures/conforming.ts",
+        "line": 3,
+        "endLine": 6,
+        "kind": "noul",
+        "value": 0.07,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/typescript/no-comment-restating-code/fixtures/conforming.ts",
+        "line": 8,
+        "endLine": 12,
+        "kind": "noul",
+        "value": 0.14,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/typescript/no-comment-restating-code/fixtures/conforming.ts",
+        "line": 14,
+        "endLine": 17,
+        "kind": "noul",
+        "value": 0.08,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/typescript/no-comment-restating-code/fixtures/conforming.ts",
+        "line": 19,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/typescript/no-comment-restating-code/fixtures/conforming.ts",
+        "line": 25,
+        "endLine": 25,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
         "file": "agents/hooks/lint/model-rules/typescript/no-comment-restating-code/fixtures/violating.ts",
         "line": 3,
         "endLine": 12,
@@ -51,9 +96,56 @@
       },
       {
         "rule": "no-comment-restating-code",
-        "file": "agents/hooks/lint/model-rules/typescript/no-comment-restating-code/fixtures/conforming.ts",
+        "file": "agents/hooks/lint/model-rules/typescript/no-comment-restating-code/fixtures/violating.ts",
+        "line": 38,
+        "endLine": 40,
+        "kind": "noul",
+        "value": 0.1,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/typescript/no-comment-restating-code/fixtures/violating.ts",
         "line": 3,
-        "endLine": 6,
+        "endLine": 12,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/typescript/no-comment-restating-code/fixtures/violating.ts",
+        "line": 14,
+        "endLine": 21,
+        "kind": "noul",
+        "value": 0.92,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/typescript/no-comment-restating-code/fixtures/violating.ts",
+        "line": 23,
+        "endLine": 26,
+        "kind": "noul",
+        "value": 0.92,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/typescript/no-comment-restating-code/fixtures/violating.ts",
+        "line": 31,
+        "endLine": 34,
+        "kind": "noul",
+        "value": 0.96,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/typescript/no-comment-restating-code/fixtures/violating.ts",
+        "line": 38,
+        "endLine": 40,
         "kind": "noul",
         "value": 0.1,
         "confidence": null
@@ -61,75 +153,10 @@
       {
         "rule": "no-comment-restating-code",
         "file": "agents/hooks/lint/model-rules/typescript/no-comment-restating-code/fixtures/conforming.ts",
-        "line": 8,
-        "endLine": 12,
-        "kind": "noul",
-        "value": 0.12,
-        "confidence": null
-      },
-      {
-        "rule": "no-comment-restating-code",
-        "file": "agents/hooks/lint/model-rules/typescript/no-comment-restating-code/fixtures/conforming.ts",
-        "line": 14,
-        "endLine": 17,
-        "kind": "noul",
-        "value": 0.07,
-        "confidence": null
-      },
-      {
-        "rule": "no-comment-restating-code",
-        "file": "agents/hooks/lint/model-rules/typescript/no-comment-restating-code/fixtures/conforming.ts",
-        "line": 19,
-        "endLine": 22,
-        "kind": "noul",
-        "value": 0.06,
-        "confidence": null
-      }
-    ],
-    [
-      {
-        "rule": "no-comment-restating-code",
-        "file": "agents/hooks/lint/model-rules/typescript/no-comment-restating-code/fixtures/violating.ts",
-        "line": 3,
-        "endLine": 12,
-        "kind": "noul",
-        "value": 0.97,
-        "confidence": null
-      },
-      {
-        "rule": "no-comment-restating-code",
-        "file": "agents/hooks/lint/model-rules/typescript/no-comment-restating-code/fixtures/violating.ts",
-        "line": 14,
-        "endLine": 21,
-        "kind": "noul",
-        "value": 0.91,
-        "confidence": null
-      },
-      {
-        "rule": "no-comment-restating-code",
-        "file": "agents/hooks/lint/model-rules/typescript/no-comment-restating-code/fixtures/violating.ts",
-        "line": 23,
-        "endLine": 26,
-        "kind": "noul",
-        "value": 0.92,
-        "confidence": null
-      },
-      {
-        "rule": "no-comment-restating-code",
-        "file": "agents/hooks/lint/model-rules/typescript/no-comment-restating-code/fixtures/violating.ts",
-        "line": 31,
-        "endLine": 34,
-        "kind": "noul",
-        "value": 0.97,
-        "confidence": null
-      },
-      {
-        "rule": "no-comment-restating-code",
-        "file": "agents/hooks/lint/model-rules/typescript/no-comment-restating-code/fixtures/conforming.ts",
         "line": 3,
         "endLine": 6,
         "kind": "noul",
-        "value": 0.07,
+        "value": 0.08,
         "confidence": null
       },
       {
@@ -138,7 +165,7 @@
         "line": 8,
         "endLine": 12,
         "kind": "noul",
-        "value": 0.15,
+        "value": 0.16,
         "confidence": null
       },
       {
@@ -147,7 +174,7 @@
         "line": 14,
         "endLine": 17,
         "kind": "noul",
-        "value": 0.09,
+        "value": 0.07,
         "confidence": null
       },
       {
@@ -157,6 +184,15 @@
         "endLine": 22,
         "kind": "noul",
         "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/typescript/no-comment-restating-code/fixtures/conforming.ts",
+        "line": 25,
+        "endLine": 25,
+        "kind": "noul",
+        "value": 0.03,
         "confidence": null
       }
     ],
@@ -176,7 +212,7 @@
         "line": 14,
         "endLine": 21,
         "kind": "noul",
-        "value": 0.92,
+        "value": 0.93,
         "confidence": null
       },
       {
@@ -199,11 +235,20 @@
       },
       {
         "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/typescript/no-comment-restating-code/fixtures/violating.ts",
+        "line": 38,
+        "endLine": 40,
+        "kind": "noul",
+        "value": 0.09,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
         "file": "agents/hooks/lint/model-rules/typescript/no-comment-restating-code/fixtures/conforming.ts",
         "line": 3,
         "endLine": 6,
         "kind": "noul",
-        "value": 0.08,
+        "value": 0.09,
         "confidence": null
       },
       {
@@ -212,7 +257,7 @@
         "line": 8,
         "endLine": 12,
         "kind": "noul",
-        "value": 0.13,
+        "value": 0.16,
         "confidence": null
       },
       {
@@ -221,7 +266,7 @@
         "line": 14,
         "endLine": 17,
         "kind": "noul",
-        "value": 0.08,
+        "value": 0.07,
         "confidence": null
       },
       {
@@ -230,15 +275,24 @@
         "line": 19,
         "endLine": 22,
         "kind": "noul",
-        "value": 0.07,
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "no-comment-restating-code",
+        "file": "agents/hooks/lint/model-rules/typescript/no-comment-restating-code/fixtures/conforming.ts",
+        "line": 25,
+        "endLine": 25,
+        "kind": "noul",
+        "value": 0.03,
         "confidence": null
       }
     ]
   ],
   "spent": {
     "calls": 6,
-    "inputTokens": 11175,
-    "usd": 0.00046935,
-    "ms": 156
+    "inputTokens": 13338,
+    "usd": 0.000560196,
+    "ms": 265
   }
 }

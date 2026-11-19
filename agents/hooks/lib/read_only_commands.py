@@ -11,6 +11,8 @@ FILTERS = frozenset(
     {"cat", "column", "cut", "echo", "false", "grep", "head", "jq", "ls", "nl", "printf", "pwd", "sleep"}
     | {"tail", "tr", "true", "wc"}
 )
+# Builtins a word known only at run time may turn into an assignment, such as printf -v PATH, or into escapes.
+PRINTING_BUILTINS = frozenset({"echo", "printf"})
 # Programs whose options or program text decide whether they write a file or run a program.
 WORD_CHECKED = frozenset({"awk", "base64", "sed", "sort", "uniq"})
 # Short sort options taking no value; o and the long --output and --compress-program write or run.
@@ -33,11 +35,12 @@ SED_FLAGS = frozenset({"-n", "-E", "-r", "--quiet", "--silent"})
 def writes_nothing(arguments: Sequence[str], dynamic: Sequence[bool]) -> bool:
     """Whether a call's words show it writes no file and runs no other program.
 
-    A word known only at run time could be an option such as sort's -o, so it is allowed only to a filter.
+    A word known only at run time could be an option such as sort's -o or printf's -v, so it is allowed only
+    to a filter other than echo and printf.
     """
     name, *rest = arguments
     if name in FILTERS:
-        return True
+        return name not in PRINTING_BUILTINS or not any(dynamic)
     if name not in WORD_CHECKED or any(dynamic):
         return False
     checks = {"awk": _awk_reads, "sed": _sed_prints, "sort": _sort_reads, "uniq": _uniq_reads}

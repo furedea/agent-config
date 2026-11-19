@@ -56,4 +56,6 @@ def test_a_call_that_may_write_or_run_a_program_is_not_read_only(line: str) -> N
 
 def test_a_word_known_only_at_run_time_is_read_only_only_for_a_filter() -> None:
     assert read_only_commands.writes_nothing(["head", "$N"], [False, True])
+    assert not read_only_commands.writes_nothing(["printf", "$OPT", "PATH", "/tmp"], [False, True, False, False])
+    assert not read_only_commands.writes_nothing(["echo", "$WORDS"], [False, True])
     assert not read_only_commands.writes_nothing(["sort", "$OPTIONS"], [False, True])

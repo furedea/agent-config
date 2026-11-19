@@ -19,6 +19,8 @@ SUBSCRIPT = re.compile(r"\$\{?[A-Za-z_][A-Za-z0-9_]*\}?\[")
 ARITHMETIC_ASSIGNMENT = re.compile(r"[A-Za-z_][A-Za-z0-9_]*=\S*\[[^\]]*\$\(")
 SHELL_BUILTINS = frozenset({"echo", "false", "printf", "pwd", "true"})
 DEVICE_NULL = "/dev/null"
+# The one change of directory the guard follows; pushd and popd keep a stack it does not track.
+DIRECTORY_CHANGE = "cd"
 # Beside a heredoc or a substitution only these filters, writing nothing, keep the working directory's remotes
 # trusted; such a line stays as #200 left it until #181.
 PIPE_FILTERS = frozenset({"cat", "column", "cut", "echo", "grep", "head", "jq", "printf", "tail", "tr", "true", "wc"})
@@ -96,11 +98,14 @@ def command_line(source: str, commands: tuple[shell_syntax.Command, ...]) -> Com
     )
     others = [item for item in commands if not is_gh(command_policy.canonical(item))]
     plain = not _builds_text(source)
+    grouped_write = _redirects_a_group(source)
     filters_only = all(item.arguments[0] in PIPE_FILTERS for item in others)
     directories = _directories(others) if plain or filters_only else None
-    reads_only = directories is not None and all(_writes_nothing(item) for item in others if item.arguments[0] != "cd")
+    reads_only = directories is not None and all(
+        _writes_nothing(item) for item in others if item.arguments[0] != DIRECTORY_CHANGE
+    )
     kept = {DEVICE_NULL} if plain else set()
-    moves = not reads_only or any(target not in kept for item in others for target in item.writes)
+    moves = grouped_write or not reads_only or any(target not in kept for item in others for target in item.writes)
     one_gh = len(commands) - len(others) == 1
     # Only gh's own output may go to a file off PATH: another command's file may be configuration a program
     # later on the line reads. gh's output lands only after every earlier command ran.
@@ -127,6 +132,16 @@ def _builds_text(source: str) -> bool:
     return any(node.get("Type") in {"CmdSubst", "ProcSubst", "ArithmExp"} for node in shell_syntax.nodes(tree))
 
 
+def _redirects_a_group(source: str) -> bool:
+    """Whether a redirection applies to a group, subshell, branch, or loop, which no call inside it records."""
+    tree = shell_syntax.syntax_tree(source)
+    return any(
+        node.get("Redirs") and (node.get("Cmd") or {}).get("Type") != "CallExpr"
+        for node in shell_syntax.nodes(tree)
+        if "Cmd" in node
+    )
+
+
 def _writes_nothing(command: shell_syntax.Command) -> bool:
     """Whether a command only reads and prints, writing no file and running no other program.
 
@@ -151,7 +166,11 @@ def _directories(others: list[shell_syntax.Command]) -> tuple[Path, ...] | None:
     for item in others:
         if Path(item.arguments[0]).name not in shell_syntax.DIRECTORY_CHANGES:
             continue
-        if item.arguments[0] != "cd" or has_relative_path_entry() or has_inherited_function("cd"):
+        if (
+            item.arguments[0] != DIRECTORY_CHANGE
+            or has_relative_path_entry()
+            or has_inherited_function(DIRECTORY_CHANGE)
+        ):
             return None
         entered = [path for path in _entered(found, item) if path.is_dir()]
         if not entered:

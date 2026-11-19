@@ -94,6 +94,15 @@ def test_a_read_of_the_working_repository_beside_read_only_commands_follows_its_
         pytest.param(
             "gh api repos/furedea/agent-config/contents/x > .git/config; git status", id="gh writing what git reads"
         ),
+        pytest.param("printf $OPT PATH /tmp; gh pr list -R furedea/agent-config", id="printf with a run-time word"),
+        pytest.param("echo $WORDS; gh pr list -R furedea/agent-config", id="echo with a run-time word"),
+        pytest.param("{ echo x; } > later/gh; gh pr list -R furedea/agent-config", id="a redirect on a block"),
+        pytest.param("(echo x) > later/gh; gh pr list -R furedea/agent-config", id="a redirect on a subshell"),
+        pytest.param("if true; then echo x; fi > later/gh; gh pr list -R furedea/agent-config", id="on an if"),
+        pytest.param(
+            "{ echo x; } >> .git/config; gh api repos/furedea/agent-config/pulls",
+            id="a block writing git configuration",
+        ),
         pytest.param("sort -o later/gh x; gh pr list -R furedea/agent-config", id="sort -o"),
         pytest.param("sort -uo later/gh x; gh pr list -R furedea/agent-config", id="sort -o in a bundle"),
         pytest.param("sort --compress-program=x y; gh pr list -R furedea/agent-config", id="sort running a program"),

@@ -70,6 +70,7 @@ known_first_party = [
   "model_rules_report",
   "model_rules_resume",
   "model_rules_run",
+  "model_rules_seen",
   "notebook_cells",
   "patch_input",
   "provider_adapter",

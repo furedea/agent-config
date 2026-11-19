@@ -103,16 +103,6 @@ def test_the_failure_reason_is_in_the_result_line() -> None:
     assert "retried next Stop" in line
 
 
-def test_a_gating_finding_stays_gating_through_the_receipt_file() -> None:
-    gating = Finding("promoted-rule", "a.py", 4, "m", 0.9, 0.5, gating=True)
-    resume = Resume(1, 3, Judgement((gating, FINDING), 3))
-
-    loaded = model_rules_resume.load(model_rules_resume.dump(resume))
-
-    assert loaded is not None
-    assert loaded.judgement.gating == (gating,)
-
-
 def test_a_resume_survives_the_receipt_file() -> None:
     resume = Resume(1, 3, Judgement((FINDING,), 3, 1, 2, 4, 5, usd=0.25))
 

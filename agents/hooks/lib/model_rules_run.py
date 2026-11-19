@@ -21,15 +21,11 @@ from model_rules_programs import Programs
 from session_store import LockTimeoutError, StateError, file_lock, private_directory
 
 REVIEWER = "jev-lint"
-# The severity of a promoted rule. `jev-lint review --fail-on` exits FINDINGS_STATUS when it reports a finding of it,
-# which is a result to read, not a failed run.
-GATE_SEVERITY = "error"
-FINDINGS_STATUS = 1
 # Measured once (2026-11-18, jev-lint 0.7.0, model jev-1.14.0, fresh cache): #201, the largest merged PR, is 988
 # subjects in 60 requests, all answered, none retried or rate limited; `op run` plus `jev-lint review` took 3.41 s
-# (0.97 s of it asking, concurrency 32) and 0.025 USD. The cap holds twice that whole, and at about 590 input tokens a
-# subject stays within jev-lint's 1.2M-token burst, so it is never paced; even ten times the measured time is far
-# below 70% of BUDGET_SECONDS.
+# (0.97 s of it asking, concurrency 32) and 0.025 USD. The cap holds twice that whole; at about 590 input tokens a
+# subject it is about 98% of jev-lint's 1.2M-token burst, so pacing at 200k tokens a second adds at most about 6 s, and
+# even ten times the measured time is far below 70% of BUDGET_SECONDS.
 SUBJECT_CAP = 2000
 PLAN_TIMEOUT_SECONDS = 20.0
 JUDGE_TIMEOUT_SECONDS = 60.0
@@ -122,16 +118,10 @@ class Review:
             *paths,
         )
         child = _Child(arguments, _environment({TOKEN_VARIABLE: credentials.token}), self.root)
-        exited = child.finish(deadline.remaining(JUDGE_TIMEOUT_SECONDS))
-        if isinstance(exited, Prevented):
-            return exited
-        if exited.status not in (0, FINDINGS_STATUS):
-            return exited.failure
-        outcome = _judgement(exited.output, plan, cached)
-        if exited.status == FINDINGS_STATUS and (isinstance(outcome, Prevented) or not outcome.gating):
-            # Anything but a readable report of a gating finding is `op` or `jev-lint` failing with the same status.
-            return exited.failure
-        return outcome
+        output = child.run(deadline.remaining(JUDGE_TIMEOUT_SECONDS))
+        if isinstance(output, Prevented):
+            return output
+        return _judgement(output, plan, cached)
 
     def _cached_count(self, deadline: Deadline, paths: tuple[str, ...]) -> int | Prevented:
         report = self._dry_run(deadline, paths)
@@ -166,7 +156,7 @@ class Review:
             *extra,
             "--no-config",
             "--fail-on",
-            GATE_SEVERITY,
+            "error",
             *base,
             *self._rule_arguments(),
             "-c",
@@ -255,13 +245,6 @@ class _Child:
     cwd: Path
 
     def run(self, timeout: float) -> bytes | Prevented:
-        """Run it to the deadline and return what it printed; any exit status but 0 is a failure."""
-        exited = self.finish(timeout)
-        if isinstance(exited, Prevented):
-            return exited
-        return exited.output if exited.status == 0 else exited.failure
-
-    def finish(self, timeout: float) -> _Exited | Prevented:
         """Run it to the deadline; stderr is discarded and never surfaced.
 
         Two things end it. `timeout(1)` runs beside the hook and still fires if Claude Code kills the hook, which
@@ -293,22 +276,11 @@ class _Child:
             output = None
         if output is None or (wrapper and process.returncode in DEADLINE_STATUSES):
             return Prevented(f"{program} timed out after {timeout:.0f}s")
+        if process.returncode != 0:
+            return Prevented(f"{program} exited with status {process.returncode}")
         if len(output) > OUTPUT_LIMIT_BYTES:
             return Prevented(f"{program} printed more than {OUTPUT_LIMIT_BYTES // (1024 * 1024)} MiB")
-        return _Exited(program, process.returncode, output)
-
-
-@dataclass(frozen=True, slots=True)
-class _Exited:
-    """A child that ran to its end: its program name, its exit status, and what it printed."""
-
-    program: str
-    status: int
-    output: bytes
-
-    @property
-    def failure(self) -> Prevented:
-        return Prevented(f"{self.program} exited with status {self.status}")
+        return output
 
 
 def _deadline_wrapper(timeout: float) -> tuple[str, ...]:
@@ -377,13 +349,7 @@ def _finding(item: dict) -> Finding:
     if not isinstance(item["rule"], str) or not isinstance(item["file"], str) or not isinstance(message, str):
         raise TypeError("finding fields must be strings")
     return Finding(
-        item["rule"],
-        item["file"],
-        _count(item, "line"),
-        message,
-        _number(item.get("value")),
-        _number(item.get("at")),
-        gating=item.get("severity") == GATE_SEVERITY,
+        item["rule"], item["file"], _count(item, "line"), message, _number(item.get("value")), _number(item.get("at"))
     )
 
 

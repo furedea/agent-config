@@ -2,9 +2,7 @@
 
 It follows the verification receipts: findings on inputs not judged before block once so the agent sees them; the same
 inputs never block again, and anything that prevents a run is only a message. The Stop hook shares this decision with
-the verification so that one rule, "unchanged inputs never trap the agent", covers both. The one exception is a
-finding of a promoted rule (a gating finding), which blocks every Stop, unchanged inputs included, until a change
-clears it.
+the verification so that one rule, "unchanged inputs never trap the agent", covers both.
 """
 
 import hashlib
@@ -76,8 +74,7 @@ def _advise(record: SessionRecord, stop_hook_active: bool, deadline: model_rules
     if resume is None:
         advice = stop.answered_from(receipt)
         if advice.blocking:
-            shown = {"outcome": SHOWN, "shown": receipt["findings"], "details": receipt.get("gate_details", "")}
-            _save(record, {**receipt, **shown})
+            _save(record, {**receipt, "outcome": SHOWN})
         return advice
     return replace(stop, shown=_shown(receipt)).judged(resume)
 
@@ -95,23 +92,21 @@ class _Stop:
     def judged(self, resume: Resume | None = None) -> Advice:
         """Run the reviews, or only those a failed run left, and save what a later Stop on the same inputs reuses.
 
-        An advisory finding blocks once: those shown before a later review failed are not shown again, and a review
-        that failed is retried alone at the next Stop. Gating findings block every time, `stop_hook_active` or not,
-        and a block shows every finding not shown yet along with them.
+        A finding blocks once: those shown before a later review failed are not shown again, and a review that
+        failed is retried alone at the next Stop.
         """
         started = time.monotonic()
         outcome = _judge(self.record, self.deadline, resume) if resume else _judge(self.record, self.deadline)
         if isinstance(outcome, Prevented):
             return _skipped_advice(outcome)
         outcome = replace(outcome, seconds=time.monotonic() - started)
-        unseen = len(outcome.findings) > self.shown and not self.stop_hook_active
-        blocking = unseen or bool(outcome.gating)
+        blocking = len(outcome.findings) > self.shown and not self.stop_hook_active
         seen = len(outcome.findings) if blocking else self.shown
         if not outcome.failed_reviews or outcome.resume:
             _save(self.record, self._receipt(outcome, seen))
         message = model_rules_report.describe_line(outcome)
-        details = model_rules_report.describe_details(_to_show(outcome, self.shown)) if blocking else ""
-        return Advice(message, blocking, details)
+        unseen = replace(outcome, findings=outcome.findings[self.shown :])
+        return Advice(message, blocking, model_rules_report.describe_details(unseen) if blocking else "")
 
     def answered_from(self, receipt: dict) -> Advice:
         """The advice a complete receipt for the same inputs gives; findings not shown yet block, once."""
@@ -130,9 +125,7 @@ class _Stop:
             "outcome": state,
             "shown": seen,
             "findings": len(outcome.findings),
-            "gating": len(outcome.gating),
-            "details": model_rules_report.describe_details(_to_show(outcome, seen)),
-            "gate_details": model_rules_report.describe_details(replace(outcome, findings=outcome.gating)),
+            "details": model_rules_report.describe_details(replace(outcome, findings=outcome.findings[seen:])),
             "subjects": outcome.subjects,
             "judged": outcome.judged,
             "requests": outcome.requests,
@@ -140,12 +133,6 @@ class _Stop:
             "seconds": round(outcome.seconds, 3),
             "usd": outcome.usd,
         }
-
-
-def _to_show(outcome: Judgement, shown: int) -> Judgement:
-    """The findings a block shows: the gating ones, then those not shown yet."""
-    unseen = tuple(finding for finding in outcome.findings[shown:] if not finding.gating)
-    return replace(outcome, findings=outcome.gating + unseen)
 
 
 def _shown(receipt: dict) -> int:
@@ -157,14 +144,9 @@ def _shown(receipt: dict) -> int:
 
 
 def _answer_from(receipt: dict, stop_hook_active: bool) -> Advice:
-    """The advice a receipt for the same inputs gives; findings the agent has not seen yet block, once.
-
-    Gating findings block every time, so they are what a receipt's details always start with.
-    """
+    """The advice a receipt for the same inputs gives; findings the agent has not seen yet block, once."""
     message = model_rules_report.describe_unchanged(receipt["findings"])
-    gating = receipt.get("gating")
-    gated = isinstance(gating, int) and not isinstance(gating, bool) and gating > 0
-    if gated or (receipt.get("outcome") == UNSHOWN and not stop_hook_active):
+    if receipt.get("outcome") == UNSHOWN and not stop_hook_active:
         return Advice(message, blocking=True, details=str(receipt.get("details", "")))
     return Advice(message)
 

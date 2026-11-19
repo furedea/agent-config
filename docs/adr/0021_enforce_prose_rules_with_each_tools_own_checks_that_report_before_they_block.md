@@ -6,7 +6,7 @@ partly-superseded-by: [ADR-0027]
 amended:
   - "2026-11-11: the hook behaviour, the two reviews, the Keychain"
   - "2026-11-15: static rules block on edit; suppression; shared rules only in trusted repositories"
-  - "2026-11-18: how a promoted model-judged rule blocks; the subject cap and the files it keeps; the run's time"
+  - "2026-11-19: the subject cap and the files it keeps; the run's time"
 ---
 
 # ADR-0021: Enforce prose rules with each tool's own checks that report before they block
@@ -68,15 +68,7 @@ own repositories get model judgement and the shared static rules.
     fix cannot trap it; nothing blocks while `stop_hook_active` is set, and findings that it kept from blocking are recorded as not yet shown, so that they block once at the next Stop on the same inputs; and anything that prevents a run is only a
     message. A model-judged rule becomes a gate that blocks every time only when its example tests pass with no false positive on
     the conforming examples and on the repository's own files; the promotion is a reviewed change to the tool's
-    config: the rule's `severity: error`. `jev-lint review --fail-on error` exits 1 when it reports a finding of such
-    a rule, so the hook reads that exit as a result, not a failed run, and treats it as a failure only when the
-    report it printed is unreadable or holds no error finding. An error finding blocks every Stop, on unchanged
-    inputs and while `stop_hook_active` is set too, until a change clears it; the receipt keeps it so that the same
-    inputs block again without asking the model. A block shows the error findings, each marked as blocking until
-    fixed, and the advisory findings not shown yet, and offers explaining a finding away only for the advisory ones.
-    The agent has no way out of a gate's false positive but changing the code: the promotion bar is what keeps it
-    rare, and a promoted rule that turns out wrong is demoted by a reviewed change back to a lower severity, while
-    the user can switch model rules off in the meantime (`AGENT_MODEL_RULES=off`, below). Model-judged rules are not promoted until their cutoff has been fitted on a larger corpus, as ADR-0020
+    config. Model-judged rules are not promoted until their cutoff has been fitted on a larger corpus, as ADR-0020
     requires.
 - **Judging time.** Static rules run on the files changed by each edit. Model-judged rules run at Stop, as
     `jev-lint review --json` with all model rules (`-R <rules dir>`) over the changes made in the session, not per
@@ -96,13 +88,14 @@ own repositories get model judgement and the shared static rules.
     declarations (state arm `local`); no other file is sent. Only functions changed in the session are judged, at most
     2000 per Stop, and the hook reports how many were skipped. The cap counts only subjects the verdict cache cannot
     answer, since the dry run plans requests for those alone; when the cap leaves files out, a file whose subjects
-    are all cached is still passed, so its cached findings are still reported. The value comes from measurement: with
+    are all cached is still passed, so its cached findings are still reported, and a plan that keeps no file sends
+    nothing rather than the whole diff. The value comes from measurement: with
     every model rule fitted in #240-#244, `jev-lint review --dry-run` over this repository's merged PRs planned up to
     988 subjects in 60 requests (#201). One uncached run of that diff (2026-11-18, `jev-lint` 0.7.0, model
     `jev-1.14.0`) sent the 60 requests, got an answer for all 988 subjects with no retry or rate limit, and took 3.41
     seconds through `op run` (0.97 seconds of it asking, at the default concurrency of 32) for 0.025 USD. 2000 holds
-    twice that session whole, costs about 0.05 USD per Stop at the cap, stays within `jev-lint`'s token burst so that
-    no request is paced, and leaves the run far inside 70% of its 90-second budget. It was measured once, so the
+    twice that session whole, costs about 0.05 USD per Stop at the cap, uses about 98% of `jev-lint`'s token burst so
+    that pacing adds at most about 6 seconds, and leaves the run far inside 70% of its 90-second budget. It was measured once, so the
     margin, not the single number, carries the decision. The previous cap of 250 came from 104 subjects at most,
     measured before those rules existed.
 - **Cache.** The hook does not keep a cache of its own. It passes `jev-lint` its verdict cache (`-c <path>`) stored
@@ -143,8 +136,7 @@ own repositories get model judgement and the shared static rules.
     child in it at most 60 seconds (20 for a planning dry run); it never ends in a block for a reason other than a
     finding. When it
     is skipped (untrusted repository, kill switch, missing Keychain item, missing `op` or `jev-lint`) or fails
-    (timeout, a non-zero exit other than a readable report of an error finding, unparsable output, errors reported
-    by `jev-lint`), the hook returns a one-line message
+    (timeout, non-zero exit, unparsable output, errors reported by `jev-lint`), the hook returns a one-line message
     instead of staying silent, and does not store a receipt, so the next Stop tries again.
 - **Orphaned children.** When Claude Code kills the hook (its timeout, Ctrl+C, closing the session), the hook cannot
     clean up, and macOS has no parent-death signal, so `op` and `jev-lint` could run on. Each child is therefore

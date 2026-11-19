@@ -4,10 +4,6 @@ from model_rules_outcome import Finding, Judgement
 
 MAX_FINDINGS = 10
 INSTRUCTION = "Fix each one, or say why it does not apply."
-# Explaining does not end a block of a promoted rule's finding, so it is not offered for one.
-GATING_INSTRUCTION = "Fix each finding of a promoted rule: it blocks every Stop until fixed."
-MIXED_INSTRUCTION = f"{GATING_INSTRUCTION} Fix each other one, or say why it does not apply."
-GATING_MARK = " (promoted rule: blocks every Stop until fixed)"
 PREFIX = "jev-lint"
 
 
@@ -16,7 +12,7 @@ def describe_line(judgement: Judgement) -> str:
     parts = [
         _counted(len(judgement.findings), "finding"),
         _subjects(judgement),
-        _incomplete(judgement) if judgement.failed_reviews else _state(judgement),
+        _incomplete(judgement) if judgement.failed_reviews else ("advisory" if judgement.findings else "passed"),
         f"${judgement.usd:.4f}",
         f"{judgement.seconds:.1f}s",
     ]
@@ -29,7 +25,7 @@ def describe_details(judgement: Judgement) -> str:
     """What only a block reason carries: the instruction and one `- rule · file:line` per finding."""
     if not judgement.findings:
         return ""
-    lines = [_instruction(judgement), *(_finding_line(finding) for finding in judgement.findings[:MAX_FINDINGS])]
+    lines = [INSTRUCTION, *(_finding_line(finding) for finding in judgement.findings[:MAX_FINDINGS])]
     if len(judgement.findings) > MAX_FINDINGS:
         lines.append(f"... and {len(judgement.findings) - MAX_FINDINGS} more")
     return "\n".join(lines)
@@ -53,18 +49,6 @@ def _counted(count: int, noun: str) -> str:
     return f"{count} {noun}" if count == 1 else f"{count} {noun}s"
 
 
-def _instruction(judgement: Judgement) -> str:
-    if not judgement.gating:
-        return INSTRUCTION
-    return GATING_INSTRUCTION if len(judgement.gating) == len(judgement.findings) else MIXED_INSTRUCTION
-
-
-def _state(judgement: Judgement) -> str:
-    if judgement.gating:
-        return "blocking"
-    return "advisory" if judgement.findings else "passed"
-
-
 def _incomplete(judgement: Judgement) -> str:
     reason = f" ({judgement.failure_reason})" if judgement.failure_reason else ""
     return f"incomplete: a review failed{reason} and is retried next Stop"
@@ -77,4 +61,4 @@ def _subjects(judgement: Judgement) -> str:
 
 
 def _finding_line(finding: Finding) -> str:
-    return f"- {finding.rule} · {finding.file}:{finding.line}{GATING_MARK if finding.gating else ''}"
+    return f"- {finding.rule} · {finding.file}:{finding.line}"

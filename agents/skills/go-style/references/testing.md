@@ -5,7 +5,7 @@ verification level. The conventions below govern Go test tooling and structure.
 
 - Use the standard `testing` package with testify.
 - Run tests with `go test -race -cover ./...`.
-- Use table-driven tests with `t.Run`.
+- Use table-driven tests with `t.Run`; call `t.Parallel()` when cases share no state.
 - Never touch the real home directory in tests.
 - Keep golden files under `testdata/`, and use them only when exact output is part of the behavior.
 - Go's `testing` package has no strict expected-failure marker; do not use a stacked PR to record

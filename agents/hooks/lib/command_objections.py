@@ -11,6 +11,7 @@ import gh_command_line
 import gh_policy
 import herdr_grammar
 import hook_decision
+import hook_input
 import literal_words
 import shell_inspection
 import shell_syntax
@@ -199,13 +200,23 @@ def gh_objection(command: str, commands: tuple[shell_syntax.Command, ...], polic
     if not candidates:
         return hook_decision.ALLOW
     line = gh_command_line.command_line(command, commands)
-    for candidate in candidates:
-        verdict = gh_policy.verdict(candidate, line, policy.gh)
-        if verdict.decision != "allow" and is_listed(candidate, policy.listing_rules):
-            verdict = gh_policy.listed_verdict(candidate, line, policy.gh)
-        if verdict.decision != "allow":
+    for directory in line.directories or (Path.cwd(),):
+        with hook_input.working_directory(directory):
+            verdicts = (_gh_verdict(candidate, line, policy) for candidate in candidates)
+            verdict = next((item for item in verdicts if item.decision != "allow"), None)
+        if verdict:
             return verdict
     return hook_decision.ALLOW
+
+
+def _gh_verdict(candidate: shell_syntax.Command, line: gh_command_line.CommandLine, policy: Policy) -> Verdict:
+    """A gh call's verdict in the current directory; a form a trusted project lists is judged as listed."""
+    if policy.gh is None:
+        return hook_decision.ALLOW
+    verdict = gh_policy.verdict(candidate, line, policy.gh)
+    if verdict.decision != "allow" and is_listed(candidate, policy.listing_rules):
+        verdict = gh_policy.listed_verdict(candidate, line, policy.gh)
+    return verdict
 
 
 def settings_objection(command: str, commands: tuple[shell_syntax.Command, ...]) -> Verdict:

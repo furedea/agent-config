@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import command_policy
+import read_only_commands
 import shell_inspection
 import shell_syntax
 
@@ -16,12 +17,15 @@ PROGRAM = "gh"
 # value, quoted in any way, holds `[...$(`.
 SUBSCRIPT = re.compile(r"\$\{?[A-Za-z_][A-Za-z0-9_]*\}?\[")
 ARITHMETIC_ASSIGNMENT = re.compile(r"[A-Za-z_][A-Za-z0-9_]*=\S*\[[^\]]*\$\(")
-SHELL_BUILTINS = frozenset({"echo", "printf", "true"})
-# Programs that only print or filter output and cannot write a file; beside them nothing on the line can change
-# the directory or remotes. sort -o and uniq's output argument write files, so neither is here.
-OUTPUT_FILTERS = frozenset(
-    {"cat", "column", "cut", "echo", "grep", "head", "jq", "printf", "tail", "tr", "true", "wc"}
-)
+SHELL_BUILTINS = frozenset({"echo", "false", "printf", "pwd", "true"})
+DEVICE_NULL = "/dev/null"
+# Beside a heredoc or a substitution only these filters, writing nothing, keep the working directory's remotes
+# trusted; such a line stays as #200 left it until #181.
+PIPE_FILTERS = frozenset({"cat", "column", "cut", "echo", "grep", "head", "jq", "printf", "tail", "tr", "true", "wc"})
+# A heredoc or herestring.
+HEREDOC = re.compile(r"<<")
+# A redirection target whose path is known only at run time, or that a shell may expand.
+RUN_TIME_PATH = re.compile(r"[$`*?\[]")
 # Programs that set shell variables, or run code that may: on a line holding one, a variable gh reads,
 # such as GH_REPO, GH_HOST, GH_TOKEN, HTTPS_PROXY, SSL_CERT_FILE, or HOME, may differ from the
 # harness environment the guard judged. The hook's own environment is the harness's.
@@ -64,9 +68,12 @@ class CommandLine:
     program through env with a changed environment, or runs any command behind a wrapper or inside a
     script another program reads, whose assignments the line's own syntax does not show; gh may then
     not see the harness environment.
-    `changes_directory` says another command on the line is not an output filter, so the directory or
-    its remotes may differ from what the hook reads, and `arguments` joins every command's arguments
-    as the shell passes them, substituted commands included, for the secret scan.
+    `changes_directory` says another command on the line may write a file or run a program, so the
+    directory or its remotes may differ from what the hook reads; otherwise gh runs in one of
+    `directories`, the hook's own and each a literal cd may enter. `plants_nothing` says nothing on
+    the line but one gh call can write a program into a PATH entry before gh runs, and `reads_git` that
+    a git read on the line may run a program git's configuration names. `arguments` joins every
+    command's arguments as the shell passes them, substituted commands included, for the secret scan.
     """
 
     source: str
@@ -75,6 +82,9 @@ class CommandLine:
     changes_environment: bool
     changes_directory: bool = False
     arguments: str = ""
+    directories: tuple[Path, ...] = ()
+    plants_nothing: bool = False
+    reads_git: bool = False
 
 
 def command_line(source: str, commands: tuple[shell_syntax.Command, ...]) -> CommandLine:
@@ -87,20 +97,87 @@ def command_line(source: str, commands: tuple[shell_syntax.Command, ...]) -> Com
         or any(item.wrapper_depth for item in commands)
     )
     others = [item for item in commands if not is_gh(command_policy.canonical(item))]
-    moves = not all(_is_output_filter(item) for item in others)
-    arguments = " ".join(argument for item in commands for argument in item.arguments)
-    return CommandLine(source, _is_single_call(source, commands), hides_code, changes, moves, arguments)
+    plain = not _builds_text(source)
+    filters_only = all(item.arguments[0] in PIPE_FILTERS for item in others)
+    directories = _directories(others) if plain or filters_only else None
+    reads_only = directories is not None and all(_writes_nothing(item) for item in others if item.arguments[0] != "cd")
+    kept = {DEVICE_NULL} if plain else set()
+    moves = not reads_only or any(target not in kept for item in others for target in item.writes)
+    one_gh = len(commands) - len(others) == 1
+    writes = [target for item in commands for target in item.writes]
+    plants = not (plain and reads_only and one_gh) or any(_may_plant(target, directories or ()) for target in writes)
+    return CommandLine(
+        source,
+        _is_single_call(source, commands),
+        hides_code,
+        changes,
+        moves,
+        " ".join(argument for item in commands for argument in item.arguments),
+        directories or (),
+        not plants,
+        any(item.arguments[0] == "git" for item in others),
+    )
 
 
-def _is_output_filter(command: shell_syntax.Command) -> bool:
-    """Whether a command only prints or filters and writes no file.
+def _builds_text(source: str) -> bool:
+    """Whether the line holds a heredoc, herestring, or command, process, or arithmetic substitution."""
+    if HEREDOC.search(shell_inspection.text_outside_single_quotes(source)):
+        return True
+    tree = shell_syntax.syntax_tree(source)
+    return any(node.get("Type") in {"CmdSubst", "ProcSubst", "ArithmExp"} for node in shell_syntax.nodes(tree))
 
-    It is a listed builtin, or a listed program PATH finds where no one on this account could plant a stand-in.
+
+def _writes_nothing(command: shell_syntax.Command) -> bool:
+    """Whether a command only reads and prints, writing no file and running no other program.
+
+    Its words show that, and it is a builtin, or a program PATH finds where no one on this account could plant a
+    stand-in. Where its redirections write, the caller judges.
     """
     name = command.arguments[0]
-    if name not in OUTPUT_FILTERS or command.writes or has_inherited_function(name):
+    if command.wrapper_depth or has_inherited_function(name):
+        return False
+    if not read_only_commands.writes_nothing(command.arguments, command.dynamic):
         return False
     return name in SHELL_BUILTINS or is_system_program(name)
+
+
+def _directories(others: list[shell_syntax.Command]) -> tuple[Path, ...] | None:
+    """Every directory gh may run in: the hook's, and each one a literal cd may enter from any before it.
+
+    A cd that fails, or runs in a subshell, leaves gh in a directory already listed. None when a change of
+    directory cannot be followed, or when PATH holds a relative entry that a cd would point elsewhere.
+    """
+    found = [Path.cwd()]
+    for item in others:
+        if Path(item.arguments[0]).name not in shell_syntax.DIRECTORY_CHANGES:
+            continue
+        if item.arguments[0] != "cd" or has_relative_path_entry() or has_inherited_function("cd"):
+            return None
+        entered = [path for path in _entered(found, item) if path.is_dir()]
+        if not entered:
+            return None
+        found += [path.resolve() for path in entered if path.resolve() not in found]
+    return tuple(found)
+
+
+def _entered(found: list[Path], item: shell_syntax.Command) -> list[Path]:
+    """Where a cd may lead from each directory found so far; CDPATH may send a relative one elsewhere."""
+    targets = [shell_syntax.changed_directory(directory, item) for directory in found]
+    if None in targets:
+        return []
+    relative = any(not Path(argument).is_absolute() for argument in item.arguments[1:] if argument != "--")
+    return [] if relative and os.environ.get("CDPATH") else [path for path in targets if path is not None]
+
+
+def _may_plant(target: str, directories: tuple[Path, ...]) -> bool:
+    """Whether a redirection may write into a PATH entry, from any directory the line may run in."""
+    if target == DEVICE_NULL:
+        return False
+    if RUN_TIME_PATH.search(target) or has_relative_path_entry() or not directories:
+        return True
+    entries = {Path(entry).resolve() for entry in os.environ.get("PATH", "").split(os.pathsep)}
+    paths = [directory / Path(target).expanduser() for directory in directories]
+    return any(path.parent.resolve() in entries or path.resolve().parent in entries for path in paths)
 
 
 def _assigns_in_syntax(source: str) -> bool:
@@ -201,6 +278,11 @@ def input_redirects(command: shell_syntax.Command) -> list[str]:
 def has_inherited_function(name: str) -> bool:
     """Whether the environment exports a bash function of this name, which bash runs before a builtin or program."""
     return any(key.startswith(f"BASH_FUNC_{name}%%") or key == f"BASH_FUNC_{name}()" for key in os.environ)
+
+
+def has_relative_path_entry() -> bool:
+    """Whether PATH holds an empty or relative entry, which names another directory after a cd."""
+    return any(not entry or not Path(entry).is_absolute() for entry in os.environ.get("PATH", "").split(os.pathsep))
 
 
 def has_writable_path_entry_before(name: str) -> bool:

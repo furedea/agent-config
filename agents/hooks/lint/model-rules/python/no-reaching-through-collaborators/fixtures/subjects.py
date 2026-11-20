@@ -43,3 +43,7 @@ def prepare_cache(settings):
 
 def utc_stamp(moment):
     return moment.astimezone().isoformat().replace("+00:00", "Z").strip()
+
+
+def shipping_city(order):
+    return order.customer.address.city

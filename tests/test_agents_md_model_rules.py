@@ -243,8 +243,9 @@ EXPECTED = {
 FUNCTIONS = {"python": 10, "typescript": 9, "go": 8, "rust": 9}
 
 # A Python docstring is a string, not a comment, and the rule selects it too: `documented` is the second subject.
+# `label` returns a public field as it is, which can be a mutable collection as much as a private one.
 EXPECTED_OVERRIDES = {
-    "python": {"no-comment-restating-code": 2},
+    "python": {"no-comment-restating-code": 2, "no-exposed-mutable-collection": 2},
     # `qualified` builds `new sdk.ApiClient()`: a namespace-qualified collaborator is a construction too.
     "typescript": {"construction-separate-from-execution": 2},
 }

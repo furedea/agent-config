@@ -121,3 +121,71 @@ def test_python_style_model_rules_select_the_subjects_they_ask_about(repository:
         "frozen-model-subclass-keeps-locked-settings": 1,
         "frozen-base-model-sets-all-settings": 1,
     }
+
+
+def subjects_of(repository: Path, rule: str) -> int:  # noqa: F811
+    """How many subjects one rule selects in the repository, counting the rules that select everything too."""
+    return sum(entry["subjects"] for entry in plan(repository)["byRule"] if entry["rule"] == rule)
+
+
+def test_demeter_rule_selects_a_chain_of_property_reads(repository: Path) -> None:  # noqa: F811
+    source = """\
+def city(order):
+    return order.customer.address.city
+
+
+def street(user):
+    return user.address.street
+"""
+
+    (repository / "sample.py").write_text(source)
+
+    # Three member accesses reach through collaborators even when no call ends the chain; two do not.
+    assert subjects_of(repository, "no-reaching-through-collaborators") == 1
+
+
+def test_mutable_collection_rule_selects_a_returned_public_field(repository: Path) -> None:  # noqa: F811
+    source = """\
+class Cart:
+    def __init__(self):
+        self.items = []
+
+    def contents(self):
+        return self.items
+
+    def size(self):
+        return len(self.items)
+"""
+
+    (repository / "sample.py").write_text(source)
+
+    # A public field handed out as it is can be the mutable collection; a value computed from it cannot.
+    assert subjects_of(repository, "no-exposed-mutable-collection") == 1
+
+
+def test_comment_rule_selects_a_comment_placed_just_before_a_function(repository: Path) -> None:  # noqa: F811
+    source = """\
+# Return the name of the user.
+def name(user):
+    return user.name
+
+
+# Cache the total.
+@cache
+def total(items):
+    return sum(items)
+
+
+# noqa: D103
+def age(user):
+    return user.age
+
+
+def email(user):
+    return user.email
+"""
+
+    (repository / "sample.py").write_text(source)
+
+    # A comment above a function or its decorators can restate it as much as one inside; a tool directive cannot.
+    assert subjects_of(repository, "no-comment-restating-code") == 2

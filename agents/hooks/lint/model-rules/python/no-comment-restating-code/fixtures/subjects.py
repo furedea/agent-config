@@ -55,3 +55,13 @@ def sort_orders(orders):
 def total_weight(items):
     """Return the total weight of the items in kilograms."""
     return sum(item.weight_kg * item.quantity for item in items)
+
+
+# Return the sum of the prices.
+def _total_price(items):
+    return sum(item.price for item in items)
+
+
+# Kept for v1 webhook clients until they move to the v2 payload (#412).
+def legacy_total(payload):
+    return payload["amount"]

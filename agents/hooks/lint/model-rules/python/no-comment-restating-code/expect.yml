@@ -12,3 +12,5 @@ fixtures/subjects.py:
   - { line: 44, label: clean, window: 1, why: "a workaround with its upstream issue" }
   - { line: 50, label: clean, window: 1, why: "states why the sort is two-pass" }
   - { line: 55, label: clean, window: 1, why: "a docstring of a public function" }
+  - { line: 61, label: bad, window: 1, why: "the comment above a private helper restates its body" }
+  - { line: 66, label: clean, window: 1, why: "the comment above the function states why it is kept" }

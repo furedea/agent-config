@@ -79,3 +79,18 @@ class CsvRow:
 
     def cells(self):
         return self._cells
+
+
+class Roster:
+    __slots__ = ("members",)
+
+    def __init__(self):
+        self.members = []
+
+    def enroll(self, member):
+        if member in self.members:
+            raise ValueError(f"cannot enroll {member.name}: already on the roster")
+        self.members.append(member)
+
+    def everyone(self):
+        return self.members

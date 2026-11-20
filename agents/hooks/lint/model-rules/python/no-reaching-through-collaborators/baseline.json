@@ -1,13 +1,13 @@
 {
   "schema": "jev-lint-eval-1",
-  "recorded": "2026-11-18T06:21:58.428Z",
+  "recorded": "2026-11-19T12:18:34.477Z",
   "model": "jev-1.14.0",
   "suite": "python/no-reaching-through-collaborators",
   "rules": [
     {
       "id": "no-reaching-through-collaborators",
-      "draft": "e73ef50030b4",
-      "at": 0.5
+      "draft": "9bc0549110bd",
+      "at": 0.79
     }
   ],
   "cutoffs": {},
@@ -19,7 +19,7 @@
         "line": 4,
         "endLine": 6,
         "kind": "noul",
-        "value": 0.92,
+        "value": 0.91,
         "confidence": null
       },
       {
@@ -28,7 +28,7 @@
         "line": 15,
         "endLine": 17,
         "kind": "noul",
-        "value": 0.83,
+        "value": 0.88,
         "confidence": null
       },
       {
@@ -37,7 +37,7 @@
         "line": 20,
         "endLine": 22,
         "kind": "noul",
-        "value": 0.89,
+        "value": 0.92,
         "confidence": null
       },
       {
@@ -46,7 +46,7 @@
         "line": 25,
         "endLine": 27,
         "kind": "noul",
-        "value": 0.88,
+        "value": 0.89,
         "confidence": null
       },
       {
@@ -55,7 +55,7 @@
         "line": 30,
         "endLine": 32,
         "kind": "noul",
-        "value": 0.14,
+        "value": 0.16,
         "confidence": null
       },
       {
@@ -73,72 +73,16 @@
         "line": 39,
         "endLine": 41,
         "kind": "noul",
-        "value": 0.75,
-        "confidence": null
-      }
-    ],
-    [
-      {
-        "rule": "no-reaching-through-collaborators",
-        "file": "agents/hooks/lint/model-rules/python/no-reaching-through-collaborators/fixtures/subjects.py",
-        "line": 4,
-        "endLine": 6,
-        "kind": "noul",
-        "value": 0.91,
+        "value": 0.74,
         "confidence": null
       },
       {
         "rule": "no-reaching-through-collaborators",
         "file": "agents/hooks/lint/model-rules/python/no-reaching-through-collaborators/fixtures/subjects.py",
-        "line": 15,
-        "endLine": 17,
+        "line": 48,
+        "endLine": 49,
         "kind": "noul",
-        "value": 0.84,
-        "confidence": null
-      },
-      {
-        "rule": "no-reaching-through-collaborators",
-        "file": "agents/hooks/lint/model-rules/python/no-reaching-through-collaborators/fixtures/subjects.py",
-        "line": 20,
-        "endLine": 22,
-        "kind": "noul",
-        "value": 0.9,
-        "confidence": null
-      },
-      {
-        "rule": "no-reaching-through-collaborators",
-        "file": "agents/hooks/lint/model-rules/python/no-reaching-through-collaborators/fixtures/subjects.py",
-        "line": 25,
-        "endLine": 27,
-        "kind": "noul",
-        "value": 0.87,
-        "confidence": null
-      },
-      {
-        "rule": "no-reaching-through-collaborators",
-        "file": "agents/hooks/lint/model-rules/python/no-reaching-through-collaborators/fixtures/subjects.py",
-        "line": 30,
-        "endLine": 32,
-        "kind": "noul",
-        "value": 0.14,
-        "confidence": null
-      },
-      {
-        "rule": "no-reaching-through-collaborators",
-        "file": "agents/hooks/lint/model-rules/python/no-reaching-through-collaborators/fixtures/subjects.py",
-        "line": 35,
-        "endLine": 36,
-        "kind": "noul",
-        "value": 0.62,
-        "confidence": null
-      },
-      {
-        "rule": "no-reaching-through-collaborators",
-        "file": "agents/hooks/lint/model-rules/python/no-reaching-through-collaborators/fixtures/subjects.py",
-        "line": 39,
-        "endLine": 41,
-        "kind": "noul",
-        "value": 0.71,
+        "value": 0.69,
         "confidence": null
       }
     ],
@@ -158,7 +102,7 @@
         "line": 15,
         "endLine": 17,
         "kind": "noul",
-        "value": 0.84,
+        "value": 0.87,
         "confidence": null
       },
       {
@@ -167,7 +111,7 @@
         "line": 20,
         "endLine": 22,
         "kind": "noul",
-        "value": 0.89,
+        "value": 0.9,
         "confidence": null
       },
       {
@@ -185,7 +129,81 @@
         "line": 30,
         "endLine": 32,
         "kind": "noul",
-        "value": 0.13,
+        "value": 0.15,
+        "confidence": null
+      },
+      {
+        "rule": "no-reaching-through-collaborators",
+        "file": "agents/hooks/lint/model-rules/python/no-reaching-through-collaborators/fixtures/subjects.py",
+        "line": 35,
+        "endLine": 36,
+        "kind": "noul",
+        "value": 0.68,
+        "confidence": null
+      },
+      {
+        "rule": "no-reaching-through-collaborators",
+        "file": "agents/hooks/lint/model-rules/python/no-reaching-through-collaborators/fixtures/subjects.py",
+        "line": 39,
+        "endLine": 41,
+        "kind": "noul",
+        "value": 0.69,
+        "confidence": null
+      },
+      {
+        "rule": "no-reaching-through-collaborators",
+        "file": "agents/hooks/lint/model-rules/python/no-reaching-through-collaborators/fixtures/subjects.py",
+        "line": 48,
+        "endLine": 49,
+        "kind": "noul",
+        "value": 0.69,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "no-reaching-through-collaborators",
+        "file": "agents/hooks/lint/model-rules/python/no-reaching-through-collaborators/fixtures/subjects.py",
+        "line": 4,
+        "endLine": 6,
+        "kind": "noul",
+        "value": 0.93,
+        "confidence": null
+      },
+      {
+        "rule": "no-reaching-through-collaborators",
+        "file": "agents/hooks/lint/model-rules/python/no-reaching-through-collaborators/fixtures/subjects.py",
+        "line": 15,
+        "endLine": 17,
+        "kind": "noul",
+        "value": 0.87,
+        "confidence": null
+      },
+      {
+        "rule": "no-reaching-through-collaborators",
+        "file": "agents/hooks/lint/model-rules/python/no-reaching-through-collaborators/fixtures/subjects.py",
+        "line": 20,
+        "endLine": 22,
+        "kind": "noul",
+        "value": 0.91,
+        "confidence": null
+      },
+      {
+        "rule": "no-reaching-through-collaborators",
+        "file": "agents/hooks/lint/model-rules/python/no-reaching-through-collaborators/fixtures/subjects.py",
+        "line": 25,
+        "endLine": 27,
+        "kind": "noul",
+        "value": 0.89,
+        "confidence": null
+      },
+      {
+        "rule": "no-reaching-through-collaborators",
+        "file": "agents/hooks/lint/model-rules/python/no-reaching-through-collaborators/fixtures/subjects.py",
+        "line": 30,
+        "endLine": 32,
+        "kind": "noul",
+        "value": 0.14,
         "confidence": null
       },
       {
@@ -203,15 +221,24 @@
         "line": 39,
         "endLine": 41,
         "kind": "noul",
-        "value": 0.74,
+        "value": 0.72,
+        "confidence": null
+      },
+      {
+        "rule": "no-reaching-through-collaborators",
+        "file": "agents/hooks/lint/model-rules/python/no-reaching-through-collaborators/fixtures/subjects.py",
+        "line": 48,
+        "endLine": 49,
+        "kind": "noul",
+        "value": 0.67,
         "confidence": null
       }
     ]
   ],
   "spent": {
     "calls": 3,
-    "inputTokens": 9939,
-    "usd": 0.000417438,
-    "ms": 412
+    "inputTokens": 11157,
+    "usd": 0.000468594,
+    "ms": 281
   }
 }

@@ -9,15 +9,16 @@ subject: node
 # `__init__` and the class header, outside the returning function.
 state: located
 # Cutoff 0.5 (unchanged): the classes do not separate. With the whole file sent, the plain record CsvRow (a dataclass
-# whose list field is private) scored 0.93 against 0.96 for the quietest violation (3 passes, means; baseline.json,
-# 2026-11-18); a cutoff inside that gap would sit within one case's pass-to-pass spread. It stays advisory.
+# whose list field is private) scored 0.94 against 0.96 for the quietest violation (4 violations, 5 conforming cases,
+# 3 passes, means; baseline.json, 2026-11-19); a cutoff inside that gap would sit within one case's pass-to-pass
+# spread. It stays advisory.
 threshold: 0.5
 axis: file
 severity: warning
 rule:
   all:
     - kind: function_definition
-    - has: { kind: return_statement, regex: "^return self\\._", stopBy: end }
+    - has: { kind: return_statement, regex: "^return self\\.(_|[A-Za-z]\\w*\\s*$)", stopBy: end }
     - has: { field: name, regex: "^[^_]" }
 ask: >-
   This function hands the caller the object's own mutable collection, so the caller can change its state without the

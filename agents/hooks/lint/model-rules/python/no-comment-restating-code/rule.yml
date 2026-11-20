@@ -1,19 +1,17 @@
 # M-33 minimal comments (agents/AGENTS.md: "minimize comments and docstrings; use them for public APIs, TODOs,
 # non-obvious constraints, and intent that code cannot express"). Advisory: the Stop hook reports findings and never
-# promotes this rule to a gate (ADR-0021). Selected by a comment or docstring inside the function that is not a tool
-# directive or TODO; a comment that restates the next line is the violation.
+# promotes this rule to a gate (ADR-0021). Selected by a comment or docstring inside the function, or a comment just
+# above it or its decorators, that is not a tool directive or TODO; a comment that restates the code is the violation.
 id: no-comment-restating-code
 language: Python
 kind: noul
 subject: node
 state: local
-# Cutoff 0.59: jev-lint's fitted midpoint on this folder's fixtures (3 violations, 5 conforming cases, 3 passes,
-# means), where the loudest conforming case scored 0.30 and the quietest violation 0.86 (baseline.json, 2026-11-18).
-threshold: 0.59
-inconclusive: >-
-  Blind: the conforming cases score at most 0.30 and the violations at least 0.86, both a quarter of the scale or more
-  from the cutoff, so this corpus cannot see the rule drift. The hard conforming cases written for it still answered
-  far below the cutoff; a boundary case needs real code that reviewers argue over, and none has been found yet.
+# Cutoff 0.62: the midpoint between the loudest conforming case (0.37, a public docstring) and the quietest violation
+# inside a function (0.87) on this folder's fixtures (4 violations, 6 conforming cases, 3 passes, means; baseline.json,
+# 2026-11-19). Limits: a comment just above a function that restates it (`_total_price`) scored 0.11, so the comment
+# above a function is selected but not yet found; no cutoff separates it.
+threshold: 0.62
 axis: file
 severity: warning
 rule:
@@ -30,8 +28,16 @@ rule:
             has: { kind: string }
             inside: { kind: block, inside: { kind: function_definition } }
             stopBy: end
+        - follows:
+            kind: comment
+            not: { regex: "^#\\s*(TODO|FIXME|XXX|HACK|SAFETY|noqa|type:|pragma|pylint|ruff|nosec|nolint|clippy|rustfmt|eslint|oxlint|ts-|prettier|biome|@ts|go:|#!)" }
+        - inside:
+            kind: decorated_definition
+            follows:
+              kind: comment
+              not: { regex: "^#\\s*(TODO|FIXME|XXX|HACK|SAFETY|noqa|type:|pragma|pylint|ruff|nosec|nolint|clippy|rustfmt|eslint|oxlint|ts-|prettier|biome|@ts|go:|#!)" }
 ask: >-
-  A comment in this function restates what the code beside it already says.
+  A comment in this function, or just above it, restates what the code beside it already says.
 criteria:
   "true": >-
     A comment only paraphrases the statement it precedes ("increment the counter", "loop over users"), narrates the

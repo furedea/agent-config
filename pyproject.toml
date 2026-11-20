@@ -76,6 +76,7 @@ known_first_party = [
   "notebook_cells",
   "patch_input",
   "provider_adapter",
+  "read_only_commands",
   "removal_paths",
   "rust_targets",
   "secret_content",

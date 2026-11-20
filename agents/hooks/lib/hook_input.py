@@ -59,8 +59,15 @@ def payload_directory(payload: object) -> Generator[None]:
     if not isinstance(value, str) or not value or not Path(value).is_dir():
         yield
         return
+    with working_directory(Path(value)):
+        yield
+
+
+@contextmanager
+def working_directory(directory: Path) -> Generator[None]:
+    """Run a decision in a directory, then restore ours."""
     previous = Path.cwd()
-    os.chdir(value)
+    os.chdir(directory)
     try:
         yield
     finally:

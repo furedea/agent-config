@@ -168,7 +168,7 @@ def _gh_config_value(key: str) -> str | None:
 
 def _stand_in_problem(name: str, line: CommandLine) -> str:
     """Why something else than the installed program may run under its name, or an empty string."""
-    if not line.single_call and has_writable_path_entry_before(name):
+    if not (line.single_call or line.plants_nothing) and has_writable_path_entry_before(name):
         return f"another command on the line could place a {name} earlier on PATH"
     if has_inherited_function(name):
         return f"the environment carries a shell function that bash would run instead of {name}"

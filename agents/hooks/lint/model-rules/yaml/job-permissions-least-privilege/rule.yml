@@ -1,54 +1,72 @@
 # github-actions-style: "grant only what each job actually requires". Advisory; the prose stays until the rule is
 # promoted (ADR-0021).
-# The cutoff is jev-lint's fitted midpoint, 0.64: on this folder's fixtures (3 bad, 5 clean, 3 passes) the highest
-# clean case scored 0.36 (a grant needed by a reusable workflow the job names) and the lowest bad one 0.92. Eight cases
-# are not a calibration, so the rule stays advisory.
+# The cutoff is jev-lint's fitted midpoint, 0.65: on this folder's fixtures (3 bad, 5 clean, 3 passes) the highest
+# clean case scored 0.40 (a grant needed by a reusable workflow the job names) and the lowest bad one 0.91 (eval of
+# 2026-11-19, after the matcher took in flow-mapping jobs and a quoted `jobs` key). Eight cases are not a calibration,
+# so the rule stays advisory.
 id: job-permissions-least-privilege
 language: Yaml
 kind: noul
 subject: node
 state: located
-threshold: 0.64
+threshold: 0.65
 inconclusive: >-
-  Blind: every fixture sits 0.28 or more from the cutoff; a boundary case needs a grant a reader would argue over
+  Blind: every fixture sits 0.25 or more from the cutoff; a boundary case needs a grant a reader would argue over
   (`actions: read` for a step that only downloads an artifact of the same run), and none is written yet.
 axis: file
 severity: warning
 # A `permissions:` value that grants something, a mapping or `read-all` / `write-all`; `permissions: {}` grants nothing.
 rule:
-  all:
-    - kind: block_mapping_pair
-    - has: { field: key, regex: "^[\"']?permissions[\"']?$" }
-    - has: { field: value, not: { regex: "^\\{\\s*\\}$" } }
-    # Only the workflow's own `permissions:` or a job's: a direct key of the top-level mapping of a file that has `jobs`,
-    # or of a job mapping. An action input named `permissions` under `with:` is neither.
-    - any:
-        - inside:
-            kind: block_mapping
-            inside:
-              kind: block_node
-              inside:
-                kind: document
-                has:
+  any:
+    - all:
+        - kind: block_mapping_pair
+        - has: { field: key, regex: "^[\"']?permissions[\"']?$" }
+        - has: { field: value, not: { regex: "^\\{\\s*\\}$" } }
+        # Only the workflow's own `permissions:` or a job's: a direct key of the top-level mapping of a file that has
+        # `jobs`, or of a job mapping. An action input named `permissions` under `with:` is neither.
+        - any:
+            - inside:
+                kind: block_mapping
+                inside:
                   kind: block_node
-                  has:
-                    kind: block_mapping
+                  inside:
+                    kind: document
                     has:
-                      kind: block_mapping_pair
-                      has: { field: key, regex: "^jobs$" }
+                      kind: block_node
+                      has:
+                        kind: block_mapping
+                        has:
+                          kind: block_mapping_pair
+                          has: { field: key, regex: "^[\"']?jobs[\"']?$" }
+            - inside:
+                kind: block_mapping
+                inside:
+                  kind: block_node
+                  inside:
+                    kind: block_mapping_pair
+                    matches: jobs-entry
+    # A job written as a flow mapping, `build: {runs-on: ..., permissions: {...}}`.
+    - all:
+        - kind: flow_pair
+        - has: { field: key, regex: "^[\"']?permissions[\"']?$" }
+        - has: { field: value, not: { regex: "^\\{\\s*\\}$" } }
         - inside:
-            kind: block_mapping
+            kind: flow_mapping
             inside:
-              kind: block_node
+              kind: flow_node
               inside:
                 kind: block_mapping_pair
-                inside:
-                  kind: block_mapping
-                  inside:
-                    kind: block_node
-                    inside:
-                      kind: block_mapping_pair
-                      has: { field: key, regex: "^jobs$" }
+                matches: jobs-entry
+utils:
+  # One job: an entry of the top-level `jobs:` mapping.
+  jobs-entry:
+    inside:
+      kind: block_mapping
+      inside:
+        kind: block_node
+        inside:
+          kind: block_mapping_pair
+          has: { field: key, regex: "^[\"']?jobs[\"']?$" }
 ask: >-
   This `permissions` block grants a scope or an access level that the steps of the job (or of every job, at the workflow
   level) do not use.

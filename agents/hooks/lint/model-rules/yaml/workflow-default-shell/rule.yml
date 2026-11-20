@@ -1,39 +1,52 @@
 # github-actions-style: `defaults.run.shell: bash` so that `run:` steps get `pipefail`. Advisory; it was a blocking
 # ast-grep rule (gha_workflow_default_shell) until review showed that job-level defaults, matrix keys and custom shell
 # strings cannot be told apart by syntax alone (ADR-0021).
-# The cutoff is jev-lint's fitted midpoint, 0.62: on this folder's fixtures (4 bad, 5 clean, 3 passes) the highest
-# clean case scored 0.35 (workflow-level `defaults.run.shell: bash`) and the lowest bad one 0.87. Nine cases are not
-# a calibration, so the rule stays advisory.
+# The cutoff is jev-lint's fitted midpoint, 0.63: on this folder's fixtures (4 bad, 5 clean, 3 passes) the highest
+# clean case scored 0.41 (workflow-level `defaults.run.shell: bash`) and the lowest bad one 0.86 (eval of 2026-11-19,
+# after the matcher took in flow-mapping steps). Nine cases are not a calibration, so the rule stays advisory.
 id: workflow-default-shell
 language: Yaml
 kind: noul
 subject: node
 state: located
-threshold: 0.62
-inconclusive: >-
-  Blind: every fixture sits 0.25 or more from the cutoff; a boundary case needs a shell a reader would argue over (a
-  custom `bash -o pipefail` wrapper in a container step), and none is written yet.
+threshold: 0.63
 axis: file
 severity: warning
-# A step's `run:`, wherever the workflow sets (or fails to set) the shell for it.
+# A step's `run:`, wherever the workflow sets (or fails to set) the shell for it. A step written as a flow mapping
+# (`- {run: make}`, `steps: [{run: make}]`) is a subject too.
 rule:
-  all:
-    - kind: block_mapping_pair
-    - has: { field: key, regex: "^[\"']?run[\"']?$" }
-    # Only a GitHub Actions file: a rule cannot be scoped by path, so the document must carry a `runs-on` (a workflow job)
-    # or `using` (a composite action) key. A CircleCI or GitLab file with `run:` steps has neither.
-    - inside:
-        kind: document
+  any:
+    - all:
+        - kind: block_mapping_pair
+        - has: { field: key, regex: "^[\"']?run[\"']?$" }
+        - matches: github-actions-document
+        # A key of a step mapping itself, not of a nested `with:` or `env:` mapping.
+        - inside:
+            kind: block_mapping
+            stopBy: neighbor
+            inside: { kind: block_node, stopBy: neighbor, inside: { kind: block_sequence_item, stopBy: neighbor } }
+    - all:
+        - kind: flow_pair
+        - has: { field: key, regex: "^[\"']?run[\"']?$" }
+        - matches: github-actions-document
+        - inside:
+            kind: flow_mapping
+            stopBy: neighbor
+            inside:
+              kind: flow_node
+              stopBy: neighbor
+              inside: { any: [{ kind: block_sequence_item }, { kind: flow_sequence }], stopBy: neighbor }
+utils:
+  # Only a GitHub Actions file: a rule cannot be scoped by path, so the document must carry a `runs-on` (a workflow job)
+  # or `using` (a composite action) key. A CircleCI or GitLab file with `run:` steps has neither.
+  github-actions-document:
+    inside:
+      kind: document
+      stopBy: end
+      has:
         stopBy: end
-        has:
-          stopBy: end
-          kind: block_mapping_pair
-          has: { field: key, regex: "^[\"']?(runs-on|using)[\"']?$" }
-    # A key of a step mapping itself, not of a nested `with:` or `env:` mapping.
-    - inside:
-        kind: block_mapping
-        stopBy: neighbor
-        inside: { kind: block_node, stopBy: neighbor, inside: { kind: block_sequence_item, stopBy: neighbor } }
+        any: [{ kind: block_mapping_pair }, { kind: flow_pair }]
+        has: { field: key, regex: "^[\"']?(runs-on|using)[\"']?$" }
 ask: >-
   The shell that this `run:` step executes under does not enable `pipefail`.
 criteria:

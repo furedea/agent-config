@@ -93,6 +93,8 @@ known_first_party = [
   "source_listing",
   "static_rule_scan",
   "system_programs",
+  "t3_ownership",
+  "t3_thread",
   "trusted_owners",
   "verification_session",
 ]

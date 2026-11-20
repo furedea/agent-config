@@ -107,12 +107,12 @@ def refusal(reason: str) -> dict:
 
 def output(event: str, result: dict) -> dict:
     """Encode a shared result in the object Antigravity reads for `event`; `{}` lets the call or stop proceed."""
-    handlers = {PRE_TOOL_USE: pre_tool_use, STOP: stop, SESSION_START: session_start}
+    handlers = {PRE_TOOL_USE: pre_tool_use, STOP: stop_decision, SESSION_START: session_start}
     return handlers.get(event, proceed)(result)
 
 
 def proceed(_result: dict) -> dict:
-    """Let the call, stop, or session go on unchanged."""
+    """Answer events such as PostToolUse, where Antigravity reads nothing but an empty object."""
     return {}
 
 
@@ -127,7 +127,7 @@ def pre_tool_use(result: dict) -> dict:
     return refusal(reason) if decision == DENY else {}
 
 
-def stop(result: dict) -> dict:
+def stop_decision(result: dict) -> dict:
     """Keep the agent going for a shared block; `continuationActive` already stops the shared gate from blocking."""
     if result.get(DECISION) != BLOCK:
         return {}

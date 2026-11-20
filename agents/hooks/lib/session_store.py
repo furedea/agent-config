@@ -129,7 +129,7 @@ class SessionKey:
 def session_directory(key: SessionKey) -> Path:
     """Locate the state directory of one session; raise StateError for an unknown provider or invalid session ID."""
     if (
-        key.provider not in {"codex", "claude", "devin", "hermes", "pi"}
+        key.provider not in {"antigravity", "codex", "claude", "devin", "hermes", "pi"}
         or not isinstance(key.session_id, str)
         or not 0 < len(key.session_id) <= 256
     ):

@@ -14,6 +14,10 @@ sys.path.insert(0, str(COMMON / "lib"))
 
 import provider_adapter
 
+NEW_STRING = "new_string"
+REPLACEMENT_CONTENT = "ReplacementContent"
+REPLACEMENT_CHUNKS = "ReplacementChunks"
+SPECIFIC_OUTPUT = "hookSpecificOutput"
 DENY = "deny"
 FORCE_ASK = "force_ask"
 CONTINUE = "continue"
@@ -26,9 +30,12 @@ ARGUMENTS = {
     "Path": "file_path",
     "AbsolutePath": "file_path",
     "TargetFile": "file_path",
+    "SearchPath": "file_path",
+    "SearchDirectory": "file_path",
+    "DirectoryPath": "file_path",
     "Content": "content",
     "CodeContent": "content",
-    "ReplacementContent": "new_string",
+    REPLACEMENT_CONTENT: NEW_STRING,
 }
 
 
@@ -52,16 +59,25 @@ def read(payload: dict) -> dict:
 
 
 def shared_arguments(args: object) -> object:
-    """Rename the tool arguments the shared guards read; a non-object is kept so the consuming check rejects it."""
+    """Rename the tool arguments the shared guards read; a non-object is kept so the consuming check rejects it.
+
+    Two arguments naming one shared field with different values are ambiguous, and a guard that read only one
+    could be bypassed through the other, so they are rejected.
+    """
     if not isinstance(args, dict):
         return {} if args is None else args
-    renamed = {ARGUMENTS.get(key, key): value for key, value in args.items()}
-    chunks = args.get("ReplacementChunks")
+    renamed: dict = {}
+    for key, value in args.items():
+        field = ARGUMENTS.get(key, key)
+        if field in renamed and renamed[field] != value:
+            raise ValueError(f"ambiguous tool arguments for {field}: {key}")
+        renamed[field] = value
+    chunks = args.get(REPLACEMENT_CHUNKS)
     if isinstance(chunks, list):
-        renamed["new_string"] = "".join(
-            chunk["ReplacementContent"]
+        renamed[NEW_STRING] = renamed.get(NEW_STRING, "") + "".join(
+            chunk[REPLACEMENT_CONTENT]
             for chunk in chunks
-            if isinstance(chunk, dict) and isinstance(chunk.get("ReplacementContent"), str)
+            if isinstance(chunk, dict) and isinstance(chunk.get(REPLACEMENT_CONTENT), str)
         )
     return renamed
 
@@ -92,14 +108,14 @@ def output(event: str, result: dict) -> dict:
             else {}
         )
     if event == SESSION_START:
-        context = (result.get("hookSpecificOutput") or {}).get("additionalContext")
+        context = (result.get(SPECIFIC_OUTPUT) or {}).get("additionalContext")
         return {"injectSteps": [{"systemMessage": {"systemMessage": context}}]} if context else {}
     return {}
 
 
 def pre_tool_use(result: dict) -> dict:
     """Encode a shared deny or ask as the PreToolUse decision; anything else lets Antigravity decide."""
-    specific = result.get("hookSpecificOutput")
+    specific = result.get(SPECIFIC_OUTPUT)
     decision = specific.get("permissionDecision") if isinstance(specific, dict) else None
     reason = (specific or {}).get("permissionDecisionReason") or "Blocked by hook policy"
     if decision == "ask":

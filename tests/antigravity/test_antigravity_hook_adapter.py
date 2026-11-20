@@ -324,3 +324,24 @@ def test_non_object_payloads_are_denied(run_cli: CliRunner, raw: str) -> None:
     result = run_cli(SCRIPT, "shell", "git", payload=raw)
     assert result.returncode == 2
     assert stdout_object(result)["decision"] == "deny"
+
+
+@pytest.mark.parametrize(
+    "args",
+    [
+        {"Path": "/safe.txt", "TargetFile": "~/.ssh/config"},
+        {"file_path": "/safe.txt", "AbsolutePath": "~/.ssh/config"},
+        {"Content": "a", "CodeContent": "b"},
+    ],
+)
+def test_ambiguous_arguments_are_denied_instead_of_guarding_only_one(
+    run_cli: CliRunner, project: Path, args: dict
+) -> None:
+    result = run_cli(SCRIPT, "paths", "patch", payload=tool_payload(project, "write_file", args))
+    assert result.returncode == 2
+    assert "ambiguous" in stdout_object(result)["reason"]
+
+
+def test_replacement_chunks_add_to_the_single_replacement(adapter: ModuleType) -> None:
+    args = {"ReplacementContent": "a", "ReplacementChunks": [{"ReplacementContent": "b"}]}
+    assert adapter.shared_arguments(args)["new_string"] == "ab"

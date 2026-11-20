@@ -82,7 +82,7 @@ def no_cwd() -> str:
     return ""
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class Profile:
     """Provider facts the shared adapter needs; every behavior derived from them is shared.
 

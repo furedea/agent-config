@@ -20,3 +20,6 @@ export const backoffMs = (retries: number): number => {
   // Capped at 8 retries: the gateway drops the connection after 30 s (#142).
   return 2 ** Math.min(retries, 8) * 100;
 };
+
+/** Prices are kept in cents, so the tax is rounded to a whole cent. */
+export const withTaxCents = (cents: number): number => Math.round(cents * 1.1);

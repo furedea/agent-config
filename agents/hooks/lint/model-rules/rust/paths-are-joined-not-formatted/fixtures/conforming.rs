@@ -19,3 +19,15 @@ pub fn backup_name(stem: &str) -> PathBuf {
 pub fn major_dir(major: u32) -> PathBuf {
     PathBuf::from(format!("v{major}"))
 }
+
+pub fn escaped_backup(stem: &str) -> PathBuf {
+    PathBuf::from(format!("{stem}\x2ebak"))
+}
+
+pub fn flat_log_name(source: &str) -> PathBuf {
+    PathBuf::from(format!("{}.log", source.replace("/", "_")))
+}
+
+pub fn raw_file_name(stem: &str) -> PathBuf {
+    PathBuf::from(format!(r"{stem}.json"))
+}

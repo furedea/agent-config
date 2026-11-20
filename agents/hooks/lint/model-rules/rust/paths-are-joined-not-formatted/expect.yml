@@ -8,9 +8,15 @@ fixtures/violating.rs:
   - { line: 11, label: bad, window: 1 }
   - { line: 15, label: bad, window: 1 }
   - { line: 19, label: bad, window: 1 }
+  - { line: 23, label: bad, window: 1 }
+  - { line: 27, label: bad, window: 1 }
+  - { line: 31, label: bad, window: 1 }
 fixtures/conforming.rs:
   - { line: 3, label: clean, window: 1 }
   - { line: 7, label: clean, window: 1 }
   - { line: 11, label: clean, window: 1 }
   - { line: 15, label: clean, window: 1 }
   - { line: 19, label: clean, window: 1 }
+  - { line: 23, label: clean, window: 1 }
+  - { line: 27, label: clean, window: 1 }
+  - { line: 31, label: clean, window: 1 }

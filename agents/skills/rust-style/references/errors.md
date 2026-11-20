@@ -11,7 +11,10 @@
 
 - Use `Result` for expected failures.
 - Reserve `panic!` for logic bugs and impossible states.
-- Do not leave debugging `panic!` calls in production code.
+- Do not use `unwrap` or `expect` in production code except for impossible states justified by a nearby invariant.
+- Avoid direct indexing when missing data is a normal possibility; use `get()` or explicit validation.
+- Public APIs that can panic must document `# Panics`, including a panic that comes from a helper they call.
+- Do not leave `todo!`, `unimplemented!`, or debugging `panic!` calls in production code.
 - Use `unreachable!` only when the type system or previous validation makes the branch impossible.
 
 Application-boundary error:

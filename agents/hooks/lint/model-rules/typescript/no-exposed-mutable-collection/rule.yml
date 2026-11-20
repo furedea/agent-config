@@ -1,17 +1,23 @@
 # M-34 collection objects (agents/AGENTS.md: "do not expose mutable raw collections"). Advisory: the Stop hook reports
 # findings and never promotes this rule to a gate (ADR-0021). Selected by a function that returns a field or a mutable
-# reference; the criteria require the collection to be the object's own state.
+# reference; the criteria require the collection to be the object's own state. A `readonly` or `Readonly*` return type
+# is not selected; a method without a return type is, and the class beside it shows the field's type.
 id: no-exposed-mutable-collection
 languages: [ TypeScript, Tsx ]
 kind: noul
 subject: node
-state: local
-# The cutoff is jev-lint's fitted midpoint on this folder's fixtures (4 violations, 4 conforming cases, 3 passes,
-# means, #220): the highest conforming case scored 0.89 (0.91 in its worst pass) and the lowest violation 0.95 (0.95
-# in its worst pass). A fit on so few cases is not a calibration, so the rule stays advisory (ADR-0021).
-# Provisional: the worst passes leave about 0.02 on each side, so a re-run can flip the plain-data-record case
-# (CsvRow). The criteria's exception for plain data records needs tightening and a refit before this value is relied on.
+state: located
+# The cutoff is jev-lint's fitted midpoint on this folder's fixtures (5 violations, 2 conforming cases, 3 passes,
+# baseline of 2026-11-19, the file sent with each method since #196): the highest conforming case scored 0.92
+# (conforming.ts:30, 0.91 to 0.92) and the lowest violation 0.92 (violating.ts:12, 0.92 to 0.96). A fit on so few
+# cases is not a calibration, so the rule stays advisory (ADR-0021).
 threshold: 0.93
+# The worst passes of the weakest violation and the plain-data-record case (CsvRow) overlap, so a run, not the rule,
+# decides whether violating.ts:12 is reported.
+inconclusive: >-
+  Unstable: the team's member array at violating.ts:12 spreads 0.04 between passes (0.92 to 0.96), wider than its 0.01
+  margin over the cutoff, and the plain data record at conforming.ts:30 scores 0.91 to 0.92; the criteria's exception
+  for plain data records needs tightening and a refit before this cutoff is relied on.
 axis: file
 severity: warning
 rule:
@@ -22,9 +28,16 @@ rule:
         - all:
             - kind: arrow_function
             - inside: { kind: variable_declarator }
-    - has:
-        field: return_type
-        regex: "(\\[\\]|Array<|Map<|Set<|Record<)"
+    - any:
+        - all:
+            - has:
+                field: return_type
+                regex: "(\\[\\]|\\bArray<|\\bMap<|\\bSet<|\\bRecord<)"
+            - not:
+                has: { field: return_type, regex: "^:\\s*(readonly\\s|Readonly<)" }
+        - all:
+            - has: { pattern: return this.$F, stopBy: end }
+            - not: { has: { field: return_type, kind: type_annotation } }
     - has: { pattern: return this.$F, stopBy: end }
 ask: >-
   This function hands the caller the object's own mutable collection, so the caller can change its state without the

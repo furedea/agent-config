@@ -6,10 +6,11 @@ languages: [ TypeScript, Tsx ]
 kind: noul
 subject: node
 state: local
-# The cutoff is jev-lint's fitted midpoint on this folder's fixtures (4 violations, 4 conforming cases, 3 passes,
-# means, #220): the highest conforming case scored 0.48 (0.51 in its worst pass) and the lowest violation 0.80 (0.79
-# in its worst pass). A fit on so few cases is not a calibration, so the rule stays advisory (ADR-0021).
-threshold: 0.65
+# The cutoff is jev-lint's fitted midpoint on this folder's fixtures (5 violations, 4 conforming cases, 3 passes,
+# baseline of 2026-11-19): the highest conforming case scored 0.57 (conforming.ts:3) and the lowest violation 0.81
+# (violating.ts:3); the property chain without a call (#196) scored above it. A fit on so few cases is not a
+# calibration, so the rule stays advisory (ADR-0021).
+threshold: 0.69
 axis: file
 severity: warning
 rule:
@@ -20,7 +21,12 @@ rule:
         - all:
             - kind: arrow_function
             - inside: { kind: variable_declarator }
-    - has: { pattern: $A.$B.$C.$D($$$), stopBy: end }
+    - has:
+        stopBy: end
+        any:
+          - pattern: $A.$B.$C.$D($$$)
+          # A property chain that ends without a call: `order.customer.address.city`
+          - pattern: $A.$B.$C.$D
 ask: >-
   This function reaches through one collaborator into another's internals instead of asking its direct collaborator.
 criteria:

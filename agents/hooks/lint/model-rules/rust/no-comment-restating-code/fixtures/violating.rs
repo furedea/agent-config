@@ -39,3 +39,8 @@ pub fn is_adult(age: u32) -> bool {
     // check if age is at least 18
     age >= 18
 }
+
+// Return the number of retries plus one.
+pub fn attempts(retries: u32) -> u32 {
+    retries + 1
+}

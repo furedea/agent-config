@@ -25,3 +25,8 @@ pub fn weekday(days_since_epoch: i64) -> u8 {
     /* 1970-01-01 was a Thursday, so day 0 maps to index 3 when Monday is 0. */
     ((days_since_epoch + 3).rem_euclid(7)) as u8
 }
+
+/// The number of tries a request gets: the first one and each retry.
+pub fn tries(retries: u32) -> u32 {
+    retries + 1
+}

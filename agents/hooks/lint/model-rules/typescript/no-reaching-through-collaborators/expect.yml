@@ -7,6 +7,7 @@ fixtures/violating.ts:
   - { line: 7, label: bad, window: 1, why: "reaches through the invoice's account to its owner" }
   - { line: 11, label: bad, window: 1, why: "reaches through the cart's store into the warehouse rates" }
   - { line: 14, label: bad, window: 1, why: "reaches through the context into the app's service registry" }
+  - { line: 19, label: bad, window: 1, why: "reads a setting through the worker's client and its transport" }
 fixtures/conforming.ts:
   - { line: 3, label: clean, window: 1, why: "a standard-library path" }
   - { line: 7, label: clean, window: 1, why: "data access on a plain event record" }

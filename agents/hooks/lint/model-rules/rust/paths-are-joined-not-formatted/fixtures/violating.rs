@@ -19,3 +19,15 @@ pub fn windows_target(drive: &str, file: &str) -> PathBuf {
 pub fn nested_log(base: String, year: u32, month: u32) -> PathBuf {
     PathBuf::from(base + &format!("/logs/{year}/{month:02}.log"))
 }
+
+pub fn cache_file(root: &str, key: &str) -> PathBuf {
+    PathBuf::from(format!(r"{root}/cache/{key}.bin"))
+}
+
+pub fn lock_file(dir: &str, name: &str) -> PathBuf {
+    std::path::PathBuf::from(std::format!("{dir}/{name}.lock"))
+}
+
+pub fn archive_path(base: &str, name: &str) -> PathBuf {
+    PathBuf::from(alloc::format!("{base}/archive/{name}"))
+}

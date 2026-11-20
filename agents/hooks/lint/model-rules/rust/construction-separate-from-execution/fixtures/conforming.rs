@@ -39,3 +39,8 @@ impl Engine {
 pub fn default_store() -> MemoryStore {
     MemoryStore::default()
 }
+
+pub fn serve(endpoint: String, token: String) -> Result<()> {
+    let repository = UserRepository { endpoint, token };
+    App::new(repository).run()
+}

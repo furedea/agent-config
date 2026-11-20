@@ -60,3 +60,16 @@ pub fn load_and_render(path: &Path) -> Result<String> {
     html.push_str("</article>");
     Ok(html)
 }
+
+pub fn publish(report: &Report) {
+    let title = report.title.trim();
+    let render = |rows: &[Row]| {
+        let mut text = format!("# {title}\n");
+        for row in rows {
+            text.push_str(&format!("{:>8} {}\n", row.count, row.name));
+        }
+        upload(&text);
+        archive(&text);
+    };
+    render(&report.rows);
+}

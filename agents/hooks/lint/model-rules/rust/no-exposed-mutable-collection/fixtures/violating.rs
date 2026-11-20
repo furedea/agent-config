@@ -53,3 +53,19 @@ impl Frame {
         &mut self.storage
     }
 }
+
+pub struct Playlist<'a> {
+    /// Tracks in play order; `position` always indexes one of them.
+    tracks: Vec<&'a str>,
+    position: usize,
+}
+
+impl<'a> Playlist<'a> {
+    pub fn skip(&mut self) {
+        self.position = (self.position + 1) % self.tracks.len();
+    }
+
+    pub fn tracks_mut<'s>(&'s mut self) -> &'s mut Vec<&'a str> {
+        &mut self.tracks
+    }
+}

@@ -6,18 +6,12 @@ kind: noul
 subject: node
 # The type's own `#[serde(..)]` attributes are sibling nodes, so the whole file is sent.
 state: located
-# Fitted by `jev-lint eval` on this rule's own fixtures (9 cases, 4 bad and 5 clean, over 3 passes; baseline of
-# 2026-11-18): the highest clean case scored 0.18 (conforming.rs:35) and the lowest violation 0.24 (violating.rs:26);
+# Fitted by `jev-lint eval` on this rule's own fixtures (10 cases, 5 bad and 5 clean, over 3 passes; baseline of
+# 2026-11-19): the highest clean case scored 0.19 (conforming.rs:35) and the lowest violation 0.29 (violating.rs:26);
 # the cutoff is jev-lint's fitted midpoint of that gap. The gap is narrow: the missing `#[serde(default)]` at
-# violating.rs:26 scored 0.24 to 0.42, so this cutoff is the least settled of the Rust rules. A fit on so few cases is a
-# starting point, not a calibration (ADR-0020), so the rule stays advisory.
-threshold: 0.21
-# The weakest violation moves more between passes (0.24 to 0.42) than its margin over the cutoff, so a run, not the
-# rule, decides whether it is reported. Reworded criteria already raised it from 0.19; a further rewrite needs more
-# fixtures of a missing default to tell noise from the rule.
-inconclusive: >-
-  Unstable: the missing `#[serde(default)]` at violating.rs:26 spreads 0.18 between passes, wider than its 0.11
-  margin over the cutoff; four bad cases are too few to fit around it.
+# violating.rs:26 scored 0.29 to 0.43, so this cutoff is the least settled of the Rust rules. A fit on so few cases is
+# a starting point, not a calibration (ADR-0020), so the rule stays advisory.
+threshold: 0.24
 axis: file
 severity: warning
 rule:
@@ -31,6 +25,7 @@ rule:
             any:
               - kind: attribute_item
               - kind: line_comment
+              - kind: block_comment
 ask: >-
   This serde type owned by the project leaves out an attribute that the project's conventions call for.
 criteria:

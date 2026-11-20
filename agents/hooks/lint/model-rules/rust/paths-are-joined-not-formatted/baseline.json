@@ -1,13 +1,13 @@
 {
   "schema": "jev-lint-eval-1",
-  "recorded": "2026-11-18T06:25:03.978Z",
+  "recorded": "2026-11-19T11:35:23.368Z",
   "model": "jev-1.14.0",
   "suite": "rust/paths-are-joined-not-formatted",
   "rules": [
     {
       "id": "paths-are-joined-not-formatted",
-      "draft": "4f738df14e9f",
-      "at": 0.5
+      "draft": "0a2e67a7c5da",
+      "at": 0.55
     }
   ],
   "cutoffs": {},
@@ -15,63 +15,9 @@
     [
       {
         "rule": "paths-are-joined-not-formatted",
-        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/conforming.rs",
-        "line": 3,
-        "endLine": 5,
-        "kind": "noul",
-        "value": 0.06,
-        "confidence": null
-      },
-      {
-        "rule": "paths-are-joined-not-formatted",
-        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/conforming.rs",
-        "line": 7,
-        "endLine": 9,
-        "kind": "noul",
-        "value": 0.13,
-        "confidence": null
-      },
-      {
-        "rule": "paths-are-joined-not-formatted",
-        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/conforming.rs",
-        "line": 11,
-        "endLine": 13,
-        "kind": "noul",
-        "value": 0.09,
-        "confidence": null
-      },
-      {
-        "rule": "paths-are-joined-not-formatted",
-        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/conforming.rs",
-        "line": 15,
-        "endLine": 17,
-        "kind": "noul",
-        "value": 0.07,
-        "confidence": null
-      },
-      {
-        "rule": "paths-are-joined-not-formatted",
-        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/conforming.rs",
-        "line": 19,
-        "endLine": 21,
-        "kind": "noul",
-        "value": 0.09,
-        "confidence": null
-      },
-      {
-        "rule": "paths-are-joined-not-formatted",
         "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/violating.rs",
         "line": 3,
         "endLine": 5,
-        "kind": "noul",
-        "value": 0.97,
-        "confidence": null
-      },
-      {
-        "rule": "paths-are-joined-not-formatted",
-        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/violating.rs",
-        "line": 7,
-        "endLine": 9,
         "kind": "noul",
         "value": 0.98,
         "confidence": null
@@ -79,136 +25,6 @@
       {
         "rule": "paths-are-joined-not-formatted",
         "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/violating.rs",
-        "line": 11,
-        "endLine": 13,
-        "kind": "noul",
-        "value": 0.96,
-        "confidence": null
-      },
-      {
-        "rule": "paths-are-joined-not-formatted",
-        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/violating.rs",
-        "line": 15,
-        "endLine": 17,
-        "kind": "noul",
-        "value": 0.97,
-        "confidence": null
-      },
-      {
-        "rule": "paths-are-joined-not-formatted",
-        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/violating.rs",
-        "line": 19,
-        "endLine": 21,
-        "kind": "noul",
-        "value": 0.97,
-        "confidence": null
-      }
-    ],
-    [
-      {
-        "rule": "paths-are-joined-not-formatted",
-        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/violating.rs",
-        "line": 3,
-        "endLine": 5,
-        "kind": "noul",
-        "value": 0.97,
-        "confidence": null
-      },
-      {
-        "rule": "paths-are-joined-not-formatted",
-        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/violating.rs",
-        "line": 7,
-        "endLine": 9,
-        "kind": "noul",
-        "value": 0.98,
-        "confidence": null
-      },
-      {
-        "rule": "paths-are-joined-not-formatted",
-        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/violating.rs",
-        "line": 11,
-        "endLine": 13,
-        "kind": "noul",
-        "value": 0.97,
-        "confidence": null
-      },
-      {
-        "rule": "paths-are-joined-not-formatted",
-        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/violating.rs",
-        "line": 15,
-        "endLine": 17,
-        "kind": "noul",
-        "value": 0.98,
-        "confidence": null
-      },
-      {
-        "rule": "paths-are-joined-not-formatted",
-        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/violating.rs",
-        "line": 19,
-        "endLine": 21,
-        "kind": "noul",
-        "value": 0.97,
-        "confidence": null
-      },
-      {
-        "rule": "paths-are-joined-not-formatted",
-        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/conforming.rs",
-        "line": 3,
-        "endLine": 5,
-        "kind": "noul",
-        "value": 0.06,
-        "confidence": null
-      },
-      {
-        "rule": "paths-are-joined-not-formatted",
-        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/conforming.rs",
-        "line": 7,
-        "endLine": 9,
-        "kind": "noul",
-        "value": 0.13,
-        "confidence": null
-      },
-      {
-        "rule": "paths-are-joined-not-formatted",
-        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/conforming.rs",
-        "line": 11,
-        "endLine": 13,
-        "kind": "noul",
-        "value": 0.08,
-        "confidence": null
-      },
-      {
-        "rule": "paths-are-joined-not-formatted",
-        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/conforming.rs",
-        "line": 15,
-        "endLine": 17,
-        "kind": "noul",
-        "value": 0.08,
-        "confidence": null
-      },
-      {
-        "rule": "paths-are-joined-not-formatted",
-        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/conforming.rs",
-        "line": 19,
-        "endLine": 21,
-        "kind": "noul",
-        "value": 0.1,
-        "confidence": null
-      }
-    ],
-    [
-      {
-        "rule": "paths-are-joined-not-formatted",
-        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/violating.rs",
-        "line": 3,
-        "endLine": 5,
-        "kind": "noul",
-        "value": 0.97,
-        "confidence": null
-      },
-      {
-        "rule": "paths-are-joined-not-formatted",
-        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/violating.rs",
         "line": 7,
         "endLine": 9,
         "kind": "noul",
@@ -230,7 +46,7 @@
         "line": 15,
         "endLine": 17,
         "kind": "noul",
-        "value": 0.98,
+        "value": 0.97,
         "confidence": null
       },
       {
@@ -239,7 +55,34 @@
         "line": 19,
         "endLine": 21,
         "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "paths-are-joined-not-formatted",
+        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/violating.rs",
+        "line": 23,
+        "endLine": 25,
+        "kind": "noul",
         "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "paths-are-joined-not-formatted",
+        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/violating.rs",
+        "line": 27,
+        "endLine": 29,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "paths-are-joined-not-formatted",
+        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/violating.rs",
+        "line": 31,
+        "endLine": 33,
+        "kind": "noul",
+        "value": 0.98,
         "confidence": null
       },
       {
@@ -248,7 +91,7 @@
         "line": 3,
         "endLine": 5,
         "kind": "noul",
-        "value": 0.07,
+        "value": 0.05,
         "confidence": null
       },
       {
@@ -275,6 +118,298 @@
         "line": 15,
         "endLine": 17,
         "kind": "noul",
+        "value": 0.08,
+        "confidence": null
+      },
+      {
+        "rule": "paths-are-joined-not-formatted",
+        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/conforming.rs",
+        "line": 19,
+        "endLine": 21,
+        "kind": "noul",
+        "value": 0.1,
+        "confidence": null
+      },
+      {
+        "rule": "paths-are-joined-not-formatted",
+        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/conforming.rs",
+        "line": 23,
+        "endLine": 25,
+        "kind": "noul",
+        "value": 0.47,
+        "confidence": null
+      },
+      {
+        "rule": "paths-are-joined-not-formatted",
+        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/conforming.rs",
+        "line": 27,
+        "endLine": 29,
+        "kind": "noul",
+        "value": 0.08,
+        "confidence": null
+      },
+      {
+        "rule": "paths-are-joined-not-formatted",
+        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/conforming.rs",
+        "line": 31,
+        "endLine": 33,
+        "kind": "noul",
+        "value": 0.09,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "paths-are-joined-not-formatted",
+        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/violating.rs",
+        "line": 3,
+        "endLine": 5,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "paths-are-joined-not-formatted",
+        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/violating.rs",
+        "line": 7,
+        "endLine": 9,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "paths-are-joined-not-formatted",
+        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/violating.rs",
+        "line": 11,
+        "endLine": 13,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "paths-are-joined-not-formatted",
+        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/violating.rs",
+        "line": 15,
+        "endLine": 17,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "paths-are-joined-not-formatted",
+        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/violating.rs",
+        "line": 19,
+        "endLine": 21,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "paths-are-joined-not-formatted",
+        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/violating.rs",
+        "line": 23,
+        "endLine": 25,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "paths-are-joined-not-formatted",
+        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/violating.rs",
+        "line": 27,
+        "endLine": 29,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "paths-are-joined-not-formatted",
+        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/violating.rs",
+        "line": 31,
+        "endLine": 33,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "paths-are-joined-not-formatted",
+        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/conforming.rs",
+        "line": 3,
+        "endLine": 5,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "paths-are-joined-not-formatted",
+        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/conforming.rs",
+        "line": 7,
+        "endLine": 9,
+        "kind": "noul",
+        "value": 0.12,
+        "confidence": null
+      },
+      {
+        "rule": "paths-are-joined-not-formatted",
+        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/conforming.rs",
+        "line": 11,
+        "endLine": 13,
+        "kind": "noul",
+        "value": 0.08,
+        "confidence": null
+      },
+      {
+        "rule": "paths-are-joined-not-formatted",
+        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/conforming.rs",
+        "line": 15,
+        "endLine": 17,
+        "kind": "noul",
+        "value": 0.06,
+        "confidence": null
+      },
+      {
+        "rule": "paths-are-joined-not-formatted",
+        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/conforming.rs",
+        "line": 19,
+        "endLine": 21,
+        "kind": "noul",
+        "value": 0.11,
+        "confidence": null
+      },
+      {
+        "rule": "paths-are-joined-not-formatted",
+        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/conforming.rs",
+        "line": 23,
+        "endLine": 25,
+        "kind": "noul",
+        "value": 0.52,
+        "confidence": null
+      },
+      {
+        "rule": "paths-are-joined-not-formatted",
+        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/conforming.rs",
+        "line": 27,
+        "endLine": 29,
+        "kind": "noul",
+        "value": 0.08,
+        "confidence": null
+      },
+      {
+        "rule": "paths-are-joined-not-formatted",
+        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/conforming.rs",
+        "line": 31,
+        "endLine": 33,
+        "kind": "noul",
+        "value": 0.08,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "paths-are-joined-not-formatted",
+        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/violating.rs",
+        "line": 3,
+        "endLine": 5,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "paths-are-joined-not-formatted",
+        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/violating.rs",
+        "line": 7,
+        "endLine": 9,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "paths-are-joined-not-formatted",
+        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/violating.rs",
+        "line": 11,
+        "endLine": 13,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "paths-are-joined-not-formatted",
+        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/violating.rs",
+        "line": 15,
+        "endLine": 17,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "paths-are-joined-not-formatted",
+        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/violating.rs",
+        "line": 19,
+        "endLine": 21,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "paths-are-joined-not-formatted",
+        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/violating.rs",
+        "line": 23,
+        "endLine": 25,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "paths-are-joined-not-formatted",
+        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/violating.rs",
+        "line": 27,
+        "endLine": 29,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "paths-are-joined-not-formatted",
+        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/violating.rs",
+        "line": 31,
+        "endLine": 33,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "paths-are-joined-not-formatted",
+        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/conforming.rs",
+        "line": 3,
+        "endLine": 5,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "paths-are-joined-not-formatted",
+        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/conforming.rs",
+        "line": 7,
+        "endLine": 9,
+        "kind": "noul",
+        "value": 0.13,
+        "confidence": null
+      },
+      {
+        "rule": "paths-are-joined-not-formatted",
+        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/conforming.rs",
+        "line": 11,
+        "endLine": 13,
+        "kind": "noul",
+        "value": 0.08,
+        "confidence": null
+      },
+      {
+        "rule": "paths-are-joined-not-formatted",
+        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/conforming.rs",
+        "line": 15,
+        "endLine": 17,
+        "kind": "noul",
         "value": 0.07,
         "confidence": null
       },
@@ -284,15 +419,42 @@
         "line": 19,
         "endLine": 21,
         "kind": "noul",
-        "value": 0.13,
+        "value": 0.11,
+        "confidence": null
+      },
+      {
+        "rule": "paths-are-joined-not-formatted",
+        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/conforming.rs",
+        "line": 23,
+        "endLine": 25,
+        "kind": "noul",
+        "value": 0.47,
+        "confidence": null
+      },
+      {
+        "rule": "paths-are-joined-not-formatted",
+        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/conforming.rs",
+        "line": 27,
+        "endLine": 29,
+        "kind": "noul",
+        "value": 0.09,
+        "confidence": null
+      },
+      {
+        "rule": "paths-are-joined-not-formatted",
+        "file": "agents/hooks/lint/model-rules/rust/paths-are-joined-not-formatted/fixtures/conforming.rs",
+        "line": 31,
+        "endLine": 33,
+        "kind": "noul",
+        "value": 0.07,
         "confidence": null
       }
     ]
   ],
   "spent": {
     "calls": 6,
-    "inputTokens": 12591,
-    "usd": 0.000528822,
-    "ms": 159
+    "inputTokens": 20931,
+    "usd": 0.0008791020000000001,
+    "ms": 175
   }
 }

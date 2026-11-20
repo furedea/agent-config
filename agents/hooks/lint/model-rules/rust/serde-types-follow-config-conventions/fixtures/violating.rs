@@ -36,3 +36,12 @@ pub struct Finding {
     pub line: u32,
     pub fix: Option<String>,
 }
+
+#[derive(Debug, Deserialize)]
+/* Read from the project's agents.toml. */
+pub struct AgentEntry {
+    name: String,
+    #[serde(rename = "skillDir")]
+    skill_dir: PathBuf,
+    source_path: PathBuf,
+}

@@ -23,3 +23,7 @@ pub fn notify(ctx: &Context, message: &Message) -> Result<(), Error> {
 pub fn queue_depth(worker: &Worker) -> usize {
     worker.scheduler().queue().pending().len()
 }
+
+pub fn can_retry(worker: &Worker) -> bool {
+    worker.client.transport.policy.max_retries > 0
+}

@@ -50,6 +50,7 @@ impl SkillName {
 - Avoid passing raw string modes through the codebase.
 - Implement `Display` when the enum has a stable user-facing representation.
 - Implement `FromStr` or `TryFrom<&str>` when parsing user input.
+- Prefer exhaustive `match` statements for domain control flow.
 
 ```rust
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -96,6 +97,7 @@ pub enum Provider {
 
 - Use `&str` for borrowed string input and `String` for owned string storage.
 - Use `format!` when constructing a new owned string from values.
+- Prefer `to_owned()` or `String::from` when converting a string literal to `String`.
 - Avoid unnecessary `to_string()` in hot or repeated code.
 - Keep user-facing text separate from machine-readable output.
 

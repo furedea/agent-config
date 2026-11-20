@@ -68,7 +68,7 @@ def record_commands(tmp_path: Path, forbidden: Path) -> Path:
 @pytest.mark.parametrize("entry", ["sweep", "caller"])
 @pytest.mark.parametrize(
     "location",
-    ["tmp", "private-tmp", "tmpdir", "tmpdir-symlink", "allow-write", "relative", "tilde", "symlink", "herdr"],
+    ["tmp", "private-tmp", "tmpdir", "tmpdir-symlink", "allow-write", "relative", "tilde", "symlink", "herdr", "t3"],
 )
 def test_lane_metadata_cannot_authorize_a_sandbox_writable_primary(
     primary: Path,
@@ -89,6 +89,8 @@ def test_lane_metadata_cannot_authorize_a_sandbox_writable_primary(
             (fake.parent / "temp-link").symlink_to(fake, target_is_directory=True)
     elif location == "herdr":
         fake = Path.home() / ".herdr/worktrees/fake/primary"
+    elif location == "t3":
+        fake = Path.home() / ".t3/worktrees/fake/primary-0123456789abcdef"
     elif location in {"relative", "tilde"}:
         fake = Path.home() / "writable/fake"
         entries = ["~/writable" if location == "tilde" else "writable"]
@@ -244,6 +246,7 @@ def test_production_writable_paths_include_all_untrusted_locations(
         Path("/tmp/claude"),
         Path("/private/tmp/claude"),
         home / ".herdr/worktrees",
+        home / ".t3/worktrees",
         tmp_path / "temporary",
         alias,
         home / "relative",
@@ -254,11 +257,12 @@ def test_production_writable_paths_include_all_untrusted_locations(
 
 
 @pytest.mark.parametrize("entry", ["sweep", "caller"])
+@pytest.mark.parametrize("location", ["writable/fake", "home/.t3/worktrees/fake/primary-0123456789abcdef"])
 def test_fixture_policy_still_rejects_a_planted_writable_primary(
-    primary: Path, merged: dict[str, str], tmp_path: Path, entry: str
+    primary: Path, merged: dict[str, str], tmp_path: Path, entry: str, location: str
 ) -> None:
-    fake = tmp_path / "writable/fake"
-    fake.parent.mkdir()
+    fake = tmp_path / location
+    fake.parent.mkdir(parents=True)
     git("clone", "--quiet", str(primary), str(fake), cwd=primary)
     lane = herdr_lane(fake)
     merged["feat/done"] = git("rev-parse", "HEAD", cwd=lane)

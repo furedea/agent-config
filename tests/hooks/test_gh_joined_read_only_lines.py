@@ -98,6 +98,8 @@ def test_a_read_of_the_working_repository_beside_read_only_commands_follows_its_
         pytest.param("printf $OPT PATH /tmp; gh pr list -R furedea/agent-config", id="printf with a run-time word"),
         pytest.param("echo $WORDS; gh pr list -R furedea/agent-config", id="echo with a run-time word"),
         pytest.param("printf x%n PATH; gh pr list -R furedea/agent-config", id="printf assigning PATH with %n"),
+        pytest.param("printf x{%,}n PATH; gh pr list -R furedea/agent-config", id="printf with %n from a brace"),
+        pytest.param("sort {-o,later/gh} x; gh pr list -R furedea/agent-config", id="sort -o from a brace"),
         pytest.param("{ echo x; } > later/gh; gh pr list -R furedea/agent-config", id="a redirect on a block"),
         pytest.param("(echo x) > later/gh; gh pr list -R furedea/agent-config", id="a redirect on a subshell"),
         pytest.param("if true; then echo x; fi > later/gh; gh pr list -R furedea/agent-config", id="on an if"),

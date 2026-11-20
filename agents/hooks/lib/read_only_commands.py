@@ -45,7 +45,7 @@ def writes_nothing(arguments: Sequence[str], dynamic: Sequence[bool]) -> bool:
     to a filter other than echo and printf.
     """
     name, *rest = arguments
-    if name == "printf" and _assigns_a_count(rest):
+    if name == "printf" and assigns_a_count(rest):
         return False
     if name in FILTERS:
         return name not in PRINTING_BUILTINS or not any(dynamic)
@@ -56,8 +56,8 @@ def writes_nothing(arguments: Sequence[str], dynamic: Sequence[bool]) -> bool:
     return checks[name](rest)
 
 
-def _assigns_a_count(arguments: list[str]) -> bool:
-    """Whether a printf format, as bash or zsh reads it, holds a %n conversion."""
+def assigns_a_count(arguments: Sequence[str]) -> bool:
+    """Whether printf's format, as bash or zsh reads it, holds a %n conversion assigning a variable."""
     operands = arguments[1:] if arguments[:1] == ["--"] else arguments
     if not operands:
         return False

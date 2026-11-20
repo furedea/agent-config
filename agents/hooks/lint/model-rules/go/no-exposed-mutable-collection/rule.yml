@@ -1,15 +1,14 @@
-# M-34 collection objects (agents/AGENTS.md: "do not expose mutable raw collections"). Advisory (ADR-0021). Selected
-# by a function that returns a field or a mutable reference; the criteria require the collection to be an unexported
-# field that the type keeps behind its methods. The first criteria scored an exported field of a JSON record 0.84
-# against 0.87 for the lowest bad case; the criteria now exclude plain data structs. The cutoff 0.57 is jev-lint's
-# fitted midpoint on this folder's fixtures (eval of 2026-11-18, 3 passes, after the criteria rewrite): the highest
-# clean case scored 0.22 and the lowest bad one 0.92.
+# M-34 collection objects (agents/AGENTS.md: "do not expose mutable raw collections"). Advisory (ADR-0021). Selected by
+# a function that returns a field or a mutable reference; the criteria require the collection to be an unexported field
+# that the type keeps behind its methods. The first criteria scored an exported field of a JSON record 0.84 against 0.87
+# for the lowest bad case; the criteria now exclude plain data structs. The cutoff 0.59 is jev-lint's fitted midpoint on
+# this folder's fixtures (eval of 2026-11-19, 3 passes): the highest clean case scored 0.24 and the lowest bad one 0.93.
 id: no-exposed-mutable-collection
 language: Go
 kind: noul
 subject: node
 state: local
-threshold: 0.57
+threshold: 0.59
 # The fixtures sit far from the cutoff on both sides, so replay calls the suite blind; a boundary fixture would
 # need a case a reviewer would argue over.
 inconclusive: >-
@@ -17,14 +16,29 @@ inconclusive: >-
   add is a getter on a type whose only invariant is set by its constructor.
 axis: file
 severity: warning
+# Limits: a named collection type is matched only as the single result declared in the same file; `(Items, error)`
+# and a type declared in another file are missed. A result whose text merely contains `[]` or `map[` (`*[]T`,
+# `chan []byte`, `func() []string`) is also selected and left to the criteria.
 rule:
   all:
     - any:
         - kind: function_declaration
         - kind: method_declaration
-    - has:
-        field: result
-        regex: "^(\\[\\]|map\\[)"
+    # A result that is a slice or map, alone or among several results, or a type this file declares as one.
+    - any:
+        - has:
+            field: result
+            regex: "\\[\\]|map\\["
+        - all:
+            - has: { field: result, pattern: $TYPE }
+            - inside:
+                kind: source_file
+                has:
+                  kind: type_spec
+                  stopBy: end
+                  all:
+                    - has: { field: name, pattern: $TYPE }
+                    - has: { field: type, regex: "^(\\[\\]|map\\[)" }
     - has: { pattern: return $R.$F, stopBy: end }
 ask: >-
   This function hands the caller an object's own private mutable collection, so the caller can change that object's

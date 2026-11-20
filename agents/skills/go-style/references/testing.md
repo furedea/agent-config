@@ -5,7 +5,7 @@ verification level. The conventions below govern Go test tooling and structure.
 
 - Use the standard `testing` package with testify.
 - Run tests with `go test -race -cover ./...`.
-- Use table-driven tests with `t.Run`.
+- Use table-driven tests with `t.Run`; call `t.Parallel()` when cases share no state.
 - Never touch the real home directory in tests.
 - Keep golden files under `testdata/`, and use them only when exact output is part of the behavior.
 - Go's `testing` package has no strict expected-failure marker; do not use a stacked PR to record
@@ -32,6 +32,7 @@ testing; it is pre-1.0, so flags and configuration can change between minor rele
 
 ```go
 func TestNewPort(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name    string
 		value   int
@@ -42,6 +43,7 @@ func TestNewPort(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			_, err := foo.NewPort(tt.value)
 			assert.Equal(t, tt.wantErr, err != nil)
 		})

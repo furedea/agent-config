@@ -1,6 +1,6 @@
 # Go errors (agents/skills/go-style/references/errors.md: "Do not log and return the same error; handle it at one
-# level, usually the outermost"). Advisory (ADR-0021). The cutoff 0.37 is jev-lint's fitted midpoint on this folder's
-# fixtures (eval of 2026-11-18, 3 passes): the highest clean case scored 0.06 and the lowest bad one 0.67 (a retry
+# level, usually the outermost"). Advisory (ADR-0021). The cutoff 0.41 is jev-lint's fitted midpoint on this folder's
+# fixtures (eval of 2026-11-19, 3 passes): the highest clean case scored 0.06 and the lowest bad one 0.75 (a retry
 # loop that logs each attempt's error at debug level and returns the last one wrapped, which the model scores lower
 # than a plain log-and-return).
 id: error-handled-once
@@ -8,7 +8,7 @@ language: Go
 kind: noul
 subject: node
 state: local
-threshold: 0.37
+threshold: 0.41
 # The fixtures sit far from the cutoff on both sides, so replay calls the suite blind; a boundary fixture would
 # need a case a reviewer would argue over.
 inconclusive: >-
@@ -16,7 +16,16 @@ inconclusive: >-
   add is a function that logs an error and returns a new error that does not wrap it.
 axis: file
 severity: warning
-# Only functions (including function literals) that log are asked about; a function that never logs cannot log and return the same error.
+# Only functions (including function literals) that log are asked about; a function that never logs cannot log and
+# return the same error. A logger is any receiver, including one reached through `Default()`, whose call has an argument
+# (so `err.Error()` is not one) or starts an event chain (zerolog's `log.Error().Err(err).Msg(...)`); error constructors
+# and test reporters are not loggers. A log call inside a nested function literal selects only that literal, the
+# function nearest to the call.
+# Limits: the logger matcher is broad on purpose and the criteria decide. It also selects calls shaped like a log that
+# are not one (`http.Error(w, msg, code)`, `cmd.Output()`, a framework `c.Error(err)`, `s.t.Fatal(...)`), and it
+# misses a log inside a closure the function runs itself (`defer func() { log.Error(err) }()`): only the literal is
+# asked about there. A call on a derived logger with arguments (`slog.With("k", v).Error(...)`, logrus
+# `log.WithError(err).Error(...)`) is not matched, because the receiver prefix allows only argument-free calls.
 rule:
   all:
     - any:
@@ -25,8 +34,11 @@ rule:
         - kind: func_literal
     - has:
         kind: call_expression
-        regex: ^(slog|log)\.(Debug|Info|Warn|Error|Print|Printf|Println|Fatal|Fatalf|Fatalln|Panic|Panicf|Panicln|Output|Log)(Context|Attrs)?\(|^(\w+\.)*[lL]og(ger)?\.(Debug|Info|Warn|Error|Print|Printf|Println|Log)(f|Context|Attrs)?\(
-        stopBy: end
+        stopBy:
+          kind: func_literal
+        regex: ^(\w+(\(\))?\.)+((Debug|Info|Warn|Warning|Error|Log)(f|w|ln|Context|Attrs)?\(\s*[^)\s]|(Print|Printf|Println|Fatal|Fatalf|Fatalln|Panic|Panicf|Panicln|Output)\(|(Trace|Debug|Info|Warn|Error|Fatal|Panic)\(\)\.)
+        not:
+          regex: ^(fmt|errors|xerrors|status|t|b|tb|require|assert)\.
 ask: >-
   This function logs an error and also returns that same error, or a wrapped form of it, to its caller.
 criteria:

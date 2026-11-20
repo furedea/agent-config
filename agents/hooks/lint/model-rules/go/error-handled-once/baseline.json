@@ -1,13 +1,13 @@
 {
   "schema": "jev-lint-eval-1",
-  "recorded": "2026-11-18T06:22:03.630Z",
+  "recorded": "2026-11-19T12:20:53.058Z",
   "model": "jev-1.14.0",
   "suite": "go/error-handled-once",
   "rules": [
     {
       "id": "error-handled-once",
-      "draft": "5e4f360aa4fb",
-      "at": 0.5
+      "draft": "f4fc12e05212",
+      "at": 0.37
     }
   ],
   "cutoffs": {},
@@ -46,7 +46,7 @@
         "line": 35,
         "endLine": 46,
         "kind": "noul",
-        "value": 0.67,
+        "value": 0.75,
         "confidence": null
       },
       {
@@ -64,7 +64,7 @@
         "line": 18,
         "endLine": 24,
         "kind": "noul",
-        "value": 0.97,
+        "value": 0.98,
         "confidence": null
       },
       {
@@ -74,71 +74,6 @@
         "endLine": 36,
         "kind": "noul",
         "value": 0.97,
-        "confidence": null
-      }
-    ],
-    [
-      {
-        "rule": "error-handled-once",
-        "file": "agents/hooks/lint/model-rules/go/error-handled-once/fixtures/violating.go",
-        "line": 9,
-        "endLine": 16,
-        "kind": "noul",
-        "value": 0.97,
-        "confidence": null
-      },
-      {
-        "rule": "error-handled-once",
-        "file": "agents/hooks/lint/model-rules/go/error-handled-once/fixtures/violating.go",
-        "line": 18,
-        "endLine": 24,
-        "kind": "noul",
-        "value": 0.97,
-        "confidence": null
-      },
-      {
-        "rule": "error-handled-once",
-        "file": "agents/hooks/lint/model-rules/go/error-handled-once/fixtures/violating.go",
-        "line": 30,
-        "endLine": 36,
-        "kind": "noul",
-        "value": 0.97,
-        "confidence": null
-      },
-      {
-        "rule": "error-handled-once",
-        "file": "agents/hooks/lint/model-rules/go/error-handled-once/fixtures/conforming.go",
-        "line": 9,
-        "endLine": 15,
-        "kind": "noul",
-        "value": 0.03,
-        "confidence": null
-      },
-      {
-        "rule": "error-handled-once",
-        "file": "agents/hooks/lint/model-rules/go/error-handled-once/fixtures/conforming.go",
-        "line": 17,
-        "endLine": 24,
-        "kind": "noul",
-        "value": 0.05,
-        "confidence": null
-      },
-      {
-        "rule": "error-handled-once",
-        "file": "agents/hooks/lint/model-rules/go/error-handled-once/fixtures/conforming.go",
-        "line": 26,
-        "endLine": 33,
-        "kind": "noul",
-        "value": 0.03,
-        "confidence": null
-      },
-      {
-        "rule": "error-handled-once",
-        "file": "agents/hooks/lint/model-rules/go/error-handled-once/fixtures/conforming.go",
-        "line": 35,
-        "endLine": 46,
-        "kind": "noul",
-        "value": 0.72,
         "confidence": null
       }
     ],
@@ -203,7 +138,72 @@
         "line": 35,
         "endLine": 46,
         "kind": "noul",
-        "value": 0.69,
+        "value": 0.75,
+        "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "error-handled-once",
+        "file": "agents/hooks/lint/model-rules/go/error-handled-once/fixtures/violating.go",
+        "line": 9,
+        "endLine": 16,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "error-handled-once",
+        "file": "agents/hooks/lint/model-rules/go/error-handled-once/fixtures/violating.go",
+        "line": 18,
+        "endLine": 24,
+        "kind": "noul",
+        "value": 0.98,
+        "confidence": null
+      },
+      {
+        "rule": "error-handled-once",
+        "file": "agents/hooks/lint/model-rules/go/error-handled-once/fixtures/violating.go",
+        "line": 30,
+        "endLine": 36,
+        "kind": "noul",
+        "value": 0.97,
+        "confidence": null
+      },
+      {
+        "rule": "error-handled-once",
+        "file": "agents/hooks/lint/model-rules/go/error-handled-once/fixtures/conforming.go",
+        "line": 9,
+        "endLine": 15,
+        "kind": "noul",
+        "value": 0.03,
+        "confidence": null
+      },
+      {
+        "rule": "error-handled-once",
+        "file": "agents/hooks/lint/model-rules/go/error-handled-once/fixtures/conforming.go",
+        "line": 17,
+        "endLine": 24,
+        "kind": "noul",
+        "value": 0.05,
+        "confidence": null
+      },
+      {
+        "rule": "error-handled-once",
+        "file": "agents/hooks/lint/model-rules/go/error-handled-once/fixtures/conforming.go",
+        "line": 26,
+        "endLine": 33,
+        "kind": "noul",
+        "value": 0.02,
+        "confidence": null
+      },
+      {
+        "rule": "error-handled-once",
+        "file": "agents/hooks/lint/model-rules/go/error-handled-once/fixtures/conforming.go",
+        "line": 35,
+        "endLine": 46,
+        "kind": "noul",
+        "value": 0.79,
         "confidence": null
       }
     ]
@@ -212,6 +212,6 @@
     "calls": 6,
     "inputTokens": 9147,
     "usd": 0.00038417400000000004,
-    "ms": 168
+    "ms": 354
   }
 }

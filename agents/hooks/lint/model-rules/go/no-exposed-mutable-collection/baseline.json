@@ -1,13 +1,13 @@
 {
   "schema": "jev-lint-eval-1",
-  "recorded": "2026-11-18T06:34:45.796Z",
+  "recorded": "2026-11-19T12:20:53.572Z",
   "model": "jev-1.14.0",
   "suite": "go/no-exposed-mutable-collection",
   "rules": [
     {
       "id": "no-exposed-mutable-collection",
-      "draft": "774f0e7e926d",
-      "at": 0.5
+      "draft": "de97b5741003",
+      "at": 0.57
     }
   ],
   "cutoffs": {},
@@ -46,35 +46,6 @@
         "line": 12,
         "endLine": 14,
         "kind": "noul",
-        "value": 0.21,
-        "confidence": null
-      },
-      {
-        "rule": "no-exposed-mutable-collection",
-        "file": "agents/hooks/lint/model-rules/go/no-exposed-mutable-collection/fixtures/conforming.go",
-        "line": 24,
-        "endLine": 27,
-        "kind": "noul",
-        "value": 0.06,
-        "confidence": null
-      },
-      {
-        "rule": "no-exposed-mutable-collection",
-        "file": "agents/hooks/lint/model-rules/go/no-exposed-mutable-collection/fixtures/conforming.go",
-        "line": 33,
-        "endLine": 36,
-        "kind": "noul",
-        "value": 0.11,
-        "confidence": null
-      }
-    ],
-    [
-      {
-        "rule": "no-exposed-mutable-collection",
-        "file": "agents/hooks/lint/model-rules/go/no-exposed-mutable-collection/fixtures/conforming.go",
-        "line": 12,
-        "endLine": 14,
-        "kind": "noul",
         "value": 0.22,
         "confidence": null
       },
@@ -95,6 +66,35 @@
         "kind": "noul",
         "value": 0.09,
         "confidence": null
+      }
+    ],
+    [
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "agents/hooks/lint/model-rules/go/no-exposed-mutable-collection/fixtures/conforming.go",
+        "line": 12,
+        "endLine": 14,
+        "kind": "noul",
+        "value": 0.24,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "agents/hooks/lint/model-rules/go/no-exposed-mutable-collection/fixtures/conforming.go",
+        "line": 24,
+        "endLine": 27,
+        "kind": "noul",
+        "value": 0.08,
+        "confidence": null
+      },
+      {
+        "rule": "no-exposed-mutable-collection",
+        "file": "agents/hooks/lint/model-rules/go/no-exposed-mutable-collection/fixtures/conforming.go",
+        "line": 33,
+        "endLine": 36,
+        "kind": "noul",
+        "value": 0.1,
+        "confidence": null
       },
       {
         "rule": "no-exposed-mutable-collection",
@@ -102,7 +102,7 @@
         "line": 7,
         "endLine": 9,
         "kind": "noul",
-        "value": 0.92,
+        "value": 0.93,
         "confidence": null
       },
       {
@@ -111,7 +111,7 @@
         "line": 15,
         "endLine": 17,
         "kind": "noul",
-        "value": 0.94,
+        "value": 0.93,
         "confidence": null
       },
       {
@@ -131,7 +131,7 @@
         "line": 12,
         "endLine": 14,
         "kind": "noul",
-        "value": 0.22,
+        "value": 0.2,
         "confidence": null
       },
       {
@@ -158,7 +158,7 @@
         "line": 7,
         "endLine": 9,
         "kind": "noul",
-        "value": 0.93,
+        "value": 0.94,
         "confidence": null
       },
       {
@@ -185,6 +185,6 @@
     "calls": 6,
     "inputTokens": 9522,
     "usd": 0.000399924,
-    "ms": 181
+    "ms": 197
   }
 }

@@ -5,6 +5,7 @@ write, the caller checks.
 """
 
 import re
+import sys
 from collections.abc import Sequence
 
 FILTERS = frozenset(
@@ -30,6 +31,11 @@ SED_PRINT = re.compile(rf"(?:{SED_ADDRESS}(?:,{SED_ADDRESS})?)?p")
 SED_SUBSTITUTE = re.compile(r"s/(?:[^/\\\n]|\\.)*/(?:[^/\\\n]|\\.)*/[gpI0-9]*")
 BASE64_DECODE = frozenset({"-d", "-D", "--decode"})
 SED_FLAGS = frozenset({"-n", "-E", "-r", "--quiet", "--silent"})
+# printf's %n conversion, with any flags, width, precision, or length, stores the count of characters printed
+# so far into the variable its operand names, as printf -v does; %% prints a percent sign.
+PRINTF_CONVERSION = re.compile(r"%(?:%|[-+ #0'*.$0-9]*[hlLqjzt]*n)")
+# Escapes zsh's printf turns into characters before it reads the conversions; a % from \x or octal stays text.
+FORMAT_ESCAPE = re.compile(r"\\(?:x([0-9A-Fa-f]{1,2})|([0-7]{1,3})|u([0-9A-Fa-f]{1,4})|U([0-9A-Fa-f]{1,8}))")
 
 
 def writes_nothing(arguments: Sequence[str], dynamic: Sequence[bool]) -> bool:
@@ -39,6 +45,8 @@ def writes_nothing(arguments: Sequence[str], dynamic: Sequence[bool]) -> bool:
     to a filter other than echo and printf.
     """
     name, *rest = arguments
+    if name == "printf" and assigns_a_count(rest):
+        return False
     if name in FILTERS:
         return name not in PRINTING_BUILTINS or not any(dynamic)
     if name not in WORD_CHECKED or any(dynamic):
@@ -46,6 +54,30 @@ def writes_nothing(arguments: Sequence[str], dynamic: Sequence[bool]) -> bool:
     checks = {"awk": _awk_reads, "sed": _sed_prints, "sort": _sort_reads, "uniq": _uniq_reads}
     checks["base64"] = _base64_decodes
     return checks[name](rest)
+
+
+def assigns_a_count(arguments: Sequence[str]) -> bool:
+    """Whether printf's format, as bash or zsh reads it, holds a %n conversion assigning a variable."""
+    operands = arguments[1:] if arguments[:1] == ["--"] else arguments
+    if not operands:
+        return False
+    format_ = operands[0]
+    return any(
+        match.group() != "%%" for text in (format_, _zsh_format(format_)) for match in PRINTF_CONVERSION.finditer(text)
+    )
+
+
+def _zsh_format(format_: str) -> str:
+    return FORMAT_ESCAPE.sub(_escaped_character, format_)
+
+
+def _escaped_character(match: re.Match[str]) -> str:
+    hexadecimal, octal, unicode_short, unicode_long = match.groups()
+    if octal is not None or hexadecimal is not None:
+        character = chr(int(octal, 8) if octal is not None else int(hexadecimal, 16))
+        return "%%" if character == "%" else character
+    code_point = int(unicode_short or unicode_long, 16)
+    return chr(code_point) if code_point <= sys.maxunicode else ""
 
 
 def _base64_decodes(arguments: list[str]) -> bool:

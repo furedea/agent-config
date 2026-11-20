@@ -151,7 +151,9 @@ def _writes_nothing(command: shell_syntax.Command) -> bool:
     name = command.arguments[0]
     if command.wrapper_depth or has_inherited_function(name):
         return False
-    if not read_only_commands.writes_nothing(command.arguments, command.dynamic):
+    # A word a brace or split may spread is known only at run time, as a printf format or sort's -o.
+    may_change = [dynamic or spreading for dynamic, spreading in zip(command.dynamic, command.spreading, strict=True)]
+    if not read_only_commands.writes_nothing(command.arguments, may_change):
         return False
     return name in SHELL_BUILTINS or is_system_program(name)
 
@@ -225,9 +227,22 @@ def _changes_environment(command: shell_syntax.Command) -> bool:
     # An inherited function may assign anything, under any name.
     if name in ASSIGNING_PROGRAMS or has_inherited_function(command.arguments[0]):
         return True
-    if name in {"print", "printf"} and any(re.match(r"-[A-Za-z]*v", argument) for argument in arguments):
+    if name in {"print", "printf"} and _prints_into_a_variable(command):
         return True
     return name == "env" and bool(arguments) and ("=" in arguments[0] or arguments[0].startswith("-"))
+
+
+def _prints_into_a_variable(command: shell_syntax.Command) -> bool:
+    """Whether print or printf may assign: with -v, a %n conversion, zsh's print -f, or a word known at run time."""
+    name, *arguments = command.arguments
+    name = Path(name).name
+    if any(command.dynamic[1:]) or any(command.spreading[1:]):
+        return True
+    if any(re.match(r"-[A-Za-z]*v", argument) for argument in arguments):
+        return True
+    if name == "print":
+        return any(re.match(r"-[A-Za-z]*f", argument) for argument in arguments)
+    return read_only_commands.assigns_a_count(arguments)
 
 
 def _is_single_call(source: str, commands: tuple[shell_syntax.Command, ...]) -> bool:

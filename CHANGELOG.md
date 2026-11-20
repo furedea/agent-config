@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.1](https://github.com/furedea/agent-config/compare/v0.3.0...v0.3.1) (2026-11-20)
+
+
+### Bug Fixes
+
+* **hooks:** do not count a printf whose format holds %n as writing nothing ([#262](https://github.com/furedea/agent-config/issues/262)) ([f3a4543](https://github.com/furedea/agent-config/commit/f3a4543483601b5468dec91d1fbc279e7d47f362))
+* **hooks:** judge gh beside commands that write nothing as gh alone ([#256](https://github.com/furedea/agent-config/issues/256)) ([540bbad](https://github.com/furedea/agent-config/commit/540bbaddc415797ef7e940a05bed3dafc16a1d32))
+* **hooks:** stop asking for gh calls whose target and arguments are known at hook time ([#254](https://github.com/furedea/agent-config/issues/254)) ([f4aa355](https://github.com/furedea/agent-config/commit/f4aa3555b44da7367655ac4b2901f928c6a43e2a))
+* **lint:** close the Rust and TypeScript items of [#196](https://github.com/furedea/agent-config/issues/196) ([#259](https://github.com/furedea/agent-config/issues/259)) ([1d2a81e](https://github.com/furedea/agent-config/commit/1d2a81e759d65f531031c4dfcff4dd66d0bf99f7))
+* **lint:** select the Go model-rule forms deferred in [#196](https://github.com/furedea/agent-config/issues/196) ([#257](https://github.com/furedea/agent-config/issues/257)) ([8c347fe](https://github.com/furedea/agent-config/commit/8c347fe3e1a53be1377be2aaadc57ad43811f13c))
+* **lint:** widen three Python model-rule selectors deferred in [#196](https://github.com/furedea/agent-config/issues/196) ([#258](https://github.com/furedea/agent-config/issues/258)) ([b3fc801](https://github.com/furedea/agent-config/commit/b3fc801afab1c2df265acfc6a6a1fd649aa22441))
+
 ## [0.3.0](https://github.com/furedea/agent-config/compare/v0.2.0...v0.3.0) (2026-11-19)
 
 

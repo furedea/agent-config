@@ -12,6 +12,7 @@ import herdr_ownership
 import hook_input
 import patch_input
 import session_gate
+import t3_ownership
 from session_snapshot import repository_root
 from session_store import (
     LockTimeoutError,
@@ -126,6 +127,7 @@ def _check_scope(record: SessionRecord, payload: dict) -> None:
     command = value.get("command", value.get("cmd", ""))
     if isinstance(command, str):
         herdr_ownership.check(record, command)
+        t3_ownership.check(record, command)
     try:
         patch = hook_input.patch_body(value, payload.get("tool_name"))
     except ValueError as error:
@@ -151,6 +153,7 @@ def _confirm_tool(record: SessionRecord, payload: dict) -> None:
     command = value.get("command", value.get("cmd", "")) if isinstance(value, dict) else ""
     if isinstance(command, str):
         herdr_ownership.confirm(record, command, payload.get("tool_response"))
+        t3_ownership.confirm(record, command, payload.get("tool_response"))
 
 
 def _end_session(record: SessionRecord) -> None:

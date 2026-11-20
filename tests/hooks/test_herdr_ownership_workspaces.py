@@ -336,6 +336,7 @@ def test_ownership_hooks_cover_creation_and_cleanup_results() -> None:
         "Bash(herdr agent start *)",
         "Bash(herdr workspace close *)",
         "Bash(herdr worktree remove *)",
+        "Bash(t3 thread start *)",
     }
     groups = settings["codex"]["hooks"]["PostToolUse"]
     assert any(

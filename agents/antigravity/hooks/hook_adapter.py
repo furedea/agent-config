@@ -18,6 +18,14 @@ NEW_STRING = "new_string"
 REPLACEMENT_CONTENT = "ReplacementContent"
 REPLACEMENT_CHUNKS = "ReplacementChunks"
 SPECIFIC_OUTPUT = "hookSpecificOutput"
+DECISION = "decision"
+REASON = "reason"
+BLOCK = "block"
+ASK = "ask"
+PERMISSION_DECISION = "permissionDecision"
+PERMISSION_REASON = "permissionDecisionReason"
+ADDITIONAL_CONTEXT = "additionalContext"
+DEFAULT_REASON = "Blocked by hook policy"
 DENY = "deny"
 FORCE_ASK = "force_ask"
 CONTINUE = "continue"
@@ -89,38 +97,47 @@ def no_diagnostics(_message: str) -> dict:
 
 def review(reason: str) -> dict:
     """Ask on every call: `ask` would let a cached Always Allow bypass the guard."""
-    return {"decision": FORCE_ASK, "reason": reason}
+    return {DECISION: FORCE_ASK, REASON: reason}
 
 
 def refusal(reason: str) -> dict:
     """Hard-block the tool call; unlike `force_ask`, no cached permission can override it."""
-    return {"decision": DENY, "reason": reason}
+    return {DECISION: DENY, REASON: reason}
 
 
 def output(event: str, result: dict) -> dict:
     """Encode a shared result in the object Antigravity reads for `event`; `{}` lets the call or stop proceed."""
-    if event == PRE_TOOL_USE:
-        return pre_tool_use(result)
-    if event == STOP:
-        return (
-            {"decision": CONTINUE, "reason": result.get("reason") or "Blocked by hook policy"}
-            if result.get("decision") == "block"
-            else {}
-        )
-    if event == SESSION_START:
-        context = (result.get(SPECIFIC_OUTPUT) or {}).get("additionalContext")
-        return {"injectSteps": [{"systemMessage": {"systemMessage": context}}]} if context else {}
+    handlers = {PRE_TOOL_USE: pre_tool_use, STOP: stop, SESSION_START: session_start}
+    return handlers.get(event, proceed)(result)
+
+
+def proceed(_result: dict) -> dict:
+    """Let the call, stop, or session go on unchanged."""
     return {}
 
 
 def pre_tool_use(result: dict) -> dict:
     """Encode a shared deny or ask as the PreToolUse decision; anything else lets Antigravity decide."""
     specific = result.get(SPECIFIC_OUTPUT)
-    decision = specific.get("permissionDecision") if isinstance(specific, dict) else None
-    reason = (specific or {}).get("permissionDecisionReason") or "Blocked by hook policy"
-    if decision == "ask":
+    specific = specific if isinstance(specific, dict) else {}
+    reason = specific.get(PERMISSION_REASON) or DEFAULT_REASON
+    decision = specific.get(PERMISSION_DECISION)
+    if decision == ASK:
         return review(reason)
     return refusal(reason) if decision == DENY else {}
+
+
+def stop(result: dict) -> dict:
+    """Keep the agent going for a shared block; `continuationActive` already stops the shared gate from blocking."""
+    if result.get(DECISION) != BLOCK:
+        return {}
+    return {DECISION: CONTINUE, REASON: result.get(REASON) or DEFAULT_REASON}
+
+
+def session_start(result: dict) -> dict:
+    """Inject the shared session context as a system message."""
+    context = (result.get(SPECIFIC_OUTPUT) or {}).get(ADDITIONAL_CONTEXT)
+    return {"injectSteps": [{"systemMessage": {"systemMessage": context}}]} if context else {}
 
 
 ADAPTER = provider_adapter.Adapter(

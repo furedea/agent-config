@@ -66,6 +66,7 @@ def test_ownership_belongs_to_one_session(repository: Path) -> None:
         pytest.param(START + "; echo done", launched("thread-1"), id="a list whose output another command shares"),
         pytest.param(START + " | cat", launched("thread-1"), id="a pipeline"),
         pytest.param("env " + START, launched("thread-1"), id="behind a wrapper"),
+        pytest.param("./" + START, launched("thread-1"), id="a program by path that may print anything"),
         pytest.param("T3CODE_HOME=/tmp/t3 " + START, launched("thread-1"), id="another data directory"),
         pytest.param(START.replace("'Read /tmp/brief.md'", '"$(cat brief)"'), launched("thread-1"), id="run-time"),
         pytest.param("t3 thread list --json", launched("thread-1"), id="a listing"),

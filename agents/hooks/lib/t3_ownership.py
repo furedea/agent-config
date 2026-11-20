@@ -46,7 +46,8 @@ def confirm(record: SessionRecord, command: str, response: object) -> None:
         simple = len(commands) == 1 and shell_syntax.is_one_simple_command(command)
     except shell_syntax.UnsupportedSyntaxError:
         return
-    if not simple or commands[0].has_dynamic_words:
+    # Only the t3 found on PATH prints the server's result; a program named by path may be the agent's own script.
+    if not simple or commands[0].has_dynamic_words or commands[0].arguments[0] != t3_thread.PROGRAM:
         return
     call = t3_thread.read(commands[0])
     if not isinstance(call, t3_thread.ThreadCall) or call.action != "start" or not call.values("--json"):

@@ -233,10 +233,12 @@ def _changes_environment(command: shell_syntax.Command) -> bool:
 
 
 def _prints_into_a_variable(command: shell_syntax.Command) -> bool:
-    """Whether print or printf may assign: with -v, a %n conversion, zsh's print -f, or a word a brace spreads."""
+    """Whether print or printf may assign: with -v, a %n conversion, zsh's print -f, or a word known at run time."""
     name, *arguments = command.arguments
     name = Path(name).name
-    if any(command.spreading[1:]) or any(re.match(r"-[A-Za-z]*v", argument) for argument in arguments):
+    if any(command.dynamic[1:]) or any(command.spreading[1:]):
+        return True
+    if any(re.match(r"-[A-Za-z]*v", argument) for argument in arguments):
         return True
     if name == "print":
         return any(re.match(r"-[A-Za-z]*f", argument) for argument in arguments)

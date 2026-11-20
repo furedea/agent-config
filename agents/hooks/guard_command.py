@@ -181,7 +181,7 @@ def forbidden_line_objection(command: str, commands: tuple[shell_syntax.Command,
 def allowed_line_objection(command: str, commands: tuple[shell_syntax.Command, ...], policy: Policy) -> Verdict:
     """The allowed guard's checks that read the whole command line before any segment's rules."""
     checks = (
-        lambda: t3_thread.objection(commands),
+        lambda: t3_thread.objection(command, commands),
         lambda: command_objections.cleanup_objection(command, commands),
         lambda: command_objections.pinned_program_objection(command, commands, policy),
     )

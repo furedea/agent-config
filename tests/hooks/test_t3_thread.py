@@ -24,7 +24,6 @@ def verdict(command: str) -> str:
         pytest.param(f"{START} . 'Read /tmp/brief.md and carry out the lane'", id="a Claude lane in a new worktree"),
         pytest.param("t3 thread start --provider codex --model gpt-5.5 --json . hello", id="a Codex thread"),
         pytest.param("t3 thread start . hello --provider=codex --model=gpt-5.5 --wait", id="options after the words"),
-        pytest.param("t3 thread start --provider codex --model m . - <<'EOF'\nbrief\nEOF", id="a message from stdin"),
         pytest.param("t3 thread send thread-1 'Address the review' --wait --json", id="a message to a thread"),
         pytest.param("t3 thread show thread-1 --messages 3 --json", id="a thread read"),
         pytest.param("t3 thread list --project . --json", id="a thread listing"),
@@ -76,6 +75,18 @@ def test_a_thread_on_a_provider_other_than_claude_or_codex_is_refused(command: s
         pytest.param("t3 thread send thread-1 hi --base-dir /tmp/t3", id="a send to another data directory"),
         pytest.param("t3 thread send thread-1", id="a send without a message"),
         pytest.param("t3 thread show thread-1 --base-dir /tmp/t3", id="a read of another data directory"),
+        pytest.param(
+            't3 thread start --provider codex --model m . "$(cp /etc/passwd /tmp/leak; echo hi)"',
+            id="a substitution the unsandboxed shell would run",
+        ),
+        pytest.param('t3 thread send "$THREAD" hi', id="a run-time thread"),
+        pytest.param("t3 thread show thread-1 --messages ~/n", id="a tilde"),
+        pytest.param("t3 thread start --provider codex --model m . - <<EOF\n$(id)\nEOF", id="an expanding heredoc"),
+        pytest.param("cp /etc/passwd /tmp/leak; t3 thread list", id="a list the unsandboxed shell would run"),
+        pytest.param(
+            "t3 thread start --provider codex --model m . - < ~/.ssh/id_ed25519", id="a message from any file"
+        ),
+        pytest.param("t3 thread start --provider codex --model m . - <<'EOF'\nbrief\nEOF", id="a message from stdin"),
         pytest.param("t3 thread archive thread-1", id="an unknown thread subcommand"),
     ],
 )

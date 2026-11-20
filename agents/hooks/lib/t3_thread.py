@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import hook_decision
+import literal_words
 import shell_syntax
 from hook_decision import Verdict
 
@@ -81,13 +82,21 @@ def refusal(commands: tuple[shell_syntax.Command, ...]) -> Verdict:
     return hook_decision.ALLOW
 
 
-def objection(commands: tuple[shell_syntax.Command, ...]) -> Verdict:
-    """Ask for a `t3 thread` call outside the documented, directly run forms."""
+def objection(command: str, commands: tuple[shell_syntax.Command, ...]) -> Verdict:
+    """Ask for a `t3 thread` call outside the documented, directly run, literal forms.
+
+    The whole line of an excluded command runs outside the sandbox, so a substitution in any word,
+    or another command in the line, would run there too.
+    """
+    literal = literal_words.allows_literal_rules(command, commands)
     for item in commands:
-        words = _thread_words(item)
-        if words is None:
+        if _thread_words(item) is None:
             continue
-        problem = _direct_problem(item) or _form_problem(read(item))
+        problem = (
+            _direct_problem(item)
+            or _form_problem(read(item))
+            or ("" if literal else "the line runs outside the sandbox, so it must be literal t3 calls only")
+        )
         if problem:
             preview = shell_syntax.command_preview(item.raw)
             return hook_decision.ask(f"Needs review: {problem}.\n\nCommand: {preview}", "t3 thread")

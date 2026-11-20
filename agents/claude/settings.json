@@ -119,6 +119,7 @@
       "gh *",
       "herdr *",
       "node \"~/.claude/plugins/cache/openai-codex/codex/*/scripts/codex-companion.mjs\" *",
+      "t3 thread *",
       "watchman *"
     ]
   },

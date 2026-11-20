@@ -9,7 +9,8 @@ Choose the workspace in this order:
 1. If this session already runs in a task worktree on a non-default branch for this task, stay there.
 2. If the user explicitly asks to stay in the current checkout, create the task branch there with
     `git switch -c <branch>`, unless that would overwrite or mix unrelated changes.
-3. If T3 Code is available (`t3 thread list` succeeds in the repository), hand each lane to a new
+3. If T3 Code is available, as its [prerequisites](../../delegation/references/t3.md#prerequisites)
+    define (`t3 thread list` succeeds as a sandboxed call), hand each lane to a new
     T3 thread in its own task worktree, as [delegation](../../delegation/SKILL.md) and its
     [T3 Code reference](../../delegation/references/t3.md) describe.
 4. Otherwise, if Herdr is available (`HERDR_ENV=1`), hand each lane to a new task worktree session
@@ -38,7 +39,8 @@ Lane rules for every transport:
     indistinguishable from the user's own input.
 - Start Claude for an implementation lane, even from a Codex session. Codex keeps a linked
     worktree's Git directory read-only inside its sandbox (openai/codex#14338), so a Codex lane
-    cannot commit there without approval. Lanes run on Sonnet at medium effort to save usage.
+    cannot commit there without approval. Lanes run on Sonnet to save usage, at medium effort where
+    the transport can set it.
 - A variable inside a `gh api` endpoint must be double-quoted (`gh api "repos/o/$r/..."`);
     unquoted expansions ask.
 - A linked worktree session cannot write another repository's `.git`, and this session cannot

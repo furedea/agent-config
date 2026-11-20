@@ -25,27 +25,27 @@ flowchart LR
   M --> C[Parent: clean up]
 ```
 
-| ステップ              | 担当          | 開始                                                                                                                                                                                                                              | スキル                                             |
-| --------------------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| 1. Issue and plan     | Parent        | —                                                                                                                                                                                                                                 | `development-cycle`                                |
-| 2. Approve            | User          | —                                                                                                                                                                                                                                 | —                                                  |
-| 3. Open lanes         | Parent        | レーンごとに，Herdr の worktree と medium effort の Sonnet レーンを，brief 付きで                                                                                                                                                 | `development-cycle` (branches), `herdr-delegation` |
-| 4. Implement          | Lane          | Codex（テストが先，コミットなし）                                                                                                                                                                                                 | `tsdd`, 各言語のスタイルスキル，`domain-modeling`  |
-| 5. Verify and deliver | Lane          | —                                                                                                                                                                                                                                 | `development-cycle` (commits, delivery)            |
-| 6. Review and fix     | Lane          | GitHub の `claude-review` と `codex-review`．レーンがすべての指摘を修正する                                                                                                                                                       | `development-cycle` (delivery), `herdr-delegation` |
-| 7. Report             | Lane → Parent | レーンは `LANE-READY` で終わり，親は `herdr agent wait` で待ってそれを読む                                                                                                                                                        | `herdr-delegation`                                 |
-| 8. Check and report   | Parent        | —                                                                                                                                                                                                                                 | —                                                  |
-| 9. Merge              | User          | —                                                                                                                                                                                                                                 | —                                                  |
-| 10. Clean up          | Parent        | ユーザーがマージした後：レンダリングされた `excludedCommands` のエントリに示されるとおり，ホームディレクトリを展開した絶対パスで `cleanup_worktrees.py` を実行する．レーンの worktree を `herdr worktree remove` で手で削除しない | `development-cycle` (branches), `source-of-truth`  |
+| ステップ              | 担当          | 開始                                                                                                                                                                                                                                        | スキル                                            |
+| --------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| 1. Issue and plan     | Parent        | —                                                                                                                                                                                                                                           | `development-cycle`                               |
+| 2. Approve            | User          | —                                                                                                                                                                                                                                           | —                                                 |
+| 3. Open lanes         | Parent        | レーンごとに，専用の worktree で medium effort の Sonnet レーンを動かす T3 Code の thread を，brief 付きで（Herdr を外すまでは Herdr の worktree とペインが代わりの手段）                                                                   | `development-cycle` (branches), `delegation`      |
+| 4. Implement          | Lane          | Codex（テストが先，コミットなし）                                                                                                                                                                                                           | `tsdd`, 各言語のスタイルスキル，`domain-modeling` |
+| 5. Verify and deliver | Lane          | —                                                                                                                                                                                                                                           | `development-cycle` (commits, delivery)           |
+| 6. Review and fix     | Lane          | GitHub の `claude-review` と `codex-review`．レーンがすべての指摘を修正する                                                                                                                                                                 | `development-cycle` (delivery), `delegation`      |
+| 7. Report             | Lane → Parent | レーンは `LANE-READY` で終わり，親は `t3 thread start --wait` か `t3 thread send --wait` で thread を待ってそれを読む．承認や質問を待つレーンにはユーザーが T3 で答える                                                                     | `delegation`                                      |
+| 8. Check and report   | Parent        | —                                                                                                                                                                                                                                           | —                                                 |
+| 9. Merge              | User          | —                                                                                                                                                                                                                                           | —                                                 |
+| 10. Clean up          | Parent        | ユーザーがマージした後：レンダリングされた `excludedCommands` のエントリに示されるとおり，ホームディレクトリを展開した絶対パスで `cleanup_worktrees.py` を実行する．レーンの worktree を T3 でも `herdr worktree remove` でも手で削除しない | `development-cycle` (branches), `source-of-truth` |
 
-| 誰                    | すること                                                                      | 決してしないこと                     |
-| --------------------- | ----------------------------------------------------------------------------- | ------------------------------------ |
-| User                  | 計画の承認，マージ，ワークフローファイルの push，リポジトリの削除やアーカイブ | —                                    |
-| Parent session (Opus) | Issue，計画，レーン，最終確認，クリーンアップ                                 | ファイルの編集，マージ               |
-| Lane (Sonnet)         | Codex の実行，検証，コミット，PR の作成，レビュー指摘の修正                   | 実装を書く，親のペインに入力する     |
-| Codex                 | 実装                                                                          | コミットや push（`.git` に書けない） |
+| 誰                    | すること                                                                      | 決してしないこと                           |
+| --------------------- | ----------------------------------------------------------------------------- | ------------------------------------------ |
+| User                  | 計画の承認，マージ，ワークフローファイルの push，リポジトリの削除やアーカイブ | —                                          |
+| Parent session (Opus) | Issue，計画，レーン，最終確認，クリーンアップ                                 | ファイルの編集，マージ                     |
+| Lane (Sonnet)         | Codex の実行，検証，コミット，PR の作成，レビュー指摘の修正                   | 実装を書く，親の thread やペインに入力する |
+| Codex                 | 実装                                                                          | コミットや push（`.git` に書けない）       |
 
-レーンは最後のメッセージを `LANE-READY` で終えて報告し，親がそれを読む．親はその文字列とユーザーの入力を区別できないので，レーンは親のペインに入力しない．
+レーンは最後のメッセージを `LANE-READY` で終えて報告し，親がそれを読む．親はその文字列とユーザーの入力を区別できないので，レーンは親の thread やペインに入力しない．
 
 注意：サンドボックスが制限するのはエージェントの書き込み先であり，その外であとから実行するものではない．そのため，エージェントの変更は，レビューしてマージした後にだけ実行すること．
 
@@ -55,7 +55,7 @@ flowchart LR
 
 - 親は他のリポジトリの `.git` に書き込めない．そこでの fetch，コミット，push はレーンが行う．
 - どのセッションも，どのリポジトリの `.git/hooks` と `.git/config` にも書き込めないので，レーンは `-u` なしで push する．
-- 各 `herdr` コマンドと各 Codex プラグインの呼び出しは 1 つのコマンドとして実行する：`cd`，パイプ，リダイレクト，`$` は使わない．
+- 各 `t3 thread` コマンド，各 `herdr` コマンド，各 Codex プラグインの呼び出しは 1 つのコマンドとして実行する：`cd`，パイプ，リダイレクト，`$` は使わない．
 - Codex はネットワークにも Nix デーモンにも届かないので，依存関係の更新と Nix のハッシュの計算はレーンが行う．
 - エージェントの GitHub App はワークフローファイルを push できないので，ユーザーが push する．
 - 公開から 7 日未満の依存関係はインストールしない（pnpm の `minimumReleaseAge`，uv の `exclude-newer`）．

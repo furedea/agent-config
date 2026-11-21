@@ -5,8 +5,8 @@ A branch goes only when a merged pull request's head is exactly its tip and its 
 clean, so a squash merge counts as merged while later or uncommitted work is kept. The primary
 checkout, the worktree the caller runs in, and the default branch are never removed; after a
 removal the default branch fast-forwards to the merges unless that would disturb work. The sweep
-covers the caller's repository and every repository with a Herdr task worktree, so lanes merged
-elsewhere go wherever the next session starts.
+covers the caller's repository and every repository with a Herdr or T3 Code task worktree, so
+lanes merged elsewhere go wherever the next session starts.
 
 Usage: cleanup_worktrees.py [--dry-run]
        cleanup_worktrees.py session-start  as a hook, reading the payload's cwd
@@ -34,6 +34,8 @@ CLAUDE_DIRECTORY = ".claude"
 SESSION_SCRATCH = ".cc-writes"
 HERDR_WORKTREES = Path(".herdr/worktrees")
 """Herdr's default worktrees.directory, holding <repo>/<branch-slug> checkouts."""
+LANE_WORKTREES = (HERDR_WORKTREES, Path(".t3/worktrees"))
+"""Herdr's and T3 Code's lane roots; T3 Code holds <repo>/<branch-prefix>-<hash>[-n] checkouts."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -75,9 +77,10 @@ def main(arguments: list[str]) -> int:
 
 
 def sweep(cwd: Path, *, dry_run: bool) -> list[str]:
-    """Clean the caller's repository and every repository with a Herdr task worktree."""
+    """Clean the caller's repository and every repository with a real (not symlinked) lane worktree."""
     current = toplevel(cwd)
-    lanes = sorted(path for path in (Path.home() / HERDR_WORKTREES).glob("*/*") if path.is_dir())
+    found = (path for root in LANE_WORKTREES for path in (Path.home() / root).glob("*/*"))
+    lanes = [path for path in found if path.is_dir() and not path.is_symlink() and not path.parent.is_symlink()]
     primaries = {primary for path in [current, *lanes] if path and (primary := _primary_checkout(path))}
     report = []
     for primary in sorted(primaries):
@@ -146,7 +149,7 @@ def _real_primary(path: Path) -> bool:
     return (
         (path / ".git").is_dir()
         and not (path / ".git").is_symlink()
-        and not path.is_relative_to((Path.home() / HERDR_WORKTREES).resolve())
+        and not any(path.is_relative_to((Path.home() / root).resolve()) for root in LANE_WORKTREES)
     )
 
 
@@ -173,7 +176,7 @@ def untrusted_locations() -> set[Path]:
         Path("/private/tmp"),
         Path("/tmp/claude"),
         Path("/private/tmp/claude"),
-        Path.home().resolve() / HERDR_WORKTREES,
+        *(Path.home().resolve() / root for root in LANE_WORKTREES),
     }
     if temporary := os.environ.get("TMPDIR"):
         paths.add(Path(temporary))

@@ -103,11 +103,14 @@ def test_an_open_herdr_workspace_is_closed_with_its_worktree(
     assert branches(primary) == {"main"}
 
 
-def test_merged_herdr_lanes_of_other_repositories_are_swept_too(
-    primary: Path, merged: dict[str, str], tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+@pytest.mark.parametrize(
+    "lane_root", [".herdr/worktrees/repo/feat-elsewhere", ".t3/worktrees/repo/feat-elsewhere-0123456789abcdef"]
+)
+def test_merged_agent_lanes_of_other_repositories_are_swept_too(
+    primary: Path, merged: dict[str, str], tmp_path: Path, monkeypatch: pytest.MonkeyPatch, lane_root: str
 ) -> None:
     home = tmp_path / "home"
-    lane = home / ".herdr/worktrees/repo/feat-elsewhere"
+    lane = home / lane_root
     lane.parent.mkdir(parents=True)
     git("worktree", "add", "--quiet", "-b", "feat/elsewhere", str(lane), cwd=primary)
     merged["feat/elsewhere"] = git("rev-parse", "HEAD", cwd=lane)

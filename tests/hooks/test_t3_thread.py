@@ -7,7 +7,9 @@ from tests.runtime import REPO_ROOT, load_script_module
 
 guard = load_script_module("agents/hooks/guard_command.py", "guard_command")
 pytestmark = pytest.mark.usefixtures("isolated_project")
-START = "t3 thread start --provider claudeAgent --model opus --worktree origin/main --branch feat/x --title lane-a"
+START = (
+    "t3 thread start --provider claudeAgent --model opus --worktree origin/main --branch feat/x --title lane-a --json"
+)
 
 
 def verdict(command: str) -> str:
@@ -23,7 +25,9 @@ def verdict(command: str) -> str:
     [
         pytest.param(f"{START} . 'Read /tmp/brief.md and carry out the lane'", id="a Claude lane in a new worktree"),
         pytest.param("t3 thread start --provider codex --model gpt-5.5 --json . hello", id="a Codex thread"),
-        pytest.param("t3 thread start . hello --provider=codex --model=gpt-5.5 --wait", id="options after the words"),
+        pytest.param(
+            "t3 thread start . hello --provider=codex --model=gpt-5.5 --wait --json", id="options after the words"
+        ),
         pytest.param("t3 thread send thread-1 'Address the review' --wait --json", id="a message to a thread"),
         pytest.param("t3 thread show thread-1 --messages 3 --json", id="a thread read"),
         pytest.param("t3 thread list --project . --json", id="a thread listing"),
@@ -93,6 +97,13 @@ def test_a_thread_on_a_provider_other_than_claude_or_codex_is_refused(command: s
         pytest.param("t3 thread list && curl -s http://localhost:3000", id="a request in the line"),
         pytest.param("t3 thread start --provider codex --model m . - <<'EOF'\nbrief\nEOF", id="a message from stdin"),
         pytest.param("t3 thread archive thread-1", id="an unknown thread subcommand"),
+        pytest.param("t3 thread start --provider codex --model m /other/repo hi --json", id="another project by path"),
+        pytest.param("t3 thread start --provider codex --model m project-2 hi --json", id="another project by id"),
+        pytest.param("t3 thread start --provider codex --model m . hi", id="a start whose thread cannot be recorded"),
+        pytest.param("t3 thread start --provider codex --model m . hi --json | jq .", id="a start through a filter"),
+        pytest.param(
+            "t3 thread list && t3 thread start --provider codex --model m . hi --json", id="a start in a list"
+        ),
     ],
 )
 def test_forms_the_guard_cannot_read_need_review(command: str) -> None:

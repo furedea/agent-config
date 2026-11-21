@@ -94,10 +94,9 @@ def objection(command: str, commands: tuple[shell_syntax.Command, ...]) -> Verdi
     for item in commands:
         if _thread_words(item) is None:
             continue
+        call = read(item)
         problem = (
-            _direct_problem(item)
-            or _form_problem(read(item))
-            or ("" if literal else "the line runs outside the sandbox, so it must be literal t3 calls only")
+            _direct_problem(item) or _form_problem(call) or _line_problem(call, literal, alone=len(commands) == 1)
         )
         if problem:
             preview = shell_syntax.command_preview(item.raw)
@@ -165,10 +164,25 @@ def _form_problem(call: ThreadCall | Unreadable | None) -> str:
     names = [name for name, _ in call.options]
     if len(names) != len(set(names)):
         return "an option given twice may be read either way"
-    if call.action == "start" and not (call.values("--provider") and call.values("--model")):
+    return _start_problem(call) if call.action == "start" else ""
+
+
+def _start_problem(call: ThreadCall) -> str:
+    if not (call.values("--provider") and call.values("--model")):
         return "a thread start needs --provider claudeAgent or codex together with --model"
-    if call.action == "start" and not set(call.values("--provider")) <= PROVIDERS:
+    if not set(call.values("--provider")) <= PROVIDERS:
         return "a thread start may name only the claudeAgent or codex provider instance"
+    if call.positionals[0] != ".":
+        return "a lane starts in this session's own project, named ., and any other project needs the user's judgment"
+    return ""
+
+
+def _line_problem(call: ThreadCall | Unreadable | None, literal: bool, *, alone: bool) -> str:
+    """Why the line around a readable call cannot run unprompted: it must be literal, and a start recordable."""
+    if not literal:
+        return "the line runs outside the sandbox, so it must be literal t3 calls only"
+    if isinstance(call, ThreadCall) and call.action == "start" and not (alone and call.values("--json")):
+        return "only one plain t3 thread start --json records its thread, so this session could not message it"
     return ""
 
 

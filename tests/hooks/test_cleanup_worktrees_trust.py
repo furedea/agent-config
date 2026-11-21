@@ -134,6 +134,33 @@ def test_lane_metadata_can_identify_another_trusted_primary(
     assert branches(other) == {"main"}
 
 
+@pytest.mark.parametrize("root", [".herdr/worktrees", ".t3/worktrees"])
+@pytest.mark.parametrize("link", ["repo/lane", "repo"])
+def test_a_symlink_in_a_lane_root_never_selects_a_repository(
+    primary: Path, merged: dict[str, str], tmp_path: Path, root: str, link: str
+) -> None:
+    other = tmp_path / "other"
+    git("clone", "--quiet", str(primary), str(other), cwd=primary)
+    done = task_worktree(other, "feat/done")
+    merged["feat/done"] = git("rev-parse", "HEAD", cwd=done)
+    planted = Path.home() / root / link
+    planted.parent.mkdir(parents=True, exist_ok=True)
+    if link == "repo":
+        holder = tmp_path / "holder"
+        holder.mkdir()
+        (holder / "lane").symlink_to(other, target_is_directory=True)
+        planted.symlink_to(holder, target_is_directory=True)
+    else:
+        planted.symlink_to(other, target_is_directory=True)
+    marker = record_commands(tmp_path, other)
+
+    result = cleanup(tmp_path)
+
+    assert result.returncode == 0
+    assert not marker.exists()
+    assert done.exists()
+
+
 @pytest.mark.parametrize("settings", ["unreadable", "invalid", "invalid-shape"])
 def test_unknown_writable_paths_skip_lane_primaries_but_clean_the_callers_repository(
     primary: Path, merged: dict[str, str], tmp_path: Path, settings: str

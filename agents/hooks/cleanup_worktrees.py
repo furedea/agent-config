@@ -34,9 +34,8 @@ CLAUDE_DIRECTORY = ".claude"
 SESSION_SCRATCH = ".cc-writes"
 HERDR_WORKTREES = Path(".herdr/worktrees")
 """Herdr's default worktrees.directory, holding <repo>/<branch-slug> checkouts."""
-T3_WORKTREES = Path(".t3/worktrees")
-"""T3 Code's default worktree location, holding <repo>/<branch-prefix>-<hash>[-n] checkouts."""
-LANE_WORKTREES = (HERDR_WORKTREES, T3_WORKTREES)
+LANE_WORKTREES = (HERDR_WORKTREES, Path(".t3/worktrees"))
+"""Herdr's and T3 Code's lane roots; T3 Code holds <repo>/<branch-prefix>-<hash>[-n] checkouts."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -78,9 +77,10 @@ def main(arguments: list[str]) -> int:
 
 
 def sweep(cwd: Path, *, dry_run: bool) -> list[str]:
-    """Clean the caller's repository and every repository with a Herdr or T3 Code task worktree."""
+    """Clean the caller's repository and every repository with a real (not symlinked) lane worktree."""
     current = toplevel(cwd)
-    lanes = sorted(path for root in LANE_WORKTREES for path in (Path.home() / root).glob("*/*") if path.is_dir())
+    found = (path for root in LANE_WORKTREES for path in (Path.home() / root).glob("*/*"))
+    lanes = [path for path in found if path.is_dir() and not path.is_symlink() and not path.parent.is_symlink()]
     primaries = {primary for path in [current, *lanes] if path and (primary := _primary_checkout(path))}
     report = []
     for primary in sorted(primaries):

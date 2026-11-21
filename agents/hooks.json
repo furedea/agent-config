@@ -1075,5 +1075,114 @@
         }
       ]
     }
+  },
+  "antigravity": {
+    "hooks": {
+      "SessionStart": [
+        {
+          "hooks": [
+            {
+              "command": "\"$HOME/.gemini/config/hooks/hook_adapter.py\" native session-start",
+              "timeout": 30,
+              "type": "command"
+            },
+            {
+              "command": "\"$HOME/.gemini/config/hooks/hook_adapter.py\" audit compaction",
+              "type": "command"
+            }
+          ]
+        }
+      ],
+      "PreToolUse": [
+        {
+          "matcher": "*",
+          "hooks": [
+            {
+              "command": "\"$HOME/.gemini/config/hooks/hook_adapter.py\" native pre-tool-use",
+              "timeout": 30,
+              "type": "command"
+            },
+            {
+              "command": "\"$HOME/.gemini/config/hooks/hook_adapter.py\" audit tool",
+              "timeout": 10,
+              "type": "command"
+            },
+            {
+              "command": "\"$HOME/.gemini/config/hooks/hook_adapter.py\" paths command",
+              "timeout": 30,
+              "type": "command"
+            },
+            {
+              "command": "\"$HOME/.gemini/config/hooks/hook_adapter.py\" shell forbidden",
+              "timeout": 30,
+              "type": "command"
+            },
+            {
+              "command": "\"$HOME/.gemini/config/hooks/hook_adapter.py\" shell commit",
+              "timeout": 30,
+              "type": "command"
+            },
+            {
+              "command": "\"$HOME/.gemini/config/hooks/hook_adapter.py\" shell git",
+              "timeout": 30,
+              "type": "command"
+            },
+            {
+              "command": "\"$HOME/.gemini/config/hooks/hook_adapter.py\" shell allowed",
+              "timeout": 30,
+              "type": "command"
+            },
+            {
+              "command": "\"$HOME/.gemini/config/hooks/hook_adapter.py\" paths patch",
+              "timeout": 30,
+              "type": "command"
+            },
+            {
+              "command": "\"$HOME/.gemini/config/hooks/hook_adapter.py\" harness",
+              "timeout": 30,
+              "type": "command"
+            },
+            {
+              "command": "\"$HOME/.gemini/config/hooks/hook_adapter.py\" content write",
+              "timeout": 30,
+              "type": "command"
+            },
+            {
+              "command": "\"$HOME/.gemini/config/hooks/hook_adapter.py\" content suppression",
+              "timeout": 30,
+              "type": "command"
+            },
+            {
+              "command": "\"$HOME/.gemini/config/hooks/hook_adapter.py\" content read",
+              "timeout": 30,
+              "type": "command"
+            }
+          ]
+        }
+      ],
+      "PostToolUse": [
+        {
+          "matcher": "*",
+          "hooks": [
+            {
+              "command": "\"$HOME/.gemini/config/hooks/hook_adapter.py\" audit tool",
+              "timeout": 10,
+              "type": "command"
+            }
+          ]
+        }
+      ],
+      "Stop": [
+        {
+          "hooks": [
+            {
+              "command": "\"$HOME/.gemini/config/hooks/hook_adapter.py\" native stop",
+              "timeout": 600,
+              "type": "command"
+            }
+          ]
+        }
+      ]
+    }
   }
 }

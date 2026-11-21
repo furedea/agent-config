@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.runtime import CliRunner
+from tests.runtime import CliRunner, load_script_module
 
 pytestmark = pytest.mark.integration
 
@@ -191,3 +191,56 @@ def test_generated_claude_settings_allow_no_unused_notification_host(agent_harne
     path = tmp_path / "settings.json"
     agent_harness("generate-claude-settings", "--output", str(path))
     assert "api.day.app" not in json.loads(path.read_text())["sandbox"]["network"]["allowedDomains"]
+
+
+def generated_antigravity_hooks(agent_harness: CliRunner, tmp_path: Path) -> dict:
+    path = tmp_path / "hooks.json"
+    agent_harness("generate-hooks", "--provider", "antigravity", "--output", str(path))
+    return json.loads(path.read_text())["hooks"]
+
+
+def test_generated_antigravity_hooks_use_only_supported_events(agent_harness: CliRunner, tmp_path: Path) -> None:
+    hooks = generated_antigravity_hooks(agent_harness, tmp_path)
+    assert set(hooks) == {"SessionStart", "PreToolUse", "PostToolUse", "Stop"}
+
+
+@pytest.mark.parametrize("event", ["PreToolUse", "PostToolUse"])
+def test_generated_antigravity_tool_hooks_match_every_tool(
+    agent_harness: CliRunner, tmp_path: Path, event: str
+) -> None:
+    groups = generated_antigravity_hooks(agent_harness, tmp_path)[event]
+    assert [group["matcher"] for group in groups] == ["*"]
+
+
+def test_generated_antigravity_pre_tool_use_runs_every_guard(agent_harness: CliRunner, tmp_path: Path) -> None:
+    group = generated_antigravity_hooks(agent_harness, tmp_path)["PreToolUse"][0]
+    commands = [hook["command"].split('hook_adapter.py" ')[1] for hook in group["hooks"]]
+    for guard in (
+        "native pre-tool-use",
+        "audit tool",
+        "paths command",
+        "paths patch",
+        "shell forbidden",
+        "shell commit",
+        "shell git",
+        "shell allowed",
+        "harness",
+        "content write",
+        "content suppression",
+        "content read",
+    ):
+        assert guard in commands
+
+
+def test_generated_antigravity_commands_run_the_deployed_adapter_with_arguments_it_accepts(
+    agent_harness: CliRunner, tmp_path: Path
+) -> None:
+    adapter = load_script_module("agents/antigravity/hooks/hook_adapter.py", "antigravity_adapter_wiring").ADAPTER
+    hooks = generated_antigravity_hooks(agent_harness, tmp_path)
+    commands = [hook["command"] for groups in hooks.values() for group in groups for hook in group["hooks"]]
+    prefix = '"$HOME/.gemini/config/hooks/hook_adapter.py" '
+    assert commands
+    for command in commands:
+        assert command.startswith(prefix), command
+        kind, *rest = command.removeprefix(prefix).split()
+        assert adapter._accepts(kind, rest), command

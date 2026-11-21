@@ -9,7 +9,9 @@ import pytest
 
 from tests.runtime import CliRunner
 
-ADAPTERS = (".codex/hooks", ".devin/hooks", ".hermes/hooks", ".pi/hooks")
+ANTIGRAVITY = ".gemini/config/hooks"
+BLOCKING_ADAPTERS = (".codex/hooks", ".devin/hooks", ".hermes/hooks", ".pi/hooks")
+ADAPTERS = (*BLOCKING_ADAPTERS, ANTIGRAVITY)
 
 
 @pytest.fixture
@@ -77,7 +79,7 @@ def test_rendered_statusline_renders_the_context_segment(rendered: Path, environ
 
 
 @pytest.mark.integration
-@pytest.mark.parametrize("directory", ADAPTERS)
+@pytest.mark.parametrize("directory", BLOCKING_ADAPTERS)
 @pytest.mark.parametrize(
     "case",
     [
@@ -92,3 +94,14 @@ def test_rendered_provider_adapters_run_shared_guards(
     result = run(rendered / directory / "hook_adapter.py", arguments, payload, environment)
     assert result.returncode == status, result.stderr
     assert message in result.stderr
+
+
+@pytest.mark.integration
+def test_rendered_antigravity_adapter_denies_secret_paths_in_its_json_reply(
+    rendered: Path, environment: dict[str, str]
+) -> None:
+    payload = {"toolCall": {"name": "edit_file", "args": {"Path": ".env.local"}}}
+    result = run(rendered / ANTIGRAVITY / "hook_adapter.py", ["paths", "patch"], payload, environment)
+    assert result.returncode == 0, result.stderr
+    assert json.loads(result.stdout)["decision"] == "deny"
+    assert "secret path policy matched" in result.stderr

@@ -36,7 +36,8 @@ human already watches on the desktop and phone, where they also answer a lane's 
 lane keeps the hooks, guard and sandbox of a terminal session and the workflow stays in this repository's skills.
 
 - A lane is started with `t3 thread start` and an explicit provider, in a worktree T3 creates for the lane's branch;
-    the parent waits with `--wait` and reads the reply. A wait that ends because the lane needs an answer goes to the
+    the parent waits with `--wait` and reads the reply (amended 2026-11-22: the parent now polls `t3 thread show`
+    instead). A wait that ends because the lane needs an answer goes to the
     human in T3; the parent never answers it.
 - Only `t3 thread *` runs outside the sandbox, as `herdr *` does for ADR-0010, because the T3 CLI writes T3's state
     under the home directory. Other `t3` subcommands stay sandboxed and ask.
@@ -66,4 +67,5 @@ choice, brief, review, waiting, cleanup) into T3, so replacing T3 would mean rew
 - Bad, because lanes stop whenever T3 is unavailable, until the user fixes T3 or explicitly asks for Herdr.
 - Bad, because the deprecated Herdr path must keep working in the skills, guard and cleanup until it is removed, and
     T3 worktrees under `~/.t3/worktrees` need their own cleanup next to Herdr's.
-- Bad, because `--wait` has no timeout, so a lane that never replies holds the parent until the human intervenes.
+- Bad, because `--wait` has no timeout, so a lane that never replies holds the parent until the human intervenes (amended 2026-11-22: the parent now polls `t3 thread show`, which
+    replaces this concern).

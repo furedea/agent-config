@@ -14,8 +14,10 @@ Choose the workspace in this order:
     covers `~/.t3/worktrees`), hand each lane to a new
     T3 thread in its own task worktree, as [delegation](../../delegation/SKILL.md) and its
     [T3 Code reference](../../delegation/references/t3.md) describe.
-4. Otherwise, if Herdr is available (`HERDR_ENV=1`), hand each lane to a new task worktree session
-    as in [Herdr fallback](#herdr-fallback). Herdr stays the fallback until its removal.
+4. Only when T3 Code is unavailable, for example before the T3 guard and cleanup are installed
+    (furedea/agent-config#265, #266), and Herdr is available (`HERDR_ENV=1`), hand each lane to a
+    new task worktree session through the deprecated Herdr transport, as in
+    [Deprecated Herdr transport](#deprecated-herdr-transport).
 5. Without either, create the task branch in the current checkout for a single lane when the tree is
     clean or its changes belong to this task. For several lanes, or unrelated dirty changes, report
     that each lane needs its own worktree session and stop: a sandboxed session cannot write a
@@ -52,19 +54,21 @@ Lane rules for every transport:
     `cleanup_worktrees.py` by its absolute path with the home directory expanded, as shown in the
     rendered `excludedCommands` entry, after the user merges, or at the next Claude session start
     (`--dry-run` previews): only when a merged pull request's head is the branch tip and the tree
-    is clean, and the primary checkout's `main` then fast-forwards. It also closes an agent-created Herdr primary workspace when no linked worktrees
-    or agents remain; user-created workspaces stay open. `--dry-run` previews both removals and
-    closures. Do not remove lane worktrees by hand or pull by hand. An abandoned worktree is the
-    user's to remove. Moving and repairing worktrees stay outside the agent workflow.
+    is clean, and the primary checkout's `main` then fast-forwards. It also closes an
+    agent-created Herdr primary workspace when no linked worktrees or agents remain; user-created
+    workspaces stay open. `--dry-run` previews both removals and closures. Do not remove lane
+    worktrees by hand or pull by hand. An abandoned worktree is the user's to remove. Moving and
+    repairing worktrees stay outside the agent workflow.
 - When updating `main` itself, use `git pull --ff-only` in the main worktree. Do not use
     `git pull --rebase origin main` for the base branch.
 - For a requested stacked pull request, `gh stack init` and `gh stack add` create the layer branches;
     the branch name format below applies to each layer. See [Stacked pull requests](stacked_prs.md).
 
-## Herdr Fallback
+## Deprecated Herdr Transport
 
-Task worktree hand-off through Herdr, once per lane, each line as its own Bash call; the
-operations follow [herdr-delegation](../../herdr-delegation/SKILL.md):
+Herdr is deprecated: use it only when T3 Code is unavailable. Task worktree hand-off through
+Herdr, once per lane, each line as its own Bash call; the operations follow
+[herdr-delegation](../../herdr-delegation/SKILL.md):
 
 ```bash
 git fetch origin

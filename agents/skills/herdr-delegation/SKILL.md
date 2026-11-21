@@ -1,12 +1,15 @@
 ---
 name: herdr-delegation
 description: >
-    Use when the user requests a plan review or implementation task in a separate
-    Codex or Claude session through Herdr, including another repository or worktree. Applies
-    when Herdr is requested or already selected for the delegation, not to ordinary local work.
+    Deprecated in favour of `delegation`, which uses T3 Code by default. Use only when the user
+    explicitly requests Herdr or T3 Code is unavailable and `development-cycle` selects the
+    deprecated Herdr transport for a plan review or implementation task in a separate Codex or
+    Claude session. Not for ordinary local work.
 ---
 
 # Herdr Delegation
+
+> Deprecated: use [delegation](../delegation/SKILL.md), with T3 Code as the default transport.
 
 Delegate a bounded task to an independent coding-agent session. The originating session owns
 the request, evaluates the returned work, and reports the outcome to the user.

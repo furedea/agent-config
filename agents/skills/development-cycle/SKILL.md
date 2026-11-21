@@ -45,8 +45,9 @@ Delegate other responsibilities:
 - Testing and implementation methodology → [tsdd](../tsdd/SKILL.md).
 - Information authority and temporary document lifetime → [source-of-truth](../source-of-truth/SKILL.md).
 - Design decision records → [adr](../adr/SKILL.md).
-- Work delegated to another session → [delegation](../delegation/SKILL.md); through Herdr, the
-    fallback until its removal → [herdr-delegation](../herdr-delegation/SKILL.md).
+- Work delegated to another session → [delegation](../delegation/SKILL.md), with T3 Code as the
+    default transport; Herdr is deprecated and used only when T3 Code is unavailable →
+    [herdr-delegation](../herdr-delegation/SKILL.md).
 
 ## Authorization
 

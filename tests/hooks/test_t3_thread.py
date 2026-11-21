@@ -28,6 +28,7 @@ def verdict(command: str) -> str:
         pytest.param("t3 thread show thread-1 --messages 3 --json", id="a thread read"),
         pytest.param("t3 thread list --project . --json", id="a thread listing"),
         pytest.param("t3 thread list", id="a plain thread listing"),
+        pytest.param("t3 thread list --json | jq .", id="a listing through a read-only filter"),
     ],
 )
 def test_lane_forms_run_without_approval(command: str) -> None:
@@ -86,6 +87,10 @@ def test_a_thread_on_a_provider_other_than_claude_or_codex_is_refused(command: s
         pytest.param(
             "t3 thread start --provider codex --model m . - < ~/.ssh/id_ed25519", id="a message from any file"
         ),
+        pytest.param("t3 thread list --json > /home/user/.bashrc", id="a write outside the sandbox"),
+        pytest.param("t3 thread start --provider codex --model m . - < /etc/passwd", id="a read outside the sandbox"),
+        pytest.param("gh pr list && t3 thread list", id="another unsandboxed program in the line"),
+        pytest.param("t3 thread list && curl -s http://localhost:3000", id="a request in the line"),
         pytest.param("t3 thread start --provider codex --model m . - <<'EOF'\nbrief\nEOF", id="a message from stdin"),
         pytest.param("t3 thread archive thread-1", id="an unknown thread subcommand"),
     ],

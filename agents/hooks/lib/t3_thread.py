@@ -88,7 +88,9 @@ def objection(command: str, commands: tuple[shell_syntax.Command, ...]) -> Verdi
     The whole line of an excluded command runs outside the sandbox, so a substitution in any word,
     or another command in the line, would run there too.
     """
-    literal = literal_words.allows_literal_rules(command, commands)
+    literal = literal_words.allows_literal_rules(command, commands) and all(
+        _thread_words(item) is not None or literal_words.is_read_only_filter(item) for item in commands
+    )
     for item in commands:
         if _thread_words(item) is None:
             continue
@@ -175,6 +177,8 @@ def _direct_problem(item: shell_syntax.Command) -> str:
         return "a t3 thread call behind a wrapper or inside a script hides its form from the permission rules"
     if item.assignments:
         return "an environment assignment can move T3 to another data directory or server"
+    if item.redirections:
+        return "a redirect of an unsandboxed t3 call can read or write any file"
     return ""
 
 

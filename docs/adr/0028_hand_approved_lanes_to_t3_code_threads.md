@@ -1,6 +1,8 @@
 ---
-status: proposed
+status: accepted
 date: 2026-11-21
+amended:
+  - "2026-11-22: accepted after the first real lane (PR #272) ran start, approval, PR, and LANE-READY, and cleanup_worktrees.py removed its worktree under ~/.t3/worktrees"
 supersedes: [ADR-0010]
 related: [ADR-0007, ADR-0009]
 ---

@@ -9,6 +9,7 @@ import pytest
 
 from tests.runtime import CliRunner
 
+ADAPTER_FILE = "hook_adapter.py"
 ANTIGRAVITY = ".gemini/config/hooks"
 BLOCKING_ADAPTERS = (".codex/hooks", ".devin/hooks", ".hermes/hooks", ".pi/hooks")
 ADAPTERS = (*BLOCKING_ADAPTERS, ANTIGRAVITY)
@@ -52,7 +53,7 @@ def test_rendered_hooks_load_adjacent_modules(rendered: Path, environment: dict[
         ".claude/hooks/lib/provider_adapter.py",
         ".claude/hooks/defaults/dprint.json",
         ".claude/statusline/statusline.py",
-        *(f"{directory}/hook_adapter.py" for directory in ADAPTERS),
+        *(f"{directory}/{ADAPTER_FILE}" for directory in ADAPTERS),
     ):
         assert (rendered / name).is_file(), name
     result = run(rendered / ".claude/hooks/lint_format.py", ["py"], {"tool_input": {}}, environment)
@@ -66,7 +67,7 @@ def test_rendered_entry_points_are_executable(rendered: Path) -> None:
         ".claude/hooks/guard_command.py",
         ".claude/hooks/verification_session.py",
         ".claude/statusline/statusline.py",
-        *(f"{directory}/hook_adapter.py" for directory in ADAPTERS),
+        *(f"{directory}/{ADAPTER_FILE}" for directory in ADAPTERS),
     ):
         assert os.access(rendered / name, os.X_OK), name
 
@@ -91,7 +92,7 @@ def test_rendered_provider_adapters_run_shared_guards(
     rendered: Path, environment: dict[str, str], directory: str, case: tuple[list[str], dict, int, str]
 ) -> None:
     arguments, payload, status, message = case
-    result = run(rendered / directory / "hook_adapter.py", arguments, payload, environment)
+    result = run(rendered / directory / ADAPTER_FILE, arguments, payload, environment)
     assert result.returncode == status, result.stderr
     assert message in result.stderr
 
@@ -101,7 +102,7 @@ def test_rendered_antigravity_adapter_denies_secret_paths_in_its_json_reply(
     rendered: Path, environment: dict[str, str]
 ) -> None:
     payload = {"toolCall": {"name": "edit_file", "args": {"Path": ".env.local"}}}
-    result = run(rendered / ANTIGRAVITY / "hook_adapter.py", ["paths", "patch"], payload, environment)
+    result = run(rendered / ANTIGRAVITY / ADAPTER_FILE, ["paths", "patch"], payload, environment)
     assert result.returncode == 0, result.stderr
     assert json.loads(result.stdout)["decision"] == "deny"
     assert "secret path policy matched" in result.stderr

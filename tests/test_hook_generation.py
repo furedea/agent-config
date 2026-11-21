@@ -193,27 +193,36 @@ def test_generated_claude_settings_allow_no_unused_notification_host(agent_harne
     assert "api.day.app" not in json.loads(path.read_text())["sandbox"]["network"]["allowedDomains"]
 
 
+PRE_TOOL_USE = "PreToolUse"
+POST_TOOL_USE = "PostToolUse"
+MATCHER = "matcher"
+COMMAND = "command"
+HOOKS = "hooks"
+ADAPTER_SCRIPT = 'hook_adapter.py" '
+EDIT_TOOLS = ("write_file", "write_to_file", "edit_file", "replace_file_content", "multi_replace_file_content")
+
+
 def generated_antigravity_hooks(agent_harness: CliRunner, tmp_path: Path) -> dict:
     path = tmp_path / "hooks.json"
     agent_harness("generate-hooks", "--provider", "antigravity", "--output", str(path))
-    return json.loads(path.read_text())["hooks"]
+    return json.loads(path.read_text())[HOOKS]
 
 
 def test_generated_antigravity_hooks_use_only_supported_events(agent_harness: CliRunner, tmp_path: Path) -> None:
     hooks = generated_antigravity_hooks(agent_harness, tmp_path)
-    assert set(hooks) == {"SessionStart", "PreToolUse", "PostToolUse", "Stop"}
+    assert set(hooks) == {"SessionStart", PRE_TOOL_USE, POST_TOOL_USE, "Stop"}
 
 
 def antigravity_commands(group: dict) -> list[str]:
-    return [hook["command"].split('hook_adapter.py" ')[1] for hook in group["hooks"]]
+    return [hook[COMMAND].split(ADAPTER_SCRIPT)[1] for hook in group[HOOKS]]
 
 
-@pytest.mark.parametrize("event", ["PreToolUse", "PostToolUse"])
+@pytest.mark.parametrize("event", [PRE_TOOL_USE, POST_TOOL_USE])
 def test_generated_antigravity_tool_hooks_match_every_tool(
     agent_harness: CliRunner, tmp_path: Path, event: str
 ) -> None:
     groups = generated_antigravity_hooks(agent_harness, tmp_path)[event]
-    assert [group for group in groups if group["matcher"] == "*"]
+    assert [group for group in groups if group[MATCHER] == "*"]
 
 
 @pytest.mark.parametrize("event", ["SessionStart", "Stop"])
@@ -222,14 +231,14 @@ def test_generated_antigravity_session_events_list_handlers_directly(
 ) -> None:
     handlers = generated_antigravity_hooks(agent_harness, tmp_path)[event]
     assert handlers
-    assert all("command" in handler and "hooks" not in handler for handler in handlers)
+    assert all(COMMAND in handler and HOOKS not in handler for handler in handlers)
 
 
 def test_generated_antigravity_pre_tool_use_runs_every_guard_on_every_tool(
     agent_harness: CliRunner, tmp_path: Path
 ) -> None:
-    groups = generated_antigravity_hooks(agent_harness, tmp_path)["PreToolUse"]
-    commands = [command for group in groups if group["matcher"] == "*" for command in antigravity_commands(group)]
+    groups = generated_antigravity_hooks(agent_harness, tmp_path)[PRE_TOOL_USE]
+    commands = [command for group in groups if group[MATCHER] == "*" for command in antigravity_commands(group)]
     for guard in (
         "native pre-tool-use",
         "audit tool",
@@ -249,18 +258,18 @@ def test_generated_antigravity_pre_tool_use_runs_every_guard_on_every_tool(
 def test_generated_antigravity_content_read_guard_runs_only_for_read_tools(
     agent_harness: CliRunner, tmp_path: Path
 ) -> None:
-    groups = generated_antigravity_hooks(agent_harness, tmp_path)["PreToolUse"]
+    groups = generated_antigravity_hooks(agent_harness, tmp_path)[PRE_TOOL_USE]
     scoped = [group for group in groups if "content read" in antigravity_commands(group)]
-    assert [group["matcher"] for group in scoped] == ["^(read_file|view_file)$"]
+    assert [group[MATCHER] for group in scoped] == ["^(read_file|view_file)$"]
 
 
 def test_generated_antigravity_lint_runs_only_after_edit_tools(agent_harness: CliRunner, tmp_path: Path) -> None:
-    groups = generated_antigravity_hooks(agent_harness, tmp_path)["PostToolUse"]
+    groups = generated_antigravity_hooks(agent_harness, tmp_path)[POST_TOOL_USE]
     scoped = [group for group in groups if "lint" in antigravity_commands(group)]
     assert len(scoped) == 1
-    for tool in ("write_file", "write_to_file", "edit_file", "replace_file_content", "multi_replace_file_content"):
-        assert tool in scoped[0]["matcher"]
-    assert "run_command" not in scoped[0]["matcher"]
+    for tool in EDIT_TOOLS:
+        assert tool in scoped[0][MATCHER]
+    assert "run_command" not in scoped[0][MATCHER]
 
 
 def test_generated_antigravity_commands_run_the_deployed_adapter_with_arguments_it_accepts(
@@ -272,9 +281,9 @@ def test_generated_antigravity_commands_run_the_deployed_adapter_with_arguments_
         handler
         for event, entries in hooks.items()
         for entry in entries
-        for handler in (entry["hooks"] if event.endswith("ToolUse") else [entry])
+        for handler in (entry[HOOKS] if event.endswith("ToolUse") else [entry])
     ]
-    commands = [handler["command"] for handler in handlers]
+    commands = [handler[COMMAND] for handler in handlers]
     prefix = '"$HOME/.gemini/config/hooks/hook_adapter.py" '
     assert commands
     for command in commands:

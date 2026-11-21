@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.runtime import CliRunner
+from tests.runtime import CliRunner, load_script_module
 
 pytestmark = pytest.mark.integration
 
@@ -191,3 +191,102 @@ def test_generated_claude_settings_allow_no_unused_notification_host(agent_harne
     path = tmp_path / "settings.json"
     agent_harness("generate-claude-settings", "--output", str(path))
     assert "api.day.app" not in json.loads(path.read_text())["sandbox"]["network"]["allowedDomains"]
+
+
+PRE_TOOL_USE = "PreToolUse"
+POST_TOOL_USE = "PostToolUse"
+MATCHER = "matcher"
+COMMAND = "command"
+HOOKS = "hooks"
+ADAPTER_SCRIPT = 'hook_adapter.py" '
+EDIT_TOOLS = ("write_file", "write_to_file", "edit_file", "replace_file_content", "multi_replace_file_content")
+
+
+def generated_antigravity_hooks(agent_harness: CliRunner, tmp_path: Path) -> dict:
+    path = tmp_path / "hooks.json"
+    agent_harness("generate-hooks", "--provider", "antigravity", "--output", str(path))
+    return json.loads(path.read_text())[HOOKS]
+
+
+def test_generated_antigravity_hooks_use_only_supported_events(agent_harness: CliRunner, tmp_path: Path) -> None:
+    hooks = generated_antigravity_hooks(agent_harness, tmp_path)
+    assert set(hooks) == {"SessionStart", PRE_TOOL_USE, POST_TOOL_USE, "Stop"}
+
+
+def antigravity_commands(group: dict) -> list[str]:
+    return [hook[COMMAND].split(ADAPTER_SCRIPT)[1] for hook in group[HOOKS]]
+
+
+@pytest.mark.parametrize("event", [PRE_TOOL_USE, POST_TOOL_USE])
+def test_generated_antigravity_tool_hooks_match_every_tool(
+    agent_harness: CliRunner, tmp_path: Path, event: str
+) -> None:
+    groups = generated_antigravity_hooks(agent_harness, tmp_path)[event]
+    assert [group for group in groups if group[MATCHER] == "*"]
+
+
+@pytest.mark.parametrize("event", ["SessionStart", "Stop"])
+def test_generated_antigravity_session_events_list_handlers_directly(
+    agent_harness: CliRunner, tmp_path: Path, event: str
+) -> None:
+    handlers = generated_antigravity_hooks(agent_harness, tmp_path)[event]
+    assert handlers
+    assert all(COMMAND in handler and HOOKS not in handler for handler in handlers)
+
+
+def test_generated_antigravity_pre_tool_use_runs_every_guard_on_every_tool(
+    agent_harness: CliRunner, tmp_path: Path
+) -> None:
+    groups = generated_antigravity_hooks(agent_harness, tmp_path)[PRE_TOOL_USE]
+    commands = [command for group in groups if group[MATCHER] == "*" for command in antigravity_commands(group)]
+    for guard in (
+        "native pre-tool-use",
+        "audit tool",
+        "paths command",
+        "paths patch",
+        "shell forbidden",
+        "shell commit",
+        "shell git",
+        "shell allowed",
+        "harness",
+        "content write",
+        "content suppression",
+    ):
+        assert guard in commands
+
+
+def test_generated_antigravity_content_read_guard_runs_only_for_read_tools(
+    agent_harness: CliRunner, tmp_path: Path
+) -> None:
+    groups = generated_antigravity_hooks(agent_harness, tmp_path)[PRE_TOOL_USE]
+    scoped = [group for group in groups if "content read" in antigravity_commands(group)]
+    assert [group[MATCHER] for group in scoped] == ["^(read_file|view_file|grep_search)$"]
+
+
+def test_generated_antigravity_lint_runs_only_after_edit_tools(agent_harness: CliRunner, tmp_path: Path) -> None:
+    groups = generated_antigravity_hooks(agent_harness, tmp_path)[POST_TOOL_USE]
+    scoped = [group for group in groups if "lint" in antigravity_commands(group)]
+    assert len(scoped) == 1
+    for tool in EDIT_TOOLS:
+        assert tool in scoped[0][MATCHER]
+    assert "run_command" not in scoped[0][MATCHER]
+
+
+def test_generated_antigravity_commands_run_the_deployed_adapter_with_arguments_it_accepts(
+    agent_harness: CliRunner, tmp_path: Path
+) -> None:
+    adapter = load_script_module("agents/antigravity/hooks/hook_adapter.py", "antigravity_adapter_wiring").ADAPTER
+    hooks = generated_antigravity_hooks(agent_harness, tmp_path)
+    handlers = [
+        handler
+        for event, entries in hooks.items()
+        for entry in entries
+        for handler in (entry[HOOKS] if event.endswith("ToolUse") else [entry])
+    ]
+    commands = [handler[COMMAND] for handler in handlers]
+    prefix = '"$HOME/.gemini/config/hooks/hook_adapter.py" '
+    assert commands
+    for command in commands:
+        assert command.startswith(prefix), command
+        kind, *rest = command.removeprefix(prefix).split()
+        assert adapter._accepts(kind, rest), command

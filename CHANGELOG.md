@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.4.0](https://github.com/furedea/agent-config/compare/v0.3.1...v0.4.0) (2026-11-21)
+
+
+### Features
+
+* **hooks:** add the Antigravity hook adapter ([#263](https://github.com/furedea/agent-config/issues/263)) ([22b5980](https://github.com/furedea/agent-config/commit/22b5980d3c33cfa16ea686c7a6cdee00ad23829a))
+* **hooks:** guard t3 thread so lanes start only on Claude or Codex ([#265](https://github.com/furedea/agent-config/issues/265)) ([aa0de7a](https://github.com/furedea/agent-config/commit/aa0de7a7a94ad08c9c324db60cf0a61d2bc9e0b2))
+* **hooks:** sweep merged T3 Code lane worktrees like Herdr ones ([#266](https://github.com/furedea/agent-config/issues/266)) ([8c730aa](https://github.com/furedea/agent-config/commit/8c730aa173a8d26b1265a130c7775bafbcc57932))
+* **skills:** add a tool-neutral delegation skill with T3 Code operations ([#268](https://github.com/furedea/agent-config/issues/268)) ([dc2c3cc](https://github.com/furedea/agent-config/commit/dc2c3cc6acef2497cebdcef63c4b2582596a0333))
+
 ## [0.3.1](https://github.com/furedea/agent-config/compare/v0.3.0...v0.3.1) (2026-11-20)
 
 

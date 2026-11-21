@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/furedea/agent-config/compare/v0.4.0...v0.5.0) (2026-11-21)
+
+
+### Features
+
+* **hooks:** wire the Antigravity hooks into the shared hook config ([#270](https://github.com/furedea/agent-config/issues/270)) ([f70db16](https://github.com/furedea/agent-config/commit/f70db162632184131e5bad4043355e3a4330b59f))
+
 ## [0.4.0](https://github.com/furedea/agent-config/compare/v0.3.1...v0.4.0) (2026-11-21)
 
 

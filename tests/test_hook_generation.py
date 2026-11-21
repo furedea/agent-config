@@ -216,6 +216,15 @@ def test_generated_antigravity_tool_hooks_match_every_tool(
     assert [group for group in groups if group["matcher"] == "*"]
 
 
+@pytest.mark.parametrize("event", ["SessionStart", "Stop"])
+def test_generated_antigravity_session_events_list_handlers_directly(
+    agent_harness: CliRunner, tmp_path: Path, event: str
+) -> None:
+    handlers = generated_antigravity_hooks(agent_harness, tmp_path)[event]
+    assert handlers
+    assert all("command" in handler and "hooks" not in handler for handler in handlers)
+
+
 def test_generated_antigravity_pre_tool_use_runs_every_guard_on_every_tool(
     agent_harness: CliRunner, tmp_path: Path
 ) -> None:
@@ -259,7 +268,13 @@ def test_generated_antigravity_commands_run_the_deployed_adapter_with_arguments_
 ) -> None:
     adapter = load_script_module("agents/antigravity/hooks/hook_adapter.py", "antigravity_adapter_wiring").ADAPTER
     hooks = generated_antigravity_hooks(agent_harness, tmp_path)
-    commands = [hook["command"] for groups in hooks.values() for group in groups for hook in group["hooks"]]
+    handlers = [
+        handler
+        for event, entries in hooks.items()
+        for entry in entries
+        for handler in (entry["hooks"] if event.endswith("ToolUse") else [entry])
+    ]
+    commands = [handler["command"] for handler in handlers]
     prefix = '"$HOME/.gemini/config/hooks/hook_adapter.py" '
     assert commands
     for command in commands:

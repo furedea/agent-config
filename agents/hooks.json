@@ -1080,17 +1080,13 @@
     "hooks": {
       "SessionStart": [
         {
-          "hooks": [
-            {
-              "command": "\"$HOME/.gemini/config/hooks/hook_adapter.py\" native session-start",
-              "timeout": 30,
-              "type": "command"
-            },
-            {
-              "command": "\"$HOME/.gemini/config/hooks/hook_adapter.py\" audit compaction",
-              "type": "command"
-            }
-          ]
+          "command": "\"$HOME/.gemini/config/hooks/hook_adapter.py\" native session-start",
+          "timeout": 30,
+          "type": "command"
+        },
+        {
+          "command": "\"$HOME/.gemini/config/hooks/hook_adapter.py\" audit compaction",
+          "type": "command"
         }
       ],
       "PreToolUse": [
@@ -1189,13 +1185,9 @@
       ],
       "Stop": [
         {
-          "hooks": [
-            {
-              "command": "\"$HOME/.gemini/config/hooks/hook_adapter.py\" native stop",
-              "timeout": 600,
-              "type": "command"
-            }
-          ]
+          "command": "\"$HOME/.gemini/config/hooks/hook_adapter.py\" native stop",
+          "timeout": 600,
+          "type": "command"
         }
       ]
     }

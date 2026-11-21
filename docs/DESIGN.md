@@ -27,28 +27,28 @@ flowchart LR
   M --> C[Parent: clean up]
 ```
 
-| Step                  | Owner         | Starts                                                                                                                                                                                                                       | Skills                                               |
-| --------------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| 1. Issue and plan     | Parent        | —                                                                                                                                                                                                                            | `development-cycle`                                  |
-| 2. Approve            | User          | —                                                                                                                                                                                                                            | —                                                    |
-| 3. Open lanes         | Parent        | a Herdr worktree and a Sonnet lane at medium effort per lane, with a brief                                                                                                                                                   | `development-cycle` (branches), `herdr-delegation`   |
-| 4. Implement          | Lane          | Codex (tests first, no commits)                                                                                                                                                                                              | `tsdd`, the language style skills, `domain-modeling` |
-| 5. Verify and deliver | Lane          | —                                                                                                                                                                                                                            | `development-cycle` (commits, delivery)              |
-| 6. Review and fix     | Lane          | the GitHub `claude-review` and `codex-review` checks; the lane fixes every finding                                                                                                                                           | `development-cycle` (delivery), `herdr-delegation`   |
-| 7. Report             | Lane → Parent | the lane ends with `LANE-READY`; the parent waits with `herdr agent wait` and reads it                                                                                                                                       | `herdr-delegation`                                   |
-| 8. Check and report   | Parent        | —                                                                                                                                                                                                                            | —                                                    |
-| 9. Merge              | User          | —                                                                                                                                                                                                                            | —                                                    |
-| 10. Clean up          | Parent        | after the user merges: run `cleanup_worktrees.py` by its absolute path with the home directory expanded, as shown in the rendered `excludedCommands` entry; never remove lane worktrees by hand with `herdr worktree remove` | `development-cycle` (branches), `source-of-truth`    |
+| Step                  | Owner         | Starts                                                                                                                                                                                                                                               | Skills                                               |
+| --------------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| 1. Issue and plan     | Parent        | —                                                                                                                                                                                                                                                    | `development-cycle`                                  |
+| 2. Approve            | User          | —                                                                                                                                                                                                                                                    | —                                                    |
+| 3. Open lanes         | Parent        | per lane, a T3 Code thread in its own worktree running a Sonnet lane at medium effort, with a brief; when T3 is unavailable, start no lane and report the reason to the user. Herdr is deprecated and used only when the user explicitly asks for it | `development-cycle` (branches), `delegation`         |
+| 4. Implement          | Lane          | Codex (tests first, no commits)                                                                                                                                                                                                                      | `tsdd`, the language style skills, `domain-modeling` |
+| 5. Verify and deliver | Lane          | —                                                                                                                                                                                                                                                    | `development-cycle` (commits, delivery)              |
+| 6. Review and fix     | Lane          | the GitHub `claude-review` and `codex-review` checks; the lane fixes every finding                                                                                                                                                                   | `development-cycle` (delivery), `delegation`         |
+| 7. Report             | Lane → Parent | the lane ends with `LANE-READY`; the parent waits on the thread with `t3 thread start --wait` or `t3 thread send --wait` and reads it; a lane waiting for an approval or an answer is answered by the user in T3                                     | `delegation`                                         |
+| 8. Check and report   | Parent        | —                                                                                                                                                                                                                                                    | —                                                    |
+| 9. Merge              | User          | —                                                                                                                                                                                                                                                    | —                                                    |
+| 10. Clean up          | Parent        | after the user merges: run `cleanup_worktrees.py` by its absolute path with the home directory expanded, as shown in the rendered `excludedCommands` entry; never remove lane worktrees by hand, in T3 or with `herdr worktree remove`               | `development-cycle` (branches), `source-of-truth`    |
 
-| Who                   | Does                                                                            | Never does                                              |
-| --------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------- |
-| User                  | approves plans, merges, pushes workflow files, deletes or archives repositories | —                                                       |
-| Parent session (Opus) | Issues, plans, lanes, final check, cleanup                                      | edits files, merges                                     |
-| Lane (Sonnet)         | runs Codex, verifies, commits, opens PRs, fixes review findings                 | writes the implementation, types into the parent's pane |
-| Codex                 | implements                                                                      | commits or pushes (it cannot write `.git`)              |
+| Who                   | Does                                                                            | Never does                                                        |
+| --------------------- | ------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| User                  | approves plans, merges, pushes workflow files, deletes or archives repositories | —                                                                 |
+| Parent session (Opus) | Issues, plans, lanes, final check, cleanup                                      | edits files, merges                                               |
+| Lane (Sonnet)         | runs Codex, verifies, commits, opens PRs, fixes review findings                 | writes the implementation, types into the parent's thread or pane |
+| Codex                 | implements                                                                      | commits or pushes (it cannot write `.git`)                        |
 
 The lane reports by ending its last message with `LANE-READY`, and the parent reads it. The lane
-never types into the parent's pane, because the parent cannot tell that text from the user's.
+never types into the parent's thread or pane, because the parent cannot tell that text from the user's.
 
 Caution: the sandbox limits where an agent writes, not what you later run outside it, so run agent
 changes only after they are reviewed and merged.
@@ -60,7 +60,7 @@ everywhere under its working directory.
 
 - The parent cannot write another repository's `.git`; lanes fetch, commit, and push there.
 - No session writes any repository's `.git/hooks` or `.git/config`, so lanes push without `-u`.
-- Run each `herdr` command and each Codex plugin call as one command: no `cd`, pipe, redirect, or `$`.
+- Run each `t3 thread` command, each `herdr` command, and each Codex plugin call as one command: no `cd`, pipe, redirect, or `$`.
 - Codex cannot reach the network or the Nix daemon; the lane updates dependencies and computes Nix hashes.
 - The agent's GitHub App cannot push workflow files; the user pushes them.
 - Dependencies younger than seven days are not installed (pnpm `minimumReleaseAge`, uv `exclude-newer`).

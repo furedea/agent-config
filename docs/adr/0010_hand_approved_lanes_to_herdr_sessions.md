@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-10-17
+partly-superseded-by: [ADR-0028]
 related: [dotfiles/ADR-0037]
 ---
 

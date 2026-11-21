@@ -1151,7 +1151,12 @@
               "command": "\"$HOME/.gemini/config/hooks/hook_adapter.py\" content suppression",
               "timeout": 30,
               "type": "command"
-            },
+            }
+          ]
+        },
+        {
+          "matcher": "^(read_file|view_file)$",
+          "hooks": [
             {
               "command": "\"$HOME/.gemini/config/hooks/hook_adapter.py\" content read",
               "timeout": 30,
@@ -1161,6 +1166,16 @@
         }
       ],
       "PostToolUse": [
+        {
+          "matcher": "^(write_file|write_to_file|edit_file|replace_file_content|multi_replace_file_content)$",
+          "hooks": [
+            {
+              "command": "\"$HOME/.gemini/config/hooks/hook_adapter.py\" lint",
+              "timeout": 120,
+              "type": "command"
+            }
+          ]
+        },
         {
           "matcher": "*",
           "hooks": [

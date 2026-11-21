@@ -204,17 +204,23 @@ def test_generated_antigravity_hooks_use_only_supported_events(agent_harness: Cl
     assert set(hooks) == {"SessionStart", "PreToolUse", "PostToolUse", "Stop"}
 
 
+def antigravity_commands(group: dict) -> list[str]:
+    return [hook["command"].split('hook_adapter.py" ')[1] for hook in group["hooks"]]
+
+
 @pytest.mark.parametrize("event", ["PreToolUse", "PostToolUse"])
 def test_generated_antigravity_tool_hooks_match_every_tool(
     agent_harness: CliRunner, tmp_path: Path, event: str
 ) -> None:
     groups = generated_antigravity_hooks(agent_harness, tmp_path)[event]
-    assert [group["matcher"] for group in groups] == ["*"]
+    assert [group for group in groups if group["matcher"] == "*"]
 
 
-def test_generated_antigravity_pre_tool_use_runs_every_guard(agent_harness: CliRunner, tmp_path: Path) -> None:
-    group = generated_antigravity_hooks(agent_harness, tmp_path)["PreToolUse"][0]
-    commands = [hook["command"].split('hook_adapter.py" ')[1] for hook in group["hooks"]]
+def test_generated_antigravity_pre_tool_use_runs_every_guard_on_every_tool(
+    agent_harness: CliRunner, tmp_path: Path
+) -> None:
+    groups = generated_antigravity_hooks(agent_harness, tmp_path)["PreToolUse"]
+    commands = [command for group in groups if group["matcher"] == "*" for command in antigravity_commands(group)]
     for guard in (
         "native pre-tool-use",
         "audit tool",
@@ -227,9 +233,25 @@ def test_generated_antigravity_pre_tool_use_runs_every_guard(agent_harness: CliR
         "harness",
         "content write",
         "content suppression",
-        "content read",
     ):
         assert guard in commands
+
+
+def test_generated_antigravity_content_read_guard_runs_only_for_read_tools(
+    agent_harness: CliRunner, tmp_path: Path
+) -> None:
+    groups = generated_antigravity_hooks(agent_harness, tmp_path)["PreToolUse"]
+    scoped = [group for group in groups if "content read" in antigravity_commands(group)]
+    assert [group["matcher"] for group in scoped] == ["^(read_file|view_file)$"]
+
+
+def test_generated_antigravity_lint_runs_only_after_edit_tools(agent_harness: CliRunner, tmp_path: Path) -> None:
+    groups = generated_antigravity_hooks(agent_harness, tmp_path)["PostToolUse"]
+    scoped = [group for group in groups if "lint" in antigravity_commands(group)]
+    assert len(scoped) == 1
+    for tool in ("write_file", "write_to_file", "edit_file", "replace_file_content", "multi_replace_file_content"):
+        assert tool in scoped[0]["matcher"]
+    assert "run_command" not in scoped[0]["matcher"]
 
 
 def test_generated_antigravity_commands_run_the_deployed_adapter_with_arguments_it_accepts(

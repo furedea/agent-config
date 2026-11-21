@@ -3,6 +3,7 @@ status: accepted
 date: 2026-11-21
 amended:
   - "2026-11-22: accepted after the first real lane (PR #272) ran start, approval, PR, and LANE-READY, and cleanup_worktrees.py removed its worktree under ~/.t3/worktrees"
+  - "2026-11-22: the parent no longer waits with --wait but polls t3 thread show as references/t3.md describes, which also replaces the no-timeout concern of the --wait option"
 supersedes: [ADR-0010]
 related: [ADR-0007, ADR-0009]
 ---

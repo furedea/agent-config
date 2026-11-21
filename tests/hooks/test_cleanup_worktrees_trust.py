@@ -141,7 +141,8 @@ def test_a_symlink_in_a_lane_root_never_selects_a_repository(
 ) -> None:
     other = tmp_path / "other"
     git("clone", "--quiet", str(primary), str(other), cwd=primary)
-    done = task_worktree(other, "feat/done")
+    done = tmp_path / "other-done"
+    git("worktree", "add", "--quiet", "-b", "feat/done", str(done), cwd=other)
     merged["feat/done"] = git("rev-parse", "HEAD", cwd=done)
     planted = Path.home() / root / link
     planted.parent.mkdir(parents=True, exist_ok=True)

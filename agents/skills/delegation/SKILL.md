@@ -20,14 +20,13 @@ the request, evaluates the returned work, and reports the outcome to the user.
     Run independent lanes of an approved plan in parallel, each in its own task worktree, instead
     of one after another; lanes that change the same lines are the exception and run in sequence.
 - A transport is the tool that starts, prompts, and waits for the other session. T3 Code is the
-    default transport. Herdr is deprecated: use it only when T3 Code is unavailable, for example
-    before the T3 guard and cleanup are installed (furedea/agent-config#265, #266). Otherwise use
-    the transport the user names, or the one that
+    default transport; use another only when the user explicitly names it. Herdr is deprecated and
+    is used only on such an explicit request. Read the transport's reference before operating it:
+    the file in `references/` named after it, such as [T3 Code](references/t3.md), or, for a
+    transport with no file there, the skill that `development-cycle` names for it. If the
+    transport is unavailable, start no session: report the reason to the user, as
     [Branches and worktrees](../development-cycle/references/branches.md) in `development-cycle`
-    selects. Read its reference before operating it: the file in `references/` named after it,
-    such as [T3 Code](references/t3.md), or, for a transport with no file there, the skill that
-    `development-cycle` names for it. If the transport is unavailable, report the limitation without
-    silently switching to another.
+    describes, and never switch to another transport on your own.
 - The transport only carries the session. Work state stays outside it: the Issue, the plan
     comment, the brief file, the pull request, and the lane's final `LANE-READY` or `LANE-BLOCKED`.
     Never use a session or thread ID from the transport as the identity of the work.

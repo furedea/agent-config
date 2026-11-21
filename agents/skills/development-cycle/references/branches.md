@@ -14,15 +14,11 @@ Choose the workspace in this order:
     covers `~/.t3/worktrees`), hand each lane to a new
     T3 thread in its own task worktree, as [delegation](../../delegation/SKILL.md) and its
     [T3 Code reference](../../delegation/references/t3.md) describe.
-4. Only when T3 Code is unavailable, for example before the T3 guard and cleanup are installed
-    (furedea/agent-config#265, #266), and Herdr is available (`HERDR_ENV=1`), hand each lane to a
-    new task worktree session through the deprecated Herdr transport, as in
-    [Deprecated Herdr transport](#deprecated-herdr-transport).
-5. Without either, create the task branch in the current checkout for a single lane when the tree is
-    clean or its changes belong to this task. For several lanes, or unrelated dirty changes, report
-    that each lane needs its own worktree session and stop: a sandboxed session cannot write a
-    sibling checkout.
-6. If the target branch is already checked out in another worktree, use that worktree or choose a
+4. If T3 Code is unavailable, for example before the T3 guard and cleanup are installed
+    (furedea/agent-config#265, #266), start no lane: report the reason to the user and stop. Never
+    switch to another transport on your own. Use Herdr only when the user explicitly asks for it,
+    as in [Herdr on explicit request](#herdr-on-explicit-request).
+5. If the target branch is already checked out in another worktree, use that worktree or choose a
     different branch name. Do not force-checkout the same branch in two places.
 
 Lane rules for every transport:
@@ -64,9 +60,10 @@ Lane rules for every transport:
 - For a requested stacked pull request, `gh stack init` and `gh stack add` create the layer branches;
     the branch name format below applies to each layer. See [Stacked pull requests](stacked_prs.md).
 
-## Deprecated Herdr Transport
+## Herdr on Explicit Request
 
-Herdr is deprecated: use it only when T3 Code is unavailable. Task worktree hand-off through
+Herdr is deprecated and is used only when the user explicitly asks for it, until its removal; it is
+never chosen because T3 Code is unavailable. Task worktree hand-off through
 Herdr, once per lane, each line as its own Bash call; the operations follow
 [herdr-delegation](../../herdr-delegation/SKILL.md):
 

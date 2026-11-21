@@ -8,6 +8,7 @@ import pytest
 from tests.runtime import REPO_ROOT
 
 ENTRY_POINTS = (
+    "agents/antigravity/hooks/hook_adapter.py",
     "agents/codex/hooks/hook_adapter.py",
     "agents/devin/hooks/hook_adapter.py",
     "agents/dsh/hooks/hook_adapter.py",

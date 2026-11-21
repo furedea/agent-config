@@ -4,10 +4,12 @@ Each provider adapter declares only a Profile of provider facts. Payload normali
 guard dispatch, and CLI validation live here so the providers cannot drift apart.
 """
 
+import io
 import json
 import os
 import sys
 from collections.abc import Callable, Mapping
+from contextlib import redirect_stderr, redirect_stdout
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -32,9 +34,13 @@ PATH_MODES = ("command", "patch", "read")
 AUDIT_KINDS = ("tool", "compaction")
 CONTENT_MODES = ("prompt", "read", "write", "apply-patch", "suppression")
 VIEW_FIELDS = frozenset({"command", "path", "file_path", "view_range"})
+GUARD_KINDS = frozenset({"shell", "paths", "content", "harness"})
+PRE_TOOL_USE_COMMAND = "pre-tool-use"
 NO_ARGUMENT: tuple[str, ...] = ()
 ANY_ARGUMENT = None
 Formatter = Callable[[str, dict], dict]
+Reader = Callable[[dict], dict]
+Refusal = Callable[[str], dict]
 
 
 def denial(result: dict) -> dict | None:
@@ -68,18 +74,27 @@ def blocking_system_message_output(message: str) -> dict:
     return {**lint_format.block(message), "systemMessage": message}
 
 
+def unchanged(payload: dict) -> dict:
+    """Read a provider payload that already has the shared shape."""
+    return payload
+
+
 def no_cwd() -> str:
     """Stand in for a working directory when the provider payload carries none, so the process directory is kept."""
     return ""
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class Profile:
     """Provider facts the shared adapter needs; every behavior derived from them is shared.
 
     `events` maps verification events to native event names and enables `native`.
     `compaction_events` maps native event names to shared audit event names and enables `audit`.
     `manifest_env` names the manifest override and enables `dispatch`.
+    `reader` turns a provider payload into the shared shape before any guard sees it.
+    `denial` makes the provider read exactly one JSON object from stdout: it encodes a refusal reason. A command that
+    prints nothing prints `{}`, or `pass_through` when it is a guard that found nothing to refuse. `escalation`
+    encodes a request for the user's review; without it the provider cannot prompt, so reviews become denials.
     """
 
     name: str
@@ -91,6 +106,10 @@ class Profile:
     lint_block: Callable[[str], dict] = lint_format.block
     content_modes: tuple[str, ...] = CONTENT_MODES
     cwd_fallback: Callable[[], str] = os.getcwd
+    reader: Reader = unchanged
+    denial: Refusal | None = None
+    escalation: Refusal | None = None
+    pass_through: Mapping[str, str] = field(default_factory=dict)
     manifest_env: str = ""
     manifest_default: str = ""
 
@@ -111,10 +130,42 @@ class Adapter:
         if not self._accepts(kind, rest):
             print(f"Usage: hook_adapter.py <{self._usage()}>", file=sys.stderr)
             return 1
+        if self.profile.denial is None:
+            return self._run(kind, rest)
+        return self._run_for_json_reader(kind, rest, self.profile.denial)
+
+    def _run(self, kind: str, rest: list[str]) -> int:
         try:
             return self.dispatch(kind, rest, self._payload())
         except (OSError, RuntimeError, ValueError, TypeError, AttributeError) as error:
             print(f"BLOCKED: {error}", file=sys.stderr)
+            return 2
+
+    def _run_for_json_reader(self, kind: str, rest: list[str], denial: Refusal) -> int:
+        """Run a command so that the provider reads one JSON object for it, whatever the command does.
+
+        A guard refuses with the provider's denial object and exit status 0, because a non-zero exit is a generic
+        hook failure that hides the reason. Other commands keep exit status 2 and answer `{}`: the denial object
+        is the PreToolUse answer and means nothing to their events.
+        """
+        guard = kind in GUARD_KINDS or (kind == "native" and rest == [PRE_TOOL_USE_COMMAND])
+        out, err = io.StringIO(), io.StringIO()
+        with redirect_stdout(out), redirect_stderr(err):
+            status = self._run_contained(kind, rest)
+        sys.stderr.write(err.getvalue())
+        if status == 2 and guard:
+            print(json.dumps(denial(err.getvalue().strip() or "Blocked by hook policy"), ensure_ascii=True))
+            return 0
+        silent = json.dumps(self.profile.pass_through if guard else {})
+        sys.stdout.write(out.getvalue() if status == 0 and out.getvalue() else silent + "\n")
+        return status
+
+    def _run_contained(self, kind: str, rest: list[str]) -> int:
+        """Turn any failure into exit status 2, so a guard that crashes refuses instead of dying without an answer."""
+        try:
+            return self._run(kind, rest)
+        except Exception as error:
+            print(f"BLOCKED: {type(error).__name__}: {error}", file=sys.stderr)
             return 2
 
     def dispatch(self, kind: str, arguments: list[str], payload: dict) -> int:
@@ -186,7 +237,7 @@ class Adapter:
             verdict = guard_git.decide(command)
         else:
             verdict = guard_command.decide(mode, command, _shared_directory())
-        return hook_decision.emit(verdict.hardened())
+        return self._emit(verdict)
 
     def lint(self, payload: dict) -> int:
         """Report shared quality diagnostics using the PostToolUse JSON contract."""
@@ -218,7 +269,7 @@ class Adapter:
                 )
         except shell_paths.UnexpandableGlobError as error:
             audit_log.blocked(_secret_path_refusal(mode, "", context))
-            return hook_decision.emit(hook_decision.ask(f"Needs review: {error}.").hardened())
+            return self._emit(hook_decision.ask(f"Needs review: {error}."))
         for value in candidates:
             if rule := secret_path_policy.blocked_rule(
                 value, rules, editing=mode == "patch" and not views_only(context)
@@ -233,12 +284,21 @@ class Adapter:
             # A view changes nothing, and read as an edit that does not apply it would ask.
             if views_only(context):
                 return 0
-            return hook_decision.emit(guard_suppression.decide(context).hardened())
+            return self._emit(guard_suppression.decide(context))
         if mode != "apply-patch":
             return guard_file.check(mode, context, _shared_directory())
         body = hook_input.patch_body(context["tool_input"], context.get("tool_name") or "apply_patch")
         values = {"content": patch_input.added_text(body)}
         return guard_file.check("write", self.translated(payload, "Edit", values), _shared_directory())
+
+    def _emit(self, verdict: hook_decision.Verdict) -> int:
+        """Report a guard verdict, passing a review to the user only where the provider can prompt for one."""
+        if verdict.decision == "ask" and self.profile.escalation is not None:
+            print(json.dumps(self.profile.escalation(verdict.reason), ensure_ascii=True, separators=(",", ":")))
+            return 0
+        if verdict.decision == "allow" and self.profile.denial is not None:
+            return 0  # a notice would be a second shape for the provider to read
+        return hook_decision.emit(verdict.hardened())
 
     def _compaction_context(self, context: dict) -> dict | None:
         """Name a native compaction event as shared audit expects, or drop an unknown event."""
@@ -253,6 +313,7 @@ class Adapter:
         payload = json.load(sys.stdin)
         if not isinstance(payload, dict):
             raise TypeError("hook payload must be an object")
+        payload = self.profile.reader(payload)
         cwd = payload.get("cwd") or self.profile.cwd_fallback()
         if isinstance(cwd, str) and cwd:
             os.chdir(cwd)

@@ -260,6 +260,8 @@ def _scan_content(mode: str, payload: dict, directory: Path) -> None:
     )
     if mode == "prompt":
         decision = {"decision": "block", "reason": f"BLOCKED: {reason}. Prompt contains sensitive information."}
+    elif payload.get("provider") == "antigravity":
+        decision = {"decision": "deny", "reason": f"BLOCKED: {reason}"}
     elif payload.get("provider") in {"devin", "dsh", "hermes", "pi"}:
         decision = {"decision": "block", "reason": f"BLOCKED: {reason}"}
     else:

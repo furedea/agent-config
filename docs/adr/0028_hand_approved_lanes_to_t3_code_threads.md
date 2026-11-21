@@ -42,8 +42,9 @@ lane keeps the hooks, guard and sandbox of a terminal session and the workflow s
     turn outside this session's control, so the guard bounds the recipients instead of reviewing the text.
 - Antigravity is never a lane recipient, and the guard enforces that in code: its subscription terms do not allow
     another agent to drive it (google-antigravity/antigravity-cli#1493). The human may still use it in the T3 UI.
-- Herdr support and `herdr-delegation` stay as the fallback until a later Issue removes them. ADR-0010's grants for
-    Herdr forms stand until then.
+- T3 threads are the default transport and Herdr is deprecated: a lane goes to a Herdr pane only when T3 is
+    unavailable, and no new work builds on Herdr. Herdr support and `herdr-delegation` keep working until a later Issue
+    removes them, and ADR-0010's grants for Herdr forms stand until then.
 
 Keeping Herdr was rejected because it leaves the lanes in a terminal on one machine, out of reach of the UI the human
 uses. `delegate_task`, subagents and Agent Rooms were rejected because they move the delegation workflow (recipient
@@ -57,6 +58,6 @@ choice, brief, review, waiting, cleanup) into T3, so replacing T3 would mean rew
     keeps the T3 operations in a reference that another transport can replace.
 - Bad, because one more command family runs outside the sandbox, and its safety rests on the guard's provider list and
     thread ownership record and on the T3 server being trusted.
-- Bad, because two transports coexist until Herdr is removed, and T3 worktrees under `~/.t3/worktrees` need their own
-    cleanup next to Herdr's.
+- Bad, because the deprecated Herdr path must keep working in the skills, guard and cleanup until it is removed, and
+    T3 worktrees under `~/.t3/worktrees` need their own cleanup next to Herdr's.
 - Bad, because `--wait` has no timeout, so a lane that never replies holds the parent until the human intervenes.

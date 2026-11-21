@@ -260,7 +260,7 @@ def test_generated_antigravity_content_read_guard_runs_only_for_read_tools(
 ) -> None:
     groups = generated_antigravity_hooks(agent_harness, tmp_path)[PRE_TOOL_USE]
     scoped = [group for group in groups if "content read" in antigravity_commands(group)]
-    assert [group[MATCHER] for group in scoped] == ["^(read_file|view_file)$"]
+    assert [group[MATCHER] for group in scoped] == ["^(read_file|view_file|grep_search)$"]
 
 
 def test_generated_antigravity_lint_runs_only_after_edit_tools(agent_harness: CliRunner, tmp_path: Path) -> None:

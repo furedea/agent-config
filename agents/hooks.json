@@ -1151,7 +1151,7 @@
           ]
         },
         {
-          "matcher": "^(read_file|view_file)$",
+          "matcher": "^(read_file|view_file|grep_search)$",
           "hooks": [
             {
               "command": "\"$HOME/.gemini/config/hooks/hook_adapter.py\" content read",

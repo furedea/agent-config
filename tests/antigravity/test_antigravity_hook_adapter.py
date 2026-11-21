@@ -170,7 +170,7 @@ def test_the_payload_cwd_wins_over_the_hook_process_directory(
     subprocess.run(["git", "-C", str(project), "add", ".env"], check=True)
     payload = tool_payload(project, "run_command", {"CommandLine": "git commit -m x"})
     result = run_cli(SCRIPT, "shell", "commit", payload=payload, cwd=isolated_project)
-    assert result.returncode == 2
+    assert result.returncode == 0
     assert ".env" in result.stderr
 
 
@@ -183,7 +183,7 @@ def test_stop_continuation_is_read_from_either_spelling(adapter: ModuleType, spe
 @pytest.mark.parametrize(
     "event,result,expected",
     [
-        ("PreToolUse", {}, {}),
+        ("PreToolUse", {}, {"decision": "allow"}),
         ("PostToolUse", {"decision": "block", "reason": "x"}, {}),
         ("Stop", {}, {}),
         ("Stop", {"systemMessage": "note"}, {}),
@@ -212,7 +212,7 @@ def test_pre_tool_use_refusals_never_use_the_cacheable_ask(adapter: ModuleType, 
 def test_a_forbidden_command_is_denied_on_stdout_and_stderr(run_cli: CliRunner, project: Path) -> None:
     payload = tool_payload(project, "run_command", {"CommandLine": "rm -rf /"})
     result = run_cli(SCRIPT, "shell", "forbidden", payload=payload)
-    assert result.returncode == 2
+    assert result.returncode == 0
     assert stdout_object(result)["decision"] == "deny"
     assert "BLOCKED" in stdout_object(result)["reason"]
     assert "BLOCKED" in result.stderr
@@ -227,11 +227,13 @@ def test_a_command_that_needs_review_is_force_asked(run_cli: CliRunner, project:
     assert "review" in output["reason"]
 
 
-def test_an_allowed_command_prints_an_empty_object_not_an_allow(run_cli: CliRunner, project: Path) -> None:
+def test_a_guard_that_finds_nothing_answers_allow_because_an_empty_object_is_denied(
+    run_cli: CliRunner, project: Path
+) -> None:
     payload = tool_payload(project, "run_command", {"CommandLine": "git status"})
     result = run_cli(SCRIPT, "shell", "git", payload=payload)
     assert result.returncode == 0
-    assert stdout_object(result) == {}
+    assert stdout_object(result) == {"decision": "allow"}
 
 
 @pytest.mark.parametrize(
@@ -244,7 +246,7 @@ def test_an_allowed_command_prints_an_empty_object_not_an_allow(run_cli: CliRunn
 )
 def test_secret_paths_are_denied_for_every_file_tool(run_cli: CliRunner, project: Path, name: str, args: dict) -> None:
     result = run_cli(SCRIPT, "paths", "patch", payload=tool_payload(project, name, args))
-    assert result.returncode == 2
+    assert result.returncode == 0
     assert stdout_object(result)["decision"] == "deny"
 
 
@@ -252,14 +254,14 @@ def test_secret_paths_in_a_command_are_denied(run_cli: CliRunner, project: Path)
     result = run_cli(
         SCRIPT, "paths", "command", payload=tool_payload(project, "run_command", {"CommandLine": "cat .env"})
     )
-    assert result.returncode == 2
+    assert result.returncode == 0
     assert stdout_object(result)["decision"] == "deny"
 
 
 def test_editing_the_hook_adapter_is_denied_by_the_harness_guard(run_cli: CliRunner, project: Path) -> None:
     args = {"TargetFile": "~/.gemini/config/hooks/hook_adapter.py", "ReplacementContent": "x"}
     result = run_cli(SCRIPT, "harness", payload=tool_payload(project, "replace_file_content", args))
-    assert result.returncode == 2
+    assert result.returncode == 0
     assert "agent harness boundary" in stdout_object(result)["reason"]
 
 
@@ -322,7 +324,7 @@ def test_lint_never_blocks_the_agent_through_post_tool_use(run_cli: CliRunner, p
 @pytest.mark.parametrize("raw", ["{", "null", "[]"])
 def test_non_object_payloads_are_denied(run_cli: CliRunner, raw: str) -> None:
     result = run_cli(SCRIPT, "shell", "git", payload=raw)
-    assert result.returncode == 2
+    assert result.returncode == 0
     assert stdout_object(result)["decision"] == "deny"
 
 
@@ -338,10 +340,76 @@ def test_ambiguous_arguments_are_denied_instead_of_guarding_only_one(
     run_cli: CliRunner, project: Path, args: dict
 ) -> None:
     result = run_cli(SCRIPT, "paths", "patch", payload=tool_payload(project, "write_file", args))
-    assert result.returncode == 2
+    assert result.returncode == 0
     assert "ambiguous" in stdout_object(result)["reason"]
 
 
 def test_replacement_chunks_add_to_the_single_replacement(adapter: ModuleType) -> None:
     args = {"ReplacementContent": "a", "ReplacementChunks": [{"ReplacementContent": "b"}]}
     assert adapter.shared_arguments(args)["new_string"] == "ab"
+
+
+@pytest.mark.parametrize(
+    "arguments",
+    [("audit", "tool"), ("lint",)],
+)
+def test_a_failing_non_guard_command_answers_an_empty_object_and_keeps_exit_status_2(
+    run_cli: CliRunner, project: Path, arguments: tuple[str, ...]
+) -> None:
+    args = {"Path": "/safe.txt", "TargetFile": "/other.txt"}
+    payload = tool_payload(project, "write_file", args, "PostToolUse")
+    result = run_cli(SCRIPT, *arguments, payload=payload)
+    assert result.returncode == 2
+    assert stdout_object(result) == {}
+    assert "ambiguous" in result.stderr
+
+
+def test_a_guard_that_raises_an_unexpected_error_still_denies(
+    adapter: ModuleType, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    def crash(*_: object) -> int:
+        raise KeyError("rule")
+
+    monkeypatch.setattr(adapter.ADAPTER, "_payload", dict)
+    monkeypatch.setattr(adapter.ADAPTER, "dispatch", crash)
+    assert adapter.ADAPTER.main(["shell", "git"]) == 0
+    captured = capsys.readouterr()
+    assert json.loads(captured.out)["decision"] == "deny"
+    assert "KeyError" in captured.err
+
+
+def test_an_allow_with_a_notice_prints_only_the_pass_through(
+    adapter: ModuleType, capsys: pytest.CaptureFixture[str]
+) -> None:
+    hook_decision = adapter.provider_adapter.hook_decision
+    assert adapter.ADAPTER._emit(hook_decision.Verdict("allow", notice="once")) == 0
+    assert capsys.readouterr().out == ""
+
+
+def test_session_start_without_cwd_uses_the_first_workspace(adapter: ModuleType) -> None:
+    payload = {
+        "conversationId": CONVERSATION,
+        "workspacePaths": ["/work/a", "/work/b"],
+        "hookEventName": "SessionStart",
+    }
+    assert adapter.read(payload)["cwd"] == "/work/a"
+
+
+@pytest.mark.parametrize("paths", [None, [], "/work", [1]])
+def test_a_malformed_workspace_list_gives_no_cwd(adapter: ModuleType, paths: object) -> None:
+    assert adapter.read({"workspacePaths": paths})["cwd"] == ""
+
+
+def test_session_start_registers_from_workspace_paths_alone(run_cli: CliRunner, project: Path) -> None:
+    payload = {"conversationId": CONVERSATION, "workspacePaths": [str(project)], "hookEventName": "SessionStart"}
+    result = run_cli(SCRIPT, "native", "session-start", payload=payload)
+    assert result.returncode == 0
+    assert "injectSteps" in stdout_object(result)
+
+
+@pytest.mark.parametrize("chunks", ["text", [1], [{"ReplacementContent": 1}], [{}], {"ReplacementContent": "x"}])
+def test_malformed_replacement_chunks_are_denied(run_cli: CliRunner, project: Path, chunks: object) -> None:
+    args = {"TargetFile": "src/a.py", "ReplacementChunks": chunks}
+    result = run_cli(SCRIPT, "content", "write", payload=tool_payload(project, "multi_replace_file_content", args))
+    assert stdout_object(result)["decision"] == "deny"
+    assert "malformed" in stdout_object(result)["reason"]

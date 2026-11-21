@@ -27,6 +27,7 @@ PERMISSION_REASON = "permissionDecisionReason"
 ADDITIONAL_CONTEXT = "additionalContext"
 DEFAULT_REASON = "Blocked by hook policy"
 DENY = "deny"
+ALLOW_DECISION = {DECISION: "allow"}
 FORCE_ASK = "force_ask"
 CONTINUE = "continue"
 PRE_TOOL_USE = "PreToolUse"
@@ -53,7 +54,7 @@ def read(payload: dict) -> dict:
     call = call if isinstance(call, dict) else {}
     result = {
         "session_id": payload.get("conversationId") or "",
-        "cwd": payload.get("cwd") or "",
+        "cwd": payload.get("cwd") or first_workspace(payload),
         "hook_event_name": payload.get("hookEventName") or "",
         "prompt": payload.get("lastUserInput") or "",
         "stop_hook_active": bool(payload.get("continuationActive") or payload.get("continuation_active")),
@@ -64,6 +65,13 @@ def read(payload: dict) -> dict:
     if payload.get("error"):
         result["tool_response"] = {"isError": True, "error": payload["error"]}
     return result
+
+
+def first_workspace(payload: dict) -> str:
+    """SessionStart carries `workspacePaths` but no `cwd`; the first workspace is where the agent works."""
+    paths = payload.get("workspacePaths")
+    first = paths[0] if isinstance(paths, list) and paths else ""
+    return first if isinstance(first, str) else ""
 
 
 def shared_arguments(args: object) -> object:
@@ -80,14 +88,18 @@ def shared_arguments(args: object) -> object:
         if field in renamed and renamed[field] != value:
             raise ValueError(f"ambiguous tool arguments for {field}: {key}")
         renamed[field] = value
-    chunks = args.get(REPLACEMENT_CHUNKS)
-    if isinstance(chunks, list):
-        renamed[NEW_STRING] = renamed.get(NEW_STRING, "") + "".join(
-            chunk[REPLACEMENT_CONTENT]
-            for chunk in chunks
-            if isinstance(chunk, dict) and isinstance(chunk.get(REPLACEMENT_CONTENT), str)
-        )
+    if REPLACEMENT_CHUNKS in args:
+        renamed[NEW_STRING] = renamed.get(NEW_STRING, "") + chunk_text(args[REPLACEMENT_CHUNKS])
     return renamed
+
+
+def chunk_text(chunks: object) -> str:
+    """Join the replacement chunks; a malformed one is rejected, since the content guards could not scan it."""
+    if not isinstance(chunks, list) or not all(
+        isinstance(chunk, dict) and isinstance(chunk.get(REPLACEMENT_CONTENT), str) for chunk in chunks
+    ):
+        raise ValueError(f"malformed {REPLACEMENT_CHUNKS}")
+    return "".join(chunk[REPLACEMENT_CONTENT] for chunk in chunks)
 
 
 def no_diagnostics(_message: str) -> dict:
@@ -124,7 +136,7 @@ def pre_tool_use(result: dict) -> dict:
     decision = specific.get(PERMISSION_DECISION)
     if decision == ASK:
         return review(reason)
-    return refusal(reason) if decision == DENY else {}
+    return refusal(reason) if decision == DENY else ALLOW_DECISION
 
 
 def stop_decision(result: dict) -> dict:
@@ -168,6 +180,7 @@ ADAPTER = provider_adapter.Adapter(
         cwd_fallback=provider_adapter.no_cwd,
         reader=read,
         denial=refusal,
+        pass_through=ALLOW_DECISION,
         escalation=review,
     )
 )

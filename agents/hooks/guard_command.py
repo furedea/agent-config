@@ -30,6 +30,7 @@ import hook_input
 import literal_words
 import removal_paths
 import shell_syntax
+import t3_thread
 import trusted_owners
 from hook_decision import Verdict
 
@@ -150,18 +151,13 @@ def command_verdict(kind: str, payload: dict, policy: Policy) -> Verdict:
     except shell_syntax.UnsupportedSyntaxError as error:
         preview = shell_syntax.command_preview(command)
         return hook_decision.ask(f"Needs review: {error}.\n\nCommand: {preview}", error.kind)
-    if (
-        kind == "forbidden"
-        and (verdict := command_objections.companion_objection(command, commands)).decision != "allow"
-    ):
-        return verdict
-    if kind == "allowed" and (verdict := command_objections.cleanup_objection(command, commands)).decision != "allow":
-        return verdict
-    if (
-        kind == "allowed"
-        and (verdict := command_objections.pinned_program_objection(command, commands, policy)).decision != "allow"
-    ):
-        return verdict
+    line = (
+        forbidden_line_objection(command, commands)
+        if kind == "forbidden"
+        else allowed_line_objection(command, commands, policy)
+    )
+    if line.decision != "allow":
+        return line
     if not literal_words.allows_literal_rules(command, commands):
         policy = replace(policy, literal_words=False)
     verdicts = (command_objections.objection(kind, item, policy) for item in commands)
@@ -171,6 +167,25 @@ def command_verdict(kind: str, payload: dict, policy: Policy) -> Verdict:
     if kind == "allowed" and verdict.decision == "allow":
         return whole_command_objection(payload, commands, policy)
     return verdict
+
+
+def forbidden_line_objection(command: str, commands: tuple[shell_syntax.Command, ...]) -> Verdict:
+    """The forbidden guard's checks that read the whole command line before any segment's rules."""
+    checks = (
+        lambda: t3_thread.refusal(commands),
+        lambda: command_objections.companion_objection(command, commands),
+    )
+    return next((verdict for check in checks if (verdict := check()).decision != "allow"), hook_decision.ALLOW)
+
+
+def allowed_line_objection(command: str, commands: tuple[shell_syntax.Command, ...], policy: Policy) -> Verdict:
+    """The allowed guard's checks that read the whole command line before any segment's rules."""
+    checks = (
+        lambda: t3_thread.objection(command, commands),
+        lambda: command_objections.cleanup_objection(command, commands),
+        lambda: command_objections.pinned_program_objection(command, commands, policy),
+    )
+    return next((verdict for check in checks if (verdict := check()).decision != "allow"), hook_decision.ALLOW)
 
 
 def whole_command_objection(payload: dict, commands: tuple[shell_syntax.Command, ...], policy: Policy) -> Verdict:

@@ -9,16 +9,19 @@ Choose the workspace in this order:
 1. If this session already runs in a task worktree on a non-default branch for this task, stay there.
 2. If the user explicitly asks to stay in the current checkout, create the task branch there with
     `git switch -c <branch>`, unless that would overwrite or mix unrelated changes.
-3. If T3 Code is available, as its [prerequisites](../../delegation/references/t3.md#prerequisites)
-    define (`t3 thread list` succeeds as a sandboxed call, and the installed `cleanup_worktrees.py`
-    covers `~/.t3/worktrees`), hand each lane to a new
-    T3 thread in its own task worktree, as [delegation](../../delegation/SKILL.md) and its
-    [T3 Code reference](../../delegation/references/t3.md) describe.
-4. If T3 Code is unavailable, for example before the T3 guard and cleanup are installed
+3. If the user explicitly asks for Herdr (deprecated, used until its removal), use it as in
+    [Herdr on explicit request](#herdr-on-explicit-request), even when T3 Code is available.
+4. Otherwise, if T3 Code is available, as its
+    [prerequisites](../../delegation/references/t3.md#prerequisites) define (`t3 thread list`
+    succeeds as a sandboxed call, and the installed `cleanup_worktrees.py` covers
+    `~/.t3/worktrees`), hand each lane to a new T3 thread in its own task worktree, as
+    [delegation](../../delegation/SKILL.md) and its
+    [T3 Code reference](../../delegation/references/t3.md) describe. T3 Code is the default
+    transport.
+5. If T3 Code is unavailable, for example before the T3 guard and cleanup are installed
     (furedea/agent-config#265, #266), start no lane: report the reason to the user and stop. Never
-    switch to another transport on your own. Use Herdr only when the user explicitly asks for it,
-    as in [Herdr on explicit request](#herdr-on-explicit-request).
-5. If the target branch is already checked out in another worktree, use that worktree or choose a
+    switch to another transport on your own, and never use Herdr because T3 Code is unavailable.
+6. If the target branch is already checked out in another worktree, use that worktree or choose a
     different branch name. Do not force-checkout the same branch in two places.
 
 Lane rules for every transport:

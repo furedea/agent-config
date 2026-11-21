@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/furedea/agent-config/compare/v0.5.0...v0.5.1) (2026-11-21)
+
+
+### Bug Fixes
+
+* **delegation:** correct the T3 Wait procedure and accept ADR-0028 ([#273](https://github.com/furedea/agent-config/issues/273)) ([85a459a](https://github.com/furedea/agent-config/commit/85a459a72bd61bc84d905d7f931b8b6f2e36ab0f))
+
 ## [0.5.0](https://github.com/furedea/agent-config/compare/v0.4.0...v0.5.0) (2026-11-21)
 
 

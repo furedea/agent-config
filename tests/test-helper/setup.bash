@@ -24,6 +24,7 @@ function create_bootstrap_server_fixtures() {
   RELEASES="$BATS_TEST_TMPDIR/releases"
   FAKE_PYTHON="$BATS_TEST_TMPDIR/python3.15"
   UV_ARGS_FILE="$BATS_TEST_TMPDIR/uv-args"
+  FAKE_UV_VERSION="$(pinned_default UV_VERSION)"
   AGENT_HARNESS_ARGS_FILE="$BATS_TEST_TMPDIR/agent-harness-args"
   SANDBOX_TOOLS_DIR="$BATS_TEST_TMPDIR/sandbox-tools"
   mkdir -p "$HOME_DIR" "$RELEASES" "$SANDBOX_TOOLS_DIR"
@@ -40,6 +41,34 @@ function create_bootstrap_server_fixtures() {
   create_ast_grep_archive
   create_bats_repository
   create_uv_archive
+}
+
+# Prints the default of a pinned `readonly NAME="${NAME:-default}"` line in the script under test,
+# so specs follow Renovate bumps instead of hard-coding the pinned values.
+function pinned_default() {
+  local _line
+  _line="$(grep -E "^readonly $1=" "$SCRIPT")"
+  _line="${_line#*:-}"
+  printf '%s\n' "${_line%\}\"}"
+}
+
+# Prints a uv version just below the pinned one: the previous patch, or the last patch of the
+# previous minor when the pinned patch is 0.
+function uv_version_older_than_pinned() {
+  local _major _minor _patch
+  IFS=. read -r _major _minor _patch <<<"$(pinned_default UV_VERSION)"
+  if ((_patch > 0)); then
+    printf '%s.%s.%s\n' "$_major" "$_minor" "$((_patch - 1))"
+  else
+    printf '%s.%s.99\n' "$_major" "$((_minor - 1))"
+  fi
+}
+
+# Prints a uv version in the next minor series after the pinned one.
+function uv_version_newer_than_pinned() {
+  local _major _minor _patch
+  IFS=. read -r _major _minor _patch <<<"$(pinned_default UV_VERSION)"
+  printf '%s.%s.0\n' "$_major" "$((_minor + 1))"
 }
 
 # Runs the script with the sandbox tools present unless PATH is overridden.
@@ -70,6 +99,7 @@ function bootstrap_server() {
     SHELLCHECK_SHA256="$(fixture_sha256 shellcheck.tar.xz)" \
     UV_SHA256="$(fixture_sha256 uv.tar.gz)" \
     FAKE_PYTHON="$FAKE_PYTHON" \
+    FAKE_UV_VERSION="$FAKE_UV_VERSION" \
     UV_ARGS_FILE="$UV_ARGS_FILE" \
     AGENT_HARNESS_ARGS_FILE="$AGENT_HARNESS_ARGS_FILE" \
     "$@" \
@@ -179,7 +209,7 @@ function write_fake_uv() {
 set -euo pipefail
 case "${1:-} ${2:-}" in
   "--version "*)
-    printf 'uv %s\n' "${FAKE_UV_VERSION:-0.13.6}"
+    printf 'uv %s\n' "${FAKE_UV_VERSION:?}"
     exit 0
     ;;
 esac

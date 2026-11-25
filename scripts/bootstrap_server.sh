@@ -120,8 +120,8 @@ readonly BATS_PREFIX="${BATS_PREFIX:-${XDG_DATA_HOME:-$HOME/.local/share}/bats-c
 # uv 0.13.6 is the first release that can install CPython 3.15.2; older uv cannot install the
 # managed CPython this script requests.
 # renovate: datasource=github-release-attachments depName=astral-sh/uv
-readonly UV_VERSION="${UV_VERSION:-0.13.6}"
-readonly UV_SHA256="${UV_SHA256:-5d61f26b6c7213779eda90edc6971ea6b0b796bfb8d49a574c8ad69b59838548}"
+readonly UV_VERSION="${UV_VERSION:-0.13.10}"
+readonly UV_SHA256="${UV_SHA256:-5597970380083a340b7983af05a84824b4db1c62b7059c796935b7fd6dc95fd2}"
 readonly UV_URL="${UV_URL:-https://github.com/astral-sh/uv/releases/download/${UV_VERSION}/uv-x86_64-unknown-linux-musl.tar.gz}"
 readonly AGENT_HARNESS_URL="${AGENT_HARNESS_URL:-https://github.com/furedea/agent-harness/releases/download/agent-harness-v${AGENT_HARNESS_VERSION}/agent-harness-x86_64-unknown-linux-musl.tar.xz}"
 readonly SHFMT_URL="${SHFMT_URL:-https://github.com/mvdan/sh/releases/download/v${SHFMT_VERSION}/shfmt_v${SHFMT_VERSION}_linux_amd64}"

@@ -25,7 +25,9 @@ def verdict(command: str) -> str:
         pytest.param(f"{RUN} claude 'Read /tmp/brief.md'", id="a Claude lane on its defaults"),
         pytest.param(f"{RUN} codex --no-daemon --model gpt-6.1-sol 'Read /tmp/brief.md'", id="a Codex reviewer"),
         pytest.param(f"{RUN} -- claude 'Read /tmp/brief.md'", id="an end of hc options before the agent"),
-        pytest.param("hc run --name=lane-a --cwd=/wt/a --bg --no-parent --json claude hi", id="values with ="),
+        pytest.param(
+            "hc run --name=lane-a --cwd=/wt/a --bg --no-parent --json claude 'Read /tmp/b.md'", id="values with ="
+        ),
         pytest.param("hc send t7 'Address the review'", id="a message to a terminal"),
         pytest.param("hc get t7 --json", id="a terminal read"),
         pytest.param("hc read t7 --lines 200", id="a screen read"),
@@ -72,6 +74,8 @@ def test_an_agent_option_that_can_switch_off_its_safeguards_is_refused(command: 
         pytest.param(f"{RUN} codex 'Read /tmp/brief.md'", id="Codex without --no-daemon runs outside hc"),
         pytest.param(f"{RUN} claude", id="an agent without its brief"),
         pytest.param(f"{RUN} claude hi extra", id="an extra word"),
+        pytest.param(f"{RUN} claude update", id="a Claude subcommand in place of the brief"),
+        pytest.param(f"{RUN} codex --no-daemon login", id="a Codex subcommand in place of the brief"),
         pytest.param(f"{RUN} claude --model hi", id="an option without a value"),
         pytest.param(f"{RUN} claude --model sonnet --model opus hi", id="an agent option given twice"),
         pytest.param(f"{RUN} claude -- hi", id="an end of agent options"),

@@ -235,19 +235,30 @@ def _agent_problem(argv: tuple[str | None, ...]) -> str:
     if not grammar.required <= set(options):
         required = ", ".join(sorted(grammar.required))
         return f"{program} must run with {required}, or its commands execute outside hc"
-    if positionals != 1:
+    return _brief_problem(program, positionals)
+
+
+def _brief_problem(program: str, positionals: list[str | None]) -> str:
+    """Why the words besides the agent's options are not one brief message."""
+    if len(positionals) != 1:
         return f"{program} takes exactly one brief message besides its options"
+    # A single word may be a subcommand such as `claude update` or `codex login` rather than a message.
+    brief = positionals[0]
+    if brief is None or not any(character.isspace() for character in brief):
+        return f"a one-word brief may be a {program} subcommand; a brief is a sentence"
     return ""
 
 
-def _agent_options(program: str, grammar: Grammar, argv: tuple[str | None, ...]) -> tuple[list[str], int] | str:
-    """The agent options named and the count of other words, or why a word cannot be read."""
+def _agent_options(
+    program: str, grammar: Grammar, argv: tuple[str | None, ...]
+) -> tuple[list[str], list[str | None]] | str:
+    """The agent options named and the other words, or why a word cannot be read."""
     options: list[str] = []
-    positionals = 0
+    positionals: list[str | None] = []
     words = iter(argv)
     for word in words:
         if word is None or not word.startswith("-"):
-            positionals += 1
+            positionals.append(word)
             continue
         name, separator, _ = word.partition("=")
         if name not in grammar.valued | grammar.flags or (name in grammar.flags and separator):

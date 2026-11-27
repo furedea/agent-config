@@ -4,7 +4,7 @@ The [delegation](../SKILL.md) operations for lanes in herdr-core terminals, thro
 the Herdr desktop app. herdr-core is the default transport; the Herdr app on the desktop and the
 iPhone shows its terminals. Checked against hc 0.1.22 (`hc --help`, `hc --skill`, and
 [herdr-core](https://github.com/herdrdev/herdr-core) `schema/hc.openrpc.json`); the decision is
-ADR-0029.
+ADR-0030.
 
 ## Prerequisites
 
@@ -37,8 +37,8 @@ ADR-0029.
 The command hooks hold `hc` to this contract; a call outside it is denied or asks.
 
 - `run` starts only `claude` or `codex` by name, with `--bg`, `--no-parent`, `--json`, `--name`, and
-    `--cwd`, optionally `--label`, and exactly one message after the agent's options. An agent
-    option other than `--model` and `--effort` for Claude, or `--no-daemon` and `--model` for Codex,
+    `--cwd`, optionally `--label`, and exactly one message after the agent's options. A message of
+    one word asks, since it may be a subcommand such as `claude update`. An agent option other than `--model` and `--effort` for Claude, or `--no-daemon` and `--model` for Codex,
     is denied: it could switch off the agent's sandbox, hooks, or approvals. Another program, a
     template, `--on`, and any other hc option ask.
 - `run --cwd` takes an absolute path inside this session's checkout or inside a worktree this

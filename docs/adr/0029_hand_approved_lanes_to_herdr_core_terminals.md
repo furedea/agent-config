@@ -45,9 +45,11 @@ sandbox of a terminal session and the workflow stays in this repository's skills
 - Every `hc` call runs outside the sandbox (`hc *`), since hc talks to the core through state under the home directory.
     The guard bounds what that may do: `hc run` starts only `claude` or `codex` by name, refuses any agent option other
     than the model, the effort, and Codex's `--no-daemon`, and asks for any other program, a template, another machine,
-    or an hc option outside the lane form. `hc send`, `hc kill`, and `hc rm` are allowed only for the addresses this
-    session's own `hc run --json` printed; an address names one terminal for the core's life, whereas a name passes to
-    a later terminal once the first finishes. Other hc subcommands ask.
+    or an hc option outside the lane form. `--cwd` must lie in this session's checkout or a lane worktree it created,
+    because the lane's sandbox is rooted there. `hc send`, `hc kill`, and `hc rm` are allowed only for the addresses
+    this session's own `hc run --json` printed, and only while `hc get` reports the same creation time for them: a
+    name passes to a later terminal once the first finishes, and an address is unique only within one core. Other hc
+    subcommands ask.
 - A template named `claude` or `codex` would take precedence over the program, but templates live in
     `~/.config/herdr-core/templates`, outside every path the sandbox lets an agent write.
 
@@ -62,7 +64,8 @@ parent would have to trust text in its input that anyone could have typed.
 - Good, because hc stays only the transport: the brief, plan, pull request, and `LANE-READY` carry the work, and the
     skill keeps the hc operations in a reference another transport can replace.
 - Bad, because the whole `hc` command family runs outside the sandbox, and its safety rests on the guard's agent
-    option list, the terminal ownership record, and herdr-core being trusted.
+    option list, the terminal ownership record, and herdr-core being trusted; every send, kill, or rm also waits on an
+    `hc get` call.
 - Bad, because lane worktrees still need the Herdr TUI's `herdr worktree create`, so the TUI cannot be removed until
     another way to create them exists.
 - Bad, because waiting depends on the agents' OSC 7501 reports: an agent version without them would look working until

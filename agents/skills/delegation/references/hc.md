@@ -41,9 +41,14 @@ The command hooks hold `hc` to this contract; a call outside it is denied or ask
     option other than `--model` and `--effort` for Claude, or `--no-daemon` and `--model` for Codex,
     is denied: it could switch off the agent's sandbox, hooks, or approvals. Another program, a
     template, `--on`, and any other hc option ask.
+- `run --cwd` takes an absolute path inside this session's checkout or inside a worktree this
+    session created with `herdr worktree create`; any other directory asks, since the lane's sandbox
+    is rooted where it starts.
 - `send`, `kill`, and `rm` run only on an address this session started, which the hooks learn from
-    the `address` that a successful plain `hc run --json` prints. A name asks, since a later terminal
-    can take it once the first finishes; any other address may be the user's or the parent's.
+    the `address` and `created_ms` that a successful plain `hc run --json` prints; before each call
+    they ask the core with `hc get` that the address still names that terminal. A name asks, since a
+    later terminal can take it once the first finishes; any other address may be the user's or the
+    parent's, and a core that cannot answer cannot vouch for one.
 - `ls`, `get`, `read`, `wait` with a terminal, `templates`, `--help`, `--version`, and `--skill` run
     as reads. Every other subcommand (`exec`, `file`, `keys`, `interrupt`, `attach`, `machine`,
     `server`, and the rest) and `send --force` ask.
@@ -69,7 +74,7 @@ The command hooks hold `hc` to this contract; a call outside it is denied or ask
     `address`, such as `t7`, as the recipient identity, and use that address, never the name, in
     every later call.
 - **Start** a plan review the same way, without the `herdr` calls and with `--cwd` set to the
-    checkout under review. The brief assigns a review only, so the reviewer reads and does not edit;
+    checkout under review, which must be this session's own. The brief assigns a review only, so the reviewer reads and does not edit;
     that checkout keeps its single writer.
 - **Wait** in the background. `hc wait` returns as soon as the lane is not working, so judge each
     return by the lane's turn, which goes up each time its status leaves `working`. Record the turn

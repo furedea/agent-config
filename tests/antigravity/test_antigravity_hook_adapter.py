@@ -82,6 +82,7 @@ def stdout_object(result: subprocess.CompletedProcess[str]) -> dict:
     [
         ("native", "session-end"),
         ("audit", "unknown"),
+        ("audit", "tool"),
         ("paths",),
         ("content",),
         ("dispatch", "PreToolUse"),
@@ -278,17 +279,6 @@ def test_a_new_suppression_is_force_asked(run_cli: CliRunner, project: Path) -> 
     assert stdout_object(result)["decision"] == "force_ask"
 
 
-def test_mcp_tools_reach_the_audit_log_unchanged(run_cli: CliRunner, project: Path, isolated_project: Path) -> None:
-    payload = tool_payload(project, "mcp_github_search", {"query": "x"})
-    result = run_cli(SCRIPT, "audit", "tool", payload=payload)
-    assert result.returncode == 0
-    assert stdout_object(result) == {}
-    [log] = sorted((isolated_project / "state/agent-harness/audit").rglob("*.jsonl"))
-    [row] = [json.loads(line) for line in log.read_text().splitlines()]
-    assert row["provider"] == "antigravity"
-    assert row["tool"] == "mcp_github_search"
-
-
 def test_session_start_asks_nothing_and_reports_the_verification_record(run_cli: CliRunner, project: Path) -> None:
     payload = {"conversationId": CONVERSATION, "cwd": str(project), "hookEventName": "SessionStart"}
     result = run_cli(SCRIPT, "native", "session-start", payload=payload)
@@ -351,7 +341,7 @@ def test_replacement_chunks_add_to_the_single_replacement(adapter: ModuleType) -
 
 @pytest.mark.parametrize(
     "arguments",
-    [("audit", "tool"), ("lint",)],
+    [("lint",)],
 )
 def test_a_failing_non_guard_command_answers_an_empty_object_and_keeps_exit_status_2(
     run_cli: CliRunner, project: Path, arguments: tuple[str, ...]

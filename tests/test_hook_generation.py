@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.runtime import CliRunner, load_script_module
+from tests.runtime import REPO_ROOT, CliRunner, load_script_module
 
 pytestmark = pytest.mark.integration
 
@@ -136,7 +136,7 @@ def test_generated_pi_hooks_use_only_supported_events_and_native_tools(
     assert any('hook_adapter.py" native session-start' in command for command in commands)
     assert any('hook_adapter.py" native session-end' in command for command in commands)
     assert any('hook_adapter.py" native pre-tool-use' in command for command in commands)
-    assert any('hook_adapter.py" audit compaction' in command for command in commands)
+    assert not any('hook_adapter.py" audit ' in command for command in commands)
     assert any('hook_adapter.py" shell forbidden' in command for command in commands)
     assert any('hook_adapter.py" content prompt' in command for command in commands)
     matchers = [group.get("matcher", "") for event in ("tool_call", "tool_result") for group in hooks.get(event, [])]
@@ -217,11 +217,8 @@ def antigravity_commands(group: dict) -> list[str]:
     return [hook[COMMAND].split(ADAPTER_SCRIPT)[1] for hook in group[HOOKS]]
 
 
-@pytest.mark.parametrize("event", [PRE_TOOL_USE, POST_TOOL_USE])
-def test_generated_antigravity_tool_hooks_match_every_tool(
-    agent_harness: CliRunner, tmp_path: Path, event: str
-) -> None:
-    groups = generated_antigravity_hooks(agent_harness, tmp_path)[event]
+def test_generated_antigravity_pre_tool_hooks_match_every_tool(agent_harness: CliRunner, tmp_path: Path) -> None:
+    groups = generated_antigravity_hooks(agent_harness, tmp_path)[PRE_TOOL_USE]
     assert [group for group in groups if group[MATCHER] == "*"]
 
 
@@ -241,7 +238,6 @@ def test_generated_antigravity_pre_tool_use_runs_every_guard_on_every_tool(
     commands = [command for group in groups if group[MATCHER] == "*" for command in antigravity_commands(group)]
     for guard in (
         "native pre-tool-use",
-        "audit tool",
         "paths command",
         "paths patch",
         "shell forbidden",
@@ -290,3 +286,20 @@ def test_generated_antigravity_commands_run_the_deployed_adapter_with_arguments_
         assert command.startswith(prefix), command
         kind, *rest = command.removeprefix(prefix).split()
         assert adapter._accepts(kind, rest), command
+
+
+def test_the_neutral_hook_source_registers_audit_only_for_approval_denials() -> None:
+    source = json.loads((REPO_ROOT / "agents/hooks.json").read_text())
+    audits = [
+        command for command in _commands(source) if "audit_log.py" in command or 'hook_adapter.py" audit' in command
+    ]
+    assert audits == ['"$HOME/.claude/hooks/audit_log.py" denied claude']
+
+
+def _commands(node: object) -> list[str]:
+    if isinstance(node, dict):
+        own = [node["command"]] if isinstance(node.get("command"), str) else []
+        return own + [command for value in node.values() for command in _commands(value)]
+    if isinstance(node, list):
+        return [command for value in node for command in _commands(value)]
+    return []

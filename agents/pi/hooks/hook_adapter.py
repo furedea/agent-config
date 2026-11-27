@@ -31,7 +31,6 @@ ADAPTER = provider_adapter.Adapter(
             "pre-tool-use": "tool_call",
             "session-end": "session_shutdown",
         },
-        compaction_events={"session_before_compact": "PreCompact", "session_compact": "PostCompaction"},
         manifest_env="AGENT_HARNESS_PI_MANIFEST",
         manifest_default=".pi/agent/hooks.json",
     )

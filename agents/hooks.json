@@ -26,10 +26,6 @@
         "matcher": "Bash",
         "hooks": [
           {
-            "command": "\"$HOME/.claude/hooks/audit_log.py\" tool claude",
-            "type": "command"
-          },
-          {
             "command": "\"$HOME/.claude/hooks/guard_command.py\" forbidden",
             "type": "command"
           },
@@ -51,10 +47,6 @@
         "matcher": "Read|Grep",
         "hooks": [
           {
-            "command": "\"$HOME/.claude/hooks/audit_log.py\" tool claude",
-            "type": "command"
-          },
-          {
             "command": "\"$HOME/.claude/hooks/guard_file.py\" read",
             "type": "command"
           }
@@ -63,10 +55,6 @@
       {
         "matcher": "Write|Edit|NotebookEdit",
         "hooks": [
-          {
-            "command": "\"$HOME/.claude/hooks/audit_log.py\" tool claude",
-            "type": "command"
-          },
           {
             "command": "\"$HOME/.claude/hooks/guard_file.py\" harness",
             "type": "command"
@@ -132,15 +120,6 @@
             "timeout": 30
           }
         ]
-      },
-      {
-        "matcher": "Bash|Edit|Write|WebFetch|WebSearch|Task|Agent",
-        "hooks": [
-          {
-            "command": "\"$HOME/.claude/hooks/audit_log.py\" tool claude",
-            "type": "command"
-          }
-        ]
       }
     ],
     "Stop": [
@@ -165,17 +144,6 @@
         ]
       }
     ],
-    "PreCompact": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "command": "\"$HOME/.claude/hooks/audit_log.py\" compaction claude",
-            "type": "command"
-          }
-        ]
-      }
-    ],
     "SessionStart": [
       {
         "hooks": [
@@ -193,15 +161,6 @@
             "type": "command",
             "async": true,
             "timeout": 120
-          }
-        ]
-      },
-      {
-        "matcher": "compact|resume",
-        "hooks": [
-          {
-            "command": "\"$HOME/.claude/hooks/audit_log.py\" compaction claude",
-            "type": "command"
           }
         ]
       }
@@ -362,17 +321,6 @@
               "type": "command"
             }
           ]
-        },
-        {
-          "matcher": ".",
-          "hooks": [
-            {
-              "command": "\"$HOME/.claude/hooks/audit_log.py\" tool codex",
-              "statusMessage": "Logging tool call",
-              "timeout": 10,
-              "type": "command"
-            }
-          ]
         }
       ],
       "Stop": [
@@ -397,10 +345,6 @@
             {
               "command": "\"$HOME/.devin/hooks/hook_adapter.py\" native session-start",
               "timeout": 30,
-              "type": "command"
-            },
-            {
-              "command": "\"$HOME/.devin/hooks/hook_adapter.py\" audit compaction",
               "type": "command"
             }
           ]
@@ -430,11 +374,6 @@
         {
           "matcher": "^exec$",
           "hooks": [
-            {
-              "command": "\"$HOME/.devin/hooks/hook_adapter.py\" audit tool",
-              "timeout": 10,
-              "type": "command"
-            },
             {
               "command": "\"$HOME/.devin/hooks/hook_adapter.py\" paths command",
               "timeout": 30,
@@ -466,11 +405,6 @@
           "matcher": "^read$",
           "hooks": [
             {
-              "command": "\"$HOME/.devin/hooks/hook_adapter.py\" audit tool",
-              "timeout": 10,
-              "type": "command"
-            },
-            {
               "command": "\"$HOME/.devin/hooks/hook_adapter.py\" content read",
               "timeout": 30,
               "type": "command"
@@ -480,11 +414,6 @@
         {
           "matcher": "^(write|edit|multi_edit|notebook_edit)$",
           "hooks": [
-            {
-              "command": "\"$HOME/.devin/hooks/hook_adapter.py\" audit tool",
-              "timeout": 10,
-              "type": "command"
-            },
             {
               "command": "\"$HOME/.devin/hooks/hook_adapter.py\" paths patch",
               "timeout": 30,
@@ -510,11 +439,6 @@
         {
           "matcher": "^apply_patch$",
           "hooks": [
-            {
-              "command": "\"$HOME/.devin/hooks/hook_adapter.py\" audit tool",
-              "timeout": 10,
-              "type": "command"
-            },
             {
               "command": "\"$HOME/.devin/hooks/hook_adapter.py\" paths patch",
               "timeout": 30,
@@ -548,16 +472,6 @@
               "type": "command"
             }
           ]
-        },
-        {
-          "matcher": ".",
-          "hooks": [
-            {
-              "command": "\"$HOME/.devin/hooks/hook_adapter.py\" audit tool",
-              "timeout": 10,
-              "type": "command"
-            }
-          ]
         }
       ],
       "Stop": [
@@ -566,16 +480,6 @@
             {
               "command": "\"$HOME/.devin/hooks/hook_adapter.py\" native stop",
               "timeout": 600,
-              "type": "command"
-            }
-          ]
-        }
-      ],
-      "PostCompaction": [
-        {
-          "hooks": [
-            {
-              "command": "\"$HOME/.devin/hooks/hook_adapter.py\" audit compaction",
               "type": "command"
             }
           ]
@@ -603,10 +507,6 @@
               "command": "\"$HOME/.hermes/hooks/hook_adapter.py\" native session-start",
               "timeout": 30,
               "type": "command"
-            },
-            {
-              "command": "\"$HOME/.hermes/hooks/hook_adapter.py\" audit compaction",
-              "type": "command"
             }
           ]
         }
@@ -624,11 +524,6 @@
         {
           "matcher": "^(terminal|exec_command|shell)$",
           "hooks": [
-            {
-              "command": "\"$HOME/.hermes/hooks/hook_adapter.py\" audit tool",
-              "timeout": 10,
-              "type": "command"
-            },
             {
               "command": "\"$HOME/.hermes/hooks/hook_adapter.py\" paths command",
               "timeout": 30,
@@ -660,11 +555,6 @@
           "matcher": "^read_file$",
           "hooks": [
             {
-              "command": "\"$HOME/.hermes/hooks/hook_adapter.py\" audit tool",
-              "timeout": 10,
-              "type": "command"
-            },
-            {
               "command": "\"$HOME/.hermes/hooks/hook_adapter.py\" content read",
               "timeout": 30,
               "type": "command"
@@ -674,11 +564,6 @@
         {
           "matcher": "^(write_file|edit_file|patch|apply_patch)$",
           "hooks": [
-            {
-              "command": "\"$HOME/.hermes/hooks/hook_adapter.py\" audit tool",
-              "timeout": 10,
-              "type": "command"
-            },
             {
               "command": "\"$HOME/.hermes/hooks/hook_adapter.py\" paths patch",
               "timeout": 30,
@@ -709,16 +594,6 @@
             {
               "command": "\"$HOME/.hermes/hooks/hook_adapter.py\" lint",
               "timeout": 120,
-              "type": "command"
-            }
-          ]
-        },
-        {
-          "matcher": ".",
-          "hooks": [
-            {
-              "command": "\"$HOME/.hermes/hooks/hook_adapter.py\" audit tool",
-              "timeout": 10,
               "type": "command"
             }
           ]
@@ -786,11 +661,6 @@
           "matcher": "^bash$",
           "hooks": [
             {
-              "command": "\"$HOME/.pi/hooks/hook_adapter.py\" audit tool",
-              "timeout": 10,
-              "type": "command"
-            },
-            {
               "command": "\"$HOME/.pi/hooks/hook_adapter.py\" paths command",
               "timeout": 30,
               "type": "command"
@@ -821,11 +691,6 @@
           "matcher": "^read$",
           "hooks": [
             {
-              "command": "\"$HOME/.pi/hooks/hook_adapter.py\" audit tool",
-              "timeout": 10,
-              "type": "command"
-            },
-            {
               "command": "\"$HOME/.pi/hooks/hook_adapter.py\" content read",
               "timeout": 30,
               "type": "command"
@@ -835,11 +700,6 @@
         {
           "matcher": "^(write|edit|multi_edit|notebook_edit)$",
           "hooks": [
-            {
-              "command": "\"$HOME/.pi/hooks/hook_adapter.py\" audit tool",
-              "timeout": 10,
-              "type": "command"
-            },
             {
               "command": "\"$HOME/.pi/hooks/hook_adapter.py\" paths patch",
               "timeout": 30,
@@ -865,11 +725,6 @@
         {
           "matcher": "^apply_patch$",
           "hooks": [
-            {
-              "command": "\"$HOME/.pi/hooks/hook_adapter.py\" audit tool",
-              "timeout": 10,
-              "type": "command"
-            },
             {
               "command": "\"$HOME/.pi/hooks/hook_adapter.py\" paths patch",
               "timeout": 30,
@@ -900,36 +755,6 @@
             {
               "command": "\"$HOME/.pi/hooks/hook_adapter.py\" lint",
               "timeout": 120,
-              "type": "command"
-            }
-          ]
-        },
-        {
-          "matcher": ".",
-          "hooks": [
-            {
-              "command": "\"$HOME/.pi/hooks/hook_adapter.py\" audit tool",
-              "timeout": 10,
-              "type": "command"
-            }
-          ]
-        }
-      ],
-      "session_before_compact": [
-        {
-          "hooks": [
-            {
-              "command": "\"$HOME/.pi/hooks/hook_adapter.py\" audit compaction",
-              "type": "command"
-            }
-          ]
-        }
-      ],
-      "session_compact": [
-        {
-          "hooks": [
-            {
-              "command": "\"$HOME/.pi/hooks/hook_adapter.py\" audit compaction",
               "type": "command"
             }
           ]
@@ -1083,10 +908,6 @@
           "command": "\"$HOME/.gemini/config/hooks/hook_adapter.py\" native session-start",
           "timeout": 30,
           "type": "command"
-        },
-        {
-          "command": "\"$HOME/.gemini/config/hooks/hook_adapter.py\" audit compaction",
-          "type": "command"
         }
       ],
       "PreToolUse": [
@@ -1096,11 +917,6 @@
             {
               "command": "\"$HOME/.gemini/config/hooks/hook_adapter.py\" native pre-tool-use",
               "timeout": 30,
-              "type": "command"
-            },
-            {
-              "command": "\"$HOME/.gemini/config/hooks/hook_adapter.py\" audit tool",
-              "timeout": 10,
               "type": "command"
             },
             {
@@ -1168,16 +984,6 @@
             {
               "command": "\"$HOME/.gemini/config/hooks/hook_adapter.py\" lint",
               "timeout": 120,
-              "type": "command"
-            }
-          ]
-        },
-        {
-          "matcher": "*",
-          "hooks": [
-            {
-              "command": "\"$HOME/.gemini/config/hooks/hook_adapter.py\" audit tool",
-              "timeout": 10,
               "type": "command"
             }
           ]

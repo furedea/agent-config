@@ -38,7 +38,6 @@ ADAPTER = provider_adapter.Adapter(
             "stop": "Stop",
             "session-end": "SessionEnd",
         },
-        compaction_events={"SessionStart": "SessionStart", "PostCompaction": "PostCompaction"},
         formatter=provider_adapter.additional_context,
         cwd_fallback=project_directory,
     )

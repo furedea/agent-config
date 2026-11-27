@@ -71,6 +71,8 @@ def project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
         ("native", "--help"),
         ("native", "compact"),
         ("audit", "denied"),
+        ("audit", "tool"),
+        ("audit", "compaction"),
         ("paths",),
         ("content",),
         ("shell", "/tmp/arbitrary-hook"),
@@ -166,42 +168,6 @@ def test_write_content_block_uses_devin_decision(run_cli: CliRunner, project: Pa
     assert result.returncode == 0
     decision = json.loads(result.stdout)
     assert decision["decision"] == "block"
-
-
-def test_audit_tool_records_the_devin_provider(
-    run_cli: CliRunner, project: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path / "state"))
-    payload = {
-        "hook_event_name": "PostToolUse",
-        "session_id": "devin-session",
-        "tool_name": "exec",
-        "tool_input": {"command": "git status"},
-    }
-    result = run_cli(SCRIPT, "audit", "tool", payload=payload, cwd=project)
-    assert result.returncode == 0
-    records = list((tmp_path / "state/agent-harness/audit").rglob("*.jsonl"))
-    assert records
-    entry = json.loads(records[0].read_text().splitlines()[-1])
-    assert entry["provider"] == "devin"
-
-
-def test_audit_compaction_records_post_compaction(
-    run_cli: CliRunner, project: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path / "state"))
-    payload = {
-        "hook_event_name": "PostCompaction",
-        "session_id": "devin-session",
-        "summary": "condensed",
-    }
-    result = run_cli(SCRIPT, "audit", "compaction", payload=payload, cwd=project)
-    assert result.returncode == 0
-    records = list((tmp_path / "state/agent-harness/audit").rglob("*.jsonl"))
-    assert records
-    entry = json.loads(records[0].read_text().splitlines()[-1])
-    assert entry["event"] == "PostCompaction"
-    assert entry["provider"] == "devin"
 
 
 def patch_payload(field: str, *paths: str) -> dict:

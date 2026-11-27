@@ -173,7 +173,6 @@ ADAPTER = provider_adapter.Adapter(
             "post-tool-use": "PostToolUse",
             "stop": STOP,
         },
-        compaction_events={SESSION_START: SESSION_START},
         formatter=output,
         lint_output=no_diagnostics,
         lint_block=no_diagnostics,

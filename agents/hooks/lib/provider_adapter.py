@@ -31,7 +31,6 @@ import verification_session
 SECRET_PATH_RULE = "guard_secret_paths.sh"
 SHELL_MODES = ("allowed", "forbidden", "git", "commit")
 PATH_MODES = ("command", "patch", "read")
-AUDIT_KINDS = ("tool", "compaction")
 CONTENT_MODES = ("prompt", "read", "write", "apply-patch", "suppression")
 VIEW_FIELDS = frozenset({"command", "path", "file_path", "view_range"})
 GUARD_KINDS = frozenset({"shell", "paths", "content", "harness"})
@@ -89,7 +88,6 @@ class Profile:
     """Provider facts the shared adapter needs; every behavior derived from them is shared.
 
     `events` maps verification events to native event names and enables `native`.
-    `compaction_events` maps native event names to shared audit event names and enables `audit`.
     `manifest_env` names the manifest override and enables `dispatch`.
     `reader` turns a provider payload into the shared shape before any guard sees it.
     `denial` makes the provider read exactly one JSON object from stdout: it encodes a refusal reason. A command that
@@ -100,7 +98,6 @@ class Profile:
     name: str
     tools: Mapping[str, str] = field(default_factory=dict)
     events: Mapping[str, str] = field(default_factory=dict)
-    compaction_events: Mapping[str, str] = field(default_factory=dict)
     formatter: Formatter = system_message
     lint_output: Callable[[str], dict] = lint_format.context
     lint_block: Callable[[str], dict] = lint_format.block
@@ -176,7 +173,6 @@ class Adapter:
             return self._harness(payload)
         commands = {
             "native": self._native,
-            "audit": self._audit,
             "dispatch": self._fan_out,
             "shell": self._shell,
             "paths": self._check_paths,
@@ -213,16 +209,6 @@ class Adapter:
             result = verification_session.failure(event, context, error)
         output = self.profile.formatter(self.profile.events[event], result)
         print(json.dumps(output, ensure_ascii=True, separators=(",", ":")))
-        return 0
-
-    def _audit(self, kind: str, payload: dict) -> int:
-        context = self.normalized(payload)
-        if kind == "compaction":
-            context = self._compaction_context(context)
-        if context is not None:
-            audit_log.append_record(
-                audit_log.record(kind, context, self.profile.name), cwd=Path(context["cwd"] or ".")
-            )
         return 0
 
     def _fan_out(self, event: str, payload: dict) -> int:
@@ -300,11 +286,6 @@ class Adapter:
             return 0  # a notice would be a second shape for the provider to read
         return hook_decision.emit(verdict.hardened())
 
-    def _compaction_context(self, context: dict) -> dict | None:
-        """Name a native compaction event as shared audit expects, or drop an unknown event."""
-        event = self.profile.compaction_events.get(context.get("hook_event_name") or "")
-        return None if event is None else context | {"hook_event_name": event}
-
     def _manifest(self) -> Path:
         default = Path.home() / self.profile.manifest_default
         return Path(os.environ.get(self.profile.manifest_env, str(default)))
@@ -346,8 +327,6 @@ class Adapter:
         commands: dict[str, tuple[str, ...] | None] = {}
         if self.profile.events:
             commands["native"] = tuple(self.profile.events)
-        if self.profile.compaction_events:
-            commands["audit"] = AUDIT_KINDS
         if self.profile.manifest_env:
             commands["dispatch"] = ANY_ARGUMENT
         return commands | {

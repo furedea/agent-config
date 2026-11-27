@@ -1,14 +1,15 @@
 #!/usr/bin/env -S python3 -IB
-"""Record bounded hook metadata without retaining prompts, commands, or file bodies."""
+"""Record guard refusals and approval denials without retaining prompts, commands, or file bodies.
+
+Session content and tool activity belong to atuin threads; compaction details to Claude Code's transcript (ADR-0029).
+"""
 
 import hashlib
 import json
-import math
 import os
 import re
 import sys
 import time
-from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -16,8 +17,6 @@ from pathlib import Path
 SCRIPT = Path(__file__).resolve()
 sys.path.insert(0, str(SCRIPT.parent / "lib"))
 
-import hook_input
-import patch_input
 from session_store import file_lock, private_directory, worktree_id
 
 RETENTION_SECONDS = 7 * 24 * 60 * 60
@@ -26,8 +25,9 @@ TOTAL_LOG_LIMIT_BYTES = 100 * LOG_LIMIT_BYTES
 CLEANUP_INTERVAL_SECONDS = 60 * 60
 MAX_TARGETS = 32
 MAX_TARGET_LENGTH = 256
+KNOWN_PROVIDERS = frozenset({"antigravity", "claude", "codex", "devin", "dsh", "hermes", "pi"})
+CLI_PROVIDERS = frozenset({"claude", "codex", "devin", "hermes", "pi"})
 SAFE_LABEL = re.compile(r"[^A-Za-z0-9_.:-]+")
-FILE_TOOLS = frozenset({"Edit", "Write", "MultiEdit", "NotebookEdit", "apply_patch"})
 
 
 def _label(value: object, fallback: str = "unknown") -> str:
@@ -39,7 +39,7 @@ def _label(value: object, fallback: str = "unknown") -> str:
 
 def _provider(payload: dict, explicit: str | None = None) -> str:
     candidate = explicit or payload.get("provider")
-    if candidate in {"antigravity", "claude", "codex", "devin", "dsh", "hermes", "pi"}:
+    if candidate in KNOWN_PROVIDERS:
         return candidate
     return "codex" if payload.get("turn_id") else "claude"
 
@@ -82,122 +82,20 @@ def _target(value: object, cwd: Path) -> str | None:
     return result[:MAX_TARGET_LENGTH]
 
 
-def _targets(tool: str, values: dict, cwd: Path) -> list[str]:
-    names: tuple[str, ...] = ()
-    if tool == "apply_patch":
-        command = values.get("command")
-        if isinstance(command, str):
-            names = patch_input.paths(command)
-    elif tool in FILE_TOOLS:
-        names = (name,) if (name := hook_input.file_path(values)) else ()
-        edits = values.get("edits")
-        if isinstance(edits, list):
-            names += tuple(
-                item["file_path"]
-                for item in edits
-                if isinstance(item, dict) and isinstance(item.get("file_path"), str)
-            )
-    result: list[str] = []
-    for name in names:
-        target = _target(name, cwd)
-        if target is not None and target not in result:
-            result.append(target)
-        if len(result) >= MAX_TARGETS:
-            break
-    return result
-
-
-def _duration(payload: dict) -> int | float | None:
-    value = payload.get("duration_ms")
-    if isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value) and value >= 0:
-        return value
-    return None
-
-
-def record(kind: str, payload: dict, provider: str | None = None) -> dict | None:
-    """Produce a metadata-only audit record or ignore an unrelated lifecycle event."""
+def record(payload: dict, provider: str | None = None) -> dict | None:
+    """Produce a metadata-only record of one approval denial."""
     if not isinstance(payload, dict):
         return None
-    defaults = {"tool": "PostToolUse", "denied": "PermissionDenied", "compaction": "PreCompact"}
-    event = _label(payload.get("hook_event_name") or defaults[kind])
     cwd = _cwd(payload)
-    result = {
-        "event": event,
-        "status": "denied" if kind == "denied" else "observed",
+    return {
+        "event": _label(payload.get("hook_event_name") or "PermissionDenied"),
+        "status": "denied",
         "provider": _provider(payload, provider),
         "session": _session(payload.get("session_id")),
         "worktree": _worktree(cwd),
-        "tool": "",
+        "tool": _label(payload.get("tool_name"), ""),
         "targets": [],
     }
-    if kind == "compaction":
-        return _compaction_record(result, payload)
-    tool = _label(payload.get("tool_name"), "")
-    values = _tool_values(kind, tool, payload)
-    if values is None:
-        return None
-    result["tool"] = tool
-    result["targets"] = _targets(tool, values, cwd)
-    if (duration := _duration(payload)) is not None:
-        result["duration_ms"] = duration
-    return result
-
-
-def _compaction_record(result: dict, payload: dict) -> dict | None:
-    event = result["event"]
-    source = payload.get("source") or ""
-    if event not in {"PreCompact", "PostCompaction"} and not (
-        event == "SessionStart" and source in {"compact", "resume"}
-    ):
-        return None
-    path = payload.get("transcript_path") or ""
-    result.update(
-        tool="Compaction",
-        counts=transcript_counts(path),
-        trigger=payload.get("trigger") if payload.get("trigger") in {"manual", "auto"} else "",
-        source=source if event == "SessionStart" else "",
-    )
-    return result
-
-
-def _tool_values(kind: str, tool: str, payload: dict) -> dict | None:
-    """Return the tool input to audit, or None when a tool event carries nothing to record."""
-    if kind == "tool" and not tool:
-        return None
-    values = payload.get("tool_input") or {}
-    if not isinstance(values, dict):
-        values = {}
-    if kind == "tool" and tool == "Bash" and not (values.get("command") or values.get("cmd")):
-        return None
-    return values
-
-
-def transcript_counts(path: str) -> dict[str, int]:
-    """Count transcript records and tool uses while keeping their bodies out of logs."""
-    counts = {"messages": 0, "tool_uses": 0}
-    if not isinstance(path, str) or not path:
-        return counts
-    try:
-        with Path(path).open() as stream:
-            _count_lines(stream, counts)
-    except OSError, TypeError:
-        pass
-    return counts
-
-
-def _count_lines(lines: Iterable[str], counts: dict[str, int]) -> None:
-    """Add as it reads, so a read failure midway keeps the counts gathered so far."""
-    for line in lines:
-        counts["messages"] += 1
-        counts["tool_uses"] += _tool_use_count(line)
-
-
-def _tool_use_count(line: str) -> int:
-    try:
-        content = (json.loads(line).get("message") or {}).get("content") or []
-        return sum(isinstance(item, dict) and item.get("type") == "tool_use" for item in content)
-    except ValueError, AttributeError, TypeError:
-        return 0
 
 
 def _state_root(cwd: Path) -> Path | None:
@@ -392,7 +290,7 @@ def _refusal(event: str, status: str, refusal: Refusal) -> None:
     context.setdefault("tool_name", refusal.tool)
     context.setdefault("session_id", refusal.session)
     try:
-        entry = record("denied", context, refusal.provider)
+        entry = record(context, refusal.provider)
     except OSError, RuntimeError, TypeError, ValueError:
         return
     if entry is None:
@@ -411,19 +309,19 @@ def _refusal(event: str, status: str, refusal: Refusal) -> None:
 
 
 def main(arguments: list[str]) -> int:
-    """Read an observational event without making logging an enforcement gate."""
-    if len(arguments) not in {1, 2} or arguments[0] not in {"tool", "denied", "compaction"}:
-        print("Usage: audit_log.py <tool|denied|compaction> [claude|codex|devin|hermes|pi]", file=sys.stderr)
-        return 1
-    if len(arguments) == 2 and arguments[1] not in {"claude", "codex", "devin", "hermes", "pi"}:
-        print("Usage: audit_log.py <tool|denied|compaction> [claude|codex|devin|hermes|pi]", file=sys.stderr)
+    """Read a denial event without making logging an enforcement gate."""
+    if (
+        len(arguments) not in {1, 2}
+        or arguments[0] != "denied"
+        or (len(arguments) == 2 and arguments[1] not in CLI_PROVIDERS)
+    ):
+        print("Usage: audit_log.py denied [claude|codex|devin|hermes|pi]", file=sys.stderr)
         return 1
     try:
         payload = json.load(sys.stdin)
         if not isinstance(payload, dict):
             return 0
-        entry = record(arguments[0], payload, arguments[1] if len(arguments) == 2 else None)
-        append_record(entry, cwd=_cwd(payload))
+        append_record(record(payload, arguments[1] if len(arguments) == 2 else None), cwd=_cwd(payload))
     except ValueError, TypeError, AttributeError, OSError:
         pass
     return 0

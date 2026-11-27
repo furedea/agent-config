@@ -9,7 +9,6 @@ from tests.runtime import CliRunner, load_script_module
 SCRIPT = "agents/hooks/guard_file.py"
 MARKER = "fixture-sensitive-marker"
 hook_input = load_script_module("agents/hooks/lib/hook_input.py", "hook_input")
-audit = load_script_module("agents/hooks/audit_log.py", "audit_log")
 
 
 @pytest.fixture(autouse=True)
@@ -59,9 +58,3 @@ def test_grep_scans_a_single_file_target_only(
 def test_notebook_edit_target_reaches_lint(tmp_path: Path) -> None:
     payload = notebook_edit("analysis.ipynb") | {"cwd": str(tmp_path)}
     assert hook_input.target_paths(payload) == (tmp_path.resolve() / "analysis.ipynb",)
-
-
-def test_notebook_edit_target_is_audited(tmp_path: Path) -> None:
-    entry = audit.record("tool", notebook_edit("analysis.ipynb") | {"cwd": str(tmp_path)})
-    assert entry is not None
-    assert entry["targets"] == ["analysis.ipynb"]

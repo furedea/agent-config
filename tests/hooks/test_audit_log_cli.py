@@ -1,4 +1,4 @@
-"""Audit entry points append bounded metadata without exposing event bodies."""
+"""Audit entry points append bounded guard and approval records without exposing event bodies."""
 
 import json
 import os
@@ -17,12 +17,8 @@ def audit_paths(state: Path) -> list[Path]:
 @pytest.mark.parametrize(
     "kind,event,status,payload",
     [
-        ("tool", "PreToolUse", "observed", {"hook_event_name": "PreToolUse"}),
-        ("tool", "PostToolUse", "observed", {"hook_event_name": "PostToolUse"}),
-        ("tool", "PostToolUse", "observed", {}),
         ("denied", "PermissionDenied", "denied", {}),
         ("denied", "PermissionDenied", "denied", {"hook_event_name": "PermissionDenied"}),
-        ("compaction", "PreCompact", "observed", {"trigger": "manual"}),
     ],
 )
 def test_cli_appends_metadata_to_external_jsonl(
@@ -61,21 +57,12 @@ def test_cli_appends_metadata_to_external_jsonl(
     assert not list((tmp_path / "docs/logs/audit").glob("*.jsonl"))
 
 
-@pytest.mark.parametrize(
-    "payload",
-    [{"tool_name": "", "tool_input": {}}, {"tool_name": "Bash"}, {"tool_name": "Bash", "tool_input": {"command": ""}}],
-)
-def test_empty_tool_events_exit_without_a_record(run_cli: CliRunner, tmp_path: Path, payload: dict) -> None:
-    result = run_cli("agents/hooks/audit_log.py", "tool", payload=payload)
-    assert result.returncode == 0
-    assert not audit_paths(tmp_path / "state")
-
-
-def test_unrelated_startup_exits_without_a_record(run_cli: CliRunner, tmp_path: Path) -> None:
-    result = run_cli(
-        "agents/hooks/audit_log.py", "compaction", payload={"hook_event_name": "SessionStart", "source": "startup"}
-    )
-    assert result.returncode == 0
+@pytest.mark.parametrize("kind", ["tool", "compaction"])
+def test_per_call_and_compaction_observations_are_not_accepted(run_cli: CliRunner, tmp_path: Path, kind: str) -> None:
+    payload = {"tool_name": "Bash", "tool_input": {"command": "git status"}, "hook_event_name": "PostToolUse"}
+    result = run_cli("agents/hooks/audit_log.py", kind, "claude", payload=payload)
+    assert result.returncode == 1
+    assert "Usage" in result.stderr
     assert not audit_paths(tmp_path / "state")
 
 
@@ -116,7 +103,7 @@ def test_audit_write_failure_is_fail_open_and_does_not_change_hook_status(run_cl
     state.write_text("not-a-directory")
     result = run_cli(
         "agents/hooks/audit_log.py",
-        "tool",
+        "denied",
         payload={"tool_name": "Bash", "tool_input": {"command": "git status"}},
         env={"XDG_STATE_HOME": str(state)},
     )
@@ -131,7 +118,7 @@ def test_state_symlink_is_not_followed(run_cli: CliRunner, tmp_path: Path) -> No
     state.symlink_to(external, target_is_directory=True)
     result = run_cli(
         "agents/hooks/audit_log.py",
-        "tool",
+        "denied",
         payload={
             "cwd": str(tmp_path / "worktree"),
             "tool_name": "Bash",
@@ -148,7 +135,7 @@ def test_parallel_audit_writes_remain_valid_jsonl(tmp_path: Path) -> None:
     environment = os.environ | {"XDG_STATE_HOME": str(tmp_path / "state")}
     processes = [
         subprocess.Popen(
-            [sys.executable, "-I", "-B", str(script), "tool", "claude"],
+            [sys.executable, "-I", "-B", str(script), "denied", "claude"],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,

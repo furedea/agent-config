@@ -33,7 +33,6 @@ ADAPTER = provider_adapter.Adapter(
             "stop": "pre_verify",
             "session-end": "on_session_end",
         },
-        compaction_events={"on_session_start": "SessionStart"},
         manifest_env="AGENT_HARNESS_HERMES_MANIFEST",
         manifest_default=".hermes/hooks.json",
     )

@@ -66,6 +66,7 @@ def manifest(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     [
         ("native", "pre-tool-use"),
         ("audit", "tool"),
+        ("audit", "compaction"),
         ("paths",),
         ("content",),
         ("dispatch",),

@@ -73,41 +73,14 @@ def test_notebook_edits_are_checked_against_the_harness_boundary(run_cli: CliRun
     assert "agent harness boundary" in result.stderr
 
 
-SESSION_START = {"devin": "SessionStart", "hermes": "on_session_start"}
-
-
-@pytest.mark.parametrize("provider", sorted(SESSION_START))
-@pytest.mark.parametrize("source,recorded", [("startup", False), ("", False), ("compact", True), ("resume", True)])
-def test_session_start_compaction_is_recorded_only_for_compact_or_resume(
-    run_cli: CliRunner, state: Path, provider: str, source: str, recorded: bool
-) -> None:
-    payload = {"hook_event_name": SESSION_START[provider], "session_id": "adapter-session", "source": source}
-    result = run_cli(script(provider), "audit", "compaction", payload=payload)
-    assert result.returncode == 0
-    rows = audit_rows(state)
-    assert len(rows) == int(recorded)
-    if recorded:
-        assert rows[0]["event"] == "SessionStart"
-        assert rows[0]["source"] == source
-        assert rows[0]["provider"] == provider
-
-
-@pytest.mark.parametrize(
-    "provider,event,expected",
-    [
-        ("devin", "PostCompaction", "PostCompaction"),
-        ("pi", "session_before_compact", "PreCompact"),
-        ("pi", "session_compact", "PostCompaction"),
-        ("devin", "", None),
-    ],
-)
-def test_native_compaction_events_are_recorded_under_the_shared_name(
-    run_cli: CliRunner, state: Path, provider: str, event: str, expected: str | None
-) -> None:
-    payload = {"hook_event_name": event, "session_id": "adapter-session"}
-    result = run_cli(script(provider), "audit", "compaction", payload=payload)
-    assert result.returncode == 0
-    assert [row["event"] for row in audit_rows(state)] == ([expected] if expected else [])
+@pytest.mark.parametrize("provider", PROVIDERS)
+@pytest.mark.parametrize("kind", ["tool", "compaction", "denied"])
+def test_adapters_have_no_audit_command(run_cli: CliRunner, state: Path, provider: str, kind: str) -> None:
+    payload = {"hook_event_name": "PostToolUse", "session_id": "adapter-session", "tool_name": "bash"}
+    result = run_cli(script(provider), "audit", kind, payload=payload)
+    assert result.returncode == 1
+    assert "Usage" in result.stderr
+    assert audit_rows(state) == []
 
 
 @pytest.mark.parametrize("provider", PROVIDERS)

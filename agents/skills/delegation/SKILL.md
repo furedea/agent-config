@@ -3,8 +3,8 @@ name: delegation
 description: >
     Use when the user requests, or the lanes of an approved plan call for, a plan review or an
     implementation task in a separate Codex or Claude session, including another repository or
-    worktree, whichever tool carries it (such as T3 Code threads). Not for ordinary local work,
-    a local review, or subagents inside this session.
+    worktree, whichever tool carries it (such as herdr-core terminals through `hc`). Not for
+    ordinary local work, a local review, or subagents inside this session.
 ---
 
 # Delegation
@@ -19,17 +19,17 @@ the request, evaluates the returned work, and reports the outcome to the user.
     from an ordinary coding request, a local review, or an opportunity to work in parallel.
     Run independent lanes of an approved plan in parallel, each in its own task worktree, instead
     of one after another; lanes that change the same lines are the exception and run in sequence.
-- A transport is the tool that starts, prompts, and waits for the other session. T3 Code is the
-    default transport; use another only when the user explicitly names it. Herdr is deprecated and
-    is used only on such an explicit request. Read the transport's reference before operating it:
-    the file in `references/` named after it, such as [T3 Code](references/t3.md), or, for a
-    transport with no file there, the skill that `development-cycle` names for it. If the
-    transport is unavailable, start no session: report the reason to the user, as
-    [Branches and worktrees](../development-cycle/references/branches.md) in `development-cycle`
-    describes, and never switch to another transport on your own.
+- A transport is the tool that starts, prompts, and waits for the other session. herdr-core, the
+    runtime of the Herdr desktop app, is the default transport; use another only when the user
+    explicitly names it. Herdr TUI panes are deprecated and used only on such an explicit request.
+    Read the transport's reference before operating it: the file in `references/` named after it,
+    such as [herdr-core](references/hc.md), or, for a transport with no file there, the skill that
+    `development-cycle` names for it. If the transport is unavailable, start no session: report the
+    reason to the user, as [Branches and worktrees](../development-cycle/references/branches.md) in
+    `development-cycle` describes, and never switch to another transport on your own.
 - The transport only carries the session. Work state stays outside it: the Issue, the plan
     comment, the brief file, the pull request, and the lane's final `LANE-READY` or `LANE-BLOCKED`.
-    Never use a session or thread ID from the transport as the identity of the work.
+    Never use a session, thread, or terminal ID from the transport as the identity of the work.
 - Use `development-cycle` for branch and worktree choices and authorized Git delivery. Delegation
     alone does not require a new worktree or authorize commits, pushes, or pull requests; an
     approved plan authorizes them for its lanes, never merging.

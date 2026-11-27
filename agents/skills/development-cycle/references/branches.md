@@ -9,18 +9,17 @@ Choose the workspace in this order:
 1. If this session already runs in a task worktree on a non-default branch for this task, stay there.
 2. If the user explicitly asks to stay in the current checkout, create the task branch there with
     `git switch -c <branch>`, unless that would overwrite or mix unrelated changes.
-3. If the user explicitly asks for Herdr (deprecated, used until its removal), use it as in
-    [Herdr on explicit request](#herdr-on-explicit-request), even when T3 Code is available.
-4. Otherwise, if T3 Code is available, as its
-    [prerequisites](../../delegation/references/t3.md#prerequisites) define (`t3 thread list`
-    succeeds as a sandboxed call, and the installed `cleanup_worktrees.py` covers
-    `~/.t3/worktrees`), hand each lane to a new T3 thread in its own task worktree, as
-    [delegation](../../delegation/SKILL.md) and its
-    [T3 Code reference](../../delegation/references/t3.md) describe. T3 Code is the default
-    transport.
-5. If T3 Code is unavailable, for example before the T3 guard and cleanup are installed
-    (furedea/agent-config#265, #266), start no lane: report the reason to the user and stop. Never
-    switch to another transport on your own, and never use Herdr because T3 Code is unavailable.
+3. If the user explicitly asks for Herdr TUI panes (deprecated, used until their removal), use
+    them as in [Herdr on explicit request](#herdr-on-explicit-request).
+4. Otherwise, if herdr-core is available, as its
+    [prerequisites](../../delegation/references/hc.md#prerequisites) define (`hc ls --json`
+    succeeds, and `herdr workspace list` succeeds for an implementation lane), hand each lane to a
+    new herdr-core terminal in its own task worktree, as [delegation](../../delegation/SKILL.md)
+    and its [herdr-core reference](../../delegation/references/hc.md) describe. herdr-core is the
+    default transport.
+5. If herdr-core is unavailable, start no lane: report the reason to the user and stop. Never
+    switch to another transport on your own, and never use Herdr TUI panes because herdr-core is
+    unavailable.
 6. If the target branch is already checked out in another worktree, use that worktree or choose a
     different branch name. Do not force-checkout the same branch in two places.
 
@@ -48,8 +47,7 @@ Lane rules for every transport:
 - A linked worktree session cannot write another repository's `.git`, and this session cannot
     fetch another repository for it, so the lane fetches and rebases onto its base before editing.
 - Merged task worktrees and branches, in this repository and every repository with a task
-    worktree under a lane root the installed script covers (`~/.herdr/worktrees`, and
-    `~/.t3/worktrees` once it names that root), are removed by the parent running
+    worktree under the lane root `~/.herdr/worktrees`, are removed by the parent running
     `cleanup_worktrees.py` by its absolute path with the home directory expanded, as shown in the
     rendered `excludedCommands` entry, after the user merges, or at the next Claude session start
     (`--dry-run` previews): only when a merged pull request's head is the branch tip and the tree
@@ -65,9 +63,9 @@ Lane rules for every transport:
 
 ## Herdr on Explicit Request
 
-Herdr is deprecated and is used only when the user explicitly asks for it, until its removal; it is
-never chosen because T3 Code is unavailable. Task worktree hand-off through
-Herdr, once per lane, each line as its own Bash call; the operations follow
+Herdr TUI panes are deprecated and are used only when the user explicitly asks for them, until
+their removal; they are never chosen because herdr-core is unavailable. Task worktree hand-off
+through Herdr TUI panes, once per lane, each line as its own Bash call; the operations follow
 [herdr-delegation](../../herdr-delegation/SKILL.md):
 
 ```bash

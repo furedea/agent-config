@@ -1,7 +1,9 @@
 ---
 status: accepted
 date: 2026-09-18
-related: [dotfiles/ADR-0032]
+amended:
+  - "2026-11-27: the log covers only guard refusals and approval denials; per-call and compaction records moved to atuin threads and Claude Code's transcript (ADR-0029)"
+related: [dotfiles/ADR-0032, ADR-0029]
 ---
 
 # ADR-0005: Bound external agent audit logs

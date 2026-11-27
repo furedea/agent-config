@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 
 import pytest
-from tests.hooks.herdr_runtime import after, decision, open_lane, run
+from tests.hooks.herdr_runtime import PRIMARY, after, decision, open_lane, open_primary, run
 from tests.runtime import REPO_ROOT
 
 pytestmark = pytest.mark.usefixtures("core")
@@ -131,6 +131,14 @@ def test_a_lane_may_start_inside_this_sessions_checkout(repository: Path, direct
 def test_a_lane_may_start_in_a_worktree_this_session_created(repository: Path, tmp_path: Path) -> None:
     open_lane(repository, tmp_path)
     assert decision(run(repository, started_in("/lanes/w6"))) == "allow"
+
+
+@pytest.mark.usefixtures("herdr")
+def test_a_workspace_opened_on_another_directory_is_no_lane_root(repository: Path, tmp_path: Path) -> None:
+    open_primary(repository, tmp_path)
+    output = run(repository, started_in(PRIMARY))
+    assert decision(output) == "ask"
+    assert "outside" in output["hookSpecificOutput"]["permissionDecisionReason"]
 
 
 @pytest.mark.parametrize(

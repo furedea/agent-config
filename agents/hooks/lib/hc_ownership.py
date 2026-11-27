@@ -78,7 +78,7 @@ def _require_lane_directory(record: SessionRecord, directories: list[str]) -> No
     for directory in directories:
         roots = [
             record.root,
-            *(Path(entry["path"]) for entry in herdr_ownership.entries(record, "workspaces").values()),
+            *(Path(path) for path in herdr_ownership.created_worktrees(record)),
         ]
         path = Path(directory)
         if not path.is_absolute() or not any(path.resolve().is_relative_to(root.resolve()) for root in roots):

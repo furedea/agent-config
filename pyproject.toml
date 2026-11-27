@@ -53,6 +53,8 @@ known_first_party = [
   "guard_file",
   "guard_git",
   "guard_suppression",
+  "hc_ownership",
+  "hc_terminal",
   "herdr_grammar",
   "herdr_ownership",
   "hook_decision",
@@ -93,8 +95,6 @@ known_first_party = [
   "source_listing",
   "static_rule_scan",
   "system_programs",
-  "t3_ownership",
-  "t3_thread",
   "trusted_owners",
   "verification_session",
 ]

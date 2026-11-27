@@ -68,7 +68,7 @@ def record_commands(tmp_path: Path, forbidden: Path) -> Path:
 @pytest.mark.parametrize("entry", ["sweep", "caller"])
 @pytest.mark.parametrize(
     "location",
-    ["tmp", "private-tmp", "tmpdir", "tmpdir-symlink", "allow-write", "relative", "tilde", "symlink", "herdr", "t3"],
+    ["tmp", "private-tmp", "tmpdir", "tmpdir-symlink", "allow-write", "relative", "tilde", "symlink", "herdr"],
 )
 def test_lane_metadata_cannot_authorize_a_sandbox_writable_primary(
     primary: Path,
@@ -89,8 +89,6 @@ def test_lane_metadata_cannot_authorize_a_sandbox_writable_primary(
             (fake.parent / "temp-link").symlink_to(fake, target_is_directory=True)
     elif location == "herdr":
         fake = Path.home() / ".herdr/worktrees/fake/primary"
-    elif location == "t3":
-        fake = Path.home() / ".t3/worktrees/fake/primary-0123456789abcdef"
     elif location in {"relative", "tilde"}:
         fake = Path.home() / "writable/fake"
         entries = ["~/writable" if location == "tilde" else "writable"]
@@ -134,7 +132,7 @@ def test_lane_metadata_can_identify_another_trusted_primary(
     assert branches(other) == {"main"}
 
 
-@pytest.mark.parametrize("root", [".herdr/worktrees", ".t3/worktrees"])
+@pytest.mark.parametrize("root", [".herdr/worktrees"])
 @pytest.mark.parametrize("link", ["repo/lane", "repo"])
 def test_a_symlink_in_a_lane_root_never_selects_a_repository(
     primary: Path, merged: dict[str, str], tmp_path: Path, root: str, link: str
@@ -274,7 +272,6 @@ def test_production_writable_paths_include_all_untrusted_locations(
         Path("/tmp/claude"),
         Path("/private/tmp/claude"),
         home / ".herdr/worktrees",
-        home / ".t3/worktrees",
         tmp_path / "temporary",
         alias,
         home / "relative",
@@ -285,7 +282,7 @@ def test_production_writable_paths_include_all_untrusted_locations(
 
 
 @pytest.mark.parametrize("entry", ["sweep", "caller"])
-@pytest.mark.parametrize("location", ["writable/fake", "home/.t3/worktrees/fake/primary-0123456789abcdef"])
+@pytest.mark.parametrize("location", ["writable/fake", "home/.herdr/worktrees/fake/primary"])
 def test_fixture_policy_still_rejects_a_planted_writable_primary(
     primary: Path, merged: dict[str, str], tmp_path: Path, entry: str, location: str
 ) -> None:

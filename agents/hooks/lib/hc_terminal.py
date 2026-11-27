@@ -38,7 +38,7 @@ RUN = Grammar(
     frozenset({"--name", "--cwd", "--label"}),
     frozenset({"--bg", "--json", "--no-parent"}),
     (1, 1 << 16),
-    frozenset({"--bg", "--json", "--no-parent", "--name"}),
+    frozenset({"--bg", "--json", "--no-parent", "--name", "--cwd"}),
 )
 GRAMMARS = {
     "run": RUN,
@@ -204,7 +204,11 @@ def _option_problem(call: TerminalCall) -> str:
         return "an option given twice may be read either way"
     missing = GRAMMARS[call.action].required - set(names)
     if missing:
-        return "an hc run lane needs --bg, --no-parent, --json, and --name: " + ", ".join(sorted(missing)) + " missing"
+        return (
+            "an hc run lane needs --bg, --no-parent, --json, --name, and --cwd: "
+            + ", ".join(sorted(missing))
+            + " missing"
+        )
     return ""
 
 

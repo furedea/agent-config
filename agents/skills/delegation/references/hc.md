@@ -36,8 +36,8 @@ ADR-0029.
 
 The command hooks hold `hc` to this contract; a call outside it is denied or asks.
 
-- `run` starts only `claude` or `codex` by name, with `--bg`, `--no-parent`, `--json`, and `--name`,
-    optionally `--cwd` and `--label`, and exactly one message after the agent's options. An agent
+- `run` starts only `claude` or `codex` by name, with `--bg`, `--no-parent`, `--json`, `--name`, and
+    `--cwd`, optionally `--label`, and exactly one message after the agent's options. An agent
     option other than `--model` and `--effort` for Claude, or `--no-daemon` and `--model` for Codex,
     is denied: it could switch off the agent's sandbox, hooks, or approvals. Another program, a
     template, `--on`, and any other hc option ask.

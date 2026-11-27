@@ -9,7 +9,7 @@ from tests.hooks.herdr_runtime import after, decision, open_lane, run
 from tests.runtime import REPO_ROOT
 
 pytestmark = pytest.mark.usefixtures("core")
-START = "hc run --bg --no-parent --json --name lane-a claude 'Read /tmp/brief.md'"
+START = "hc run --bg --no-parent --json --name lane-a --cwd {root} claude 'Read /tmp/brief.md'"
 CREATED_MS = 1795000000000
 
 
@@ -36,7 +36,13 @@ def core(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     return tmp_path
 
 
-def start_terminal(repository: Path, address: str = "t7", command: str = START) -> None:
+def started_in(directory: object) -> str:
+    """The lane start, rooted in the directory."""
+    return START.format(root=directory)
+
+
+def start_terminal(repository: Path, address: str = "t7") -> None:
+    command = started_in(repository)
     assert decision(run(repository, command)) == "allow"
     after(repository, command, launched(address))
 
@@ -90,7 +96,7 @@ def test_ownership_belongs_to_one_session(repository: Path) -> None:
     ],
 )
 def test_only_the_result_of_one_plain_start_records_a_terminal(repository: Path, command: str, response: dict) -> None:
-    after(repository, command, response)
+    after(repository, command.format(root=repository), response)
     assert decision(run(repository, "hc send t7 hi")) == "ask"
 
 
@@ -98,7 +104,7 @@ def test_only_the_result_of_one_plain_start_records_a_terminal(repository: Path,
     "command", ["hc read t8 --lines 50", "hc wait t8 --json", "hc ls --json", START, "echo hc send t8 hi"]
 )
 def test_reads_starts_and_text_are_not_the_ownership_checks_concern(repository: Path, command: str) -> None:
-    assert decision(run(repository, command)) == "allow"
+    assert decision(run(repository, command.format(root=repository))) == "allow"
 
 
 @pytest.mark.parametrize("action", ["send t7 hi", "kill t7", "rm t7"])
@@ -118,14 +124,13 @@ def test_a_core_that_cannot_answer_cannot_vouch_for_an_address(repository: Path,
 
 @pytest.mark.parametrize("directory", [".", "src", "src/../docs"])
 def test_a_lane_may_start_inside_this_sessions_checkout(repository: Path, directory: str) -> None:
-    command = START.replace("--name lane-a", f"--name lane-a --cwd {(repository / directory).absolute()}")
-    assert decision(run(repository, command)) == "allow"
+    assert decision(run(repository, started_in((repository / directory).absolute()))) == "allow"
 
 
 @pytest.mark.usefixtures("herdr")
 def test_a_lane_may_start_in_a_worktree_this_session_created(repository: Path, tmp_path: Path) -> None:
     open_lane(repository, tmp_path)
-    assert decision(run(repository, START.replace("--name lane-a", "--name lane-a --cwd /lanes/w6"))) == "allow"
+    assert decision(run(repository, started_in("/lanes/w6"))) == "allow"
 
 
 @pytest.mark.parametrize(
@@ -134,8 +139,7 @@ def test_a_lane_may_start_in_a_worktree_this_session_created(repository: Path, t
     ids=["a home", "a worktree another session created", "a relative path", "a parent escape", "a sibling prefix"],
 )
 def test_a_lane_rooted_outside_this_sessions_checkouts_asks(repository: Path, directory: str) -> None:
-    command = START.replace("--name lane-a", f"--name lane-a --cwd {directory.format(repository=repository)}")
-    output = run(repository, command)
+    output = run(repository, started_in(directory.format(repository=repository)))
     assert decision(output) == "ask"
     assert "outside" in output["hookSpecificOutput"]["permissionDecisionReason"]
 

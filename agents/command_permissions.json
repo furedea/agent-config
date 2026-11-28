@@ -2597,6 +2597,42 @@
     {
       "decision": "allow",
       "prefix": [
+        "t3",
+        "thread",
+        "start"
+      ],
+      "justification": "Allow starting a T3 thread, which runs outside the sandbox under its own hooks; the guard requires an explicit claudeAgent or codex provider instance and refuses any other."
+    },
+    {
+      "decision": "allow",
+      "prefix": [
+        "t3",
+        "thread",
+        "send"
+      ],
+      "justification": "Allow messaging a T3 thread; the session check allows only a thread this session started, since any other may be the user's or the parent's."
+    },
+    {
+      "decision": "allow",
+      "prefix": [
+        "t3",
+        "thread",
+        "show"
+      ],
+      "justification": "Allow reading a T3 thread's state and messages."
+    },
+    {
+      "decision": "allow",
+      "prefix": [
+        "t3",
+        "thread",
+        "list"
+      ],
+      "justification": "Allow listing a project's T3 threads."
+    },
+    {
+      "decision": "allow",
+      "prefix": [
         "hc",
         "run"
       ],

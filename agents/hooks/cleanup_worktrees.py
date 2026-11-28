@@ -5,7 +5,7 @@ A branch goes only when a merged pull request's head is exactly its tip and its 
 clean, so a squash merge counts as merged while later or uncommitted work is kept. The primary
 checkout, the worktree the caller runs in, and the default branch are never removed; after a
 removal the default branch fast-forwards to the merges unless that would disturb work. The sweep
-covers the caller's repository and every repository with a Herdr task worktree, so
+covers the caller's repository and every repository with a Herdr or T3 Code task worktree, so
 lanes merged elsewhere go wherever the next session starts.
 
 Usage: cleanup_worktrees.py [--dry-run]
@@ -34,8 +34,8 @@ CLAUDE_DIRECTORY = ".claude"
 SESSION_SCRATCH = ".cc-writes"
 HERDR_WORKTREES = Path(".herdr/worktrees")
 """Herdr's default worktrees.directory, holding <repo>/<branch-slug> checkouts."""
-LANE_WORKTREES = (HERDR_WORKTREES,)
-"""The lane roots: `herdr worktree create` makes every lane worktree."""
+LANE_WORKTREES = (HERDR_WORKTREES, Path(".t3/worktrees"))
+"""Herdr's and T3 Code's lane roots; T3 Code holds <repo>/<branch-prefix>-<hash>[-n] checkouts."""
 
 
 @dataclass(frozen=True, slots=True)

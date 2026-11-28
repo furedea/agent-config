@@ -118,6 +118,12 @@
             "if": "Bash(hc run *)",
             "type": "command",
             "timeout": 30
+          },
+          {
+            "command": "\"$HOME/.claude/hooks/verification_session.py\" claude post-tool-use",
+            "if": "Bash(t3 thread start *)",
+            "type": "command",
+            "timeout": 30
           }
         ]
       }

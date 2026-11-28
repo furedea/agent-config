@@ -31,6 +31,7 @@ import hook_input
 import literal_words
 import removal_paths
 import shell_syntax
+import t3_thread
 import trusted_owners
 from hook_decision import Verdict
 
@@ -172,6 +173,7 @@ def command_verdict(kind: str, payload: dict, policy: Policy) -> Verdict:
 def forbidden_line_objection(command: str, commands: tuple[shell_syntax.Command, ...]) -> Verdict:
     """The forbidden guard's checks that read the whole command line before any segment's rules."""
     checks = (
+        lambda: t3_thread.refusal(commands),
         lambda: hc_terminal.refusal(commands),
         lambda: command_objections.companion_objection(command, commands),
     )
@@ -181,6 +183,7 @@ def forbidden_line_objection(command: str, commands: tuple[shell_syntax.Command,
 def allowed_line_objection(command: str, commands: tuple[shell_syntax.Command, ...], policy: Policy) -> Verdict:
     """The allowed guard's checks that read the whole command line before any segment's rules."""
     checks = (
+        lambda: t3_thread.objection(command, commands),
         lambda: hc_terminal.objection(command, commands),
         lambda: command_objections.cleanup_objection(command, commands),
         lambda: command_objections.pinned_program_objection(command, commands, policy),

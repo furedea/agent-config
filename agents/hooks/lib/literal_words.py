@@ -9,7 +9,7 @@ import shell_syntax
 # Settings that can send a request to a local server somewhere else: a proxy, or another configuration file.
 # The only programs the literal_words rules govern; through any wrapper they get main's rules, or no
 # rule at all for curl and wget.
-LITERAL_PROGRAMS = frozenset({"agent-browser", "agent-desktop", "curl", "gh", "hc", "herdr", "wget"})
+LITERAL_PROGRAMS = frozenset({"agent-browser", "agent-desktop", "curl", "gh", "hc", "herdr", "t3", "wget"})
 # Characters through which any shell may expand or run something, and a word starting with `=` (zsh
 # looks it up on PATH); a command holding one anywhere outside quotes, in the program name, an
 # assignment, or a redirect included, gets no literal_words rule.

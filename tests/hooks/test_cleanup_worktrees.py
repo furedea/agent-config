@@ -103,7 +103,9 @@ def test_an_open_herdr_workspace_is_closed_with_its_worktree(
     assert branches(primary) == {"main"}
 
 
-@pytest.mark.parametrize("lane_root", [".herdr/worktrees/repo/feat-elsewhere"])
+@pytest.mark.parametrize(
+    "lane_root", [".herdr/worktrees/repo/feat-elsewhere", ".t3/worktrees/repo/feat-elsewhere-0123456789abcdef"]
+)
 def test_merged_agent_lanes_of_other_repositories_are_swept_too(
     primary: Path, merged: dict[str, str], tmp_path: Path, monkeypatch: pytest.MonkeyPatch, lane_root: str
 ) -> None:

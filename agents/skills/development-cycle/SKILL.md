@@ -46,7 +46,8 @@ Delegate other responsibilities:
 - Information authority and temporary document lifetime → [source-of-truth](../source-of-truth/SKILL.md).
 - Design decision records → [adr](../adr/SKILL.md).
 - Work delegated to another session → [delegation](../delegation/SKILL.md), with T3 Code as the
-    default transport; Herdr is deprecated and used only on the user's explicit request →
+    default transport and herdr-core (the Herdr app's `hc`) as the alternative; Herdr TUI panes are
+    deprecated and used only on the user's explicit request →
     [herdr-delegation](../herdr-delegation/SKILL.md).
 
 ## Authorization

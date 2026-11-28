@@ -2631,6 +2631,102 @@
       "justification": "Allow listing a project's T3 threads."
     },
     {
+      "decision": "allow",
+      "prefix": [
+        "hc",
+        "run"
+      ],
+      "justification": "Allow starting a coding-agent lane in an hc terminal, which runs outside the sandbox under the agent's own sandbox and hooks; the guard refuses any agent option besides its model, effort, and daemon setting."
+    },
+    {
+      "decision": "allow",
+      "prefix": [
+        "hc",
+        "send"
+      ],
+      "justification": "Allow messaging, ending, or removing an hc terminal; the session check allows only a terminal this session started, since any other may be the user's or the parent's."
+    },
+    {
+      "decision": "allow",
+      "prefix": [
+        "hc",
+        "kill"
+      ],
+      "justification": "Allow messaging, ending, or removing an hc terminal; the session check allows only a terminal this session started, since any other may be the user's or the parent's."
+    },
+    {
+      "decision": "allow",
+      "prefix": [
+        "hc",
+        "rm"
+      ],
+      "justification": "Allow messaging, ending, or removing an hc terminal; the session check allows only a terminal this session started, since any other may be the user's or the parent's."
+    },
+    {
+      "decision": "allow",
+      "prefix": [
+        "hc",
+        "get"
+      ],
+      "justification": "Allow reading hc terminals, their screens, and their status, and waiting for them."
+    },
+    {
+      "decision": "allow",
+      "prefix": [
+        "hc",
+        "read"
+      ],
+      "justification": "Allow reading hc terminals, their screens, and their status, and waiting for them."
+    },
+    {
+      "decision": "allow",
+      "prefix": [
+        "hc",
+        "wait"
+      ],
+      "justification": "Allow reading hc terminals, their screens, and their status, and waiting for them."
+    },
+    {
+      "decision": "allow",
+      "prefix": [
+        "hc",
+        "ls"
+      ],
+      "justification": "Allow reading hc terminals, their screens, and their status, and waiting for them."
+    },
+    {
+      "decision": "allow",
+      "prefix": [
+        "hc",
+        "templates"
+      ],
+      "justification": "Allow reading hc terminals, their screens, and their status, and waiting for them."
+    },
+    {
+      "decision": "allow",
+      "prefix": [
+        "hc",
+        "--help"
+      ],
+      "justification": "Allow reading hc terminals, their screens, and their status, and waiting for them."
+    },
+    {
+      "decision": "allow",
+      "prefix": [
+        "hc",
+        "--version"
+      ],
+      "justification": "Allow reading hc terminals, their screens, and their status, and waiting for them."
+    },
+    {
+      "decision": "allow",
+      "prefix": [
+        "hc",
+        "--skill"
+      ],
+      "justification": "Allow reading hc terminals, their screens, and their status, and waiting for them."
+    },
+    {
       "decision": "ask",
       "prefix": [
         "esa",

@@ -25,6 +25,7 @@ import command_policy
 import foreign_shell_policy
 import gh_command_line
 import gh_policy
+import hc_terminal
 import hook_decision
 import hook_input
 import literal_words
@@ -173,6 +174,7 @@ def forbidden_line_objection(command: str, commands: tuple[shell_syntax.Command,
     """The forbidden guard's checks that read the whole command line before any segment's rules."""
     checks = (
         lambda: t3_thread.refusal(commands),
+        lambda: hc_terminal.refusal(commands),
         lambda: command_objections.companion_objection(command, commands),
     )
     return next((verdict for check in checks if (verdict := check()).decision != "allow"), hook_decision.ALLOW)
@@ -182,6 +184,7 @@ def allowed_line_objection(command: str, commands: tuple[shell_syntax.Command, .
     """The allowed guard's checks that read the whole command line before any segment's rules."""
     checks = (
         lambda: t3_thread.objection(command, commands),
+        lambda: hc_terminal.objection(command, commands),
         lambda: command_objections.cleanup_objection(command, commands),
         lambda: command_objections.pinned_program_objection(command, commands, policy),
     )

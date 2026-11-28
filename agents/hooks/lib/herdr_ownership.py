@@ -133,12 +133,19 @@ def _record_workspace(record: SessionRecord, parsed: shell_syntax.Command, resul
         return
     if parsed.arguments[1] == "worktree" and not _valid_entry(result.get("worktree"), ("path",)):
         return
+    created_worktree = parsed.arguments[1] == "worktree"
     entry = {
-        "path": _normpath(result["worktree"]["path"] if parsed.arguments[1] == "worktree" else pane["cwd"]),
+        "path": _normpath(result["worktree"]["path"] if created_worktree else pane["cwd"]),
         "label": workspace["label"],
         "terminal_id": pane["terminal_id"],
+        "created_worktree": created_worktree,
     }
     _save(record, workspaces={**entries(record, "workspaces"), workspace["workspace_id"]: entry})
+
+
+def created_worktrees(record: SessionRecord) -> list[str]:
+    """The checkout paths of the worktrees this session created; a workspace it opened on a directory is none."""
+    return [entry["path"] for entry in entries(record, "workspaces").values() if entry.get("created_worktree") is True]
 
 
 def created_result(response: object) -> dict:

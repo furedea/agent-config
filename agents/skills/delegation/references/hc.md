@@ -1,18 +1,25 @@
 # herdr-core Transport
 
 The [delegation](../SKILL.md) operations for lanes in herdr-core terminals, through the `hc` CLI of
-the Herdr desktop app. herdr-core is the default transport; the Herdr app on the desktop and the
-iPhone shows its terminals. Checked against hc 0.1.22 (`hc --help`, `hc --skill`, and
+the Herdr desktop app, which shows its terminals on the desktop and the iPhone. herdr-core is the
+alternative to the default T3 Code: use it when the user asks for the Herdr app or `hc`, or when
+T3 Code is unavailable. Checked against hc 0.1.22 (`hc --help`, `hc --skill`, and
 [herdr-core](https://github.com/herdrdev/herdr-core) `schema/hc.openrpc.json`); the decision is
 ADR-0030.
 
 ## Prerequisites
 
-- herdr-core is available when `hc ls --json` succeeds as an ordinary Bash call: the core runs and
-    the installed sandbox settings let `hc` leave the sandbox, which they do only together with the
-    [Guard Contract](#guard-contract). Otherwise start no lane: report the reason to the user, as
-    [Branches and worktrees](../../development-cycle/references/branches.md) describes, and never
-    switch to another transport on your own. Do not start, stop, restart, or update the core.
+- The Herdr app runs before any `hc` call. Every `hc` command, `hc ls` and `hc server status`
+    included, starts a core when none runs, and that core and every terminal it opens inherit this
+    agent shell's environment; no `hc` command checks without starting one. So ask the user to
+    confirm that the Herdr app is running before the first `hc` call of a session, and run no `hc`
+    command until they do.
+- herdr-core is available when, with the app running, `hc ls --json` succeeds as an ordinary Bash
+    call: the installed sandbox settings let `hc` leave the sandbox, which they do only together
+    with the [Guard Contract](#guard-contract). Otherwise start no lane: report the reason to the
+    user, as [Branches and worktrees](../../development-cycle/references/branches.md) describes,
+    and never switch to another transport on your own. Do not start, stop, restart, or update the
+    core.
 - An implementation lane also needs `herdr worktree create`, since hc has no worktree command and
     the sandbox refuses writes to another repository's `.git/worktrees`. It works when
     `herdr workspace list` succeeds; otherwise start no implementation lane and report the reason.

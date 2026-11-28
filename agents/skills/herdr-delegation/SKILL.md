@@ -1,16 +1,16 @@
 ---
 name: herdr-delegation
 description: >
-    Deprecated in favour of `delegation`, which runs lanes in herdr-core terminals through `hc`.
+    Deprecated in favour of `delegation`, which uses T3 Code or herdr-core (the Herdr app's `hc`).
     Use only when the user explicitly requests Herdr TUI panes for a plan review or implementation
     task in a separate Codex or Claude session, until they are removed. Not for ordinary local
-    work, and not a fallback when herdr-core is unavailable.
+    work, and not a fallback when T3 Code or herdr-core is unavailable.
 ---
 
 # Herdr Delegation
 
-> Deprecated: use [delegation](../delegation/SKILL.md), which runs lanes in herdr-core terminals
-> that the Herdr app shows on the desktop and the iPhone. Use this skill only when the user
+> Deprecated: use [delegation](../delegation/SKILL.md) with T3 Code, or with herdr-core terminals,
+> which the Herdr app shows on the desktop and the iPhone. Use this skill only when the user
 > explicitly requests Herdr TUI panes.
 
 Delegate a bounded task to an independent coding-agent session. The originating session owns

@@ -1,34 +1,41 @@
 ---
 status: accepted
 date: 2026-11-27
-supersedes: [ADR-0028]
-related: [ADR-0010, ADR-0007]
+related: [ADR-0028, ADR-0010, ADR-0007]
 ---
 
-# Hand approved lanes to herdr-core terminals
+# Offer herdr-core terminals as an alternative lane transport
 
 ## Context and Problem Statement
 
-ADR-0028 handed each lane to a T3 Code thread so that the human could follow and answer lanes on the desktop and
-phone. T3 Code has since been removed from the human's machines (#280). The Herdr desktop app runs its terminals in
-herdr-core, whose `hc` CLI starts programs in terminals that outlive their caller, and the Herdr iPhone app reaches
-the same core over SSH; it does not see the older Herdr TUI that ADR-0010 used. Which transport should hand approved
-lanes to their sessions now?
+ADR-0028 hands each lane to a T3 Code thread so that the human can follow and answer lanes on the desktop and the
+phone. The Herdr desktop app runs its terminals in herdr-core, whose `hc` CLI starts programs in terminals that outlive
+their caller, and the Herdr iPhone app reaches the same core over SSH; it does not see the older Herdr TUI that
+ADR-0010 used. The human wants to follow lanes in the Herdr app as well, and to keep lanes running when T3 Code is
+unavailable (#280). How should herdr-core carry lanes next to T3 Code?
 
 As before, the work state (Issue, plan comment, brief, pull request, `LANE-READY`) stays outside the transport, and a
 terminal address is never the identity of the work (#181).
 
 ## Considered Options
 
-- Start lanes with `hc run` in herdr-core terminals
+- Start lanes with `hc run` in herdr-core terminals as an alternative, keeping T3 Code the default
+- Replace T3 Code with herdr-core terminals
+- Keep T3 Code as the only transport
 - Go back to Herdr TUI panes (`herdr agent start`, ADR-0010)
 - Let each lane report back with `hc send` into the parent
 
 ## Decision Outcome
 
-Chosen option: "Start lanes with `hc run` in herdr-core terminals", because it is the only option that puts lanes
-where the human watches and answers them on the desktop and the phone, while each lane keeps the hooks, guard, and
-sandbox of a terminal session and the workflow stays in this repository's skills.
+Chosen option: "Start lanes with `hc run` in herdr-core terminals as an alternative, keeping T3 Code the default",
+because it puts lanes in the Herdr app when the human asks for it or T3 Code is unavailable, while T3 Code keeps
+carrying lanes as ADR-0028 decided, and each lane keeps the hooks, guard, and sandbox of a terminal session either way.
+
+- T3 Code stays the default transport. The parent uses herdr-core when the user asks for the Herdr app or `hc`, or when
+    T3 Code is unavailable and herdr-core is available; with neither, it starts no lane. Herdr TUI panes stay deprecated
+    and are never a fallback.
+- Every `hc` command starts a core when none runs, and that core and its terminals inherit the calling shell's
+    environment, so the Herdr app must be running before the first `hc` call; the parent asks the user to confirm it.
 
 - A lane runs as `hc run --bg --no-parent --json --name <lane> --cwd <worktree> --label herdr.space=<repository>
     --label herdr.tab=<lane> claude|codex ... "<read the brief>"`. The labels make the Herdr app show the terminal.
@@ -53,14 +60,17 @@ sandbox of a terminal session and the workflow stays in this repository's skills
 - A template named `claude` or `codex` would take precedence over the program, but templates live in
     `~/.config/herdr-core/templates`, outside every path the sandbox lets an agent write.
 
-Going back to Herdr TUI panes was rejected because the Herdr iPhone app does not see the TUI, which leaves lanes out of
-the human's reach away from the desk, as ADR-0028 already found. Reporting back with `hc send` was rejected because the
+Replacing T3 Code was rejected because the human keeps T3 Code for lanes, and its guard, ownership records, and cleanup
+already work (ADR-0028). Keeping T3 Code alone was rejected because lanes would stop whenever T3 Code is unavailable and
+would never show in the Herdr app. Going back to Herdr TUI panes was rejected because the Herdr iPhone app does not see
+the TUI, which leaves lanes out of the human's reach away from the desk, as ADR-0028 already found. Reporting back with `hc send` was rejected because the
 parent would have to trust text in its input that anyone could have typed.
 
 ### Consequences
 
-- Good, because the human follows and answers every lane in the Herdr app on the desktop or the phone, and a lane's
-    approval prompt reaches them through the agent's own blocked status.
+- Good, because the human can follow and answer lanes in the Herdr app on the desktop or the phone, and a lane's
+    approval prompt reaches them through the agent's own blocked status; lanes also run when T3 Code is unavailable.
+- Bad, because two transports, each with its own guard rules, ownership record, and reference, must be kept working.
 - Good, because hc stays only the transport: the brief, plan, pull request, and `LANE-READY` carry the work, and the
     skill keeps the hc operations in a reference another transport can replace.
 - Bad, because the whole `hc` command family runs outside the sandbox, and its safety rests on the guard's agent
